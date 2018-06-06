@@ -1,0 +1,46 @@
+{
+    "default": {
+        "t1": 1500,
+        "t2": 100,
+        "t3": 1500,
+        "t4": 0,
+        "t5": 0,
+        "d0": 6,
+        "sx0": 400,
+        "sx1": 400,
+        "dz0": 1000,
+        "dz1": 2000,
+        "sz0": 400,
+        "sz1": 400,
+        "layer thickness": 5
+    },
+    "layers": {
+        "1": {
+            "images": [
+                "0001.png"
+            ],
+            "exposure time ms": [
+                3000
+            ]
+        },
+        "2": {
+            "images": [
+                "0002a.png",
+                "0002b.png"
+            ],
+            "exposure time ms": [
+                2000,
+                1000
+            ]
+        },
+        "3": {
+            "images": [
+                "0003.png"
+            ],
+            "exposure time ms": [
+                1000
+            ],
+            "t1": 1000
+        }
+    }
+}

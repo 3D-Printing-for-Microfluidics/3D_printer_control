@@ -1,0 +1,14 @@
+*.jpg
+*.pyc
+.ipynb_checkpoints
+__pycache__
+logs/
+env/
+.pytest_cache/
+geckodriver.log
+_build/
+*.db
+migrations/
+.vscode/
+env2/
+slices/

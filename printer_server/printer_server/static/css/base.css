@@ -1,0 +1,15 @@
+.container {
+  width: auto;
+  max-width: 680px;
+  padding: 0 15px;
+}
+
+.jumbotron {
+  padding-top: 1.5em;
+  padding-bottom: 1.5em;
+  margin-bottom: 1rem;
+}
+
+.jumbotron h2 {
+  margin-bottom: 0;
+}
