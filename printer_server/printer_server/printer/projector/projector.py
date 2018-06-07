@@ -9,11 +9,14 @@ __all__ = ['Projector']
 
 class Projector:
     
+    def __init__(self, projectorResolution):
+        self.resolution = projectorResolution
+    
     def connect(self):
         """Create a :py:class:ScreenThread object and run it.
         Also, connect to the I\ :sup:`2`\ C-USB adapter
         """
-        self.screenThread = ScreenThread()
+        self.screenThread = ScreenThread(self.resolution)
         self.screenThread.start()
         self.i2c = LightEngineI2C()
         

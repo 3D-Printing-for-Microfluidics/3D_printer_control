@@ -5,9 +5,6 @@ from mttkinter import mtTkinter as tkinter
 from PIL import Image, ImageTk
 import threading
 
-# Change it to the actual 3D printer projector resolution
-SCREEN_WIDTH, SCREEN_HEIGHT = 640, 400
-
 
 class Screen:
     """The Screen class uses ``tkinter`` as the underlying 
@@ -15,7 +12,8 @@ class Screen:
     Python standard library, and it is platform agnostic. 
     Most importantly, it works. 
     """
-    def __init__(self):
+    def __init__(self, resolution):
+        self.width, self.height = resolution
         self.root = tkinter.Tk()
         # self.root.overrideredirect(True)
         # self.root.overrideredirect(False)
@@ -23,15 +21,15 @@ class Screen:
         
         # set the size and position of Tk window
         # format: <width>x<height>+xoffset+yoffset
-        self.root.geometry('{0}x{1}+0+0'.format(SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.root.geometry('{0}x{1}+0+0'.format(self.width, self.height))
         # hide cursor in the Tk window
         self.root.config(cursor='none')
         self.root.focus_set()
         
         # create a canvas object where we draw images of each 3D print layer
         self.canvas = tkinter.Canvas(self.root,
-                                     width=SCREEN_WIDTH,
-                                     height=SCREEN_HEIGHT,
+                                     width=self.width,
+                                     height=self.height,
                                      bd=0, # border width
                                      highlightthickness=0, # canvas edge with
                                      relief='ridge')
@@ -58,7 +56,7 @@ class Screen:
         
     def clear(self):
         """Clear the Tk window by drawing a black image."""
-        pilImage = Image.new(mode='1', size=(SCREEN_WIDTH, SCREEN_HEIGHT))
+        pilImage = Image.new(mode='1', size=(self.width, self.height))
         self.tkImage = ImageTk.PhotoImage(pilImage)
         self.canvas.itemconfig(self.canvasImage, image=self.tkImage)
 
@@ -71,8 +69,9 @@ class ScreenThread(threading.Thread):
     
          a ``threading.Event`` object to set flag to stop thread
     """
-    def __init__(self):
+    def __init__(self, resolution):
         super().__init__()
+        self.resolution = resolution
         self.stopped = threading.Event()
         
     def run(self):
@@ -83,7 +82,7 @@ class ScreenThread(threading.Thread):
         the tk window is on top.  
         """
         self.stopped.clear()
-        self.screen = Screen()
+        self.screen = Screen(self.resolution)
         while not self.stopped.is_set():
             # set tk window on top
             self.screen.root.wm_attributes("-topmost", 1)
