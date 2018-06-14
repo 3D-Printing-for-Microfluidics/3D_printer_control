@@ -29,11 +29,14 @@ class Projector:
         self.i2c.stop()
         
     def setLedAmplitude(self, i):
-        """Set the projector LED power level
-        :param int i: between 1 and 1000
-        """
-        self.i2c.setLedAmplitude(i)
+        """Set the projector LED power level.
         
+        :param int i: between 1 and 1000. If it is too low or 
+        too high, the LED amplitude will not be change. 
+        """
+        if i >= 1 and i <= 1000:
+            self.i2c.setLedAmplitude(int(i))
+            
     @property
     def ledPower(self):
         return self.i2c.ledPower
@@ -53,7 +56,6 @@ class Projector:
     def project(self, image, exposureTime, ledPower):
         """Poject a image for a period of t (ms).
         
-        TODO: image doesnot have to be 8-bit
         :param image: an 8-bit grayscale image filename
         :param int exposureTime: exposure time (ms)
         :param int ledPower: LED power setting (0-1000)

@@ -97,9 +97,9 @@ class Solus(serial.Serial):
             direction = m.group(2)
             distance = float(m.group(3))
             speed = int(m.group(5))
-            if m.group(1) is 'BP':
+            if m.group(1) == 'BP':
                 self.moveZ(direction, distance, speed)
-            elif m.group(1) is 'QW':
+            elif m.group(1) == 'QW':
                 self.moveX(direction, distance, speed)
                 
     def pause(self):

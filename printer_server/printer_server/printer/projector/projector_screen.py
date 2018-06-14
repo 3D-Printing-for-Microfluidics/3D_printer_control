@@ -45,8 +45,14 @@ class Screen:
         """Draw image in the Tk canvas.
         :param str fn: image filename
         """
-        # open image file as a PIL.Image object
-        pilImage = Image.open(fn)
+        # open image file as a PIL.Image object. If it is a corrupted image, 
+        # substitute it with a plain white image.
+        try:
+            pilImage = Image.open(fn)
+        except OSError:
+            pilImage = Image.new(mode='1', 
+                                 size=(self.width, self.height),
+                                 color=1)
         # Tk canvas only takes `PhotoImage` object
         self.tkImage = ImageTk.PhotoImage(pilImage)
         # change the canvas image to the new image
@@ -56,7 +62,10 @@ class Screen:
         
     def clear(self):
         """Clear the Tk window by drawing a black image."""
-        pilImage = Image.new(mode='1', size=(self.width, self.height))
+        # When mode is `1`, it creates a 1-bit image.
+        pilImage = Image.new(mode='1', 
+                             size=(self.width, self.height),
+                             color=0)
         self.tkImage = ImageTk.PhotoImage(pilImage)
         self.canvas.itemconfig(self.canvasImage, image=self.tkImage)
 

@@ -320,8 +320,9 @@ Format of A Print Job
 
 To submit a print job to the 3D printer, a ZIP file is the only 
 format the 3D printer accepts. This ZIP file should contain only 
-one JSON file and all the images that will be used for this print 
-job. The file structure in the ZIP file should be as following ::
+one JSON file, named ``print_settings.json``, and all the images 
+that will be used for this print job. The file structure in the 
+ZIP file should be as following ::
 
     .
     ├── print_settings.json
@@ -334,10 +335,9 @@ job. The file structure in the ZIP file should be as following ::
             .
             .
 
-Although the name of the JSON file is not enforced, as well as 
-the names of the images and image folder name, the naming 
-convention shown above is highly recommended. This convention is 
-also adopted by the print job preparing software we provide. 
+The name of the JSON file must be ``print_settings.json``, and 
+the names of the images and image folder name need to match what 
+is specified in the json file. 
 
 .. Note::
     After the ZIP file is extracted, the JSON file directory will 
@@ -347,6 +347,7 @@ also adopted by the print job preparing software we provide.
 """
 
 
+import re
 import json
 import zipfile
 import os
@@ -362,6 +363,10 @@ class PrintSettings:
     
     :param dict settings: a dictionary of print settings.
     """
+    
+    waitRegex = re.compile(r'WAIT (-?\d+(\.\d+)?)')
+    moveRegex = re.compile(r'^(BP|QW) (UP|DOWN) (-?\d+(\.\d+)?) SPEED (\d+)')
+    
     def __init__(self, settings):
         self.__settings = settings
         
@@ -470,22 +475,21 @@ class PrintSettings:
             temp = [temp] * len(self.__getLayerParam(layerNum, 'Images'))
         return temp
         
-    # TODO: re-write
     # TODO: benchmark this method on RPi
-    @staticmethod
-    def validate(filename, path):
+    @classmethod
+    def validate(cls, filename, path):
         """This method validates the (.zip) file of a print job. 
         
         What does it check?
         
         #. The ZIP file is not corrupted. 
-        #. There is only one JSON file
+        #. There is only one JSON file named ``print_settings.json``.
         #. The JSON file can be successfully loaded, and it 
            contains all the necessary entries.
         #. The values of these entries are the correct type.
-        #. The images used actually exist, and each one has an 
-           exposure time.
-        #. The exposure times are the correct type.
+        #. The images used actually exist.
+        #. The Solus command chain syntax is correct, and the BP and 
+           QW moving up and down distance is the same.
         
         :param str filename: a zip file with directory tree as 
                              following
@@ -497,46 +501,93 @@ class PrintSettings:
         """
         try:
             with zipfile.ZipFile(filename, 'r') as zf:
-                zf.extractall(path=path)
+                files = [f for f in zf.namelist() if not f.startswith('__MACOSX')]
+                jsonFiles = [f for f in files if f.endswith('print_settings.json')]
+                assert len(jsonFiles) == 1
+                jsonFile = jsonFiles[0]
+                zf.extract(jsonFile, path=path)
                 
-            # remove hidden files from Mac
-            try:
-                shutil.rmtree(os.path.join(path, '__MACOSX'))
-            except FileNotFoundError:
-                pass
-            
-            _jsonFileList = glob.glob(os.path.join(path, '**/*.json'), recursive=True)
-            assert len(_jsonFileList) == 1
-            _jsonFile = _jsonFileList[0]
-            _jsonDir = os.path.dirname(os.path.abspath(_jsonFile))
-            
-            with open(_jsonFile, 'r') as f:
-                __settings = json.load(f)
-
-            # validate `default` values
-            _keysToCheck = ['t1', 't2', 't3', 't4', 't5', 'd0',
-                'sx0', 'sx1', 'dz0', 'dz1', 'sz0', 'sz1', 'layer thickness']
-
-            # make sure keys exist and their value types are correct
-            for key in _keysToCheck:
-                float(__settings['default'][key])
-
-            _totalLayerNum = len(list(__settings['layers'].keys()))
-            for i in range(1, _totalLayerNum+1):
-                _images = __settings["layers"][str(i)]['images']
-                _exptime = __settings["layers"][str(i)]['exposure time ms']
-                
-                for j, im in enumerate(_images):
-                    # make sure the images exist
-                    assert os.path.exists(os.path.join(_jsonDir, im))
-                    # make sure every image has an exposure time and the exposure
-                    # time is the right type.
-                    float(_exptime[j])
-        except zipfile.BadZipFile:
-            return False
-        except:
+            settings = cls.fromFile(os.path.join(path, jsonFile))
+            shutil.rmtree(path)
+            jsonDir = os.path.dirname(jsonFile)
+            settings.checkDefault()
+            settings.checkLayers(jsonDir, files)
+        except json.decoder.JSONDecodeError:
             shutil.rmtree(path)
             return False
+        except:
+            return False
             
-        shutil.rmtree(path)
         return True
+        
+    def checkDefault(self):
+        assert isinstance(self.__settings['Default settings']['Light engine power setting'], int)
+        assert isinstance(self.__settings['Default settings']['Layer exposure time (ms)'], int)
+        float(self.__settings['Default settings']['Layer thickness (um)'])
+        assert isinstance(self.__settings['Default settings']['Number of duplications'], int)
+        self.checkSolusCommandChain(self.__settings['Default settings']['Solus command chain'])
+        
+    def checkLayers(self, jsonDir, files):
+        for layer in self.__settings['Layers']:
+            for image in layer['Images']:
+                assert os.path.join(jsonDir, self.__settings['Header']['Image directory'], image) in files
+                
+            try:
+                assert len(layer['Light engine power setting']) == len(layer['Images'])
+                for i in layer['Light engine power setting']:
+                    assert isinstance(i, int)
+            except KeyError:
+                pass
+                
+            try:
+                assert len(layer['Layer exposure time (ms)']) == len(layer['Images'])
+                for i in layer['Layer exposure time (ms)']:
+                    assert isinstance(i, int)
+            except KeyError:
+                pass
+                
+            try:
+                float(layer['Layer thickness (um)'])
+            except KeyError:
+                pass
+                
+            try:
+                assert isinstance(layer['Number of duplications'], int)
+            except KeyError:
+                pass
+            
+            try:
+                self.checkSolusCommandChain(layer['Solus command chain'])
+            except KeyError:
+                pass
+                
+    def checkSolusCommandChain(self, commandChain):
+        distanceBP = 0
+        distanceQW = 0
+        
+        for command in commandChain:
+            m1 = self.waitRegex.fullmatch(command)
+            m2 = self.moveRegex.fullmatch(command)
+            
+            if m1:
+                continue
+            elif m2:
+                if m2.group(2) == 'UP':
+                    sign = -1
+                else:
+                    sign = 1
+                print(m2.group(1))
+                if m2.group(1) == 'BP':
+                    distanceBP += sign * float(m2.group(3))
+                else:
+                    distanceQW += sign * float(m2.group(3))
+            else:
+                raise AssertionError
+                
+        print(distanceBP, distanceQW)
+        if distanceBP != 0 or distanceQW != 0:
+            raise AssertionError
+
+
+
+

@@ -3,6 +3,9 @@ import time
 
 class Projector:
     
+    def __init__(self, *args):
+        pass
+    
     def setLedAmplitude(self, *args):
         pass
         
