@@ -352,7 +352,6 @@ import json
 import zipfile
 import os
 import shutil
-import glob
 
 
 class PrintSettings:
