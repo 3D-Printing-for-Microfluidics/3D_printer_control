@@ -137,7 +137,7 @@ def shutdown(message):
         printer3d.solus.__del__()
         printer3d.projector.__del__()
         
-        socketio.emit('shutdown completed', {},
+        socketio.emit('shutdown completed', dict(),
             namespace='/printing', broadcast=True)
         time.sleep(1)
         func()

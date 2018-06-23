@@ -31,17 +31,19 @@ var show_btn = function(btn) {
 };
 
 var update_print_message = function(message) {
-    var new_text = `
-    <div class="row">
-        <div class="col-4">
-          ${message.time}
+    if($.isEmptyObject(message)) {
+        var new_text = `
+        <div class="row">
+            <div class="col-4">
+            ${message.time}
+            </div>
+            <div class="col-8">
+            ${message.text}
+            </div>
         </div>
-        <div class="col-8">
-          ${message.text}
-        </div>
-    </div>
-    `;
-    $("#print-message").append(new_text);
+        `;
+        $("#print-message").append(new_text);
+    }
 }
 
 $(document).ready(function(){
