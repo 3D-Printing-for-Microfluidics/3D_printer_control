@@ -25,6 +25,8 @@ class Screen:
         # hide cursor in the Tk window
         self.root.config(cursor='none')
         self.root.focus_set()
+        # set tk window on top
+        self.root.wm_attributes("-topmost", 1)
         
         # create a canvas object where we draw images of each 3D print layer
         self.canvas = tkinter.Canvas(self.root,
@@ -40,7 +42,7 @@ class Screen:
         # create a canvas image, offset (0, 0), 
         # anchor point NW (northwest), upper left corner 
         self.canvasImage = self.canvas.create_image(0, 0, anchor=tkinter.NW)
-        
+
     def draw(self, fn):
         """Draw image in the Tk canvas.
         :param str fn: image filename
@@ -59,6 +61,7 @@ class Screen:
         # In order to update the Tk window, we still need to call 
         # `root.update`, which is done in the `ScreenThread`. 
         self.canvas.itemconfig(self.canvasImage, image=self.tkImage)
+        self.root.update()
         
     def clear(self):
         """Clear the Tk window by drawing a black image."""
@@ -68,6 +71,7 @@ class Screen:
                              color=0)
         self.tkImage = ImageTk.PhotoImage(pilImage)
         self.canvas.itemconfig(self.canvasImage, image=self.tkImage)
+        self.root.update()
 
 
 class ScreenThread(threading.Thread):
@@ -81,7 +85,6 @@ class ScreenThread(threading.Thread):
     def __init__(self, resolution):
         super().__init__()
         self.resolution = resolution
-        self.stopped = threading.Event()
         
     def run(self):
         """Create a Tk window and run it.Instead of the normal 
@@ -90,16 +93,12 @@ class ScreenThread(threading.Thread):
         arbitrary operation can be added, such as guaranteeing 
         the tk window is on top.  
         """
-        self.stopped.clear()
         self.screen = Screen(self.resolution)
-        while not self.stopped.is_set():
-            # set tk window on top
-            self.screen.root.wm_attributes("-topmost", 1)
-            self.screen.root.update()
-            
+        self.screen.root.mainloop()
+        
     def stop(self):
         """Stop the thread"""
-        self.stopped.set()
+        self.screen.root.quit()
         self.join()
 
 
