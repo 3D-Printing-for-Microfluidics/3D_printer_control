@@ -137,14 +137,14 @@ class TestStart:
         job = PrintJob.query.filter_by(original_filename=filename).first()
         app.printer3d.state = 'planarized'
         socketio_client.emit('start', {'job': job.id}, namespace='/printing')
-        assert os.path.exists(os.path.join(Config.UPLOAD_FOLDER, 'archive', job.zip_filename))
+        assert os.path.exists(os.path.join(Config.UPLOAD_FOLDER, 'print_history', job.zip_filename))
         assert os.path.exists(os.path.join(Config.UPLOAD_FOLDER, 'current_job'))
         # assert the started job is deleted from queue
         assert not PrintJob.get_by_id(job.id)
         assert res.status_code == 200
         pt.start.assert_called_once()
         shutil.rmtree(os.path.join(Config.UPLOAD_FOLDER, 'current_job'))
-        os.remove(os.path.join(Config.UPLOAD_FOLDER, 'archive', job.zip_filename))
+        os.remove(os.path.join(Config.UPLOAD_FOLDER, 'print_history', job.zip_filename))
 
 
 @pytest.mark.usefixtures('mocker_class')

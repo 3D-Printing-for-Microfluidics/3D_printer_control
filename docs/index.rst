@@ -21,10 +21,6 @@ Welcome to 3D Printer's documentation!
 TODO
 ----
 
-#. Fix all tests to work with websockets
-#. Alter JSON format and make it programmable
-#. Change `archive` to `Print History`
-#. Toggle the text in the `Create a job` button
 #. Build a print job preparing software
 #. Offer download from RPi for the print job preparing software
 #. View/download printing history

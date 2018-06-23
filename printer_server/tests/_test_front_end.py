@@ -171,11 +171,11 @@ class TestPrintRecord:
         db.session.commit()
         
         live_server.start()
-        self.browser.get(url_for('digital.archive', _external=True))
+        self.browser.get(url_for('digital.printHistory', _external=True))
         _wait()
         assert '<td>job99.zip</td>' in self.browser.page_source
         assert '<td>job50.zip</td>' in self.browser.page_source
-        self.browser.get(url_for('digital.archive', page=2, _external=True))
+        self.browser.get(url_for('digital.printHistory', page=2, _external=True))
         _wait()
         assert '<td>job49.zip</td>' in self.browser.page_source
         assert '<td>job0.zip</td>' in self.browser.page_source
@@ -186,7 +186,7 @@ class TestPrintRecord:
         db.session.commit()
         
         live_server.start()
-        self.browser.get(url_for('digital.archive', _external=True))
+        self.browser.get(url_for('digital.printHistory', _external=True))
         _wait()
         self.browser.find_element_by_id('datepicker-from').send_keys('2018-05-05')
         self.browser.find_element_by_id('datepicker-to').send_keys('2018-05-25')

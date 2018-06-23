@@ -72,15 +72,15 @@ class TestPrintRecord:
             PrintRecordFactory()
         db.session.commit()
         
-        res = self.client.get(url_for('digital.archive'))
+        res = self.client.get(url_for('digital.printHistory'))
         assert res.status_code == 200
         assert b'<td>job99.zip</td>' in res.data
         assert b'<td>job50.zip</td>' in res.data
-        res = self.client.get(url_for('digital.archive', page=2))
+        res = self.client.get(url_for('digital.printHistory', page=2))
         assert res.status_code == 200
         assert b'<td>job49.zip</td>' in res.data
         assert b'<td>job0.zip</td>' in res.data
-        res = self.client.get(url_for('digital.archive', page=3))
+        res = self.client.get(url_for('digital.printHistory', page=3))
         assert res.status_code == 404
         
     def test_print_record_start_date(self, db):
@@ -88,7 +88,7 @@ class TestPrintRecord:
             PrintRecordFactory()
         db.session.commit()
         
-        res = self.client.get(url_for('digital.archive', start='2018-05-10'))
+        res = self.client.get(url_for('digital.printHistory', start='2018-05-10'))
         assert res.status_code == 200
         assert b'2018-05-09' not in res.data
         assert b'2018-05-10' in res.data
@@ -98,7 +98,7 @@ class TestPrintRecord:
             PrintRecordFactory()
         db.session.commit()
         
-        res = self.client.get(url_for('digital.archive', end='2018-05-20'))
+        res = self.client.get(url_for('digital.printHistory', end='2018-05-20'))
         assert res.status_code == 200
         assert b'2018-05-21' not in res.data
         assert b'2018-05-20' in res.data
@@ -108,7 +108,7 @@ class TestPrintRecord:
             PrintRecordFactory()
         db.session.commit()
         
-        res = self.client.get(url_for('digital.archive', start='2018-05-10', end='2018-05-20'))
+        res = self.client.get(url_for('digital.printHistory', start='2018-05-10', end='2018-05-20'))
         assert res.status_code == 200
         assert b'2018-05-09' not in res.data
         assert b'2018-05-10' in res.data

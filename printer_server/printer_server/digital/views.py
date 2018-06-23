@@ -57,8 +57,8 @@ def deleteJob(message):
         namespace='/printing', broadcast=True)
 
 
-@blueprint.route('archive')
-def archive():
+@blueprint.route('print-history')
+def printHistroy():
     page = request.args.get('page', 1, type=int)
     
     _PR = PrintRecord
@@ -84,7 +84,7 @@ def archive():
         
     recs = _q.order_by(_PR.id.desc()).paginate(page, 50)
     startPage, endPage = calcPageNum(page, recs.pages)
-    return render_template('archive.html', 
+    return render_template('print_history.html', 
                            recs=recs,
                            startPage=startPage,
                            endPage=endPage,
