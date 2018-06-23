@@ -1,7 +1,15 @@
 var start_job_id;
 var delete_job_id;
 
-$(".table").on("click", ".clickable-row", function(event) {
+$("#create-job").on("click", function() {
+  if($(this).text() == "Create a job") {
+    $(this).text("Hide");
+  } else {
+    $(this).text("Create a job");
+  }
+});
+
+$("#job-table").on("click", ".clickable-row", function(event) {
   if($(this).hasClass("table-success")){
     $(this).removeClass("table-success");
     start_job_id = "";
@@ -14,7 +22,7 @@ $(".table").on("click", ".clickable-row", function(event) {
 });
 
 $("#clear-print-message").on("click", function() {
-    $("#print-message > div:not(#print-message-end)").remove();
+    $("#print-message > div").remove();
 });
 
 var show_btn = function(btn) {
@@ -33,7 +41,7 @@ var update_print_message = function(message) {
         </div>
     </div>
     `;
-    $("#print-message-end").before(new_text);
+    $("#print-message").append(new_text);
 }
 
 $(document).ready(function(){
@@ -189,7 +197,7 @@ $(document).ready(function(){
       <td>${message.name}</td>
       <td>${message.uploadTime}</td>
       <td>${message.uploadIP}</td>
-      <td><a class="btn btn-sm btn-warning delete-job" id="delete-job${message.id}" role="button" aria-pressed="true" data-toggle="modal" data-target="#exampleModalCenter">delete</a></td>
+      <td><a class="btn btn-sm btn-warning delete-job" id="delete-job${message.id}" role="button" aria-pressed="true" data-toggle="modal" data-target="#confirmModal">delete</a></td>
     </tr>
         `;
         $("#job-table > tbody").append(new_row);
