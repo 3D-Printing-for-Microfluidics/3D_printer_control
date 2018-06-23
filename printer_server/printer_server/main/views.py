@@ -95,7 +95,7 @@ def start(message):
             job.delete()
             
             printSettingsFile = glob.glob(os.path.join(Config.UPLOAD_FOLDER, 
-                'current_job', '**/print_settings.json'), recursive=True)
+                'current_job', '**/print_settings.json'), recursive=True)[0]
             printingThread.printSettings = PrintSettings.fromFile(printSettingsFile)
             printingThread.jsonDir = os.path.dirname(printSettingsFile)
             printingThread.start()
