@@ -49,10 +49,10 @@ class Screen:
         # substitute it with a plain white image.
         try:
             pilImage = Image.open(fn)
-        except OSError:
-            pilImage = Image.new(mode='1', 
+        except (OSError, FileNotFoundError):
+            pilImage = Image.new(mode='L', 
                                  size=(self.width, self.height),
-                                 color=1)
+                                 color=255)
         # Tk canvas only takes `PhotoImage` object
         self.tkImage = ImageTk.PhotoImage(pilImage)
         # change the canvas image to the new image
@@ -63,7 +63,7 @@ class Screen:
     def clear(self):
         """Clear the Tk window by drawing a black image."""
         # When mode is `1`, it creates a 1-bit image.
-        pilImage = Image.new(mode='1', 
+        pilImage = Image.new(mode='L', 
                              size=(self.width, self.height),
                              color=0)
         self.tkImage = ImageTk.PhotoImage(pilImage)
