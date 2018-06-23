@@ -1,8 +1,7 @@
 import time
 
 from .projector_screen import ScreenThread
-# from .i2cdriver import LightEngineI2C
-from .i2cdummy import LightEngineI2C
+from .i2c import LightEngineI2C
 
 __all__ = ['Projector']
 
