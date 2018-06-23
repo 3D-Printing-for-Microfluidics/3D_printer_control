@@ -31,7 +31,7 @@ var show_btn = function(btn) {
 };
 
 var update_print_message = function(message) {
-    if($.isEmptyObject(message)) {
+    if(!$.isEmptyObject(message)) {
         var new_text = `
         <div class="row">
             <div class="col-4">
