@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 from zipfile import ZipFile
 import glob
+import time
 
 from printer_server.settings import Config
 from printer_server.hardware import printer3d, PrintSettings
@@ -71,8 +72,8 @@ def start(message):
                 except FileNotFoundError:
                     pass
                     
-            # Moves the zip file in `queue` folder to `archive` folder
-            os.rename(_zipFile, os.path.join(Config.UPLOAD_FOLDER, 'archive', job.zip_filename))
+            # Moves the zip file in `queue` folder to `print_history` folder
+            os.rename(_zipFile, os.path.join(Config.UPLOAD_FOLDER, 'print_history', job.zip_filename))
             
             # Saves a print record in the database
             printRecord = PrintRecord(original_filename=job.original_filename,
@@ -138,7 +139,7 @@ def shutdown(message):
         
         socketio.emit('shutdown completed', {},
             namespace='/printing', broadcast=True)
-
+        time.sleep(1)
         func()
 
     else:
