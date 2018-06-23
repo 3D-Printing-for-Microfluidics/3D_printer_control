@@ -22,8 +22,7 @@
     <button type="button" class="printer-btn btn btn-lg btn-success d-none" data-toggle="modal" data-target="#confirmModal" id="start-btn" disabled>Start</button>
     <button type="button" class="printer-btn btn btn-lg btn-primary d-none" data-toggle="modal" data-target="#confirmModal" id="pause-btn">Pause</button>
     <button type="button" class="printer-btn btn btn-lg btn-success d-none" data-toggle="modal" data-target="#confirmModal" id="resume-btn">Resume</button>
-    <button type="button" class="printer-btn btn btn-lg btn-primary d-none" data-toggle="modal" data-target="#confirmModal" id="stop-btn" >Stop</button>
-    <button type="button" class="printer-btn btn btn-lg btn-danger d-none" data-toggle="modal" data-target="#confirmModal" id="shutdown-btn" >Shutdown</button>
+    <button type="button" class="printer-btn btn btn-lg btn-primary d-none" data-toggle="modal" data-target="#confirmModal" id="stop-btn">Stop</button>
   </div>
   <div class="col-auto">
     <button class="btn btn-lg btn-info" type="button" data-toggle="collapse" data-target="#collapseUpload" aria-expanded="false" aria-controls="collapseUpload" id="create-job">Create a job</button>
@@ -130,6 +129,13 @@
 
 
 <hr>
+
+<div class="row mb-5">
+  <div class="col-auto mr-auto">
+    <button type="button" class="printer-btn btn btn-sm btn-outline-danger d-none" data-toggle="modal" data-target="#confirmModal" id="shutdown-btn">Shutdown</button>
+    <a href="#" class="btn btn-sm btn-outline-info" role="button" aria-pressed="true">Print history</a>
+  </div>
+</div>
 
 {% endblock %}
 
