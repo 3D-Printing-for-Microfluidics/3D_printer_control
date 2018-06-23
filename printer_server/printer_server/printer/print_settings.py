@@ -575,7 +575,6 @@ class PrintSettings:
                     sign = -1
                 else:
                     sign = 1
-                print(m2.group(1))
                 if m2.group(1) == 'BP':
                     distanceBP += sign * float(m2.group(3))
                 else:
@@ -583,7 +582,6 @@ class PrintSettings:
             else:
                 raise AssertionError
                 
-        print(distanceBP, distanceQW)
         if distanceBP != 0 or distanceQW != 0:
             raise AssertionError
 
