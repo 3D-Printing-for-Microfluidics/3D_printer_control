@@ -15,8 +15,7 @@ class Screen:
     def __init__(self, resolution):
         self.width, self.height = resolution
         self.root = tkinter.Tk()
-        # self.root.overrideredirect(True)
-        # self.root.overrideredirect(False)
+        # Uncomment the following line to get a fullscreen window
         # self.root.attributes('-fullscreen',True)
         
         # set the size and position of Tk window
