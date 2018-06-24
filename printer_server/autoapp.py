@@ -11,7 +11,7 @@ from printer_server.settings import DevConfig, ProdConfig
 CONFIG = DevConfig if get_debug_flag() else ProdConfig
 
 logger = logging.getLogger('werkzeug')
-logger_filename = os.path.join()
+logger_filename = os.path.join(
     CONFIG.PROJECT_ROOT, 
     'logs', 
     '{}.log'.format(time.strftime('%Y%m%d'))
