@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Main view."""
 import os
 import shutil
 from flask import Blueprint, request, redirect, url_for, render_template
@@ -9,7 +11,7 @@ import time
 
 from printer_server.settings import Config
 from printer_server.hardware import printer3d, PrintSettings
-from printer_server.printing import printingThread
+from printer_server.threads import printingThreads
 from printer_server.models import PrintJob, PrintRecord
 from printer_server.extensions import socketio
 
@@ -30,20 +32,20 @@ def connect():
 @socketio.on('initialize', namespace='/printing')
 def initialize(message):
     if printer3d.state is 'uninitialized':
-        printingThread.initialize()
+        printingThreads.initialize()
 
 
 @socketio.on('planarization step 1', namespace='/printing')
 def planarizationStep1(message):
     printer_states = ['initialized', 'planarized', 'completed', 'stopped']
     if printer3d.state in printer_states:
-        printingThread.planarizationStep1()
+        printingThreads.planarizationStep1()
 
 
 @socketio.on('planarization step 2', namespace='/printing')
 def planarizationStep1(message):
     if printer3d.state is 'planarizing':
-        printingThread.planarizationStep2()
+        printingThreads.planarizationStep2()
 
 
 @socketio.on('start', namespace='/printing')
@@ -97,27 +99,27 @@ def start(message):
             
             printSettingsFile = glob.glob(os.path.join(Config.UPLOAD_FOLDER, 
                 'current_job', '**/print_settings.json'), recursive=True)[0]
-            printingThread.printSettings = PrintSettings.fromFile(printSettingsFile)
-            printingThread.jsonDir = os.path.dirname(printSettingsFile)
-            printingThread.start()
+            printingThreads.printSettings = PrintSettings.fromFile(printSettingsFile)
+            printingThreads.jsonDir = os.path.dirname(printSettingsFile)
+            printingThreads.start()
 
 
 @socketio.on('pause', namespace='/printing')
 def pause(message):
     if printer3d.state is 'printing':
-        printingThread.pause()
+        printingThreads.pause()
 
 
 @socketio.on('resume', namespace='/printing')
 def resume(message):
     if printer3d.state is 'paused':
-        printingThread.resume()
+        printingThreads.resume()
 
 
 @socketio.on('stop', namespace='/printing')
 def stop(message):
     if printer3d.state is 'printing' or printer3d.state is 'paused':
-        printingThread.stop()
+        printingThreads.stop()
 
 
 @socketio.on('shutdown', namespace='/printing')

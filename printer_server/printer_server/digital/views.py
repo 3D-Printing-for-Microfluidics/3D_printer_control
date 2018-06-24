@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Digital view."""
 import os
 from flask import Blueprint, request, render_template, flash
 from datetime import datetime

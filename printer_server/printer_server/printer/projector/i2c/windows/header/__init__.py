@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Defined constants for I2C module."""
 from .constants import *
 from .dln_generic import *
 from .dln_i2c_master import *

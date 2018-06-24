@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+"""Database models"""
 import datetime as dt
 
 from printer_server.database import Column, Model, SurrogatePK, db, reference_col, relationship

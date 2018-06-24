@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Test print jobs and records."""
 import pytest
 from flask import url_for
 import os

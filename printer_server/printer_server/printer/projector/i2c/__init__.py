@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """The i2c module"""
 
 # import platform

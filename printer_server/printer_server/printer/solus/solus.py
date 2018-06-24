@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Dummy Solus module, used for development."""
 import time
 
 

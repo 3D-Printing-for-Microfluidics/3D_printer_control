@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Projector module."""
 import time
 
 from .projector_screen import ScreenThread

@@ -2,5 +2,5 @@
 Printing Thread
 ***************
 
-.. automodule:: printer_server.printing_thread
+.. automodule:: printer_server.printing_threads
    :members:

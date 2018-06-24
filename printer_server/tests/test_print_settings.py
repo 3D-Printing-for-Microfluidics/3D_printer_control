@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Test print settings."""
 import pytest
 import json
 import os

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Light engine I2C module for Windows"""
 from .header import *
 from ctypes import *
 import time

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Test front end with selenium."""
 import pytest
 from flask import url_for
 import os

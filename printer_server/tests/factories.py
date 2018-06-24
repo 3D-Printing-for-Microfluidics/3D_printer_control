@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Data factory."""
 from factory import PostGenerationMethodCall, Sequence, LazyFunction, LazyAttribute
 from factory.alchemy import SQLAlchemyModelFactory
 from datetime import datetime

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Standard for Print Job
 ======================

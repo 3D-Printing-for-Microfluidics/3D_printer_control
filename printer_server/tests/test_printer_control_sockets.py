@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Test printer control sockets."""
 import pytest
 import os
 import io
@@ -8,7 +10,7 @@ import time
 
 from printer_server.settings import Config
 from printer_server.models import PrintJob, PrintRecord
-from printer_server.printing import printingThread as pt
+from printer_server.threads import printingThreads as pt
 from printer_server.printer.print_settings import PrintSettings
 
 

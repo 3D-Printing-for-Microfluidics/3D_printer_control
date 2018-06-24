@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Test database models."""
 from datetime import datetime
 
 from printer_server.models import PrintJob

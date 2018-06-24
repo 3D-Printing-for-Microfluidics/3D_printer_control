@@ -14,7 +14,7 @@ Welcome to 3D Printer's documentation!
    project
    information
    print_settings
-   printing_thread
+   printing_threads
    database_schema
 
 

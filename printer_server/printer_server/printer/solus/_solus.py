@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Solus module."""
 import serial
 import serial.tools.list_ports
 import serial.serialutil

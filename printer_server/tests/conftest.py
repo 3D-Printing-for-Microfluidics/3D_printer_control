@@ -29,7 +29,7 @@ from printer_server.extensions import db as _db
 from printer_server.app import create_app
 from printer_server.settings import TestConfig
 from printer_server.extensions import socketio
-from printer_server.printing_thread import PrintingThread
+from printer_server.printing_threads import PrintingThreads
 from printer_server.printer.print_settings import PrintSettings
 from printer_server.models import PrintJob
 from .factories import UserFactory, PrintJobFactory, PrintRecordFactory
@@ -122,7 +122,7 @@ def pt(app, mocker):
         def save(self):
             pass
     
-    pt = PrintingThread()
+    pt = PrintingThreads()
     printSettingsFile = os.path.join(TestConfig.PROJECT_ROOT, 'tests',
         'dummy_files', 'print_settings', 'print_settings.json')
     pt.printSettings = PrintSettings.fromFile(filename=printSettingsFile)

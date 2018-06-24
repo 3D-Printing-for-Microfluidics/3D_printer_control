@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
+"""Test printing threads."""
 import time
 
 
-# TODO: add more test for PrintingThread
-class TestPrintingThread:
+# TODO: add more test for PrintingThreads
+class TestPrintingThreads:
     
     def test_start_printing(self, pt, printrecord):
         pt.printer3d.state = 'planarized'

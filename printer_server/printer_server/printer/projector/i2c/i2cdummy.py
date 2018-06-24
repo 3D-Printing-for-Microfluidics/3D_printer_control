@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+"""Dummy I2C module."""
+
+
 class LightEngineI2C: 
 
     ledPower = 100

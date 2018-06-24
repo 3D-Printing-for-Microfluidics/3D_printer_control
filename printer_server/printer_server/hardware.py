@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Hardware module. It integrates Solus and Projector into a Printer3D."""
 from printer_server.printer.solus import Solus
 from printer_server.printer.projector import Projector
 from printer_server.printer.print_settings import PrintSettings

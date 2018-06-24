@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 """
 All the printer operations involve physical movement of certain 
 parts in the 3D printer. Therefore, it makes sense to throw them 
 into another thread such that the server stays responsive. This 
-is achieved by using :py:class:`PrintingThread`.
+is achieved by using :py:class:`PrintingThreads`.
 """
 
 
@@ -77,8 +78,8 @@ def multithreading(state, text):
     return decorator
 
 
-class PrintingThread:
-    """The PrintingThread class contains all the 3D printer 
+class PrintingThreads:
+    """The PrintingThreads class contains all the 3D printer 
     operations. It wraps the ``threading.Thread`` object such that 
     a new thread is instantiated every time the 3D printer starts 
     an operation. This is because the native Python ``threading.Thread`` 

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Dummy projector module."""
 import time
 
 

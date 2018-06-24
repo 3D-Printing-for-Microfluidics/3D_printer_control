@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Projector screen module."""
 # `mttkinter` stands for multi-threading tkinter. 
 # The `tkinter` in standard library is not technically thread-safe. 
 # `mttkinter` wraps it to make it thread-safe. 
