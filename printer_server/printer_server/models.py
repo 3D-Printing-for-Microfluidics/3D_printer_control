@@ -138,3 +138,23 @@ class PrintRecord(SurrogatePK, Model):
         """
         return '{}.zip'.format(self.upload_time.strftime('job-%Y-%m-%dT%H-%M-%S.%f'))
 
+
+class ServerLog(SurrogatePK, Model):
+    __tablename__ = 'serverlogs'
+    logger = Column(db.String) # the name of the logger. (e.g. myapp.views)
+    level = Column(db.String) # info, debug, or error?
+    trace = Column(db.String) # the full traceback printout
+    msg = Column(db.String) # any custom log you may have included
+    created_at = Column(db.DateTime, default=dt.datetime.utcnow) # the current timestamp
+
+    def __init__(self, logger=None, level=None, trace=None, msg=None):
+        self.logger = logger
+        self.level = level
+        self.trace = trace
+        self.msg = msg
+
+    def __unicode__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return "<Log: %s - %s>" % (self.created_at.strftime('%m/%d/%Y-%H:%M:%S'), self.msg[:50])
