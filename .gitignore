@@ -2,7 +2,7 @@
 *.pyc
 .ipynb_checkpoints
 __pycache__
-logs/
+*.log
 env/
 .pytest_cache/
 geckodriver.log
