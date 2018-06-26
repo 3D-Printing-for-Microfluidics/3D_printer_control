@@ -12,83 +12,94 @@ import RPi.GPIO as GPIO
 
 GPIO.setmode(GPIO.BCM)
 
-#set the input and output pins and give them names
-Alarm = 18
-Step = 23       # green  (gnd)  yellow (+)
-Direction = 24  # purple (gnd)  blue   (+)
-Enable = 25
+# set the input and output pins and give them names
+alarm_pin = 18
+pulse_pin = 23       # green  (gnd)  yellow (+)
+direction_pin = 24   # purple (gnd)  blue   (+)
 
-GPIO.setup(Alarm,GPIO.IN)
-GPIO.setup(Step,GPIO.OUT)
-GPIO.setup(Direction,GPIO.OUT)
-GPIO.setup(Enable,GPIO.OUT)
+# set pin directions. Alarm is currently unused 
+GPIO.setup(direction_pin,GPIO.OUT)
+GPIO.setup(pulse_pin,GPIO.OUT)
+GPIO.setup(alarm_pin,GPIO.IN)
 
-def upward(delay,steps):
-    setStep(0,0,0)
-    time.sleep(.060)
-    setStep(0,1,0)
-    time.sleep(.001)
+# set commonly used delays 
+direction_change_delay = .00005   # 50us, must be at least 5us (direction setup time)
+pulse_high_time = .00005          # 50us, must be longer than 2.5us (pulse high/low setup time)
+
+# move z axis up by specified number of steps 
+def z_up(delay, steps):  # delay is the time between pulses 
+    set_direction(1) 
     for i in range(0,steps):
-        setStep(1,1,0)
-        time.sleep(delay)
-        setStep(0,1,0)
-        time.sleep(delay)
+        send_pulse(pulse_high_time, delay)
 
-def downwards(delay,steps):
-    setStep(0,0,0)
-    time.sleep(.06)
-    setStep(0,0,0)
-    time.sleep(.001)
+# move z axis down by specified number of steps 
+def z_down(delay, steps): # delay is the time between pulses 
+    set_direction(0) 
     for i in range(0,steps):
-        setStep(1,0,0)
-        time.sleep(delay)
-        setStep(0,0,0)
-        time.sleep(delay)
+        send_pulse(pulse_high_time, delay)
 
-def setStep(w1,w2,w3):
-    GPIO.output(Step,w1)
-    GPIO.output(Direction,w2)
-    GPIO.output(Enable,w3)
+# set the motion direction 1=up, 0=down (with sw7 up)
+def set_direction(z_direction):    
+    GPIO.output(direction_pin, z_direction)
+    time.sleep(direction_change_delay)      # this signal needs to be at least 5us ahead of the pulse
+                                            # waiting ensures this always happens 
 
-
-
-
+# make a square pulse defined by high and low time 
+def send_pulse(time_high, time_low):
+    GPIO.output(pulse_pin,1)
+    time.sleep(time_high)
+    GPIO.output(pulse_pin,0)
+    time.sleep(time_low)
 
 try:  
     while True:
-        delay = .1
-        # minimum delay for stepper motor is >5us
         '''
-        This part of the script assumes that we are operating with the current configuration:
-        Off On Off Off, this coresponds to 10000 steps per revolution and .5mm vertical
-        translation per revolution
-        Steps per revolution can be adjusted by adjusting switches 1-4 on the stepper motor
-        with the following being example conditions and values
-        3200 - Off Off On On
-        6400 - On On Off On
-        4000 - On Off On Off
-        10000 - Off On Off Off
-        40000 - Off Off Off Off
-        This is controlled with the variable called size, defined below and used in the upward and downwards functions
-        Also, dpr (distance per revolution) is used to calculate total steps needed based on
-        inputed displacement
-        As stated above, the value used is for a microstepping value of 10000 steps per revolution
-        Note, this script will not work with a step size not evenly divisible by 500 due to the math used
+
+        .5mm vertical translation per revolution 
+        Steps per revolution set by switches: 
+
+        -----------------------
+        Switch S1  S2  S3  S4 
+        -----------------------
+        400    On  On  On  On
+        800    Off On  On  On
+        1600   On  Off On  On
+        3200   Off Off On  On
+        6400   On  On  Off On
+        12800  Off On  Off On
+        25600  On  Off Off On
+        51200  Off Off Off On
+        1000   On  On  On  Off
+        2000   Off On  On  Off
+        4000   On  Off On  Off
+        5000   Off Off On  Off
+        8000   On  On  Off Off
+        10000  Off On  Off Off
+        20000  On  Off Off Off
+        40000  Off Off Off Off 
+
+        For accurate operation, the variable steps_per_revolution 
+        should agree with the value set by the switches 
+
+        We are using 1600 = On  Off On  On
+        
         '''
-        #Vertical Translation Stepper Control
-        size = 10000
-        dpr = 500
-        distance = input("How many um upwards? ")
-        upward(delay/1000,int(int(distance)*(size/dpr)))
-        distance = input("How many um downwards? ")
-        downwards(delay / 1000.0,int(int(distance)*(size/dpr)))
-        # This turns off current to the coils so the motor does not get hot(unknown if actually needed)
-        # setStep(0, 0, 0)
+
+        distance_per_revolution_mm = .5 # determined by lead screw 
+        steps_per_revolution = 1600     # determined by stepper motor switches 
+
+        distance = input("How many um up? ")
+        n_steps = int(int(distance)/1000/distance_per_revolution_mm*steps_per_revolution)
+        z_up(pulse_high_time, n_steps)
+
+        distance = input("How many um down? ")
+        n_steps = int(int(distance)/1000/distance_per_revolution_mm*steps_per_revolution)
+        z_up(pulse_high_time, n_steps)
   
 finally:  
     GPIO.cleanup() # this ensures a clean exit even on interrupt 
     print("Clean exit\n")
-    
+
     
 
 
