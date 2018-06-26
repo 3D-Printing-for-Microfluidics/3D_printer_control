@@ -14,8 +14,8 @@ GPIO.setmode(GPIO.BCM)
 
 #set the input and output pins and give them names
 Alarm = 18
-Step = 23
-Direction = 24
+Step = 23       # green  (gnd)  yellow (+)
+Direction = 24  # purple (gnd)  blue   (+)
 Enable = 25
 
 GPIO.setup(Alarm,GPIO.IN)
