@@ -3,6 +3,7 @@
 The purpose of this code is to experiment with running the large stepper motor
 This will be built on the script to run the smaller stepper motor
 from the documentation, enable must first be turned on for over 50ms(we will use 60ms)
+  - Since leaving the enable unwired means it is always enabled, we will only wait 60ms on startup 
 and direction setup time must be greater than 5us(we will use 1ms)
 '''
 
@@ -48,6 +49,12 @@ def setStep(w1,w2,w3):
     GPIO.output(Step,w1)
     GPIO.output(Direction,w2)
     GPIO.output(Enable,w3)
+
+
+
+
+
+
 
 while True:
     delay = .1
