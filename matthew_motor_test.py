@@ -87,5 +87,8 @@ try:
   
 finally:  
     GPIO.cleanup() # this ensures a clean exit even on interrupt 
+    print("Clean exit\n")
+    
+    
 
 
