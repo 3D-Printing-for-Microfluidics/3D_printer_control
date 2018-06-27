@@ -5,6 +5,11 @@
     Purpose: Run z axis motor with pi gpio Library
 
     Notes: 
+
+        To use pigpio, you must first start the pigpio daemon with: 
+
+            sudo pigpiod
+
         For the iES-1706 motor: 
             Direction setup time:      5us 
             High/Low Pulse setup time: 2.5us 
