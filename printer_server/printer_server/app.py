@@ -2,11 +2,14 @@
 """The app module, containing the app factory function."""
 from flask import Flask, render_template
 from werkzeug.contrib.fixers import ProxyFix
+import logging
+from flask.logging import default_handler
 
 from printer_server.extensions import db, migrate, socketio
 from printer_server import commands, models, main, digital
 from printer_server.settings import ProdConfig
 from printer_server.hardware import printer3d
+from printer_server.logging_handler import SQLAlchemyHandler
 
 
 def create_app(config_object=ProdConfig):
@@ -23,6 +26,7 @@ def create_app(config_object=ProdConfig):
     register_shellcontext(app)
     register_commands(app)
     register_hardware(app)
+    register_logger(app)
     return app
 
 
@@ -74,3 +78,14 @@ def register_commands(app):
 
 def register_hardware(app):
     app.printer3d = printer3d
+    printer3d.init_app(app)
+
+
+def register_logger(app):
+    if not app.debug:
+        sh = SQLAlchemyHandler(app)
+        sh.setLevel(logging.WARNING)
+        root_logger = logging.getLogger()
+        root_logger.addHandler(sh)
+        app.logger.removeHandler(default_handler)
+        app.logger.addHandler(sh)

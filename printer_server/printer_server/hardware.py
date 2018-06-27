@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Hardware module. It integrates Solus and Projector into a Printer3D."""
+import pigpio
+
 from printer_server.printer.solus import Solus
 from printer_server.printer.projector import Projector
 from printer_server.printer.print_settings import PrintSettings
@@ -11,8 +13,13 @@ projectorResolution = (640, 400)
 
 class Printer3D:
     state = 'uninitialized'
+    pi = pigpio.pi()
     solus = Solus(serialNum=solusSerialNum)
     projector = Projector(projectorResolution)
+
+    def init_app(self, app):
+        self.projector.i2c.logger = app.logger
+        self.projector.i2c.init_pi(self.pi)
 
 
 printer3d = Printer3D()

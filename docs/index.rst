@@ -29,16 +29,8 @@ TODO
 #. Add `User` and authentication_
 #. Look in to Raspberry Pi
 
-   #. 2560 x 1600 resolution
-   #. Show image fullscreen - OpenGL?
-   
-      * `Raspberry Pi & Python OpenGL Youtube Video
-        <https://www.youtube.com/watch?v=lQYlIn1BEfk>`_
-   
-   #. Tkinter on RPI?
    #. I2C
-   #. USB to Arduino
-   #. GPIO for Z
+   #. PIGPIO
 
 #. Benchmark :py:meth:`printer_server.printer.PrintSettings.validate` on RPi
 #. Add control panel for **Projector** and **Solus**

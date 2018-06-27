@@ -3,6 +3,7 @@
 from .header import *
 from ctypes import *
 import time
+import logging
 
 
 __all__ = ['LightEngineBase', 'LightEngineI2C']
@@ -19,23 +20,28 @@ class LightEngineBase:
     
     _ok = ERROR_OK
     
-    def __init__(self):
+    def __init__(self, logger=None):
         self._handle = HDLN_INVALID_HANDLE
         
         self.i2cPortNum = 0
         self.i2cFrequency = 100000
-        
-        self.connectServer()
-        
+        self.logger = logger
+
+    def log(self, lvl, msg):
+        try:
+            self.logger.log(lvl, msg)
+        except AttributeError:
+            print(msg)
+    
     def i2cInit(self):
-        result = DLN.DlnConnect(create_string_buffer(b"localhost"), DLN_DEFAULT_SERVER_PORT)
+        result = DLN.DlnConnect(create_string_buffer(b"localhost, DLN_DEFAULT_SERVER_PORT)
         time.sleep(0.01)
         if not DLN_SUCCEEDED(result):
-            print("I2C initialization failed (%s)" % hex(result))
+            self.log(logging.ERROR, "I2C initialization failed (%s)" % hex(result))
             self.disconnectServer()
             return ERROR_DLN_SERVER_CONNECT_FAILED
         else:
-            print("I2C initialization OK (%s)" % hex(result))
+            self.log(logging.INFO, "I2C initialization OK (%s)" % hex(result))
             return ERROR_OK
             
     def openDevice(self):
@@ -45,11 +51,11 @@ class LightEngineBase:
         result = DLN.DlnOpenDevice(c_uint32(0), byref(self._handle))
         time.sleep(0.01)
         if DLN_FAILED(result):
-            print("Open device failed (%s)" % hex(result))
+            self.log(logging.ERROR, "Open device failed (%s)" % hex(result))
             self.disconnectServer()
             return ERROR_DLN_ADAPTER_OPEN
         else:
-            print("Open device OK (%s)" % hex(result))
+            self.log(logging.INFO, "Open device OK (%s)" % hex(result))
             return ERROR_OK
             
     def setI2cMaster(self):
@@ -57,11 +63,11 @@ class LightEngineBase:
         result = DLN.DlnI2cMasterEnable(self._handle, c_uint8(self.i2cPortNum), byref(conflict))
         time.sleep(0.01)
         if DLN_FAILED(result):
-            print("I2C master enable failed (%s)" % hex(result))
+            self.log(logging.ERROR, "I2C master enable failed (%s)" % hex(result))
             self.disconnectServer()
             return ERROR_MASTER_ENABLE_FAILED
         else:
-            print("I2C master enabled OK (%s)" % hex(result))
+            self.log(logging.INFO, "I2C master enabled OK (%s)" % hex(result))
             return ERROR_OK
             
     def connectServer(self):
@@ -76,14 +82,14 @@ class LightEngineBase:
     def write(self, slaveAddr, memAddr, memAddrLen, data, dataSize):
         time.sleep(0.01)
         writeData = (c_uint8 * dataSize)()
-        writeData[:] = data.to_bytes(dataSize, byteorder="big") # [:] keep writeData to c_ubyte_Array
+        writeData[:] = data.to_bytes(dataSize, byteorder="big # [:] keep writeData to c_ubyte_Array
         if len(writeData) == 0:
-            print("No data to write")
+            self.log(logging.WARNING, "No data to write
             return ERROR_INVALID_WRITE_DATA
         result = dlnWrite(self._handle, self.i2cPortNum, slaveAddr>>1, 
                           memAddrLen, memAddr, dataSize, writeData)
         if DLN_FAILED(result):
-            print("Write data failed (%s)" % hex(result))
+            self.log(logging.ERROR, "Write data failed (%s)" % hex(result))
             return ERROR_WRITE_FAILED
         return ERROR_OK
     
@@ -94,7 +100,7 @@ class LightEngineBase:
                          memAddrLen, memAddr, dataSize, readData)
         result = DLN_RESULT(result).value # result has be to converted to c_uint16 first
         if DLN_FAILED(result):
-            print("Read data failed (%s)" % hex(result))
+            self.log(logging.ERROR, "Read data failed (%s)" % hex(result))
             return ERROR_READ_FAILED
         data[:] = readData
         return ERROR_OK
@@ -102,14 +108,14 @@ class LightEngineBase:
     def parseSendSequence(self, sequence, repeat):
         assert [len(l) for l in sequence] == [len(sequence[0])] * len(sequence)
         if len(sequence[0]) != NUM_SEQUENCE_COMMAND_VAR:
-            print("The number of parameters is not right.")
+            self.log(logging.ERROR, "The number of parameters is not right.
             return ERROR_SEQUENCE_NUM_ARGS
         numPattern = len(sequence)
         if numPattern > MAX_NUM_PATTERNS_IN_SEQ:
-            print("Too many patterns")
+            self.log(logging.ERROR, "Too many patterns
             return ERROR_SEQUENCE_TO_MANY_PATTERNS
         if len(sequence) == 0:
-            print("No line is found.")
+            self.log(logging.ERROR, "No line is found.
             return ERROR_COULD_NOT_FIND_ANY_LINES_IN_SEQUENCE_FILE
         # write sequence
         for i in range(numPattern):
@@ -129,7 +135,7 @@ class LightEngineBase:
             result = dlnWrite(self._handle, self.i2cPortNum, TI_I2C_RADDR>>1, 
                               1, TI_REG_W_PATTERN_DISPLAY_LUT, 12, buf)
             if DLN_FAILED(result):
-                print("Write sequence failed (%s)" % hex(result))
+                self.log(logging.ERROR, "Write sequence failed (%s)" % hex(result))
                 return ERROR_WRITE_FAILED
             time.sleep(0.01)
             
@@ -140,7 +146,7 @@ class LightEngineBase:
         result = dlnWrite(self._handle, self.i2cPortNum, TI_I2C_RADDR>>1, 
                           1, TI_REG_W_PATTERN_DISPLAY_LUT_CONFIG, 6, bufconfig)
         if DLN_FAILED(result):
-            print("Write config failed (%s)" % hex(result))
+            self.log(logging.ERROR, "Write config failed (%s)" % hex(result))
             return ERROR_WRITE_FAILED
             
         return ERROR_OK
@@ -179,16 +185,17 @@ class LightEngineBase:
                           2, memAddr, 4, sendbyte)
         time.sleep(0.01)
         if DLN_FAILED(result):
-            print("Write LED parameters failed (%s)" % hex(result))
+            self.log(logging.ERROR, "Write LED parameters failed (%s)" % hex(result))
             self.disconnectServer()
         else:
             return ERROR_OK
 
             
 class LightEngineI2C(LightEngineBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
+    def connect(self):
+        self.connectServer()
+        
         time.sleep(0.01)
         self.stop()
         self.setPixelMode(0)
@@ -279,7 +286,7 @@ class LightEngineI2C(LightEngineBase):
         '''range: 0 - 1000'''
         if val > 1000 or val < 0:
             self.disconnectServer
-            print("LED amplitude out of range")
+            self.log(logging.ERROR, "LED amplitude out of range
             return ERROR_TO_HIGH_LED_AMPLITUDE
         # ret = self.writeLedParam(param = val, memAddr = LED_AMPLITUDE_REGISTER)
         ret = self.write(LED_I2C_WADDR, LED_AMPLITUDE_REGISTER, 2, val, 4)
@@ -305,7 +312,7 @@ class LightEngineI2C(LightEngineBase):
             self.disconnectServer()
             return ret
         self.boardTemp = (int.from_bytes(t, byteorder='big', signed=False))/256
-        print("Board temperature: %.1f" % self.boardTemp)
+        self.log(logging.INFO, "Board temperature: %.1f" % self.boardTemp)
         return ret
         
     def getLedTemp(self):
@@ -315,7 +322,7 @@ class LightEngineI2C(LightEngineBase):
             self.disconnectServer()
             return ret
         self.ledTemp = (int.from_bytes(t, byteorder='big', signed=False))/10
-        print("LED temperature: %.1f" % self.ledTemp)
+        self.log(logging.INFO, "LED temperature: %.1f" % self.ledTemp)
         return ret
         
     def getStickyBits(self):
@@ -325,7 +332,7 @@ class LightEngineI2C(LightEngineBase):
             self.disconnectServer()
             return ret
         self.stickybits = int.from_bytes(t, byteorder='big', signed=False)
-        print("Sticky bits: %u" % self.stickybits)
+        self.log(logging.INFO, "Sticky bits: %u" % self.stickybits)
         return ret
         
     def getSequencerStatus(self):
@@ -335,7 +342,7 @@ class LightEngineI2C(LightEngineBase):
             self.disconnectServer()
             return ret
         self.seqstat = int.from_bytes(seqstat, byteorder='big', signed=False)
-        print("Sequencer status: %u" % self.seqstat)
+        self.log(logging.INFO, "Sequencer status: %u" % self.seqstat)
         return ret
         
     def setLedTempLimit(self, limit):

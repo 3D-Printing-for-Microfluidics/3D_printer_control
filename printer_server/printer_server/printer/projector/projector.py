@@ -12,6 +12,7 @@ class Projector:
     
     def __init__(self, projectorResolution):
         self.resolution = projectorResolution
+        self.i2c = LightEngineI2C()
     
     def connect(self):
         """Create a :py:class:ScreenThread object and run it.
@@ -19,7 +20,7 @@ class Projector:
         """
         self.screenThread = ScreenThread(self.resolution)
         self.screenThread.start()
-        self.i2c = LightEngineI2C()
+        self.i2c.connect()
         
     def start(self):
         """Turn on the LED in projector"""
