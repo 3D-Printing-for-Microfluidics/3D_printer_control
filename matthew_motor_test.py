@@ -88,13 +88,13 @@ try:
         distance_per_revolution_mm = .5 # determined by lead screw 
         steps_per_revolution = 1600     # determined by stepper motor switches 
 
-        distance = input("How many um up? ")
-        n_steps = int(int(distance)/1000/distance_per_revolution_mm*steps_per_revolution)
-        z_up(pulse_high_time, n_steps)
+        n_steps = input("How many steps up? ")
+        # n_steps = int(int(distance)/1000/distance_per_revolution_mm*steps_per_revolution)
+        z_up(pulse_high_time, int(n_steps))
 
-        distance = input("How many um down? ")
-        n_steps = int(int(distance)/1000/distance_per_revolution_mm*steps_per_revolution)
-        z_up(pulse_high_time, n_steps)
+        n_steps = input("How many steps down? ")
+        # n_steps = int(int(distance)/1000/distance_per_revolution_mm*steps_per_revolution)
+        z_down(pulse_high_time, int(n_steps)
   
 finally:  
     GPIO.cleanup() # this ensures a clean exit even on interrupt 
