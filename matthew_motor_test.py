@@ -94,8 +94,8 @@ try:
 
         n_steps = input("How many steps down? ")
         # n_steps = int(int(distance)/1000/distance_per_revolution_mm*steps_per_revolution)
-        z_down(pulse_high_time, int(n_steps)
-  
+        z_down(pulse_high_time, int(n_steps))
+
 finally:  
     GPIO.cleanup() # this ensures a clean exit even on interrupt 
     print("Clean exit\n")
