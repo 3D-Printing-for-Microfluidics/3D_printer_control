@@ -23,8 +23,8 @@ GPIO.setup(pulse_pin,GPIO.OUT)
 GPIO.setup(alarm_pin,GPIO.IN)
 
 # set commonly used delays 
-direction_change_delay = .00005   # 50us, must be at least 5us (direction setup time)
-pulse_high_time = .00005          # 50us, must be longer than 2.5us (pulse high/low setup time)
+direction_change_delay = .001    # 50us, must be at least 5us (direction setup time)
+pulse_high_time = .0005          # 50us, must be longer than 2.5us (pulse high/low setup time)
 
 # move z axis up by specified number of steps 
 def z_up(delay, steps):  # delay is the time between pulses 
@@ -38,7 +38,7 @@ def z_down(delay, steps): # delay is the time between pulses
     for i in range(0,steps):
         send_pulse(pulse_high_time, delay)
 
-# set the motion direction 1=up, 0=down (with sw7 up)
+# set the motion direction 1=up, 0=down (with sw7 off)
 def set_direction(z_direction):    
     GPIO.output(direction_pin, z_direction)
     time.sleep(direction_change_delay)      # this signal needs to be at least 5us ahead of the pulse
@@ -89,11 +89,10 @@ try:
         steps_per_revolution = 1600     # determined by stepper motor switches 
 
         n_steps = input("How many steps up? ")
-        # n_steps = int(int(distance)/1000/distance_per_revolution_mm*steps_per_revolution)
-        z_up(pulse_high_time, int(n_steps))
+        n_steps = int(n_steps)
+        z_up(pulse_high_time, n_steps)
 
         n_steps = input("How many steps down? ")
-        # n_steps = int(int(distance)/1000/distance_per_revolution_mm*steps_per_revolution)
         z_down(pulse_high_time, int(n_steps))
 
 finally:  
