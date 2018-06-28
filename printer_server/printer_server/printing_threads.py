@@ -95,7 +95,7 @@ class PrintingThreads:
     
     .. py:attribute:: printingStopped
     
-         a ``threading.Event`` object to set flag to stop printing
+        a ``threading.Event`` object to set flag to stop printing
     
     .. py:attribute:: printingPaused
     

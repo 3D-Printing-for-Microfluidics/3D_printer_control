@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Projector screen module."""
+"""
+Projector screen module
+=======================
+"""
 # `mttkinter` stands for multi-threading tkinter. 
 # The `tkinter` in standard library is not technically thread-safe. 
 # `mttkinter` wraps it to make it thread-safe. 
@@ -81,7 +84,7 @@ class ScreenThread(threading.Thread):
     
     .. py:attribute:: stopped
     
-         a ``threading.Event`` object to set flag to stop thread
+        a ``threading.Event`` object to set flag to stop thread
     """
     def __init__(self, resolution):
         super().__init__()

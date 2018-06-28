@@ -5,7 +5,10 @@
 class LightEngineI2C: 
 
     ledPower = 100
-    
+
+    def connect(self):
+        pass
+
     def start(self):
         pass
         

@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
-"""Projector module."""
+"""
+Projector
+=========
+"""
 import time
 
 from .projector_screen import ScreenThread
 from .i2c import LightEngineI2C
 
-__all__ = ['Projector']
-
 
 class Projector:
-    
+    """
+    """
     def __init__(self, projectorResolution):
         self.resolution = projectorResolution
         self.i2c = LightEngineI2C()
@@ -34,7 +36,8 @@ class Projector:
         """Set the projector LED power level.
         
         :param int i: between 1 and 1000. If it is too low or 
-        too high, the LED amplitude will not be change. 
+                      too high, the LED amplitude will not be 
+                      change. 
         """
         if i >= 1 and i <= 1000:
             self.i2c.setLedAmplitude(int(i))

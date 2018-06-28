@@ -14,6 +14,7 @@ Welcome to 3D Printer's documentation!
    project
    information
    print_settings
+   hardware
    printing_threads
    database_schema
 
@@ -27,11 +28,6 @@ TODO
 #. Add re-print feature
 #. Figure out **Solus** module with the new motor
 #. Add `User` and authentication_
-#. Look in to Raspberry Pi
-
-   #. I2C
-   #. PIGPIO
-
 #. Benchmark :py:meth:`printer_server.printer.PrintSettings.validate` on RPi
 #. Add control panel for **Projector** and **Solus**
 

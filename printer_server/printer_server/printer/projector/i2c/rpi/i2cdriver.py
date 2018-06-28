@@ -27,7 +27,6 @@ class LightEngineI2C:
     :param logger: a ``logging.logger`` object. If not specified, 
                    the ``print`` function will be used. 
     """
-
     def __init__(self, pi=None, bus=1, logger=None):
         self.pi = pi
         self.bus = bus
@@ -88,9 +87,10 @@ class LightEngineI2C:
     def setDisplayMode(self, mode):
         '''Set display mode. 
 
-        :param int mode:
-        0: video pattern mode; 1: normal video mode;
-        2: pre-stored mode; 3: on-the-fly mode.
+        :param int mode: 0 - video pattern mode
+                         1 - normal video mode
+                         2 - pre-stored mode
+                         3 - on-the-fly mode
         '''
         patternModes = [TI_DISPLAY_MODE_VIDEO_PATTERN, 
                         TI_DISPLAY_MODE_NORMAL, 
@@ -109,7 +109,9 @@ class LightEngineI2C:
         rate, HDMI 2560x1600 @30Hz and DisplayPort 2560x1600 
         @60Hz.
 
-        :param int input: either 0 or 1. 0 - HDMI; 1 - DisplayPort.
+        :param int input: either 0 or 1. 
+                          0 - HDMI
+                          1 - DisplayPort
         """
         inputSources = [TI_IT6536_HDMI, TI_IT6536_DISPLAY]
         self.pi.i2c_write_byte_data(
