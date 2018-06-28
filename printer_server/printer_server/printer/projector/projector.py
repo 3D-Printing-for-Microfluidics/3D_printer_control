@@ -16,7 +16,7 @@ class Projector:
     
     def connect(self):
         """Create a :py:class:ScreenThread object and run it.
-        Also, connect to the I\ :sup:`2`\ C-USB adapter
+        Also, connect to the I\ :sup:`2`\ C.
         """
         self.screenThread = ScreenThread(self.resolution)
         self.screenThread.start()
