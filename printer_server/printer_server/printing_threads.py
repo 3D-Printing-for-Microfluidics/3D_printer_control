@@ -125,14 +125,14 @@ class PrintingThreads:
         """
         self.projector.connect()
         self.solus.connect()
-        self.solus.initializeBuildPlatform()
+        self.solus.initialize()
         
     @multithreading('planarizing', 'Planarization Step 1')
     def planarizationStep1(self):
         """Planarization Step 1 -- Lower the build platform to 
         zero in Z for planarization.
         """
-        self.solus.goToZeroZ()
+        self.solus.goToZmin()
         
     @multithreading('planarized', 'Planarization Step 2')
     def planarizationStep2(self):
@@ -140,7 +140,7 @@ class PrintingThreads:
         is flat on the teflon film. Then tighten the screws and 
         bring the build platform to home position in Z.
         """
-        self.solus.homing()
+        self.solus.goToZmax()
         
     @multithreading('paused', 'Pause Printing')
     def pause(self):
@@ -287,7 +287,7 @@ class PrintingThreads:
         if self.printingPaused.is_set():
             self.solus.pause()
         else:
-            self.solus.homing()
+            self.solus.goToZmax()
             
             # save the end time to database
             with app.app_context():

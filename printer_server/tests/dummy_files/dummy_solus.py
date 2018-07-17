@@ -10,13 +10,13 @@ class Solus:
     def connect(self):
         pass
 
-    def initializeBuildPlatform(self):
+    def initialize(self):
         pass
 
-    def goToZeroZ(self):
+    def goToZmin(self):
         pass
 
-    def homing(self):
+    def goToZmax(self):
         pass
         
     def goToFirstLayerHeight(self, *args):

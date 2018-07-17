@@ -14,7 +14,7 @@ class TestPrintingThreads:
         assert pt.projector.projectMulti.call_count == 3
         pt.projector.stop.assert_called_once()
         pt.projector.clear.assert_called_once()
-        pt.solus.homing.assert_called_once()
+        pt.solus.goToZmax.assert_called_once()
         pt.solus.goToFirstLayerHeight.assert_called_once()
         assert pt.solus.printCycle.call_count == 2
         assert pt.printer3d.state is 'completed'
@@ -28,7 +28,7 @@ class TestPrintingThreads:
         assert pt.projector.projectMulti.call_count == 2
         pt.projector.stop.assert_called_once()
         pt.projector.clear.assert_called_once()
-        pt.solus.homing.assert_called_once()
+        pt.solus.goToZmax.assert_called_once()
         pt.solus.resume.assert_called_once()
         assert pt.solus.printCycle.call_count == 1
         assert pt.printer3d.state is 'completed'
