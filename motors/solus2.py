@@ -8,12 +8,13 @@ import time
 
 __all__ = ['Solus']
 
+HWID = '1A86:7523'  # specific to each arduino 
 
 class Solus(serial.Serial):
-    def __init__(self, hwid, verbose=False):
+    def __init__(self, serialNum, verbose=False):
         super().__init__(baudrate=115200, timeout=None)
         self.verbose = verbose
-        self.hwid = hwid
+        self.serialNum = serialNum
         self.regex = re.compile(r'^(BP|QW) (UP|DOWN) (-?\d+(\.\d+)?) SPEED (\d+)')
         
     def connect(self):
@@ -156,7 +157,7 @@ def findUsbPort():
     for p in ports:
             if 'ttyUSB' in p.name:
                 print("Found", p.device)
-                if self.hwid in p.hwid:
+                if HWID in p.hwid:
                     return p.device
 
 if __name__ == '__main__':

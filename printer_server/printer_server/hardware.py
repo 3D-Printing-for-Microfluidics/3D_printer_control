@@ -7,14 +7,14 @@ from printer_server.printer.projector import Projector
 from printer_server.printer.print_settings import PrintSettings
 
 
-solusSerialNum = '95530343534351102222'
-projectorResolution = (640, 400)
+solusHWID = '1A86:7523'  # specific to each arduino 
+projectorResolution = (2650, 1600)
 
 
 class Printer3D:
     state = 'uninitialized'
     pi = pigpio.pi()
-    solus = Solus(serialNum=solusSerialNum)
+    solus = Solus(hwid=solusHWID)
     projector = Projector(projectorResolution)
 
     def init_app(self, app):
