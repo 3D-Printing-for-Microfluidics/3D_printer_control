@@ -134,7 +134,7 @@ def pt(app, mocker):
     pt.projector.projectMulti = mocker.MagicMock()
     pt.projector.stop = mocker.MagicMock()
     pt.projector.clear = mocker.MagicMock()
-    pt.solus.homing = mocker.MagicMock()
+    pt.solus.goToZmax = mocker.MagicMock()
     pt.solus.goToFirstLayerHeight = mocker.MagicMock()
     pt.solus.printCycle = mocker.MagicMock()
     pt.solus.resume = mocker.MagicMock()

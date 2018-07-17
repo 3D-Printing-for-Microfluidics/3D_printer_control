@@ -125,7 +125,7 @@ class TestStart:
         
         def __wait():
             time.sleep(0.5)
-        pt.solus.homing = __wait
+        pt.solus.goToZmax = __wait
         
         # Upload a file for testing
         filename = 'correct_job.zip'

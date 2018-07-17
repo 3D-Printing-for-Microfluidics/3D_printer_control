@@ -160,7 +160,6 @@ def findUsbPort(hwid):
                     return p.device
 
 if __name__ == '__main__':
-    # s = Solus(0, verbose=True)
     s = Solus('1A86:7523')
     print("CONNECT")
     s.connect()

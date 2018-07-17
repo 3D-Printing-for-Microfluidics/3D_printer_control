@@ -20,13 +20,13 @@ class TestSolus:
         assert solus.is_open is True
 
     def test_solus_initializing(self, solus):
-        res = solsu.initializeBuildPlatform()
+        res = solsu.initialize()
         assert 'Grbl 0.9g' in res
         assert res.count('ok') == 3
 
     def test_planarizing(self, solus):
         res = solus.planarize()
-        res += solus.homing()
+        res += solus.goToZmax()
         assert res.count('ok') == 3
 
     def test_go_to_first_layer_height(self, solus):
