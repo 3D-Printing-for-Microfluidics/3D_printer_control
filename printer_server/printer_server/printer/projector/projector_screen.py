@@ -21,7 +21,7 @@ class Screen:
         self.width, self.height = resolution
         self.root = tkinter.Tk()
         # Uncomment the following line to get a fullscreen window
-        # self.root.attributes('-fullscreen',True)
+        self.root.attributes('-fullscreen',True)
         
         # set the size and position of Tk window
         # format: <width>x<height>+xoffset+yoffset
