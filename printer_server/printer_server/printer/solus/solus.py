@@ -17,7 +17,7 @@ class Solus(serial.Serial):
         self.regex = re.compile(r'^(BP|QW) (UP|DOWN) (-?\d+(\.\d+)?) SPEED (\d+)')
         
     def connect(self):
-        self.port = findUsbPort()
+        self.port = findUsbPort(self.hwid)
         if self.port is None:
             raise ValueError('BP and QW not found')
         elif self.is_open:
@@ -151,17 +151,17 @@ class Solus(serial.Serial):
         except serial.serialutil.SerialException:
             pass
 
-def findUsbPort():
+def findUsbPort(hwid):
     ports = list(serial.tools.list_ports.comports())
     for p in ports:
             if 'ttyUSB' in p.name:
                 print("Found", p.device)
-                if self.hwid in p.hwid:
+                if hwid in p.hwid:
                     return p.device
 
 if __name__ == '__main__':
     # s = Solus(0, verbose=True)
-    s = Solus(0)
+    s = Solus('1A86:7523')
     print("CONNECT")
     s.connect()
     print("INITIALIZE")
