@@ -39,6 +39,7 @@ class LightEngineI2C:
                 pi.i2c_write_byte_data(handle, reg, byte_val)
             except:
                 self.logger.exception('pigpio went wrong')
+                raise
         self.pi.i2c_write_byte_data = pi_i2c_write_byte_data
 
     def connect(self):
