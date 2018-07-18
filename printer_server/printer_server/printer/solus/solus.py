@@ -91,11 +91,11 @@ class Solus(serial.Serial):
                 
     def pause(self):
         """What solus does after a print is paused"""
-        return self.send('G1 Z30 F400')
+        return self.moveZ('UP', 30, 400)
         
     def resume(self, layerThickness):
         """Resume after pausing"""
-        return self.send('G1 Z-{:.4f} F400'.format(30-layerThickness))
+        return self.moveZ('DOWN', 30-layerThickness, 400)
         
     def moveX(self, direction, distance, speed):
         """Move quartz window up/down a certain distance at a 
