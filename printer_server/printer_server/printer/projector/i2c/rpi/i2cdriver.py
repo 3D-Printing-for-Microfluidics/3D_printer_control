@@ -34,6 +34,12 @@ class LightEngineI2C:
 
     def init_pi(self, pi):
         self.pi = pi
+        def pi_i2c_write_byte_data(handle, reg, byte_val):
+            try:
+                pi.i2c_write_byte_data(handle, reg, byte_val)
+            except:
+                self.logger.exception('pigpio went wrong')
+        self.pi.i2c_write_byte_data = pi_i2c_write_byte_data
 
     def connect(self):
         self.dmd = self.pi.i2c_open(self.bus, TI_I2C_RADDR>>1)
