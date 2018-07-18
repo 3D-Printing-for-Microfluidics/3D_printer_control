@@ -253,11 +253,11 @@ class LightEngineI2C:
 
     def getBoardTemp(self):
         self.boardTemp = self.readLedParam(LED_BOARDTEMP_REGISTER) / 256
-        self.log(logging.INFO, "Board temperature: {.1f}".format(self.boardTemp))
+        self.log(logging.INFO, "Board temperature: {:.1f}".format(self.boardTemp))
 
     def getLedTemp(self):
         self.ledTemp = self.readLedParam(LED_LEDTEMP_REGISTER) / 10
-        self.log(logging.INFO, "LED temperature: {.1f}".format(self.ledTemp))
+        self.log(logging.INFO, "LED temperature: {:.1f}".format(self.ledTemp))
 
     def getStickyBits(self):
         self.stickybits = self.readLedParam(LED_STICKYBITS_REGISTER)
