@@ -8,7 +8,6 @@ import time
 
 __all__ = ['Solus']
 
-
 class Solus(serial.Serial):
     def __init__(self, hwid, verbose=False):
         super().__init__(baudrate=115200, timeout=None)
@@ -26,7 +25,7 @@ class Solus(serial.Serial):
         self.open()
         self.reset_input_buffer()
         self.reset_output_buffer()
-        return self.receive()
+        return self.send("G4 P0")   # send a G4 P0 command so you get a response, even if the startup message doesn't appear 
         
     def goToZmax(self):
         response =  self.send('G90')          # set positioning to absolute
@@ -170,8 +169,6 @@ if __name__ == '__main__':
     print("GO TO Z MAX")
     s.goToZmax()
 
-
-
     commandChain= [
           "WAIT 0.1",
           "BP UP 1 SPEED 400",
@@ -188,8 +185,5 @@ if __name__ == '__main__':
 
     for i in range(0,3):
         s.printCycle(0.1, commandChain)
-
-
-
 
     print("DONE")
