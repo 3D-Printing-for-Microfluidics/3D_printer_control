@@ -4,6 +4,8 @@ import serial.serialutil
 import time
 import sys
 
+HWID = '1A86:7523'  # this is the product and vendor ID for the knock-off Arduino Uno
+
 class grblConfig(serial.Serial):
     def __init__(self, hwid, verbose=False):
         super().__init__(baudrate=115200, timeout=None)
@@ -28,9 +30,6 @@ class grblConfig(serial.Serial):
         response = self.transmit(cmd)
         if self.verbose: print("Response: ", response)
         
-        # # send a G4 P0 command to wait for completion of previous command 
-        # self.transmit('G4 P0')
-
         # return the reponse of the first command 
         return response
 
@@ -43,7 +42,6 @@ class grblConfig(serial.Serial):
         response += self.readline()         # wait for the first line to fill in the rx buffer 
         time.sleep(1)
         while self.in_waiting:              # while there is more data in the rx buffer      
-            # time.sleep(1)
             response += self.readline()     # read next line from rx buffer 
         return response.decode().rstrip()   # return decoded byte response (as string)
 
@@ -120,10 +118,9 @@ if __name__ == '__main__':
         exit()
 
     # open connection 
-    s = grblConfig('1A86:7523',verbose=False)
+    s = grblConfig(HWID,verbose=False)
     s.connect()
 
-    
     if save: 
         # perform save function 
         with open(sys.argv[2], 'w') as configFile: 
@@ -139,4 +136,4 @@ if __name__ == '__main__':
         for setting in configuration: 
             setting = setting.rstrip()                  # remove trailing characters 
             s.send(setting)
-            # print(setting)
+            print(setting)
