@@ -5,9 +5,9 @@ GPIO.setmode(GPIO.BCM)
 
 # RPi GPIO pins and corresponding
 # ULN2803 board pins
-coil_A_1_pin = 18   # IN1
-coil_A_2_pin = 23   # IN2
-coil_B_1_pin = 24   # IN3
+coil_A_1_pin = 1    # IN1
+coil_A_2_pin = 7    # IN2
+coil_B_1_pin = 8    # IN3
 coil_B_2_pin = 25   # IN4
 
 GPIO.setup(coil_A_1_pin, GPIO.OUT)
@@ -43,19 +43,19 @@ def setStep(w1, w2, w3, w4):
     GPIO.output(coil_B_1_pin, w3)
     GPIO.output(coil_B_2_pin, w4)
 
-while True:
 
-    size = 4096   # From spec sheet we know that the motors have 4096 steps per revolution
+try:
+    while True:
+        size = 4096   # From spec sheet we know that the motors have 4096 steps per revolution
+        dpr = 381 # We also know distance per revolution to be 381 um
+        delay = 4 # Min delay for 28BYJ-48 is 2 ms, we will set it at 4ms
 
-    dpr = 381 # We also know distance per revolution to be 381 um
+        distance = input("How many um upwards? ")
+        forward(delay/1000, int(int(distance)*size/dpr))
+        setStep(0, 0, 0, 0) # This turns off current to the coils so the motor does not get hot
+        distance = input("How many um downwards? ")
+        backwards(delay/1000, int(int(distance)*size/dpr))
+        setStep(0, 0, 0, 0) # This turns off current to the coils so the motor does not get hot
 
-    delay = 4 # Min delay for 28BYJ-48 is 2 ms, we will set it at 4ms
-
-
-    distance = input("How many um upwards? ")
-    forward(int(delay) / 1000.0, int(int(distance)*(size/dpr)))
-    distance = input("How many um downwards? ")
-    backwards(int(delay) / 1000.0, int(int(distance)*(size/dpr)))
-    # This turns off current to the coils so the motor does not get hot
-    setStep(0, 0, 0, 0)
-
+finally:  
+    GPIO.cleanup() # this ensures a clean exit even on interrupt 
