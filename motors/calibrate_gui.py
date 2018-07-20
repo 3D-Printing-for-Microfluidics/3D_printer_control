@@ -1,32 +1,26 @@
 from tkinter import Tk, Label, Button, Entry, IntVar, END, W, E
+from functools import partial
 
 class Calibrate:
 
     def __init__(self, master):
         self.master = master
         master.title("Focus Calibration")
-
-        self.tip = 0
-        self.tilt = 0
-        self.distance = 0
-
         self.buttons = []
         self.labels = []
+        self.measurements = []
         self.labels_dynamic = []
         self.labels_dynamic_text = []
-        self.measurements = [0,0,0]
 
         # Specify Buttons
         self.axes = ["Tip","Tilt","Distance"]
-        self.button_text = ["-100","-10","-1","+1","+10","+100"]
-        self.button_value = [-100,  -10,  -1,   1,   10,   100]
-
-
-        for i in self.button_value:
-            print(i)
+        self.button_text = ["-1000","-100","-10","-1","+1","+10","+100", "+1000"]
 
         # Create and add buttons and labels
         for a in range(len(self.axes)):
+            # add a spot in the measurement array to hold the current value
+            self.measurements.append(0)
+
             # add first column labels
             self.labels.append(Label(master, text=self.axes[a]))
             self.labels[a].grid(row=a, column=0, sticky=W)
@@ -37,32 +31,27 @@ class Calibrate:
             self.labels_dynamic.append(Label(master, textvariable=self.labels_dynamic_text[a]))
             self.labels_dynamic[a].grid(row=a, column=1)
 
-            # add increment/decrement buttons
+            # add buttons
             for i in range(len(self.button_text)):
-                print("button",a,i)
-                self.buttons.append(Button(master, text=self.button_text[i], command=lambda: self.update(a,i)))
+                button_press_func = partial(self.update_labels, a, i)
+                self.buttons.append(Button(master, text=self.button_text[i], command=button_press_func))
                 self.buttons[len(self.button_text)*a+i].grid(column=i+2, row=a)
 
-    ## TODO: Use partial function to keep arguments dynamic
-    def update(self, row, column):
-        print("update:",row,column)
-        self.measurements[row] += self.button_value[column]
-        print(self.button_value[column])
-        self.labels_dynamic_text[row].set(self.measurements[row])
-
-        for a in range(len(self.axes)):
-            self.labels_dynamic_text[a].set(self.measurements[a])
+    # update the dynamic labels when a button is pressed 
+    def update_labels(self, row, column):
+        self.measurements[row] += int(float(self.button_text[column]))  # convert button text to int and add/subtract
+        self.labels_dynamic_text[row].set(self.measurements[row])       # update the associated dynamic label 
 
 root = Tk()
 my_gui = Calibrate(root)
 root.mainloop()
 
-# # Create entry box
+# # This code can optionally be used to create an entry box
 # vcmd = master.register(self.validate) # we have to wrap the command
 # self.entry = Entry(master, validate="key", validatecommand=(vcmd, '%P'))
 # # layout
 # self.entry.grid(row=1, column=0, columnspan=3, sticky=W+E)
-# # put this in update
+# # put this in the update function (clears the text box)
 # self.entry.delete(0, END)
 
 # def validate(self, new_text):
