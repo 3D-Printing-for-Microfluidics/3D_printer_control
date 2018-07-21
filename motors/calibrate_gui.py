@@ -126,7 +126,8 @@ class CalibrationControl:
         self.labels_dynamic_text[motor].set(self.measurements[motor])   # update the associated dynamic label 
 
     # Iteratively toggle each input to each motor. 
-    # You should be able to watch the LEDs flash in order across all the motors   
+    # You should be able to watch the LEDs flash in this order: A, B, C, D, C, B, A, off   
+    # If they go in some other order or don't light at all, the board has been wired incorrectly 
     def test_sequence(self):
         delay = .1
         for m in self.motors:
