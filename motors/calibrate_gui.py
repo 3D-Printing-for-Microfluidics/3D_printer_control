@@ -154,22 +154,3 @@ if __name__ == '__main__':
         root.mainloop()
     except:
         GPIO.cleanup()
-
-# # This code can optionally be used to create an entry box
-# vcmd = master.register(self.validate) # we have to wrap the command
-# self.entry = Entry(master, validate="key", validatecommand=(vcmd, '%P'))
-# # layout
-# self.entry.grid(row=1, column=0, columnspan=3, sticky=W+E)
-# # put this in the update function (clears the text box)
-# self.entry.delete(0, END)
-
-# def validate(self, new_text):
-#     if not new_text: # the field is being cleared
-#         self.entered_number = 0
-#         return True
-
-#     try:
-#         self.entered_number = int(new_text)
-#         return True
-#     except ValueError:
-#         return False
