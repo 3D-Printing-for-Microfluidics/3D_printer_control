@@ -114,7 +114,12 @@ class CalibrationControl:
 
     def __del__(self):
         try: 
-            GPIO.cleanup()  # always close GPIO pins when done 
+            # always turn off all motor controls 
+            for m in self.motors: 
+                self.setStep(m, [0,0,0,0])
+
+            # always close GPIO pins when done 
+            GPIO.cleanup()          
         except:
             pass
 
