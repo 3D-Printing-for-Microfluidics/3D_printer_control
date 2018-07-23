@@ -78,6 +78,8 @@ class CalibrationControl:
 
         # Setup GPIO
         GPIO.setmode(GPIO.BCM)   
+        GPIO.setwarnings(False) # running GPIO.cleanup() for some reason leaves some pins on, even after turning them off. 
+                                # Without it, you always get a warning that pins are in use, so I'm disabling warnings here. 
         for motor in self.pins:   
             for pin in self.pins[motor]: 
                 GPIO.setup(self.pins[motor][pin], GPIO.OUT) # set every pin as output      
@@ -117,9 +119,6 @@ class CalibrationControl:
             # always turn off all motor controls 
             for m in self.motors: 
                 self.setStep(m, [0,0,0,0])
-
-            # always close GPIO pins when done 
-            GPIO.cleanup()          
         except:
             pass
 
@@ -159,4 +158,5 @@ if __name__ == '__main__':
         controller = CalibrationControl(root)
         root.mainloop()
     except:
-        GPIO.cleanup()
+        for m in controller.motors: 
+            controller.setStep(m, [0,0,0,0])
