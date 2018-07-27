@@ -17,11 +17,11 @@ class Screen:
     Python standard library, and it is platform agnostic. 
     Most importantly, it works. 
     """
-    def __init__(self, resolution):
+    def __init__(self, resolution, fullscreen=True):
         self.width, self.height = resolution
         self.root = tkinter.Tk()
         # Uncomment the following line to get a fullscreen window
-        self.root.attributes('-fullscreen',True)
+        self.root.attributes('-fullscreen', fullscreen)
         
         # set the size and position of Tk window
         # format: <width>x<height>+xoffset+yoffset
@@ -86,9 +86,10 @@ class ScreenThread(threading.Thread):
     
         a ``threading.Event`` object to set flag to stop thread
     """
-    def __init__(self, resolution):
+    def __init__(self, resolution, fullscreen):
         super().__init__()
         self.resolution = resolution
+        self.fullscreen = fullscreen
         
     def run(self):
         """Create a Tk window and run it.Instead of the normal 
@@ -97,7 +98,7 @@ class ScreenThread(threading.Thread):
         arbitrary operation can be added, such as guaranteeing 
         the tk window is on top.  
         """
-        self.screen = Screen(self.resolution)
+        self.screen = Screen(self.resolution, self.fullscreen)
         self.screen.root.mainloop()
         
     def stop(self):

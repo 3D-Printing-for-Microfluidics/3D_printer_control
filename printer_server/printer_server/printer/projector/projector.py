@@ -12,15 +12,16 @@ from .i2c import LightEngineI2C
 class Projector:
     """
     """
-    def __init__(self, projectorResolution):
-        self.resolution = projectorResolution
+    def __init__(self, resolution, fullscreen=True):
+        self.resolution = resolution
+        self.fullscreen = fullscreen
         self.i2c = LightEngineI2C()
     
     def connect(self):
         """Create a :py:class:ScreenThread object and run it.
         Also, connect to the I\ :sup:`2`\ C.
         """
-        self.screenThread = ScreenThread(self.resolution)
+        self.screenThread = ScreenThread(self.resolution, self.fullscreen)
         self.screenThread.start()
         self.i2c.connect()
         
