@@ -6,6 +6,7 @@ Light engine I2C module for Raspberry Pi
 Here, we take advantage of the existing I\ :sup:`2`\ C bus on 
 Raspberry Pi, and uses it to control light engine directly. 
 """
+import pigpio
 import logging
 import time
 
@@ -27,13 +28,10 @@ class LightEngineI2C:
     :param logger: a ``logging.logger`` object. If not specified, 
                    the ``print`` function will be used. 
     """
-    def __init__(self, pi=None, bus=1, logger=None):
-        self.pi = pi
+    def __init__(self, bus=1, logger=None):
         self.bus = bus
         self.logger = logger
-
-    def init_pi(self, pi):
-        self.pi = pi
+        self.pi = pigpio.pi()
 
     def connect(self):
         self.dmd = self.pi.i2c_open(self.bus, TI_I2C_RADDR>>1)

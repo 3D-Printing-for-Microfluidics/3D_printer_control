@@ -8,6 +8,7 @@ import time
 
 __all__ = ['Solus']
 
+
 class Solus(serial.Serial):
     def __init__(self, hwid, verbose=False):
         super().__init__(baudrate=115200, timeout=None)
@@ -132,7 +133,7 @@ class Solus(serial.Serial):
         # return the reponse of the first command 
         return response
 
-    def transmit(self,cmd):
+    def transmit(self, cmd):
         self.write(bytes(cmd + '\r', encoding='ascii')) # write to serial tx buffer 
         return self.receive()                           # wait for response from serial rx buffer
         
@@ -157,6 +158,7 @@ def findUsbPort(hwid):
                 print("Found", p.device)
                 if hwid in p.hwid:
                     return p.device
+
 
 if __name__ == '__main__':
     s = Solus('1A86:7523')
