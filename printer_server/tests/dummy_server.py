@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Run a dummy server on PC/Mac without 3D printer hardware."""
-
+import os
 import sys
-sys.path.append("../printer_server")
+
+TEST_DIR = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.join(TEST_DIR, '..', 'printer_server'))
 
 import types
 
@@ -12,23 +14,23 @@ import types
 module_name = 'printer_server.printer.solus'
 dummy_module = types.ModuleType(module_name)
 sys.modules[module_name] = dummy_module
-_code = open('tests/dummy_files/dummy_solus.py', 'rb').read()
+_code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_solus.py'), 'rb').read()
 exec(_code, dummy_module.__dict__)
 
 module_name = 'printer_server.printer.projector.i2c'
 dummy_module = types.ModuleType(module_name)
 sys.modules[module_name] = dummy_module
-_code = open('tests/dummy_files/dummy_i2c.py', 'rb').read()
+_code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_i2c.py'), 'rb').read()
 exec(_code, dummy_module.__dict__)
 
 module_name = 'printer_server.hardware'
 dummy_module = types.ModuleType(module_name)
 sys.modules[module_name] = dummy_module
-_code = open('tests/dummy_files/dummy_hardware.py', 'rb').read()
+_code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_hardware.py'), 'rb').read()
 exec(_code, dummy_module.__dict__)
 #########################################
 
-import os
+
 import time
 from flask.helpers import get_debug_flag
 
