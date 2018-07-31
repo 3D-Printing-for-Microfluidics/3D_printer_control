@@ -4,7 +4,7 @@ import os
 import sys
 
 TEST_DIR = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(os.path.join(TEST_DIR, '..', 'printer_server'))
+sys.path.append(os.path.join(TEST_DIR, '..'))
 
 import types
 
