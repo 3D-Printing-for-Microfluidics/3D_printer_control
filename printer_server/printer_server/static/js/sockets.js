@@ -65,7 +65,7 @@ $(document).ready(function(){
     
     socket.on("initialized", function(message) {
         $("#printer-state").text("Initialized");
-        show_btn("#plana1-btn, #shutdown-btn");
+        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
     });
     
     socket.on("planarizing", function(message) {
@@ -103,13 +103,13 @@ $(document).ready(function(){
     
     socket.on("stopped", function(message) {
         $("#printer-state").text("Stopped");
-        show_btn("#plana1-btn, #shutdown-btn");
+        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
         $("#print-progress").addClass("d-none");
     });
     
     socket.on("completed", function(message) {
         $("#printer-state").text("Completed");
-        show_btn("#plana1-btn, #shutdown-btn");
+        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
         $("#print-progress").addClass("d-none");
         update_print_message(message);
     });
@@ -190,7 +190,7 @@ $(document).ready(function(){
         $("#print-alert-title").text("Shutdown");
         $("#print-alert-body").text("Make sure 3D printer is not operating, and that build platform is at home position.");
     });
-    
+       
     // Database interaction
     socket.on("job uploaded", function(message) {
         var new_row = `
