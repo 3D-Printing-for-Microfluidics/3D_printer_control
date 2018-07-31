@@ -6,7 +6,7 @@ import logging
 from flask.logging import default_handler
 
 from printer_server.extensions import db, migrate, socketio
-from printer_server import commands, models, main, digital
+from printer_server import commands, models, main, digital, calibrate
 from printer_server.settings import ProdConfig
 from printer_server.hardware import printer3d
 from printer_server.logging_handler import SQLAlchemyHandler
@@ -42,6 +42,7 @@ def register_blueprints(app):
     """Register Flask blueprints."""
     app.register_blueprint(main.views.blueprint)
     app.register_blueprint(digital.views.blueprint)
+    app.register_blueprint(calibrate.views.blueprint)
     return None
 
 
