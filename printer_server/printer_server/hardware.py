@@ -6,7 +6,7 @@ from printer_server.printer.print_settings import PrintSettings
 
 
 solusHWID = '1A86:7523'  # specific to each arduino 
-projectorResolution = (2650, 1600)
+projectorResolution = (2560, 1600)
 
 
 class Printer3D:
