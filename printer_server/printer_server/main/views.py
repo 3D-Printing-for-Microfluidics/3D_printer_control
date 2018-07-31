@@ -43,7 +43,7 @@ def planarizationStep1(message):
 
 
 @socketio.on('planarization step 2', namespace='/printing')
-def planarizationStep1(message):
+def planarizationStep2(message):
     if printer3d.state is 'planarizing':
         printingThreads.planarizationStep2()
 
