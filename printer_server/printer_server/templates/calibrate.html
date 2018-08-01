@@ -4,27 +4,126 @@
 {% block title %}3D Printer Calibration{% endblock %}
 
 {% block printer3d_state %}
-<h2 id='printer-state'></h2>
+<h2>Calibration Controls</h2>
 {% endblock %}
 
 {% block styles %}
 {{ super() }}
-<link href="{{ url_for('static', filename='css/controls.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/calibrate.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block page_content %}
 
-<div class="row mb-2" id="printer-controls">
+<div class="container">
+    <div class="row top-buffer align-items-center">
+        <h3>Motor Controls</h3>
+    </div>
+
+    <div class="row align-items-center">
+        <div class="col-sm">
+            <h4 class="col">Tip</h3>
+        </div>
+        <div class="col-sm">
+            <h5 class="col text-right" id='tip-state'>345</h2>
+        </div>
+        <div class="col-sm">
+            <div class="btn-group" role="group" aria-label="Tip">
+                <button type="button" class="btn btn-secondary">-1000</button>
+                <button type="button" class="btn btn-secondary">-100</button>
+                <button type="button" class="btn btn-secondary">-10</button>
+                <button type="button" class="btn btn-secondary">10</button>
+                <button type="button" class="btn btn-secondary">100</button>
+                <button type="button" class="btn btn-secondary">1000</button>
+            </div>
+        </div>
+    </div>
+    <div class="row align-items-center">
+        <div class="col-sm">
+            <h4 class="col">Tilt</h3>
+        </div>
+        <div class="col-sm">
+            <h5 class="col text-right" id='tip-state'>345</h2>
+        </div>
+        <div class="col-sm">
+            <div class="btn-group" role="group" aria-label="Tip">
+                <button type="button" class="btn btn-secondary">-1000</button>
+                <button type="button" class="btn btn-secondary">-100</button>
+                <button type="button" class="btn btn-secondary">-10</button>
+                <button type="button" class="btn btn-secondary">10</button>
+                <button type="button" class="btn btn-secondary">100</button>
+                <button type="button" class="btn btn-secondary">1000</button>
+            </div>
+        </div>
+    </div>
+    <div class="row align-items-center">
+        <div class="col-sm">
+            <h4 class="col">Distance</h3>
+        </div>
+        <div class="col-sm">
+            <h5 class="col text-right" id='tip-state'>345</h2>
+        </div>
+        <div class="col-sm">
+            <div class="btn-group" role="group" aria-label="Tip">
+                <button type="button" class="btn btn-secondary">-1000</button>
+                <button type="button" class="btn btn-secondary">-100</button>
+                <button type="button" class="btn btn-secondary">-10</button>
+                <button type="button" class="btn btn-secondary">10</button>
+                <button type="button" class="btn btn-secondary">100</button>
+                <button type="button" class="btn btn-secondary">1000</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row top-buffer align-items-center">
+        <h3>Solus</h3>
+    </div>
+    <div class="row align-items-center">
+        <div class="col-6">
+            <h4 class="col">Move to</h3>
+        </div>
+        <div class="col-3">
+            <button type="button" class="btn btn-secondary btn-block" data-toggle="modal" data-target="#confirmModal" id="init-btn">Top</button>
+        </div>
+        <div class="col-3">
+            <button type="button" class="btn btn-secondary btn-block" data-toggle="modal" data-target="#confirmModal" id="init-btn">Bottom</button>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row top-buffer align-items-center">
+        <h3>Light Engine</h3>
+    </div>
+    <div class="row align-items-center">
+        <div class="col-6">
+            <h4 class="col">Calibration image</h3>
+        </div>
+        <div class="col-3">
+            <button type="button" class="btn btn-secondary btn-block" data-toggle="modal" data-target="#confirmModal" id="init-btn">On</button>
+        </div>
+        <div class="col-3">
+            <button type="button" class="btn btn-secondary btn-block" data-toggle="modal" data-target="#confirmModal" id="init-btn">Off</button>
+        </div>
+    </div>
+</div>
+    
+
+<!-- <div class="row mb-2" id="printer-controls">
   <div class="col-auto mr-auto">
+    <button type="button" class="printer-btn btn btn-lg btn-primary d-none" data-toggle="modal" data-target="#confirmModal" id="init-btn">Matthew</button>
+    <button type="button" class="printer-btn btn btn-lg btn-primary d-none" data-toggle="modal" data-target="#confirmModal" id="init-btn">Matthew</button>
+    <button type="button" class="printer-btn btn btn-lg btn-primary d-none" data-toggle="modal" data-target="#confirmModal" id="init-btn">Matthew</button>
     <button type="button" class="printer-btn btn btn-lg btn-primary d-none" data-toggle="modal" data-target="#confirmModal" id="init-btn">Matthew</button>
   </div>
   <div class="col-auto">
     <button class="btn btn-lg btn-info" type="button" data-toggle="collapse" data-target="#collapseUpload" aria-expanded="false" aria-controls="collapseUpload" id="create-job">Create a job</button>
   </div>
-</div>
+</div> -->
 
 <!-- Modal -->
-<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalTitle" aria-hidden="true">
+<!-- <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalTitle" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -46,7 +145,7 @@
  <div class="progress d-none" id="print-progress">
    <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" id="print-progress-bar" role="progressbar" style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
  </div>
-<hr>
+<hr> -->
 
 
 
