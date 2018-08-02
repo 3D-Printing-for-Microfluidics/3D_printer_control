@@ -130,3 +130,10 @@ class Projector:
             self.i2c.disconnectServer()
         except AttributeError:
             pass
+
+
+if __name__ == '__main__':
+    projectorResolution = (2560, 1600)
+    p=Projector(projectorResolution)
+    p.connect()
+    p.calibrateProject("calibrate.png", 100, 0, 1000)
