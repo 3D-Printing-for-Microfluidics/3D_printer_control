@@ -104,7 +104,7 @@ class LightEngineI2C:
         """Set video source. 
         The Visitech LRS-WQ light engine has a HDMI and a 
         DisplayPort connection. They support different frame 
-        rate, HDMI 2560x1600 @30Hz and DisplayPort 2560x1600 
+        rates, HDMI 2560x1600 @30Hz and DisplayPort 2560x1600 
         @60Hz.
 
         :param int input: either 0 or 1. 
