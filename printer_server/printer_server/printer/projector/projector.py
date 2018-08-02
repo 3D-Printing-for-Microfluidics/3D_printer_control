@@ -77,26 +77,30 @@ class Projector:
             self.setLedAmplitude(ledPower)
             
         for t in exposureTime:
-            self.setProjectingTime(t)
+            self.sendSequence(t)
             self.screenThread.screen.draw(image)
             time.sleep(0.1)
             self.start()
             time.sleep(0.1 + t * 1e-3)
             self.stop()
             
-    def setProjectingTime(self, t, repeat=1):
-        """Set projecting time in millisecond.
+    def sendSequence(self, exposure, repeat=1, bitdepth=7, vsync=1, darktime=0, bitposition=0):
+        """Generate and send control sequence
+
+        :param int exposure: exposure time (ms)
+        :param int repeat: number of times to repeat pattern sequence
+                           0 - repeat forever, (1-4294967296) - repeat 
+                           n times 
+        :param int bitdepth: image bit depth. 7 means 8 bits 
+        :param int vsync: 1 = Wait for VSYNC before displaying the 
+                          pattern, 0 = Continue running after previous 
+                          pattern 
+        :param int darktime: (0-2^24) Dark display time following exposure     
+        :param int bitposition: see DLPC900 datasheet     
         
-        :param int t: exposure time (ms)
         """
-        # repeat = 1
-        exptime = int(t * 1e3)
-        bitdepth = 7 # 7 means 8 bits
-        vsync = 1
-        darktime = 0
-        bitposition = 0
-        sequence = [[exptime, bitdepth, 1, vsync, 
-                     darktime, bitposition, 0]]
+        exptime = int(exposure * 1e3)   # convert to us 
+        sequence = [[exptime, bitdepth, 1, vsync, darktime, bitposition, 0]]
         self.i2c.parseSendSequence(sequence, repeat)
         
     def calibrateProject(self, image, ledPower, repeat, exposureTime):
@@ -114,7 +118,7 @@ class Projector:
         else: 
             if ledPower != self.ledPower:
                 self.setLedAmplitude(ledPower)
-            self.setProjectingTime(exposureTime, repeat)
+            self.sendSequence(exposureTime, repeat)
             self.screenThread.screen.draw(image)
             time.sleep(0.1)
             self.start()
