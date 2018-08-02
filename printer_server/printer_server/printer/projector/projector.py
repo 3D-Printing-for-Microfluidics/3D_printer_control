@@ -38,7 +38,7 @@ class Projector:
         
         :param int i: between 1 and 1000. If it is too low or 
                       too high, the LED amplitude will not be 
-                      change. 
+                      changed. 
         """
         if i >= 1 and i <= 1000:
             self.i2c.setLedAmplitude(int(i))
@@ -84,9 +84,12 @@ class Projector:
             time.sleep(0.1 + t * 1e-3)
             self.stop()
             
-    def setProjectingTime(self, t):
-        '''Set projecting time in millisecond.'''
-        repeat = 1
+    def setProjectingTime(self, t, repeat=1):
+        """Set projecting time in millisecond.
+        
+        :param int t: exposure time (ms)
+        """
+        # repeat = 1
         exptime = int(t * 1e3)
         bitdepth = 7 # 7 means 8 bits
         vsync = 1
@@ -96,6 +99,26 @@ class Projector:
                      darktime, bitposition, 0]]
         self.i2c.parseSendSequence(sequence, repeat)
         
+    def calibrateProject(self, image, ledPower, repeat, exposureTime):
+        """Enable continuous projection of an image for 
+        calibration
+        
+        :param image: an 8-bit grayscale image filename
+        :param int ledPower: LED power setting (0-1000)
+        :param int repeat: 0 repeats forever, 1 repeat 
+                           once (normal operation)
+        :param int exposureTime: exposure time (ms).
+        """
+        if repeat != 0: 
+            self.project(image, exposureTime, ledPower)
+        else: 
+            if ledPower != self.ledPower:
+                self.setLedAmplitude(ledPower)
+            self.setProjectingTime(exposureTime, repeat)
+            self.screenThread.screen.draw(image)
+            time.sleep(0.1)
+            self.start()
+
     def clear(self):
         """Clear the projector screen to be black"""
         self.screenThread.screen.clear()
