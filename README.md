@@ -3,7 +3,7 @@
 ### Setup 
 
 To run the dummy server to develop on, do the following: 
-
+  * Navigate to the printer_server directory (3D_printer_control/printer_server)
   * Install all required modules with `pip install -r ../requirements/dev.txt`
   * Set the required $FLASK_APP environment variable. This varies based on platform, but for bash do `export FLASK_APP=tests/dummy_server.py`
   * Do the following only if you don't have a database built yet (i.e. it's your first time running this app)
