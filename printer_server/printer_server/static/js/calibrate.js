@@ -1,31 +1,21 @@
-$("#create-job").on("click", function() {
-  if($(this).text() == "Create a job") {
-    $(this).text("Hide");
-  } else {
-    $(this).text("Create a job");
-  }
-});
 
-$("#job-table").on("click", ".clickable-row", function(event) {
-  if($(this).hasClass("table-success")){
-    $(this).removeClass("table-success");
-    start_job_id = "";
-    $("#start-btn").prop("disabled", true).addClass("btn-secondary");
-  } else {
-    $(this).addClass("table-success").siblings().removeClass("table-success");
-    start_job_id = $(this).attr("id").replace("row-", "")
-    $("#start-btn").prop("disabled", false).removeClass("btn-secondary");
-  }
-});
+var disable_motor_control_buttons = function(){
+    $('.motor-controls button').prop('disabled', true);
+}
 
-$("#clear-print-message").on("click", function() {
-    $("#print-message > div").remove();
-});
+var enable_motor_control_buttons = function(){
+    $('.motor-controls button').prop('disabled', false);
+}
 
-var show_btn = function(btn) {
-    $(".printer-btn").prop("disabled", true).addClass("d-none");
-    $(btn).prop("disabled", false).removeClass("d-none");
-};
+var disable_solus_buttons = function(){
+    $('.solus button').prop('disabled', true);
+}
+
+var enable_solus_buttons = function(){
+    $('.solus button').prop('disabled', false);
+}
+
+
 
 var update_print_message = function(message) {
     if(!$.isEmptyObject(message)) {
@@ -57,13 +47,20 @@ $(document).ready(function(){
     
     
     
+    // Set up socket 
+    var socket = io.connect("http://" + document.domain + ":" + location.port + "/calibrate");
     
-    var socket = io.connect("http://" + document.domain + ":" + location.port + "/printing");
+    
+    disable_motor_control_buttons();
     socket.emit("connect");
     
+    socket.on("matthew", function() {
+        enable_motor_control_buttons();
+    });
+
     socket.on("busy", function(message) {
         $("#printer-state").text("3D Printer is Busy");
-        show_btn();
+        // show_btn();
         start_job_id = "";
         $(".clickable-row").removeClass("table-success");
         update_print_message(message);
@@ -71,64 +68,9 @@ $(document).ready(function(){
     
     socket.on("uninitialized", function(message) {
         $("#printer-state").text("Uninitialized");
-        show_btn("#init-btn, #shutdown-btn");
+        // show_btn("#init-btn, #shutdown-btn");
     });
     
-    socket.on("initialized", function(message) {
-        $("#printer-state").text("Initialized");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
-    });
-    
-    socket.on("planarizing", function(message) {
-        $("#printer-state").text("Planarizing");
-        show_btn("#plana2-btn");
-    });
-    
-    socket.on("planarized", function(message) {
-        $("#printer-state").text("Planarized");
-        show_btn("#plana1-btn, #shutdown-btn");
-        $("#start-btn").removeClass("d-none").addClass("btn-secondary");
-    });
-    
-    socket.on("printing", function(message) {
-        $("#printer-state").text("Printing");
-        show_btn("#pause-btn, #stop-btn");
-        $("#print-progress-bar").css({"width": message.percent + "%"})
-                                .attr({"aria-valuenow": message.percent})
-                                .text(message.percent + "%");
-        $("#print-progress").removeClass("d-none");
-        update_print_message(message);
-    });
-    
-    socket.on("print progress", function(message) {
-        $("#print-progress-bar").css({"width": message.percent + "%"})
-                                .attr({"aria-valuenow": message.percent})
-                                .text(message.percent + "%");
-        update_print_message(message);
-    });
-    
-    socket.on("paused", function(message) {
-        $("#printer-state").text("Paused");
-        show_btn("#resume-btn, #stop-btn");
-    });
-    
-    socket.on("stopped", function(message) {
-        $("#printer-state").text("Stopped");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
-        $("#print-progress").addClass("d-none");
-    });
-    
-    socket.on("completed", function(message) {
-        $("#printer-state").text("Completed");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
-        $("#print-progress").addClass("d-none");
-        update_print_message(message);
-    });
-
-    socket.on("shutting down", function(message) {
-        $("#printer-state").text("Shutting down");
-        update_print_message(message);
-    });
 
     socket.on("shutdown completed", function(message) {
         $("html").text("3D printer has been shutdown");
@@ -153,11 +95,6 @@ $(document).ready(function(){
             msg = {};
         }
         socket.emit(operation.toLowerCase(), msg);
-        $("#print-alert-title").text("");
-        $("#print-alert-body").text("");
-    });
-
-    $("#print-alert-cancel").click(function() {
         $("#print-alert-title").text("");
         $("#print-alert-body").text("");
     });
