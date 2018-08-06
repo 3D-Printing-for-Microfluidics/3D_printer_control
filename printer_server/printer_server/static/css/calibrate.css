@@ -38,3 +38,6 @@
     cursor: pointer;
 }
 
+.ip-input {
+    padding-top: none;
+}
