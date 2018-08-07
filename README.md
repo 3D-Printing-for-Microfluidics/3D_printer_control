@@ -31,3 +31,4 @@ Right now the page is hosted locally at `http://127.0.0.1:5000` but this is conf
 
 This page talks all about flask and how to use it. It is very helpful if you want to know more about how the server runs: http://flask.pocoo.org/docs/1.0/quickstart/
 
+Additionally, here is some good info on the python virtual environment we are using: https://docs.python.org/3/tutorial/venv.html
