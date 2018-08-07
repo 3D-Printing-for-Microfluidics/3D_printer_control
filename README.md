@@ -1,6 +1,6 @@
 # Running the dummy server
 
-### Setup 
+## Setup 
 
 To run the dummy server to develop on, do the following: 
   * Navigate to the printer_server directory (3D_printer_control/printer_server)
@@ -18,7 +18,7 @@ To run the dummy server to develop on, do the following:
     * Migrate it with `flask db migrate`
     * Upgrade it with `flask db upgrade` 
 
-### Debug Mode (Recommended for development)
+## Debug Mode (Recommended for development)
 You can also optionally enable debug mode, which gives you feedback in the terminal, by setting the debug environment variable with `export FLASK_DEBUG=1`. Set this to 0 to disable it again later. 
 
 After this is all done, run the dummy server with `python $FLASK_APP` or `python3 $FLASK_APP`. (Make sure you are using Python 3.5, using `python --version` to double check if it doesn't work) (\*Note from Clayton: I got the dummy server to work without Anaconda.) 
@@ -27,7 +27,7 @@ In debug mode, the server will automatically reload changed Python and HTML file
 
 Right now the page is hosted locally at `http://127.0.0.1:5000` but this is configurable. To host it to the public IP of your computer, change the IP address to `0.0.0.0:some_port` in `app.py`
 
-### More info 
+## More info 
 
 This page talks all about flask and how to use it. It is very helpful if you want to know more about how the server runs: http://flask.pocoo.org/docs/1.0/quickstart/
 
