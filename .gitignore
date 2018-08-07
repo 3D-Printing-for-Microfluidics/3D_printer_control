@@ -13,6 +13,5 @@ migrations/
 env2/
 slices/
 error.txt
-*.zip
 printer_server/upload/current_job/
 
