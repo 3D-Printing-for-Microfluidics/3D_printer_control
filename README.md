@@ -12,14 +12,14 @@ To run the dummy server to develop on, do the following:
   * Install all required modules with `pip install -r requirements/dev.txt` or `pip3 install -r requirements/dev.txt` as appropriate
     * both python and pip are likely the correct version now that you installed them in the virtual environment, so you may no longer have to use `pip3` or `python3`. You can check with `python --version` or `pip --version` again from inside the new virtual environment
   * Set the required $FLASK_APP environment variable. This varies based on platform. For bash do `export FLASK_APP=tests/dummy_server.py`
-  * If you get an ereror that you don't have mttkinter, run `pip install mttkinter` or `pip3 install mttkinter`
+  * If you get an error that you don't have mttkinter, run `pip install mttkinter` or `pip3 install mttkinter`
   * Do the following only if you don't have a database built yet (i.e. it's your first time running this app)
     * Initialize the database with `flask db init`
     * Migrate it with `flask db migrate`
     * Upgrade it with `flask db upgrade` 
 
 ## Debug Mode (Recommended for development)
-You can also optionally enable debug mode, which gives you feedback in the terminal, by setting the debug environment variable with `export FLASK_DEBUG=1`. Set this to 0 to disable it again later. 
+You can also optionally enable debug mode, which gives you feedback in the terminal and automatically restarts the server on file changes, by setting the debug environment variable with `export FLASK_DEBUG=1`. Set this to 0 to disable it again later. 
 
 After this is all done, run the dummy server with `python $FLASK_APP` or `python3 $FLASK_APP`. (Make sure you are using Python 3.5, using `python --version` to double check if it doesn't work) (\*Note from Clayton: I got the dummy server to work without Anaconda.) 
 
