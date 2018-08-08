@@ -11,7 +11,7 @@ import time
 
 from printer_server.settings import Config
 from printer_server.hardware import printer3d, PrintSettings
-from printer_server.threads import printingThreads
+from printer_server.threads import calibrationThreads
 from printer_server.models import PrintJob, PrintRecord
 from printer_server.extensions import socketio
 
@@ -19,7 +19,7 @@ from printer_server.extensions import socketio
 blueprint = Blueprint('calibrate', __name__, url_prefix='/', static_folder='../static')
 
 # Decorator to handle navigation to calibration page 
-@blueprint.route('/calibrate1')
+@blueprint.route('/calibrate')
 def index():
     return render_template('calibrate.html')
 
@@ -31,25 +31,38 @@ def index():
 #     print("sending response")
 #     socketio.emit('matthew', namespace='/calibrate')
 
-@socketio.on('connect', namespace='/calibrate')
-def connect():
-    print("on connect")
-    time.sleep(1)
-    print("emit test1")
-    socketio.emit('test1', namespace='/calibrate')
 
 
-# @socketio.on('initialize', namespace='/calibrate')
-# def initialize(message):
-#     if printer3d.state is 'uninitialized':
-#         printingThreads.initialize()
+# If hardware isn't initialized, initialize it 
+@socketio.on('initialize', namespace='/calibrate')
+def initialize(message):
+    if printer3d.state is 'uninitialized':
+        calibrationThreads.initialize()
 
 
-# @socketio.on('planarization step 1', namespace='/calibrate')
-# def planarizationStep1(message):
-#     printer_states = ['initialized', 'planarized', 'completed', 'stopped']
-#     if printer3d.state in printer_states:
-#         printingThreads.planarizationStep1()
+
+
+
+@socketio.on('solus_go_to_top', namespace='/calibrate')
+def solus_go_to_top():
+    print("go to top was clicked")
+    printer3d.solus.goToZmax()
+    socketio.emit('solus_done', namespace='/calibrate', broadcast=True)
+
+@socketio.on('solus_go_to_bottom', namespace='/calibrate')
+def solus_go_to_bottom():
+    printer3d.solus.goToZmin()
+    socketio.emit('solus_done', namespace='/calibrate', broadcast=True)
+
+
+
+
+
+@socketio.on('planarization step 1', namespace='/calibrate')
+def planarizationStep1(message):
+    printer_states = ['initialized', 'planarized', 'completed', 'stopped']
+    if printer3d.state in printer_states:
+        calibrationThreads.planarizationStep1()
 
 
 # @socketio.on('start', namespace='/calibrate')
@@ -103,27 +116,27 @@ def connect():
             
 #         #     printSettingsFile = glob.glob(os.path.join(Config.UPLOAD_FOLDER, 
 #         #         'current_job', '**/print_settings.json'), recursive=True)[0]
-#         #     printingThreads.printSettings = PrintSettings.fromFile(printSettingsFile)
-#         #     printingThreads.jsonDir = os.path.dirname(printSettingsFile)
-#         #     printingThreads.start()
+#         #     calibrationThreads.printSettings = PrintSettings.fromFile(printSettingsFile)
+#         #     calibrationThreads.jsonDir = os.path.dirname(printSettingsFile)
+#         #     calibrationThreads.start()
 
 
 # @socketio.on('pause', namespace='/calibrate')
 # def pause(message):
 #     if printer3d.state is 'printing':
-#         printingThreads.pause()
+#         calibrationThreads.pause()
 
 
 # @socketio.on('resume', namespace='/calibrate')
 # def resume(message):
 #     if printer3d.state is 'paused':
-#         printingThreads.resume()
+#         calibrationThreads.resume()
 
 
 # @socketio.on('stop', namespace='/calibrate')
 # def stop(message):
 #     if printer3d.state is 'printing' or printer3d.state is 'paused':
-#         printingThreads.stop()
+#         calibrationThreads.stop()
 
 
 # @socketio.on('shutdown', namespace='/calibrate')

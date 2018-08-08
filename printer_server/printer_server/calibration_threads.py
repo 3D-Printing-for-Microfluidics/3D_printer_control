@@ -17,7 +17,7 @@ from printer_server.hardware import printer3d
 from printer_server.models import PrintRecord
 
 
-def multithreading(state, text):
+def thread_decorator(state, text):
     """Make decorators for the printer operation methods. 
     The wrapped methods will push the 3D printer state changes 
     to clients, and finish the operations in another thread. 
@@ -34,22 +34,18 @@ def multithreading(state, text):
             def func(*args, **kwargs):
                 # code for operation #
                 printer3d.state = 'initialized'
-                socketio.emit(printer3d.state, {}, 
-                    namespace='/printing', broadcast=True)
+                socketio.emit(printer3d.state, {}, namespace='/calibration', broadcast=True)
     
             printer3d.state = 'busy'
             message = {
                 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'text': text
             }
-            socketio.emit(printer3d.state, message, 
-                namespace='/printing', broadcast=True)
-            _thread = threading.Thread(target=func,
-                                       args=(*args, ),
-                                       kwargs={**kwargs, })
+            socketio.emit(printer3d.state, message, namespace='/calibration', broadcast=True)
+            _thread = threading.Thread(target=func, args=(*args, ), kwargs={**kwargs, })
             _thread.start()
     
-    :param str state: 3D printer state (Details: :ref:`3d_printer_state_machine`)
+    :param str state: what will be emitted when operation is complete 
     :param str text: printer message for the message box in webpage
     """
     def decorator(f):
@@ -58,24 +54,22 @@ def multithreading(state, text):
             def func(*args, **kwargs):
                 f(*args, **kwargs)
                 printer3d.state = state
-                socketio.emit(printer3d.state, dict(), 
-                    namespace='/printing', broadcast=True)
+                socketio.emit(printer3d.state, dict(), namespace='/printing', broadcast=True)
             
             printer3d.state = 'busy'
             message = {
                 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'text': text
             }
-            socketio.emit(printer3d.state, message, 
-                namespace='/printing', broadcast=True)
-            _thread = threading.Thread(target=func,
-                                       args=(*args, ),
-                                       kwargs={**kwargs, })
+            socketio.emit(printer3d.state, message, namespace='/printing', broadcast=True)
+            _thread = threading.Thread(target=func, args=(*args, ), kwargs={**kwargs, })
             _thread.start()
             
         return decorated_function
         
     return decorator
+
+
 
 
 class CalibrationThreads:
@@ -118,7 +112,7 @@ class CalibrationThreads:
         self.pausedLayer = 1
         self._thread = threading.Thread()
         
-    @multithreading('initialized', 'Initialize')
+    @thread_decorator('initialize_complete', 'Initialize')
     def initialize(self):
         """Establish USB connection with Solus, and find zero in Z 
         axis for build platform.
@@ -127,14 +121,22 @@ class CalibrationThreads:
         self.solus.connect()
         self.solus.initialize()
         
-    @multithreading('planarizing', 'Planarization Step 1')
+    @thread_decorator('planarizing', 'Planarization Step 1')
     def planarizationStep1(self):
         """Planarization Step 1 -- Lower the build platform to 
         zero in Z for planarization.
         """
         self.solus.goToZmin()
         
-    @multithreading('planarized', 'Planarization Step 2')
+    @thread_decorator('planarizing', 'Planarization Step 1')
+    def goToZmin(self):
+        """Planarization Step 1 -- Lower the build platform to 
+        zero in Z for planarization.
+        """
+        self.solus.goToZmin()
+
+
+    @thread_decorator('planarized', 'Planarization Step 2')
     def planarizationStep2(self):
         """Planarization Step 2 -- Make sure the build platform 
         is flat on the teflon film. Then tighten the screws and 
@@ -142,7 +144,7 @@ class CalibrationThreads:
         """
         self.solus.goToZmax()
         
-    @multithreading('paused', 'Pause Printing')
+    @thread_decorator('paused', 'Pause Printing')
     def pause(self):
         """Pause the printing process. It is implemented with a
         ``threading.Event`` object, :py:attr:`printingPaused`. 
@@ -156,7 +158,7 @@ class CalibrationThreads:
         self.printingPaused.set()
         self._thread.join()
         
-    @multithreading('stopped', 'Stop Printing')
+    @thread_decorator('stopped', 'Stop Printing')
     def stop(self):
         """Stop the printing process. It works basically the same 
         as :py:meth:`puase`, except the 3D printer can not resume 
@@ -179,7 +181,7 @@ class CalibrationThreads:
             'text': 'Start Printing'
         }
         socketio.emit(self.printer3d.state, message, 
-            namespace='/printing', broadcast=True)
+            namespace='/calibration', broadcast=True)
         
         app = db.get_app()
         self._thread = threading.Thread(target=self.startPrinting, 
@@ -200,7 +202,7 @@ class CalibrationThreads:
             'text': 'Resume Printing'
         }
         socketio.emit(self.printer3d.state, message, 
-            namespace='/printing', broadcast=True)
+            namespace='/calibration', broadcast=True)
         
         app = db.get_app()
         self._thread = threading.Thread(target=self.startPrinting, 
@@ -279,7 +281,7 @@ class CalibrationThreads:
                           {'percent': int(100*i/totalLayerNum),
                            'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                            'text': 'Layer {}'.format(i)}, 
-                          namespace='/printing', broadcase=True)
+                          namespace='/calibration', broadcase=True)
                           
         # Clean up
         self.projector.stop()
@@ -305,7 +307,7 @@ class CalibrationThreads:
                     'text': 'Printing Compeleted'
                 }
                 socketio.emit(self.printer3d.state, message, 
-                    namespace='/printing', broadcast=True)
+                    namespace='/calibration', broadcast=True)
                 
     @property
     def isBusy(self):

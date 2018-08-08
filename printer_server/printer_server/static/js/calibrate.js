@@ -47,24 +47,26 @@ $(document).ready(function(){
     
     
     
-    // Set up socket 
+    // Set up socket and send message to initialize hardware 
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/calibrate");
-    console.log("http://" + document.domain + ":" + location.port + "/calibrate")
+    socket.emit("initialize");
+
+
+
+
     
-    
-    disable_motor_control_buttons();
+    $("#solus-top-btn").click(function() {
+        disable_solus_buttons();
+        socket.emit("solus_go_to_top");
+    });
 
-    console.log("emit connect");
-    socket.emit("connect");
+    $("#solus-bottom-btn").click(function() {
+        disable_solus_buttons();
+        socket.emit("solus_go_to_bottom");
+    });
 
-
-
-    // console.log("emit test1")
-    // socket.emit("test1");
-    
-    socket.on("test1", function() {
-        console.log("on test1");
-        enable_motor_control_buttons();
+    socket.on("solus_done", function() {
+        enable_solus_buttons();
     });
 
     // socket.on("busy", function(message) {
@@ -108,8 +110,5 @@ $(document).ready(function(){
     //     $("#print-alert-body").text("");
     // });
 
-    // $("#shutdown-btn").click(function() {
-    //     $("#print-alert-title").text("Shutdown");
-    //     $("#print-alert-body").text("Make sure 3D printer is not operating, and that build platform is at home position.");
-    // });
+
 });
