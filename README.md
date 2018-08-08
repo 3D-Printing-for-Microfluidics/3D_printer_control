@@ -12,7 +12,7 @@ To run the dummy server to develop on, do the following:
   * Install all required modules with `pip install -r requirements/dev.txt` or `pip3 install -r requirements/dev.txt` as appropriate
     * both python and pip are likely the correct version now that you installed them in the virtual environment, so you may no longer have to use `pip3` or `python3`. You can check with `python --version` or `pip --version` again from inside the new virtual environment
   * Set the required $FLASK_APP environment variable. This varies based on platform. For bash do `export FLASK_APP=tests/dummy_server.py`
-  * If you get an ereror that you don't have mttkinter, run `pip install mttkinter` or `pip3 install mttkinter`
+  * If you get an error that you don't have mttkinter, run `pip install mttkinter` or `pip3 install mttkinter`
   * Do the following only if you don't have a database built yet (i.e. it's your first time running this app)
     * Initialize the database with `flask db init`
     * Migrate it with `flask db migrate`
