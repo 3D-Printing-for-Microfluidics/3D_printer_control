@@ -19,7 +19,7 @@ To run the dummy server to develop on, do the following:
     * Upgrade it with `flask db upgrade` 
 
 ## Debug Mode (Recommended for development)
-You can also optionally enable debug mode, which gives you feedback in the terminal, by setting the debug environment variable with `export FLASK_DEBUG=1`. Set this to 0 to disable it again later. 
+You can also optionally enable debug mode, which gives you feedback in the terminal and automatically restarts the server on file changes, by setting the debug environment variable with `export FLASK_DEBUG=1`. Set this to 0 to disable it again later. 
 
 After this is all done, run the dummy server with `python $FLASK_APP` or `python3 $FLASK_APP`. (Make sure you are using Python 3.5, using `python --version` to double check if it doesn't work) (\*Note from Clayton: I got the dummy server to work without Anaconda.) 
 
