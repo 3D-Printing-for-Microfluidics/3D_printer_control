@@ -23,22 +23,6 @@ var enable_all_buttons = function(){
     $('button').prop('disabled', false);
 }
 
-// var update_print_message = function(message) {
-//     if(!$.isEmptyObject(message)) {
-//         var new_text = `
-//         <div class="row">
-//             <div class="col-4">
-//             ${message.time}
-//             </div>
-//             <div class="col-8">
-//             ${message.text}
-//             </div>
-//         </div>
-//         `;
-//         $("#print-message").append(new_text);
-//     }
-// }
-
 $(document).ready(function(){
     
     var slider = document.getElementById("myRange");
@@ -52,7 +36,6 @@ $(document).ready(function(){
         
     // Set up socket and send message to initialize hardware 
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/calibrate");
-    console.log("Sending init from frontend");
     
     disable_all_buttons();
     socket.emit("initialize");
@@ -61,19 +44,23 @@ $(document).ready(function(){
         enable_all_buttons();
     });
 
+    var tipLabel  = document.getElementById("tip-state");
+    var tiltLabel = document.getElementById("tilt-state");
+    var distLabel = document.getElementById("dist-state");
 
-    
-
-    $(".btn-tip").click(function() {
-        // disable_solus_buttons();
-        // socket.emit("solus_go_to_top");
-        console.log("tip clicked");
-        // var mybutton = $(this).val(); 
-        var mybutton = $(this).text(); 
-        console.log(mybutton); 
-        socket.emit("tip", { "axis": "tip", "move": mybutton });
+    $(".mtr-cntrl-btn").click(function() {
+        var steps = $(this).text(); 
+        var axis = $(this).parent().attr('aria-label')
+        if (axis == "Tip") {
+            tipLabel.innerHTML = Number(tipLabel.innerHTML) + Number(steps); 
+        } else if (axis == "Tilt") {
+            tiltLabel.innerHTML = Number(tiltLabel.innerHTML) + Number(steps); 
+        } else if (axis == "Distance") {
+            distLabel.innerHTML = Number(distLabel.innerHTML) + Number(steps); 
+        }
+        disable_calibration_motor_buttons();
+        socket.emit("calibration_motor", {"axis": axis, "steps": steps});
     });
-
 
     $("#solus-top-btn").click(function() {
         disable_solus_buttons();
@@ -89,46 +76,8 @@ $(document).ready(function(){
         enable_solus_buttons();
     });
 
-    // socket.on("busy", function(message) {
-    //     $("#printer-state").text("3D Printer is Busy");
-    //     // show_btn();
-    //     start_job_id = "";
-    //     $(".clickable-row").removeClass("table-success");
-    //     update_print_message(message);
-    // });
+    socket.on("calibration_motor_done", function() {
+        enable_calibration_motor_buttons();
+    });
     
-    // socket.on("uninitialized", function(message) {
-    //     $("#printer-state").text("Uninitialized");
-    //     // show_btn("#init-btn, #shutdown-btn");
-    // });
-    
-
-    // socket.on("shutdown completed", function(message) {
-    //     $("html").text("3D printer has been shutdown");
-    // });
-
-    // socket.on("shutdown failed", function(message) {
-    //     // TODO: add a warning window
-    //     update_print_message(message);
-    // });
-
-
-    
-    // $("#print-alert-confirm").click(function() {
-    //     var operation = $("#print-alert-title").text();
-    //     var msg;
-        
-    //     if (operation === "Start") {
-    //         msg = {job: start_job_id};
-    //     } else if (operation === "Delete Job") {
-    //         msg = {job: delete_job_id};
-    //     } else {
-    //         msg = {};
-    //     }
-    //     socket.emit(operation.toLowerCase(), msg);
-    //     $("#print-alert-title").text("");
-    //     $("#print-alert-body").text("");
-    // });
-
-
 });
