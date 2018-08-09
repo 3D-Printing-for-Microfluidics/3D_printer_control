@@ -35,34 +35,42 @@ def index():
 
 # If hardware isn't initialized, initialize it 
 @socketio.on('initialize', namespace='/calibrate')
-def initialize(message):
+def initialize():
     if printer3d.state is 'uninitialized':
         calibrationThreads.initialize()
-
+    else: 
+        socketio.emit('initialized', namespace='/calibrate', broadcast=True)
+        
 
 
 
 
 @socketio.on('solus_go_to_top', namespace='/calibrate')
 def solus_go_to_top():
-    print("go to top was clicked")
-    printer3d.solus.goToZmax()
-    socketio.emit('solus_done', namespace='/calibrate', broadcast=True)
+    print("CLICK: got to top")
+    calibrationThreads.goToZmax()
 
 @socketio.on('solus_go_to_bottom', namespace='/calibrate')
 def solus_go_to_bottom():
-    printer3d.solus.goToZmin()
-    socketio.emit('solus_done', namespace='/calibrate', broadcast=True)
+    print("CLICK: go to bottom")
+    calibrationThreads.goToZmin()
+
+@socketio.on('tip', namespace='/calibrate')
+def meee(message):
+    print(message)
 
 
+# @socketio.on('my event', namespace='/test')
+# def test_message(message):
+#     print message
+#     emit('my response', {'data': message['data']})
 
 
-
-@socketio.on('planarization step 1', namespace='/calibrate')
-def planarizationStep1(message):
-    printer_states = ['initialized', 'planarized', 'completed', 'stopped']
-    if printer3d.state in printer_states:
-        calibrationThreads.planarizationStep1()
+# @socketio.on('planarization step 1', namespace='/calibrate')
+# def planarizationStep1(message):
+#     printer_states = ['initialized', 'planarized', 'completed', 'stopped']
+#     if printer3d.state in printer_states:
+#         calibrationThreads.planarizationStep1()
 
 
 # @socketio.on('start', namespace='/calibrate')
