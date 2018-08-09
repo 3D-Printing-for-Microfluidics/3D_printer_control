@@ -11,18 +11,28 @@ import types
 #########################################
 # inject dummy modules for testing
 
+# dummy Solus module
 module_name = 'printer_server.printer.solus'
 dummy_module = types.ModuleType(module_name)
 sys.modules[module_name] = dummy_module
 _code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_solus.py'), 'rb').read()
 exec(_code, dummy_module.__dict__)
 
+# dummy projector module 
 module_name = 'printer_server.printer.projector.i2c'
 dummy_module = types.ModuleType(module_name)
 sys.modules[module_name] = dummy_module
 _code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_i2c.py'), 'rb').read()
 exec(_code, dummy_module.__dict__)
 
+# dummy calibration control module 
+module_name = 'printer_server.printer.calibrationControl'
+dummy_module = types.ModuleType(module_name)
+sys.modules[module_name] = dummy_module
+_code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_calibrationControl.py'), 'rb').read()
+exec(_code, dummy_module.__dict__)
+
+# dummy hardware module 
 module_name = 'printer_server.hardware'
 dummy_module = types.ModuleType(module_name)
 sys.modules[module_name] = dummy_module
