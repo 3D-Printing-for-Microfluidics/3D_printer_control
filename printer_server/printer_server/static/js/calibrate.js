@@ -1,9 +1,9 @@
 
-var disable_motor_control_buttons = function(){
+var disable_calibration_motor_buttons = function(){
     $('.motor-controls button').prop('disabled', true);
 }
 
-var enable_motor_control_buttons = function(){
+var enable_calibration_motor_buttons = function(){
     $('.motor-controls button').prop('disabled', false);
 }
 
@@ -15,7 +15,13 @@ var enable_solus_buttons = function(){
     $('.solus button').prop('disabled', false);
 }
 
+var disable_all_buttons = function(){
+    $('button').prop('disabled', true);
+}
 
+var enable_all_buttons = function(){
+    $('button').prop('disabled', false);
+}
 
 // var update_print_message = function(message) {
 //     if(!$.isEmptyObject(message)) {
@@ -43,18 +49,32 @@ $(document).ready(function(){
     slider.oninput = function() {
         output.innerHTML = this.value;
     }
-    
-    
-    
-    
+        
     // Set up socket and send message to initialize hardware 
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/calibrate");
+    console.log("Sending init from frontend");
+    
+    disable_all_buttons();
     socket.emit("initialize");
 
-
+    socket.on("initialized", function(){
+        enable_all_buttons();
+    });
 
 
     
+
+    $(".btn-tip").click(function() {
+        // disable_solus_buttons();
+        // socket.emit("solus_go_to_top");
+        console.log("tip clicked");
+        // var mybutton = $(this).val(); 
+        var mybutton = $(this).text(); 
+        console.log(mybutton); 
+        socket.emit("tip", { "axis": "tip", "move": mybutton });
+    });
+
+
     $("#solus-top-btn").click(function() {
         disable_solus_buttons();
         socket.emit("solus_go_to_top");

@@ -12,9 +12,8 @@ from datetime import datetime
 from functools import wraps
 import os
 
-from printer_server.extensions import db, socketio
+from printer_server.extensions import socketio
 from printer_server.hardware import printer3d
-from printer_server.models import PrintRecord
 
 
 def thread_decorator(state, text):
@@ -22,6 +21,9 @@ def thread_decorator(state, text):
     The wrapped methods will push the 3D printer state changes 
     to clients, and finish the operations in another thread. 
     
+    :param str state: what will be emitted when operation is complete 
+    :param str text: printer message for the message box in webpage
+
     Before::
     
         def operation(self):
@@ -44,9 +46,6 @@ def thread_decorator(state, text):
             socketio.emit(printer3d.state, message, namespace='/calibration', broadcast=True)
             _thread = threading.Thread(target=func, args=(*args, ), kwargs={**kwargs, })
             _thread.start()
-    
-    :param str state: what will be emitted when operation is complete 
-    :param str text: printer message for the message box in webpage
     """
     def decorator(f):
         @wraps(f)
@@ -54,14 +53,16 @@ def thread_decorator(state, text):
             def func(*args, **kwargs):
                 f(*args, **kwargs)
                 printer3d.state = state
-                socketio.emit(printer3d.state, dict(), namespace='/printing', broadcast=True)
+                print("DECORATED EMIT 2: ", printer3d.state)
+                socketio.emit(printer3d.state, dict(), namespace='/calibrate', broadcast=True)
             
             printer3d.state = 'busy'
             message = {
                 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'text': text
             }
-            socketio.emit(printer3d.state, message, namespace='/printing', broadcast=True)
+            print("DECORATE EMIT 1: ", printer3d.state)
+            socketio.emit(printer3d.state, message, namespace='/calibrate', broadcast=True)
             _thread = threading.Thread(target=func, args=(*args, ), kwargs={**kwargs, })
             _thread.start()
             
@@ -112,37 +113,37 @@ class CalibrationThreads:
         self.pausedLayer = 1
         self._thread = threading.Thread()
         
-    @thread_decorator('initialize_complete', 'Initialize')
+    @thread_decorator('initialized', 'Initialization complete')
     def initialize(self):
         """Establish USB connection with Solus, and find zero in Z 
         axis for build platform.
         """
+        
+        print("THREAD: initialize")
         self.projector.connect()
         self.solus.connect()
         self.solus.initialize()
-        
-    @thread_decorator('planarizing', 'Planarization Step 1')
-    def planarizationStep1(self):
-        """Planarization Step 1 -- Lower the build platform to 
-        zero in Z for planarization.
-        """
-        self.solus.goToZmin()
-        
-    @thread_decorator('planarizing', 'Planarization Step 1')
-    def goToZmin(self):
-        """Planarization Step 1 -- Lower the build platform to 
-        zero in Z for planarization.
-        """
-        self.solus.goToZmin()
+        print("THREAD: initialize complete")
 
-
-    @thread_decorator('planarized', 'Planarization Step 2')
-    def planarizationStep2(self):
-        """Planarization Step 2 -- Make sure the build platform 
-        is flat on the teflon film. Then tighten the screws and 
-        bring the build platform to home position in Z.
+    @thread_decorator('solus_done', 'Solus go to Z max')
+    def goToZmax(self):
+        """goToZmax -- Move main Z stage to max position (up)
         """
+
+        print("THREAD: goToZmax")
         self.solus.goToZmax()
+        print("THREAD: goToZmax complete")
+
+    @thread_decorator('solus_done', 'Solus go to Z min')
+    def goToZmin(self):
+        """goToZmin -- Move main z stage to min position (down)
+        """
+
+        print("THREAD: goToZmin")
+        self.solus.goToZmin()
+        print("THREAD: goToZmin complete")
+
+
         
     @thread_decorator('paused', 'Pause Printing')
     def pause(self):
@@ -167,147 +168,147 @@ class CalibrationThreads:
         self.printingStopped.set()
         self._thread.join()
         
-    def start(self):
-        """This method starts a new print. 
+    # def start(self):
+    #     """This method starts a new print. 
         
-        If printer is planarized, this method starts printing from 
-        layer 1 in a new thread. When printing is completed, paused, 
-        or stopped, the thread ends gracefully.
-        """
-        self.printer3d.state = 'printing'
-        message = {
-            'percent': 0,
-            'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'text': 'Start Printing'
-        }
-        socketio.emit(self.printer3d.state, message, 
-            namespace='/calibration', broadcast=True)
+    #     If printer is planarized, this method starts printing from 
+    #     layer 1 in a new thread. When printing is completed, paused, 
+    #     or stopped, the thread ends gracefully.
+    #     """
+    #     self.printer3d.state = 'printing'
+    #     message = {
+    #         'percent': 0,
+    #         'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+    #         'text': 'Start Printing'
+    #     }
+    #     socketio.emit(self.printer3d.state, message, 
+    #         namespace='/calibration', broadcast=True)
         
-        app = db.get_app()
-        self._thread = threading.Thread(target=self.startPrinting, 
-                                        args=(1, app))
-        self._thread.start()
+    #     app = db.get_app()
+    #     self._thread = threading.Thread(target=self.startPrinting, 
+    #                                     args=(1, app))
+    #     self._thread.start()
         
-    def resume(self):
-        """This method resumes a paused print. 
+    # def resume(self):
+    #     """This method resumes a paused print. 
         
-        If printing is paused, this method starts printing from 
-        :py:attr:`pausedLayer` in a new thread. When printing is 
-        completed, paused, or stopped, the thread ends gracefully.
-        """
-        self.printer3d.state = 'printing'
-        message = {
-            'percent': int(100*(self.pausedLayer-1)/self.printSettings.totalLayerNum),
-            'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'text': 'Resume Printing'
-        }
-        socketio.emit(self.printer3d.state, message, 
-            namespace='/calibration', broadcast=True)
+    #     If printing is paused, this method starts printing from 
+    #     :py:attr:`pausedLayer` in a new thread. When printing is 
+    #     completed, paused, or stopped, the thread ends gracefully.
+    #     """
+    #     self.printer3d.state = 'printing'
+    #     message = {
+    #         'percent': int(100*(self.pausedLayer-1)/self.printSettings.totalLayerNum),
+    #         'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+    #         'text': 'Resume Printing'
+    #     }
+    #     socketio.emit(self.printer3d.state, message, 
+    #         namespace='/calibration', broadcast=True)
         
-        app = db.get_app()
-        self._thread = threading.Thread(target=self.startPrinting, 
-                                        args=(self.pausedLayer, app))
-        self._thread.start()
+    #     app = db.get_app()
+    #     self._thread = threading.Thread(target=self.startPrinting, 
+    #                                     args=(self.pausedLayer, app))
+    #     self._thread.start()
         
-    def startPrinting(self, startingLayer, app):
-        """The ``startPrinting`` method implements the printing 
-        process. 
+    # def startPrinting(self, startingLayer, app):
+    #     """The ``startPrinting`` method implements the printing 
+    #     process. 
         
-        .. note:: 
-            This method should **NEVER** be called from the main 
-            thread. Otherwise, it will block the main thread until 
-            it is done, and cannot be interrupted.
+    #     .. note:: 
+    #         This method should **NEVER** be called from the main 
+    #         thread. Otherwise, it will block the main thread until 
+    #         it is done, and cannot be interrupted.
         
-        .. describe:: Printing process 
+    #     .. describe:: Printing process 
         
-        #. It starts with initializing parameters.
-        #. Then the build platform move to the starting height.
-        #. The layers will be iterated from the starting layer to 
-           the last.
+    #     #. It starts with initializing parameters.
+    #     #. Then the build platform move to the starting height.
+    #     #. The layers will be iterated from the starting layer to 
+    #        the last.
         
-            #. Every layer starts with checking whether printing 
-               is stopped or paused. 
-            #. If not, it goes through the mechanical operations 
-               in Solus first, and then exposes the layer with 
-               all the images. 
+    #         #. Every layer starts with checking whether printing 
+    #            is stopped or paused. 
+    #         #. If not, it goes through the mechanical operations 
+    #            in Solus first, and then exposes the layer with 
+    #            all the images. 
         
-        #. If the printing is stopped, paused, or completed, it 
-           exits the for-loop, cleans up, and ends gracefully. 
+    #     #. If the printing is stopped, paused, or completed, it 
+    #        exits the for-loop, cleans up, and ends gracefully. 
         
-            #. If printing is paused, the current layer number 
-               will be saved to :py:attr:`pausedLayer`, and the 
-               build platform will move up 30 mm and wait for 
-               further instruction.
-            #. If printing is stopped, the build platform will 
-               move up to home position.
+    #         #. If printing is paused, the current layer number 
+    #            will be saved to :py:attr:`pausedLayer`, and the 
+    #            build platform will move up 30 mm and wait for 
+    #            further instruction.
+    #         #. If printing is stopped, the build platform will 
+    #            move up to home position.
         
-        :param int startingLayer: the layer to start printing
-        :param app: the current flask ``app`` object. We have to 
-                    get ``app`` in the main thread, and pass it 
-                    to the working thread. The reason that we need 
-                    ``app`` is that in order to interact with 
-                    database, we have to be under ``app_context``.
-                    See http://flask-sqlalchemy.pocoo.org/contexts/.
-        """
-        # Initialize parameters
-        self.printingStopped.clear()
-        self.printingPaused.clear()
-        self.projector.setLedAmplitude(100)
+    #     :param int startingLayer: the layer to start printing
+    #     :param app: the current flask ``app`` object. We have to 
+    #                 get ``app`` in the main thread, and pass it 
+    #                 to the working thread. The reason that we need 
+    #                 ``app`` is that in order to interact with 
+    #                 database, we have to be under ``app_context``.
+    #                 See http://flask-sqlalchemy.pocoo.org/contexts/.
+    #     """
+    #     # Initialize parameters
+    #     self.printingStopped.clear()
+    #     self.printingPaused.clear()
+    #     self.projector.setLedAmplitude(100)
         
-        # Move build platform to the starting position
-        if startingLayer == 1:
-            self.solus.goToFirstLayerHeight(self.printSettings.layerThicknessMm(1))
-        else:
-            self.solus.resume(self.printSettings.layerThicknessMm(startingLayer))
+    #     # Move build platform to the starting position
+    #     if startingLayer == 1:
+    #         self.solus.goToFirstLayerHeight(self.printSettings.layerThicknessMm(1))
+    #     else:
+    #         self.solus.resume(self.printSettings.layerThicknessMm(startingLayer))
             
-        # Iterate from the startingLayer to the last
-        totalLayerNum = self.printSettings.totalLayerNum
-        for i in range(startingLayer, totalLayerNum+1):
-            if self.printingStopped.is_set() or self.printingPaused.is_set():
-                self.pausedLayer = i # layer i has not been exposed
-                break
+    #     # Iterate from the startingLayer to the last
+    #     totalLayerNum = self.printSettings.totalLayerNum
+    #     for i in range(startingLayer, totalLayerNum+1):
+    #         if self.printingStopped.is_set() or self.printingPaused.is_set():
+    #             self.pausedLayer = i # layer i has not been exposed
+    #             break
                 
-            if i != startingLayer:
-                self.solus.printCycle(self.printSettings.layerThicknessMm(i),
-                                      self.printSettings.solusCommandChain(i))
+    #         if i != startingLayer:
+    #             self.solus.printCycle(self.printSettings.layerThicknessMm(i),
+    #                                   self.printSettings.solusCommandChain(i))
                                       
-            images = [os.path.join(self.jsonDir, im) 
-                for im in self.printSettings.images(i)]
-            self.projector.projectMulti(images,
-                                        self.printSettings.exposureTimeMs(i),
-                                        self.printSettings.ledPowers(i))
+    #         images = [os.path.join(self.jsonDir, im) 
+    #             for im in self.printSettings.images(i)]
+    #         self.projector.projectMulti(images,
+    #                                     self.printSettings.exposureTimeMs(i),
+    #                                     self.printSettings.ledPowers(i))
                                         
-            socketio.emit('print progress', 
-                          {'percent': int(100*i/totalLayerNum),
-                           'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                           'text': 'Layer {}'.format(i)}, 
-                          namespace='/calibration', broadcase=True)
+    #         socketio.emit('print progress', 
+    #                       {'percent': int(100*i/totalLayerNum),
+    #                        'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+    #                        'text': 'Layer {}'.format(i)}, 
+    #                       namespace='/calibration', broadcase=True)
                           
-        # Clean up
-        self.projector.stop()
-        self.projector.clear()
-        if self.printingPaused.is_set():
-            self.solus.pause()
-        else:
-            self.solus.goToZmax()
+    #     # Clean up
+    #     self.projector.stop()
+    #     self.projector.clear()
+    #     if self.printingPaused.is_set():
+    #         self.solus.pause()
+    #     else:
+    #         self.solus.goToZmax()
             
-            # save the end time to database
-            with app.app_context():
-                latestPrintRecord = PrintRecord.query.\
-                    order_by(PrintRecord.id.desc()).first()
-                latestPrintRecord.end_time = datetime.now()
-                if self.printingStopped.is_set():
-                    latestPrintRecord.completed = False
-                latestPrintRecord.save()
+    #         # save the end time to database
+    #         with app.app_context():
+    #             latestPrintRecord = PrintRecord.query.\
+    #                 order_by(PrintRecord.id.desc()).first()
+    #             latestPrintRecord.end_time = datetime.now()
+    #             if self.printingStopped.is_set():
+    #                 latestPrintRecord.completed = False
+    #             latestPrintRecord.save()
                 
-            if not self.printingStopped.is_set() and not self.printingPaused.is_set():
-                self.printer3d.state = 'completed'
-                message = {
-                    'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    'text': 'Printing Compeleted'
-                }
-                socketio.emit(self.printer3d.state, message, 
-                    namespace='/calibration', broadcast=True)
+    #         if not self.printingStopped.is_set() and not self.printingPaused.is_set():
+    #             self.printer3d.state = 'completed'
+    #             message = {
+    #                 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+    #                 'text': 'Printing Compeleted'
+    #             }
+    #             socketio.emit(self.printer3d.state, message, 
+    #                 namespace='/calibration', broadcast=True)
                 
     @property
     def isBusy(self):
