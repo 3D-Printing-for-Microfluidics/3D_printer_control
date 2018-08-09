@@ -99,7 +99,7 @@
 
 
 <!-- Light Engine Control -->
-<div class="container top-buffer">
+<div class="container top-buffer light-engine">
     <div class="row align-items-center">
         <h3>Light Engine</h3>
     </div>
@@ -107,18 +107,19 @@
     <!-- Upload Image -->
     <div class="row align-items-center">
         <h4 class="col-4 text-left">Image</h4>    
-        <form class="col-8">
-            <div class="form-group">
-                <input type="file" class="form-control-file" id="exampleFormControlFile1">
-            </div>
+        <form class="col-5">
+            <input type="file" class="form-control-file" name="file" id="file-picker">
         </form>    
+        <div class="col-3">
+            <button type="button" class="btn btn-primary btn-block" id="upload-btn">Upload</button>
+        </div>    
     </div>
 
     <!-- LED Power -->
     <div class="row align-items-center">
         <h4 class="col-3 text-left">LED Power</h4>
-        <h5 class="col-1 text-left" id="myValue"></h5>
-        <div class="slidecontainer col-8"><input type="range" min="1" max="1000" value="100" class="slider" id="myRange"></div>
+        <h5 class="col-1 text-left" id="LedPowerLabel"></h5>
+        <div class="slidecontainer col-8"><input type="range" min="1" max="1000" value="100" class="slider" id="LedPowerSlider"></div>
     </div>
 
     <!-- Repeat and Exposure Time -->
@@ -165,4 +166,5 @@
 {{super()}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
 <script src="{{ url_for('static', filename='js/calibrate.js') }}"></script>
+<!-- <script src="{{ url_for('static', filename='js/calibrate_upload.js') }}"></script> -->
 {% endblock %}
