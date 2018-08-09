@@ -6,10 +6,10 @@ import time
 class CalibrationControl:
 
     def setStep(self, motor, pinPattern):
-        print("CalibrationControl: setStep(" + motor + "," + pinPattern + ")")
+        print("CalibrationControl: setStep(", motor, ",", pinPattern, ")")
 
     def move(self, motor, steps): 
-        print("CalibrationControl: move(" + motor + "," + steps + ")")
+        print("CalibrationControl: move(", motor, ",", steps, ")")
         time.sleep(1)
     
     def test_sequence(self):

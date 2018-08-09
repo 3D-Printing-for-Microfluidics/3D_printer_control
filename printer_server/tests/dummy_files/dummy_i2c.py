@@ -19,7 +19,7 @@ class LightEngineI2C:
         print("LightEngineI2C: setLedAmplitude(" + i + ")")
         
     def parseSendSequence(self, sequence, repeat):
-        print("LightEngineI2C: parseSendSequence(" + sequence + "," + repeat + ")")
+        print("LightEngineI2C: parseSendSequence(", sequence, ",", repeat, ")")
         
     def disconnectServer(self):
         print("LightEngineI2C: disconnectServer()")
