@@ -111,8 +111,7 @@ class CalibrationThreads:
         """calibration_motor_move -- Move specified calibration 
         motor by specified number of steps
         """
-        axes = {"Tip": 0, "Tilt": 1, "Distance": 2}
-        self.calibrationControl.move(axes[axis], steps)
+        self.calibrationControl.move(axis, steps)
            
     @property
     def isBusy(self):
