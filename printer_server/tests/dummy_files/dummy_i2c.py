@@ -7,19 +7,19 @@ class LightEngineI2C:
     ledPower = 100
 
     def connect(self):
-        pass
+        print("LightEngineI2C: connect()")
 
     def start(self):
-        pass
+        print("LightEngineI2C: start()")
         
     def stop(self):
-        pass
+        print("LightEngineI2C: stop()")
         
     def setLedAmplitude(self, i):
-        pass
+        print("LightEngineI2C: setLedAmplitude(" + i + ")")
         
     def parseSendSequence(self, sequence, repeat):
-        pass
+        print("LightEngineI2C: parseSendSequence(" + sequence + "," + repeat + ")")
         
     def disconnectServer(self):
-        pass
+        print("LightEngineI2C: disconnectServer()")

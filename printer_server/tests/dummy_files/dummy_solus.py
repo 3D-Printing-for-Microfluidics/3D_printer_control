@@ -6,33 +6,34 @@ import time
 class Solus:
     def __init__(self, hwid):
         self.hwid = hwid
-    #     self.is_open = False
-    #     self.initialized = False
-    #     self.z = 'up'
 
     def connect(self):
-        pass
+        print("Solus: connect()")        
 
     def initialize(self):
-        time.sleep(3)
+        print("Solus: initialize()")
+        time.sleep(1)
 
     def goToZmin(self):
-        time.sleep(3)
+        print("Solus: goToZmin()")
+        time.sleep(1)
 
     def goToZmax(self):
-        time.sleep(3)
+        print("Solus: goToZmax()")
+        time.sleep(1)
         
     def goToFirstLayerHeight(self, *args):
-        time.sleep(3)
+        print("Solus: goToFirstLayerHeight()")
+        time.sleep(1)
         
     def resume(self, *args):
-        pass
+        print("Solus: resume()")
         
     def printCycle(self, *args):
-        pass
+        print("Solus: printCycle()")
         
     def pause(self):
-        pass
+        print("Solus: pause()")
         
     def __del__(self):
         pass
