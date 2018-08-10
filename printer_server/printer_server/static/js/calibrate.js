@@ -30,6 +30,14 @@ var disable_upload_buttons = function(){
     $('.light-engine button').prop('disabled', true);
 }
 
+var enable_upload_button = function(){
+    $('#upload-btn').prop('disabled', false);
+}
+
+var disable_upload_button = function(){
+    $('#upload-btn').prop('disabled', true);
+}
+
 var disable_project_start_button = function(){
     $('#le-start-btn').prop('disabled', true);
 }
@@ -49,6 +57,7 @@ $(document).ready(function(){
     var LedPowerSliderElement = document.getElementById("led-power-slider");
     var LedPowerLabelElement  = document.getElementById("led-power-label");
     var exposureElement       = document.getElementById("exposure-txt");
+    var filePickerElement     = document.getElementById("file-picker");
     
     // Set initial LED power slider label value 
     LedPowerLabelElement.innerHTML = LedPowerSliderElement.value; // Display the default slider value
@@ -61,7 +70,7 @@ $(document).ready(function(){
     // Once hardware is initialized, enable controls 
     socket.on("initialized", function(){
         enable_all_buttons();
-        disable_project_start_button();
+        disable_upload_buttons();
     });
     
     // Enable calibration motor buttons when current motion is complete 
@@ -76,12 +85,31 @@ $(document).ready(function(){
 
     // Once once upload is complete, re-enable upload controls  
     socket.on("calibration_image_uploaded", function(){
-        enable_upload_buttons();
+        filePickerElement.classList.remove("is-invalid")
+        
+        var exposure = exposureElement.value;
+        // Validate user input for exposure. Only allows positive integers > 0
+        if(/^\d+$/.test(exposure) && exposure > 0){
+            enable_upload_buttons();
+        } else {
+            disable_upload_buttons();
+        }
     });
-    
+
+    // If a bad file was uploaded, disable upload options  
+    socket.on("calibration_image_bad", function(){
+        filePickerElement.classList.add("is-invalid")
+        disable_upload_buttons();
+    });
+
+    // Enable upload button when a file is chosen
+    $("#file-picker").on("click", function(e) {
+        enable_upload_button();
+    });
+
     // Upload button click function 
     $("#upload-btn").on("click", function(e) {
-        var selectedFile = document.getElementById('file-picker').files[0];
+        var selectedFile = filePickerElement.files[0];
         if (typeof selectedFile !== 'undefined') {  // if there is a file selected 
             disable_upload_buttons();
             uploadFile(selectedFile);
@@ -112,10 +140,10 @@ $(document).ready(function(){
         // Validate user input. Only allows positive integers > 0
         if(/^\d+$/.test(exposure) && exposure > 0){
             exposureElement.classList.remove("is-invalid")
-            enable_project_start_button();
+            enable_upload_buttons();
         } else {
             exposureElement.classList.add("is-invalid")
-            disable_project_start_button();
+            disable_upload_buttons();
         }
     })
 
@@ -125,6 +153,9 @@ $(document).ready(function(){
         var exposure = exposureElement.value;
         var repeat = Number(!repeatCheckboxElement.checked);
         var ledPower = LedPowerSliderElement.value;
+
+
+
         socket.emit("light_engine_start", {"repeat": repeat, "exposure": exposure, "ledPower": ledPower});
     });
 

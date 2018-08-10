@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Control view."""
 import os
+import imghdr
+from PIL import Image
 from flask import Blueprint, request, render_template
 from datetime import datetime
 
@@ -57,6 +59,18 @@ def lightEngineProject(message):
 @blueprint.route('handle-calibration-upload', methods=['POST'])
 def handleUpload():
     file = request.files.getlist('file')[0]
-    file.save(image)
-    socketio.emit('calibration_image_uploaded', namespace='/calibrate', broadcast=True)
+    try:
+        pilImage = Image.open(file)                             # Open file as PIL object 
+        if pilImage.format != "PNG" or pilImage.mode != "L":    # Check image format and mode
+            socketio.emit('calibration_image_bad', namespace='/calibrate', broadcast=True)
+        else:                                                   # File is a good image 
+            pilImage.close()
+            file.save(image)
+            socketio.emit('calibration_image_uploaded', namespace='/calibrate', broadcast=True)
+    except (OSError, FileNotFoundError):                        # File has big issues 
+        socketio.emit('calibration_image_bad', namespace='/calibrate', broadcast=True)
     return ''   # this line is requred as a response must be returned 
+
+    # file.save(image)
+    # socketio.emit('calibration_image_uploaded', namespace='/calibrate', broadcast=True)
+    # return ''   # this line is requred as a response must be returned 
