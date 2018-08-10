@@ -118,27 +118,27 @@
     <!-- LED Power -->
     <div class="row align-items-center">
         <h4 class="col-3 text-left">LED Power</h4>
-        <h5 class="col-1 text-left" id="LedPowerLabel"></h5>
-        <div class="slidecontainer col-8"><input type="range" min="1" max="1000" value="100" class="slider" id="LedPowerSlider"></div>
+        <h5 class="col-1 text-left" id="led-power-label"></h5>
+        <div class="slidecontainer col-8"><input type="range" min="1" max="1000" value="100" class="slider" id="led-power-slider"></div>
     </div>
 
     <!-- Repeat and Exposure Time -->
     <div class="row align-items-center">
         <h4 class="col-4 text-left">Exposure</h4>    
         <div class="col-2 form-group text-center">
-            <input class="form-check-input" type="checkbox" value="" id="defaultCheck1">
-            <label class="form-check-label" for="defaultCheck1">Repeat</label>
+            <input class="form-check-input" type="checkbox" value="" id="repeat-chkbx">
+            <label class="form-check-label" for="repeat-chkbx">Repeat</label>
         </div>
         <div class="col-6 form-group">
-            <input class="form-control" type="text" placeholder="Exposure Time (ms)">
+            <input class="form-control" type="text" id="exposure-txt" placeholder="Exposure Time (ms)">
         </div>
     </div>
 
     <!-- Start Stop -->
     <div class="row align-items-center">
         <h4 class="col-6">Project</h4>
-        <div class="col-3"><button type="button" class="btn btn-primary btn-block" data-toggle="modal" data-target="#confirmModal" id="init-btn">Start</button></div>
-        <div class="col-3"><button type="button" class="btn btn-primary btn-block" data-toggle="modal" data-target="#confirmModal" id="init-btn">Stop</button></div>
+        <div class="col-3"><button type="button" class="btn btn-primary btn-block" data-toggle="modal" data-target="#confirmModal" id="le-start-btn">Start</button></div>
+        <div class="col-3"><button type="button" class="btn btn-primary btn-block" data-toggle="modal" data-target="#confirmModal" id="le-stop-btn">Stop</button></div>
     </div>
 
 </div>
@@ -166,5 +166,4 @@
 {{super()}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
 <script src="{{ url_for('static', filename='js/calibrate.js') }}"></script>
-<!-- <script src="{{ url_for('static', filename='js/calibrate_upload.js') }}"></script> -->
 {% endblock %}
