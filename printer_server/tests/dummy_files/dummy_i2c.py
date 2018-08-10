@@ -16,7 +16,7 @@ class LightEngineI2C:
         print("LightEngineI2C: stop()")
         
     def setLedAmplitude(self, i):
-        print("LightEngineI2C: setLedAmplitude(" + i + ")")
+        print("LightEngineI2C: setLedAmplitude(", i, ")")
         
     def parseSendSequence(self, sequence, repeat):
         print("LightEngineI2C: parseSendSequence(", sequence, ",", repeat, ")")
