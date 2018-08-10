@@ -12,6 +12,9 @@ from printer_server.extensions import socketio
 # Create bluprint 
 blueprint = Blueprint('calibrate', __name__, url_prefix='/', static_folder='../static')
 
+# Specify location of uploaded image 
+image = os.path.join(CalibrationConfig.UPLOAD_FOLDER, 'calibration_images','temp.png')
+
 # Decorator to handle navigation to calibration page 
 @blueprint.route('/calibrate')
 def index():
@@ -34,13 +37,26 @@ def solus_go_to_bottom():
     calibrationThreads.goToZmin()
 
 @socketio.on('calibration_motor', namespace='/calibrate')
-def calibration_motor_move(message):
-    calibrationThreads.calibration_motor_move(message["axis"],message["steps"])
+def calibrationMotorMove(message):
+    calibrationThreads.calibrationMotorMove(
+                       message["axis"],
+                       message["steps"])
+
+@socketio.on('light_engine_stop', namespace='/calibrate')
+def lightEngineStop():
+    calibrationThreads.lightEngineStop()
+
+@socketio.on('light_engine_start', namespace='/calibrate')
+def lightEngineProject(message):
+    calibrationThreads.lightEngineProject(
+                       image, 
+                       int(message["ledPower"]),
+                       int(message["repeat"]),
+                       int(message["exposure"]))
 
 @blueprint.route('handle-calibration-upload', methods=['POST'])
 def handleUpload():
     file = request.files.getlist('file')[0]
-    newFilename = os.path.join(CalibrationConfig.UPLOAD_FOLDER, 'calibration_images','temp.png')
-    file.save(newFilename)
+    file.save(image)
     socketio.emit('calibration_image_uploaded', namespace='/calibrate', broadcast=True)
     return ''   # this line is requred as a response must be returned 

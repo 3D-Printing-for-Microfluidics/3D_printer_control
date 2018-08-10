@@ -37,11 +37,11 @@ $(document).ready(function(){
     disable_all_buttons();
     socket.emit("initialize");
 
-    // Handles to LedPower slider and label 
-    var LedPowerSliderElement = document.getElementById("LedPowerSlider");
-    var LedPowerLabelElement  = document.getElementById("LedPowerLabel");
+    // Handles to LED power slider and label 
+    var LedPowerSliderElement = document.getElementById("led-power-slider");
+    var LedPowerLabelElement  = document.getElementById("led-power-label");
     
-    // Set initial LedPower slider label value 
+    // Set initial LED power slider label value 
     LedPowerLabelElement.innerHTML = LedPowerSliderElement.value; // Display the default slider value
 
     // Update the LedPowerLabelElement with the current slider value
@@ -76,7 +76,6 @@ $(document).ready(function(){
             disable_upload_buttons();
             uploadFile(selectedFile);
         }
-        
     });
 
     // Solus control top button click function 
@@ -89,6 +88,21 @@ $(document).ready(function(){
     $("#solus-bottom-btn").click(function() {
         disable_solus_buttons();
         socket.emit("solus_go_to_bottom");
+    });
+
+    // Light engine control stop button click function 
+    $("#le-stop-btn").click(function() {
+        socket.emit("light_engine_stop");
+    });
+
+    // Light engine control start button click function 
+    $("#le-start-btn").click(function() {
+        repeatCheckboxElement = document.getElementById("repeat-chkbx");
+        exposure = document.getElementById("exposure-txt").value;
+        repeat = Number(!repeatCheckboxElement.checked);
+        ledPower = LedPowerSliderElement.value;
+        if(exposure != "")
+            socket.emit("light_engine_start", {"repeat": repeat, "exposure": exposure, "ledPower": ledPower});
     });
 
     // Handles to auto-updating position labels
@@ -116,6 +130,7 @@ $(document).ready(function(){
 });
 
 function uploadFile(image) {
+    // TODO: Add validation, check to see if .png, if has 8-bit depth 
     var fd = new FormData();    // Create form data 
     fd.append("file", image);   // Attach the image file 
     $.ajax({                    // Use ajax to compose and send the request  

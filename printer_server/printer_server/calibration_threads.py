@@ -107,12 +107,28 @@ class CalibrationThreads:
         self.solus.goToZmin()
 
     @thread_decorator('calibration_motor_done', 'Calibration move done')
-    def calibration_motor_move(self, axis, steps):
-        """calibration_motor_move -- Move specified calibration 
+    def calibrationMotorMove(self, axis, steps):
+        """calibrationMotorMove -- Move specified calibration 
         motor by specified number of steps
         """
         self.calibrationControl.move(axis, steps)
            
+    @thread_decorator('light_engine_stop_complete', 'Light engine stopped')
+    def lightEngineStop(self):
+        """lightEngineStop -- Turn off the LED in the light engine 
+        """
+        self.projector.stop()
+        self.projector.clear()
+
+    @thread_decorator('light_engine_start_complete', 'Light engine started')
+    def lightEngineProject(self, image, ledPower, repeat, exposure):
+        """lightEngineProject -- Project the image with the given settings 
+        """
+        self.projector.calibrateProject(image, ledPower, repeat, exposure)
+        print("repeat: ",repeat)
+        if repeat:      # repeat == 1 means show once, == 0 means repeat forever  
+            self.projector.clear()
+
     @property
     def isBusy(self):
         """boolean -- whether the printer is printing"""
