@@ -30,6 +30,14 @@ var disable_upload_buttons = function(){
     $('.light-engine button').prop('disabled', true);
 }
 
+var disable_project_start_button = function(){
+    $('#le-start-btn').prop('disabled', true);
+}
+
+var enable_project_start_button = function(){
+    $('#le-start-btn').prop('disabled', false);
+}
+
 $(document).ready(function(){
     
     // Set up socket, disable all controls, and send message to initialize hardware 
@@ -37,9 +45,10 @@ $(document).ready(function(){
     disable_all_buttons();
     socket.emit("initialize");
 
-    // Handles to LED power slider and label 
+    // Handles to user inputs 
     var LedPowerSliderElement = document.getElementById("led-power-slider");
     var LedPowerLabelElement  = document.getElementById("led-power-label");
+    var exposureElement       = document.getElementById("exposure-txt");
     
     // Set initial LED power slider label value 
     LedPowerLabelElement.innerHTML = LedPowerSliderElement.value; // Display the default slider value
@@ -52,6 +61,7 @@ $(document).ready(function(){
     // Once hardware is initialized, enable controls 
     socket.on("initialized", function(){
         enable_all_buttons();
+        disable_project_start_button();
     });
     
     // Enable calibration motor buttons when current motion is complete 
@@ -95,14 +105,27 @@ $(document).ready(function(){
         socket.emit("light_engine_stop");
     });
 
+    // Exposure text input change function 
+    $('#exposure-txt').on('change', function() {
+        exposure = exposureElement.value;
+
+        // Validate user input. Only allows positive integers > 0
+        if(/^\d+$/.test(exposure) && exposure > 0){
+            exposureElement.classList.remove("is-invalid")
+            enable_project_start_button();
+        } else {
+            exposureElement.classList.add("is-invalid")
+            disable_project_start_button();
+        }
+    })
+
     // Light engine control start button click function 
     $("#le-start-btn").click(function() {
-        repeatCheckboxElement = document.getElementById("repeat-chkbx");
-        exposure = document.getElementById("exposure-txt").value;
-        repeat = Number(!repeatCheckboxElement.checked);
-        ledPower = LedPowerSliderElement.value;
-        if(exposure != "")
-            socket.emit("light_engine_start", {"repeat": repeat, "exposure": exposure, "ledPower": ledPower});
+        var repeatCheckboxElement = document.getElementById("repeat-chkbx");
+        var exposure = exposureElement.value;
+        var repeat = Number(!repeatCheckboxElement.checked);
+        var ledPower = LedPowerSliderElement.value;
+        socket.emit("light_engine_start", {"repeat": repeat, "exposure": exposure, "ledPower": ledPower});
     });
 
     // Handles to auto-updating position labels
