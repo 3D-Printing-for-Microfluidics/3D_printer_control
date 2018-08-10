@@ -108,7 +108,10 @@
     <div class="row align-items-center">
         <h4 class="col-4 text-left">Image</h4>    
         <form class="col-5">
-            <input type="file" class="form-control-file" name="file" id="file-picker">
+            <input type="file" class="form-control-file" name="file" accept=".png" id="file-picker">
+            <div class="invalid-feedback">
+                Please provide a valid png file.
+            </div>
         </form>    
         <div class="col-3">
             <button type="button" class="btn btn-primary btn-block" id="upload-btn">Upload</button>
