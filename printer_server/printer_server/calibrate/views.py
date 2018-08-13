@@ -2,6 +2,7 @@
 """Control view."""
 import os
 import imghdr
+import copy 
 from PIL import Image
 from flask import Blueprint, request, render_template
 from datetime import datetime
@@ -14,8 +15,8 @@ from printer_server.extensions import socketio
 # Create bluprint 
 blueprint = Blueprint('calibrate', __name__, url_prefix='/', static_folder='../static')
 
-# Specify location of uploaded image 
-image = os.path.join(CalibrationConfig.UPLOAD_FOLDER, 'calibration_images','temp.png')
+# Specify location of uploaded image and give default name 
+imagePath = os.path.join(CalibrationConfig.UPLOAD_FOLDER, 'calibration_images','temp.png')
 
 # Decorator to handle navigation to calibration page 
 @blueprint.route('/calibrate')
@@ -51,26 +52,24 @@ def lightEngineStop():
 @socketio.on('light_engine_start', namespace='/calibrate')
 def lightEngineProject(message):
     calibrationThreads.lightEngineProject(
-                       image, 
+                       imagePath, 
                        int(message["ledPower"]),
                        int(message["repeat"]),
                        int(message["exposure"]))
 
 @blueprint.route('handle-calibration-upload', methods=['POST'])
 def handleUpload():
-    file = request.files.getlist('file')[0]
-    try:
-        pilImage = Image.open(file)                             # Open file as PIL object 
-        if pilImage.format != "PNG" or pilImage.mode != "L":    # Check image format and mode
-            socketio.emit('calibration_image_bad', namespace='/calibrate', broadcast=True)
-        else:                                                   # File is a good image 
-            pilImage.close()
-            file.save(image)
-            socketio.emit('calibration_image_uploaded', namespace='/calibrate', broadcast=True)
-    except (OSError, FileNotFoundError):                        # File has big issues 
-        socketio.emit('calibration_image_bad', namespace='/calibrate', broadcast=True)
-    return ''   # this line is requred as a response must be returned 
-
-    # file.save(image)
-    # socketio.emit('calibration_image_uploaded', namespace='/calibrate', broadcast=True)
-    # return ''   # this line is requred as a response must be returned 
+    if 'file' in request.files:             # Check if the post request has the file part
+        file = request.files['file']        # Get the file
+        if file.filename != '' and file:    # File part of request actually has a file 
+            try:
+                with Image.open(file) as pilImage:                          # Open file as PIL object 
+                    if pilImage.format == "PNG" and pilImage.mode == "L":   # Check imagePath format and mode
+                        file.stream.seek(0)     # Seek to the beginning of file (fixes bug in Werkzeug file I\O)
+                        file.save(imagePath)    # save it to the server 
+                        socketio.emit('calibration_image_uploaded', namespace='/calibrate', broadcast=True)
+                        return ''
+            except (OSError, FileNotFoundError):                            # File has big issues 
+                pass
+    socketio.emit('calibration_image_bad', namespace='/calibrate', broadcast=True)
+    return '' 
