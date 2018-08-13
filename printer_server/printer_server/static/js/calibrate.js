@@ -46,6 +46,16 @@ var enable_project_start_button = function(){
     $('#le-start-btn').prop('disabled', false);
 }
 
+var enable_project_start_stop_buttons = function(){
+    $('#le-start-btn').prop('disabled', false);
+    $('#le-stop-btn').prop('disabled', false);
+}
+
+var disable_project_start_stop_buttons = function(){
+    $('#le-start-btn').prop('disabled', true);
+    $('#le-stop-btn').prop('disabled', true);
+}
+
 $(document).ready(function(){
     
     // Set up socket, disable all controls, and send message to initialize hardware 
@@ -86,13 +96,14 @@ $(document).ready(function(){
     // Once once upload is complete, re-enable upload controls  
     socket.on("calibration_image_uploaded", function(){
         filePickerElement.classList.remove("is-invalid")
+        enable_upload_button()
         
         var exposure = exposureElement.value;
         // Validate user input for exposure. Only allows positive integers > 0
         if(/^\d+$/.test(exposure) && exposure > 0){
-            enable_upload_buttons();
+            enable_project_start_stop_buttons();    // input was good 
         } else {
-            disable_upload_buttons();
+            disable_project_start_stop_buttons();   // input was bad 
         }
     });
 
@@ -140,10 +151,10 @@ $(document).ready(function(){
         // Validate user input. Only allows positive integers > 0
         if(/^\d+$/.test(exposure) && exposure > 0){
             exposureElement.classList.remove("is-invalid")
-            enable_upload_buttons();
+            enable_project_start_stop_buttons();
         } else {
             exposureElement.classList.add("is-invalid")
-            disable_upload_buttons();
+            disable_project_start_stop_buttons();
         }
     })
 
@@ -153,9 +164,6 @@ $(document).ready(function(){
         var exposure = exposureElement.value;
         var repeat = Number(!repeatCheckboxElement.checked);
         var ledPower = LedPowerSliderElement.value;
-
-
-
         socket.emit("light_engine_start", {"repeat": repeat, "exposure": exposure, "ledPower": ledPower});
     });
 
