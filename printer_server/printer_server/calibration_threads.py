@@ -125,7 +125,6 @@ class CalibrationThreads:
         """lightEngineProject -- Project the image with the given settings 
         """
         self.projector.calibrateProject(image, ledPower, repeat, exposure)
-        print("repeat: ",repeat)
         if repeat:      # repeat == 1 means show once, == 0 means repeat forever  
             self.projector.clear()
 
