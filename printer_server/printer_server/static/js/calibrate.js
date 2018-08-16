@@ -61,6 +61,7 @@ $(document).ready(function(){
     // Set up socket, disable all controls, and send message to initialize hardware 
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/calibrate");
     disable_all_buttons();
+    console.log("emit initialize")
     socket.emit("initialize");
 
     // Handles to user inputs 
@@ -130,17 +131,21 @@ $(document).ready(function(){
     // Solus control top button click function 
     $("#solus-top-btn").click(function() {
         disable_solus_buttons();
+        console.log("emit solus_go_to_top")
         socket.emit("solus_go_to_top");
     });
 
     // Solus control bottom button click function 
     $("#solus-bottom-btn").click(function() {
         disable_solus_buttons();
+        console.log("emit solus_go_to_bottom")        
         socket.emit("solus_go_to_bottom");
     });
 
+    
     // Light engine control stop button click function 
     $("#le-stop-btn").click(function() {
+        console.log("emit light_engine_stop")        
         socket.emit("light_engine_stop");
     });
 
@@ -164,6 +169,7 @@ $(document).ready(function(){
         var exposure = exposureElement.value;
         var repeat = Number(!repeatCheckboxElement.checked);
         var ledPower = LedPowerSliderElement.value;
+        console.log("emit light_engine_start", repeat, exposure, ledPower)
         socket.emit("light_engine_start", {"repeat": repeat, "exposure": exposure, "ledPower": ledPower});
     });
 
@@ -187,12 +193,12 @@ $(document).ready(function(){
         // Disable calibration motor buttons  
         disable_calibration_motor_buttons();
         // Emit control message with parsed values 
+        console.log("calibration_motor", axis, steps)
         socket.emit("calibration_motor", {"axis": axis, "steps": steps});
     });
 });
 
 function uploadFile(image) {
-    // TODO: Add validation, check to see if .png, if has 8-bit depth 
     var fd = new FormData();    // Create form data 
     fd.append("file", image);   // Attach the image file 
     $.ajax({                    // Use ajax to compose and send the request  
