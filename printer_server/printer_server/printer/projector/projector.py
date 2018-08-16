@@ -116,8 +116,7 @@ class Projector:
         if repeat != 0: 
             self.project(image, exposureTime, ledPower)
         else: 
-            if ledPower != self.ledPower:
-                self.setLedAmplitude(ledPower)
+            self.setLedAmplitude(ledPower)
             self.sendSequence(exposureTime, repeat)
             self.screenThread.screen.draw(image)
             time.sleep(0.1)
