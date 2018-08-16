@@ -1,5 +1,3 @@
-from tkinter import Tk, Label, Button, Entry, IntVar, END, W, E
-from functools import partial
 import RPi.GPIO as GPIO
 import time
 
@@ -19,22 +17,22 @@ class CalibrationControl:
         self.pin_names = ['IN1','IN2','IN3','IN4']
         self.pins = {
             self.motors[0]:{            # tip 
-                self.pin_names[0]:23,    
-                self.pin_names[1]:24,   
-                self.pin_names[2]:22,   
-                self.pin_names[3]:10    
+                self.pin_names[0]:14,    
+                self.pin_names[1]:15,   
+                self.pin_names[2]:18,   
+                self.pin_names[3]:4    
             },
             self.motors[1]:{            # tilt 
-                self.pin_names[0]:15,   
-                self.pin_names[1]:18,    
-                self.pin_names[2]:17,  
-                self.pin_names[3]:27    
+                self.pin_names[0]:17,   
+                self.pin_names[1]:27,    
+                self.pin_names[2]:22,  
+                self.pin_names[3]:23    
             },
             self.motors[2]:{            # distance 
-                self.pin_names[0]:4,    
-                self.pin_names[1]:3,     
-                self.pin_names[2]:2,    
-                self.pin_names[3]:14    
+                self.pin_names[0]:24,    
+                self.pin_names[1]:25,     
+                self.pin_names[2]:10,    
+                self.pin_names[3]:9    
             }
         }
 
@@ -45,7 +43,7 @@ class CalibrationControl:
         for motor in self.pins:   
             for pin in self.pins[motor]: 
                 GPIO.setup(self.pins[motor][pin], GPIO.OUT) # set every pin as output      
-
+        
     # Set GPIO pins on specified motor to given pattern 
     def setStep(self, motor, pinPattern):
         for i in range(len(self.pin_names)):
@@ -106,3 +104,7 @@ class CalibrationControl:
                 self.setStep(m, [0,0,0,0])
         except:
             pass
+
+if __name__ == '__main__':
+    c=CalibrationControl()
+    c.test_sequence()
