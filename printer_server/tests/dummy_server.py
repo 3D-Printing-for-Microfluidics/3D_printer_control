@@ -25,12 +25,12 @@ sys.modules[module_name] = dummy_module
 _code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_i2c.py'), 'rb').read()
 exec(_code, dummy_module.__dict__)
 
-# dummy calibration control module 
-module_name = 'printer_server.printer.calibrationControl'
-dummy_module = types.ModuleType(module_name)
-sys.modules[module_name] = dummy_module
-_code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_calibrationControl.py'), 'rb').read()
-exec(_code, dummy_module.__dict__)
+# # dummy calibration control module 
+# module_name = 'printer_server.printer.calibrationControl'
+# dummy_module = types.ModuleType(module_name)
+# sys.modules[module_name] = dummy_module
+# _code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_calibrationControl.py'), 'rb').read()
+# exec(_code, dummy_module.__dict__)
 
 # dummy hardware module 
 module_name = 'printer_server.hardware'
@@ -53,4 +53,5 @@ app = create_app(CONFIG)
 
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000)
+    # app.run(host='127.0.0.1', port=5000)
+    app.run(host='0.0.0.0', port=5000)
