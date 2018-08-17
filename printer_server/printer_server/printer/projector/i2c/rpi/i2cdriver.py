@@ -28,6 +28,8 @@ class LightEngineI2C:
     :param logger: a ``logging.logger`` object. If not specified, 
                    the ``print`` function will be used. 
     """
+    I2C_IO_DELAY = .001   # Delay after every I2C command, 10ms 
+    
     def __init__(self, bus=1, logger=None):
         self.bus = bus
         self.logger = logger
@@ -35,7 +37,9 @@ class LightEngineI2C:
 
     def connect(self):
         self.dmd = self.pi.i2c_open(self.bus, TI_I2C_RADDR>>1)
+        time.sleep(self.I2C_IO_DELAY)
         self.led = self.pi.i2c_open(self.bus, LED_I2C_WADDR>>1)
+        time.sleep(self.I2C_IO_DELAY)
 
         self.stop()
         self.setPixelMode(0)
@@ -61,6 +65,7 @@ class LightEngineI2C:
             TI_REG_W_SEQUENCE, 
             TI_SEQUENCE_ON
         )
+        time.sleep(self.I2C_IO_DELAY)
 
     def stop(self):
         self.pi.i2c_write_byte_data(
@@ -68,6 +73,7 @@ class LightEngineI2C:
             TI_REG_W_SEQUENCE, 
             TI_SEQUENCE_OFF
         )
+        time.sleep(self.I2C_IO_DELAY)
 
     def pause(self):
         self.pi.i2c_write_byte_data(
@@ -75,10 +81,12 @@ class LightEngineI2C:
             TI_REG_W_SEQUENCE, 
             TI_SEQUENCE_PAUSE
         )
+        time.sleep(self.I2C_IO_DELAY)
 
     def initDisplayMode(self):
         time.sleep(5) # must wait for at least 5 s to read or write display mode
         mode = self.pi.i2c_read_byte_data(self.dmd, TI_REG_R_DISPLAY_MODE)
+        time.sleep(self.I2C_IO_DELAY)
         if mode == 0: # Normal video mode, need to initialize to video pattern mode
             self.setDisplayMode(0) # set to video pattern mode
 
@@ -99,6 +107,7 @@ class LightEngineI2C:
             TI_REG_W_DISPLAY_MODE, 
             patternModes[mode]
         )
+        time.sleep(self.I2C_IO_DELAY)
 
     def setVideoInput(self, input):
         """Set video source. 
@@ -117,6 +126,7 @@ class LightEngineI2C:
             TI_REG_W_IT6535, 
             inputSources[input]
         )
+        time.sleep(self.I2C_IO_DELAY)
 
     def setPixelMode(self, mode):
         '''0: single; 1: dual.'''
@@ -126,6 +136,7 @@ class LightEngineI2C:
             TI_REG_W_PIXEL_MODE, 
             pixelModes[mode]
         )
+        time.sleep(self.I2C_IO_DELAY)
 
     def setInternalImage(self, imageNum):
         '''imageNum range: 0 - 10'''
@@ -134,11 +145,13 @@ class LightEngineI2C:
             TI_REG_W_DISPLAY_MODE, 
             TI_DISPLAY_MODE_PRE_STORED
         )
+        time.sleep(self.I2C_IO_DELAY)
         self.pi.i2c_write_byte_data(
             self.dmd, 
             TI_REG_W_TEST_PATTERN, 
             imageNum
         )
+        time.sleep(self.I2C_IO_DELAY)
 
     def parseSendSequence(self, sequence, repeat):
         assert [len(l) for l in sequence] == [len(sequence[0])] * len(sequence)
@@ -191,12 +204,14 @@ class LightEngineI2C:
             self.dmd, 
             addr + numPattern + repeat
         )
+        time.sleep(self.I2C_IO_DELAY)
 
     def getSequencerStatus(self):
         seqstat = self.pi.i2c_read_byte_data(
             self.led, 
             TI_REG_R_MAIN_STATUS
         )
+        time.sleep(self.I2C_IO_DELAY)
         self.log(logging.INFO, "Sequencer status: {}".format(seqstat))
 
     ###################################
@@ -206,13 +221,15 @@ class LightEngineI2C:
         register = int(register).to_bytes(4, byteorder='big')
         param = int(param).to_bytes(4, byteorder='big')
         self.pi.i2c_write_device(self.led, register+param)
-        time.sleep(0.01)
+        time.sleep(self.I2C_IO_DELAY)
 
     def readLedParam(self, register):
         # TODO: check read result format
         register = int(register).to_bytes(4, byteorder='big')
         self.pi.i2c_write_device(self.led, register)
+        time.sleep(self.I2C_IO_DELAY)
         count, data = self.pi.i2c_read_device(self.led, 4)
+        time.sleep(self.I2C_IO_DELAY)
         # data is a `bytearray` object
         return int.from_bytes(data, byteorder='big')
 
