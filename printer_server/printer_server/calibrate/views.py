@@ -25,12 +25,10 @@ def index():
 
 @socketio.on('connect', namespace='/calibrate')
 def connect():
-    print("on connect")
 
 # If hardware isn't initialized, initialize it 
 @socketio.on('initialize', namespace='/calibrate')
 def initialize():
-    print("on initialize")
     if printer3d.state is 'uninitialized':
         calibrationThreads.initialize()
     else: 
@@ -39,34 +37,28 @@ def initialize():
 # Reset printer stat e 
 @socketio.on('reset_printer_state', namespace='/calibrate')
 def resetPrinterState():
-    print("reset_printer_state")
     printer3d.state = 'initialized'
   
 @socketio.on('solus_go_to_top', namespace='/calibrate')
 def solus_go_to_top():
-    print("on solus_go_to_top")
     calibrationThreads.goToZmax()
 
 @socketio.on('solus_go_to_bottom', namespace='/calibrate')
 def solus_go_to_bottom():
-    print("on solus_go_to_bottom")
     calibrationThreads.goToZmin()
 
 @socketio.on('calibration_motor', namespace='/calibrate')
 def calibrationMotorMove(message):
-    print("on calibration_motor", message["axis"], message["steps"])
     calibrationThreads.calibrationMotorMove(
                        message["axis"],
                        int(message["steps"]))
 
 @socketio.on('light_engine_stop', namespace='/calibrate')
 def lightEngineStop():
-    print("on light_engine_stop")
     calibrationThreads.lightEngineStop()
 
 @socketio.on('light_engine_start', namespace='/calibrate')
 def lightEngineProject(message):
-    print("on light_engine_start", message["ledPower"], message["repeat"], message["exposure"])
     calibrationThreads.lightEngineProject(
                        imagePath, 
                        int(message["ledPower"]),
