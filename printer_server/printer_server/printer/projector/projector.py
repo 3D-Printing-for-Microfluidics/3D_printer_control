@@ -12,15 +12,16 @@ from .i2c import LightEngineI2C
 class Projector:
     """
     """
-    def __init__(self, projectorResolution):
-        self.resolution = projectorResolution
+    def __init__(self, resolution, fullscreen=True):
+        self.resolution = resolution
+        self.fullscreen = fullscreen
         self.i2c = LightEngineI2C()
     
     def connect(self):
         """Create a :py:class:ScreenThread object and run it.
         Also, connect to the I\ :sup:`2`\ C.
         """
-        self.screenThread = ScreenThread(self.resolution)
+        self.screenThread = ScreenThread(self.resolution, self.fullscreen)
         self.screenThread.start()
         self.i2c.connect()
         
@@ -37,7 +38,7 @@ class Projector:
         
         :param int i: between 1 and 1000. If it is too low or 
                       too high, the LED amplitude will not be 
-                      change. 
+                      changed. 
         """
         if i >= 1 and i <= 1000:
             self.i2c.setLedAmplitude(int(i))
@@ -76,25 +77,51 @@ class Projector:
             self.setLedAmplitude(ledPower)
             
         for t in exposureTime:
-            self.setProjectingTime(t)
+            self.sendSequence(t)
             self.screenThread.screen.draw(image)
             time.sleep(0.1)
             self.start()
             time.sleep(0.1 + t * 1e-3)
             self.stop()
             
-    def setProjectingTime(self, t):
-        '''Set projecting time in millisecond.'''
-        repeat = 1
-        exptime = int(t * 1e3)
-        bitdepth = 7 # 7 means 8 bits
-        vsync = 1
-        darktime = 0
-        bitposition = 0
-        sequence = [[exptime, bitdepth, 1, vsync, 
-                     darktime, bitposition, 0]]
+    def sendSequence(self, exposure, repeat=1, bitdepth=7, vsync=1, darktime=0, bitposition=0):
+        """Generate and send control sequence
+
+        :param int exposure: exposure time (ms)
+        :param int repeat: number of times to repeat pattern sequence
+                           0 - repeat forever, (1-4294967296) - repeat 
+                           n times 
+        :param int bitdepth: image bit depth. 7 means 8 bits 
+        :param int vsync: 1 = Wait for VSYNC before displaying the 
+                          pattern, 0 = Continue running after previous 
+                          pattern 
+        :param int darktime: (0-2^24) Dark display time following exposure     
+        :param int bitposition: see DLPC900 datasheet     
+        
+        """
+        exptime = int(exposure * 1e3)   # convert to us 
+        sequence = [[exptime, bitdepth, 1, vsync, darktime, bitposition, 0]]
         self.i2c.parseSendSequence(sequence, repeat)
         
+    def calibrateProject(self, image, ledPower, repeat, exposureTime):
+        """Enable continuous projection of an image for 
+        calibration
+        
+        :param image: an 8-bit grayscale image filename
+        :param int ledPower: LED power setting (0-1000)
+        :param int repeat: 0 repeats forever, 1 repeat 
+                           once (normal operation)
+        :param int exposureTime: exposure time (ms).
+        """
+        if repeat != 0: 
+            self.project(image, exposureTime, ledPower)
+        else: 
+            self.setLedAmplitude(ledPower)
+            self.sendSequence(exposureTime, repeat)
+            self.screenThread.screen.draw(image)
+            time.sleep(0.1)
+            self.start()
+
     def clear(self):
         """Clear the projector screen to be black"""
         self.screenThread.screen.clear()
@@ -106,3 +133,10 @@ class Projector:
             self.i2c.disconnectServer()
         except AttributeError:
             pass
+
+
+if __name__ == '__main__':
+    projectorResolution = (2560, 1600)
+    p=Projector(projectorResolution)
+    p.connect()
+    p.calibrateProject("calibrate.png", 100, 0, 1000)

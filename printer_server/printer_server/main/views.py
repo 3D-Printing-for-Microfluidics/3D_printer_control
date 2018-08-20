@@ -21,7 +21,7 @@ blueprint = Blueprint('main', __name__, url_prefix='/', static_folder='../static
 @blueprint.route('/')
 def index():
     allJobs = PrintJob.query.all()
-    return render_template('controls.html', allJobs=allJobs)
+    return render_template('index.html', allJobs=allJobs)
 
 
 @socketio.on('connect', namespace='/printing')
@@ -43,7 +43,7 @@ def planarizationStep1(message):
 
 
 @socketio.on('planarization step 2', namespace='/printing')
-def planarizationStep1(message):
+def planarizationStep2(message):
     if printer3d.state is 'planarizing':
         printingThreads.planarizationStep2()
 
