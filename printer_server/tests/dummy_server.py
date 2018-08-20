@@ -26,15 +26,15 @@ _code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_i2c.py'), 'rb').read()
 exec(_code, dummy_module.__dict__)
 
 # # dummy calibration control module 
-# module_name = 'printer_server.printer.calibrationControl'
-# dummy_module = types.ModuleType(module_name)
-# sys.modules[module_name] = dummy_module
-# _code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_calibrationControl.py'), 'rb').read()
-# exec(_code, dummy_module.__dict__)
+module_name = 'printer_server.printer.calibrationControl'
+dummy_module = types.ModuleType(module_name)
+sys.modules[module_name] = dummy_module
+_code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_calibrationControl.py'), 'rb').read()
+exec(_code, dummy_module.__dict__)
 
 # dummy hardware module 
 module_name = 'printer_server.hardware'
-dummy_module = types.ModuleType(module_name)
+dummy_module = types.ModuleType(module_name)    
 sys.modules[module_name] = dummy_module
 _code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_hardware.py'), 'rb').read()
 exec(_code, dummy_module.__dict__)
