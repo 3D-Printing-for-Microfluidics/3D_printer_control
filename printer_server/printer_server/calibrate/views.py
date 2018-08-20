@@ -27,7 +27,6 @@ def index():
 def connect():
     print("on connect")
 
-
 # If hardware isn't initialized, initialize it 
 @socketio.on('initialize', namespace='/calibrate')
 def initialize():
@@ -36,7 +35,13 @@ def initialize():
         calibrationThreads.initialize()
     else: 
         socketio.emit('initialized', namespace='/calibrate', broadcast=True)
-        
+
+# Reset printer stat e 
+@socketio.on('reset_printer_state', namespace='/calibrate')
+def resetPrinterState():
+    print("reset_printer_state")
+    printer3d.state = 'initialized'
+  
 @socketio.on('solus_go_to_top', namespace='/calibrate')
 def solus_go_to_top():
     print("on solus_go_to_top")

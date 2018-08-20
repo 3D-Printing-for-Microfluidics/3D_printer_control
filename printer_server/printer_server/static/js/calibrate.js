@@ -119,6 +119,12 @@ $(document).ready(function(){
         enable_upload_button();
     });
 
+    // Reset button click function 
+    $("#reset-printer-state").on("click", function() {
+        disable_all_buttons();
+        socket.emit("reset_printer_state");
+    });
+
     // Upload button click function 
     $("#upload-btn").on("click", function(e) {
         var selectedFile = filePickerElement.files[0];
