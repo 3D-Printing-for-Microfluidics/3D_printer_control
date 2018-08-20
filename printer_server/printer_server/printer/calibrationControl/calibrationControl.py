@@ -35,7 +35,8 @@ class CalibrationControl:
                 self.pin_names[3]:9    
             }
         }
-
+        
+    def initialize(self):
         # Setup GPIO
         GPIO.setmode(GPIO.BCM)   
         GPIO.setwarnings(False) # running GPIO.cleanup() for some reason leaves some pins on, even after turning them off. 
@@ -43,7 +44,7 @@ class CalibrationControl:
         for motor in self.pins:   
             for pin in self.pins[motor]: 
                 GPIO.setup(self.pins[motor][pin], GPIO.OUT) # set every pin as output      
-        
+
     # Set GPIO pins on specified motor to given pattern 
     def setStep(self, motor, pinPattern):
         for i in range(len(self.pin_names)):

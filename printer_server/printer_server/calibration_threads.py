@@ -93,6 +93,7 @@ class CalibrationThreads:
         self.projector.connect()
         self.solus.connect()
         self.solus.initialize()
+        self.calibrationControl.initialize()
 
     @thread_decorator('solus_done', 'Solus go to Z max')
     def goToZmax(self):
