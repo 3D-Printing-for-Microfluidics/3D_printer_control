@@ -28,7 +28,7 @@ class LightEngineI2C:
     :param logger: a ``logging.logger`` object. If not specified, 
                    the ``print`` function will be used. 
     """
-    I2C_IO_DELAY = .001   # Delay after every I2C command, 10ms 
+    I2C_IO_DELAY = .01   # Delay after every I2C command, 10ms 
     
     def __init__(self, bus=1, logger=None):
         self.bus = bus
