@@ -23,9 +23,6 @@ imagePath = os.path.join(CalibrationConfig.UPLOAD_FOLDER, 'calibration_images','
 def index():
     return render_template('calibrate.html')
 
-@socketio.on('connect', namespace='/calibrate')
-def connect():
-
 # If hardware isn't initialized, initialize it 
 @socketio.on('initialize', namespace='/calibrate')
 def initialize():
