@@ -31,10 +31,10 @@ def initialize():
     else: 
         socketio.emit('initialized', namespace='/calibrate', broadcast=True)
 
-# Reset printer stat e 
+# Reset printer state, necessary if hardware has been powered down  
 @socketio.on('reset_printer_state', namespace='/calibrate')
 def resetPrinterState():
-    printer3d.state = 'initialized'
+    printer3d.state = 'uninitialized'
   
 @socketio.on('solus_go_to_top', namespace='/calibrate')
 def solus_go_to_top():
