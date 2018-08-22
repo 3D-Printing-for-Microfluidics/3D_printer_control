@@ -14,6 +14,8 @@ To run the dummy server to develop on, do the following:
   * Set the required $FLASK_APP environment variable. This varies based on platform. For bash do `export FLASK_APP=tests/dummy_server.py`
   * If you get an error that you don't have mttkinter, run `pip install mttkinter` or `pip3 install mttkinter`
   * Do the following only if you don't have a database built yet (i.e. it's your first time running this app)
+    * Source the new setup script in `printer_server/rpi/`   
+      -- or do it manually --   
     * Initialize the database with `flask db init`
     * Migrate it with `flask db migrate`
     * Upgrade it with `flask db upgrade` 
