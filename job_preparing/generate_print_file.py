@@ -389,15 +389,15 @@ if args.slices_folder  : slices_folder      = args.slices_folder
 
 # Other default values that aren't updatable via cmd line 
 nomal_solus_chain = [                       # Normal solus command chain 
-            "WAIT 0.1",
-            "BP UP 1 SPEED 300",
-            "QW DOWN 6 SPEED 400",
-            "WAIT 1.5",
-            "BP UP 2 SPEED 400",
-            "QW UP 6 SPEED 400",
-            "BP DOWN 3 SPEED 400",
-            "WAIT 1.5"
-        ]
+    "WAIT 0.1",
+    "BP UP 1 SPEED 400",
+    "QW DOWN 3 SPEED 300",
+    "WAIT 1.0",
+    "BP UP 2 SPEED 400",
+    "QW UP 3 SPEED 300",
+    "BP DOWN 3 SPEED 400",
+    "WAIT 1.0"
+]
 bi_exp_ms = [20000, 10000, 5000, 1000, 500] # Burn in exposure times 
 data = {                                    # Default fields  
     "Design": {
