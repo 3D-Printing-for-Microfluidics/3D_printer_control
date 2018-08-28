@@ -64,6 +64,8 @@ def start(message):
                 shutil.rmtree(os.path.join(Config.UPLOAD_FOLDER, 'current_job'))
             except FileNotFoundError:
                 pass
+            except:
+                pass
                 
             _zipFile = os.path.join(Config.UPLOAD_FOLDER, 'queue', job.zip_filename)
             with ZipFile(_zipFile, 'r') as f:
