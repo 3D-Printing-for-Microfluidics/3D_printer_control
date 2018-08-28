@@ -396,6 +396,9 @@ class PrintSettings:
         """
         with open(filename, 'r') as f:
             settings = json.load(f)
+            print("load settings file")
+            print(json.dumps(settings, indent=2))
+
         return cls(settings)
         
     @property
@@ -416,8 +419,10 @@ class PrintSettings:
         """
         try:
             i = self.__mapOfLayers[layerNum-1]
+            print("TRYING OVERRIDE with '", paramName, "'='", self.__settings['Layers'][i][paramName], "'")
             return self.__settings['Layers'][i][paramName]
         except KeyError:
+            print("USING DEFAULT '", paramName, "'='", self.__settings['Default settings'][paramName])
             return self.__settings['Default settings'][paramName]
             
     def layerThicknessMm(self, layerNum):
@@ -478,6 +483,9 @@ class PrintSettings:
     # TODO: benchmark this method on RPi
     @classmethod
     def validate(cls, filename, path):
+
+        print("try validation")
+
         """This method validates the (.zip) file of a print job. 
         
         What does it check?
@@ -503,19 +511,26 @@ class PrintSettings:
             with zipfile.ZipFile(filename, 'r') as zf:
                 files = [f for f in zf.namelist() if not f.startswith('__MACOSX')]
                 jsonFiles = [f for f in files if f.endswith('print_settings.json')]
+                print("made it to 1")
                 assert len(jsonFiles) == 1
                 jsonFile = jsonFiles[0]
                 zf.extract(jsonFile, path=path)
+                print("made it to 2")
                 
             settings = cls.fromFile(os.path.join(path, jsonFile))
+            # print(json.dumps(settings))
+            
             shutil.rmtree(path)
             jsonDir = os.path.dirname(jsonFile)
+
             settings.checkDefault()
             settings.checkLayers(jsonDir, files)
         except json.decoder.JSONDecodeError:
+            print("made it to 3")
             shutil.rmtree(path)
             return False
         except:
+            print("made it to 4")
             return False
             
         return True
@@ -557,6 +572,7 @@ class PrintSettings:
                 pass
             
             try:
+                print("checking solus chain")
                 self.checkSolusCommandChain(layer['Solus command chain'])
             except KeyError:
                 pass
@@ -580,6 +596,8 @@ class PrintSettings:
                     distanceBP += sign * float(m2.group(3))
                 else:
                     distanceQW += sign * float(m2.group(3))
+                    if distanceQW > 3:  # max travel for quartz window is 3mm
+                        raise AssertionError # fail if you try to move more than 3mm
             else:
                 raise AssertionError
                 
