@@ -194,7 +194,7 @@ in any way. Example ::
           "Images": [
             "0000.png"
           ],
-          "Layer exposure times (ms)": [
+          "Layer exposure time (ms)": [
             20000
           ],
           "Layer thickness (um)": 20,
@@ -205,7 +205,7 @@ in any way. Example ::
           "Images": [
             "0000.png"
           ],
-          "Layer exposure times (ms)": [
+          "Layer exposure time (ms)": [
             10000
           ],
           "Number of duplications": 2,
@@ -216,7 +216,7 @@ in any way. Example ::
           "Images": [
             "0000.png"
           ],
-          "Layer exposure times (ms)": [
+          "Layer exposure time (ms)": [
             5000
           ],
           "Light engine power setting": [
@@ -238,7 +238,7 @@ in any way. Example ::
             "0002.png",
             "0002a.png"
           ],
-          "Layer exposure times (ms)": [
+          "Layer exposure time (ms)": [
             400,
             200
           ],
@@ -262,7 +262,7 @@ in any way. Example ::
             "0004.png",
             "0004a.png"
           ],
-          "Layer exposure times (ms)": [
+          "Layer exposure time (ms)": [
             400,
             200
           ],
@@ -301,7 +301,7 @@ in any way. Example ::
 
 We can customize any layer by override the default values. In 
 the above JSON file, the first list item in ``Layers`` contains 
-``Layer exposure times (ms)`` and ``Layer thickness (um)``, 
+``Layer exposure time (ms)`` and ``Layer thickness (um)``, 
 which means the first layer will have exposure time of 20000 ms 
 and layer thickness of 20 um. Note that a number of consective 
 layers can share one list item by making 
@@ -396,9 +396,6 @@ class PrintSettings:
         """
         with open(filename, 'r') as f:
             settings = json.load(f)
-            print("load settings file")
-            print(json.dumps(settings, indent=2))
-
         return cls(settings)
         
     @property
@@ -419,10 +416,11 @@ class PrintSettings:
         """
         try:
             i = self.__mapOfLayers[layerNum-1]
-            print("TRYING OVERRIDE with '", paramName, "'='", self.__settings['Layers'][i][paramName], "'")
             return self.__settings['Layers'][i][paramName]
-        except KeyError:
-            print("USING DEFAULT '", paramName, "'='", self.__settings['Default settings'][paramName])
+        except KeyError: # TODO: This key error gets caught when key doesn't exist or when it is wrong. That means it 
+                         # is possible for a user to think they are putting in good information but the software will 
+                         # ignore it and keep running without notification. Validation should be more robust to 
+                         # prevent this 
             return self.__settings['Default settings'][paramName]
             
     def layerThicknessMm(self, layerNum):
@@ -484,8 +482,6 @@ class PrintSettings:
     @classmethod
     def validate(cls, filename, path):
 
-        print("try validation")
-
         """This method validates the (.zip) file of a print job. 
         
         What does it check?
@@ -511,26 +507,20 @@ class PrintSettings:
             with zipfile.ZipFile(filename, 'r') as zf:
                 files = [f for f in zf.namelist() if not f.startswith('__MACOSX')]
                 jsonFiles = [f for f in files if f.endswith('print_settings.json')]
-                print("made it to 1")
                 assert len(jsonFiles) == 1
                 jsonFile = jsonFiles[0]
                 zf.extract(jsonFile, path=path)
-                print("made it to 2")
                 
             settings = cls.fromFile(os.path.join(path, jsonFile))
-            # print(json.dumps(settings))
-            
             shutil.rmtree(path)
             jsonDir = os.path.dirname(jsonFile)
 
             settings.checkDefault()
             settings.checkLayers(jsonDir, files)
         except json.decoder.JSONDecodeError:
-            print("made it to 3")
             shutil.rmtree(path)
             return False
         except:
-            print("made it to 4")
             return False
             
         return True
@@ -548,6 +538,7 @@ class PrintSettings:
                 assert os.path.join(jsonDir, self.__settings['Header']['Image directory'], image) in files
                 
             try:
+                # Check to make sure there is the same number of images and LED powers 
                 assert len(layer['Light engine power setting']) == len(layer['Images'])
                 for i in layer['Light engine power setting']:
                     assert isinstance(i, int)
@@ -555,6 +546,7 @@ class PrintSettings:
                 pass
                 
             try:
+                # Check to make sure there is the same number of images and exposure times 
                 assert len(layer['Layer exposure time (ms)']) == len(layer['Images'])
                 for i in layer['Layer exposure time (ms)']:
                     assert isinstance(i, int)
@@ -572,7 +564,6 @@ class PrintSettings:
                 pass
             
             try:
-                print("checking solus chain")
                 self.checkSolusCommandChain(layer['Solus command chain'])
             except KeyError:
                 pass

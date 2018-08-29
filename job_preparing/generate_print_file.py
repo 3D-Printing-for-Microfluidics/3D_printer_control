@@ -193,7 +193,7 @@
             "Images": [
                 "0000.png"
             ],
-            "Layer exposure times (ms)": [
+            "Layer exposure time (ms)": [
                 20000
             ],
             "Layer thickness (um)": 20,
@@ -204,7 +204,7 @@
             "Images": [
                 "0000.png"
             ],
-            "Layer exposure times (ms)": [
+            "Layer exposure time (ms)": [
                 10000
             ],
             "Number of duplications": 2,
@@ -215,7 +215,7 @@
             "Images": [
                 "0000.png"
             ],
-            "Layer exposure times (ms)": [
+            "Layer exposure time (ms)": [
                 5000
             ],
             "Light engine power setting": [
@@ -237,7 +237,7 @@
                 "0002.png",
                 "0002a.png"
             ],
-            "Layer exposure times (ms)": [
+            "Layer exposure time (ms)": [
                 400,
                 200
             ],
@@ -261,7 +261,7 @@
                 "0004.png",
                 "0004a.png"
             ],
-            "Layer exposure times (ms)": [
+            "Layer exposure time (ms)": [
                 400,
                 200
             ],
@@ -300,7 +300,7 @@
 
     We can customize any layer by override the default values. In 
     the above JSON file, the first list item in ``Layers`` contains 
-    ``Layer exposure times (ms)`` and ``Layer thickness (um)``, 
+    ``Layer exposure time (ms)`` and ``Layer thickness (um)``, 
     which means the first layer will have exposure time of 20000 ms 
     and layer thickness of 20 um. Note that a number of consective 
     layers can share one list item by making 
@@ -348,7 +348,6 @@
 import os 
 import sys 
 import json
-import pprint
 import argparse
 from PIL import Image
 from zipfile import ZipFile 
@@ -470,7 +469,7 @@ try:
             # If this is a burn in layer and the normal exposure is lower than 
             # the burn in exposure, use the burn in exposure  
             if i < len(bi_exp_ms) and bi_exp_ms[i] > normal_exp_time_ms:
-                    this_layer["Layer exposure times (ms)"] = bi_exp_ms[i]
+                    this_layer["Layer exposure time (ms)"] = [bi_exp_ms[i]]
 
             # Add the full dictionary for this layer to the full print data
             data["Layers"].append(this_layer)
@@ -490,5 +489,3 @@ except FileExistsError:
     error_msg =  "Error: The file '" + output_filename
     error_msg += "' already exists. Delete ot or use a different name."
     sys.exit(error_msg)
-
-# # pprint.pprint(data)
