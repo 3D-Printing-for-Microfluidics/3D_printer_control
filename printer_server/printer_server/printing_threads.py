@@ -133,16 +133,6 @@ class PrintingThreads:
         zero in Z for planarization.
         """
         self.solus.goToZmin()
-
-        # # Iterate from the startingLayer to the last
-        # totalLayerNum = self.printSettings.totalLayerNum
-        # for i in range(1, totalLayerNum+1):
-
-        #     images = [os.path.join(self.jsonDir, im) for im in self.printSettings.images(i)]
-
-        #     print(i, " - ", images,
-        #         self.printSettings.exposureTimeMs(i),
-        #         self.printSettings.ledPowers(i))
         
     @multithreading('planarized', 'Planarization Step 2')
     def planarizationStep2(self):
@@ -282,7 +272,6 @@ class PrintingThreads:
             images = [os.path.join(self.jsonDir, im) 
                 for im in self.printSettings.images(i)]
 
-            print("print layer ", i, " - ", images, self.printSettings.exposureTimeMs(i), self.printSettings.ledPowers(i))
             self.projector.projectMulti(images,
                                         self.printSettings.exposureTimeMs(i),
                                         self.printSettings.ledPowers(i))
