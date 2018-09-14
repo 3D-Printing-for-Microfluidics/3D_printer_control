@@ -50,28 +50,15 @@ class Solus(serial.Serial):
         return response
         
     def printCycle(self, layerThicknessMm, commandChain):
-        # TODO: explain the code here
-        for i in range(len(commandChain)-1, -1, -1):
-            if commandChain[i].startswith('BP'):
-                a = i
-                break
-            if i == 0:
-                a = -1
-                
-        if a == -1:
-            commandChain.append('BP UP {:.4f} SPEED 400'.format(layerThicknessMm))
-        else:
-            lastBpCommand = commandChain[a].split()
-            distance = float(lastBpCommand[2])
-            speed = lastBpCommand[4]
-            if lastBpCommand[1] is 'UP':
-                newCommand = 'BP UP {:.4f} SPEED {}'.format(distance+layerThicknessMm, speed)
-            else:
-                newCommand = 'BP DOWN {:.4f} SPEED {}'.format(distance-layerThicknessMm, speed)
-            commandChain[a] = newCommand
-            
+        # Command chain is the series of commands for this layer 
+        # i.e. ['WAIT 0.1', 'BP UP 1 SPEED 400', 'QW DOWN 3 SPEED 300', 'WAIT 1.0', 'BP UP 2 SPEED 400', 'QW UP 3 SPEED 300', 'BP DOWN 2.9800 SPEED 400', 'WAIT 1.0']
+
+        # execute all user supplied commands 
         for command in commandChain:
             self.execute(command)
+
+        # move up by layerThickness 
+        self.execute('BP UP {:.4f} SPEED 400'.format(layerThicknessMm))
             
     def execute(self, command):
         # Example: `WAIT 1.5` => `time.sleep(1.5)`
