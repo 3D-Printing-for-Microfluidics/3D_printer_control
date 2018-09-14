@@ -10,7 +10,7 @@ __all__ = ['Solus']
 
 
 class Solus(serial.Serial):
-    def __init__(self, hwid, verbose=False):
+    def __init__(self, hwid, verbose=True):
         super().__init__(baudrate=115200, timeout=None)
         self.verbose = verbose
         self.hwid = hwid
@@ -121,6 +121,11 @@ class Solus(serial.Serial):
             distance = -distance
         return self.send('G1 Z{:.4f} F{:d}'.format(distance, abs(speed)))
         
+    def queryPosition(self):
+        # query position and capture response 
+        if self.verbose: print('Sent: ' + '?')
+        return self.transmit('?')
+
     def send(self, cmd):
         # send the command to grbl
         if self.verbose: print('Sent: ' + cmd)
@@ -128,7 +133,10 @@ class Solus(serial.Serial):
         if self.verbose: print("Response: ", response)
         
         # send a G4 P0 command to wait for completion of previous command 
-        self.transmit('G4 P0\r')
+        self.transmit('G4 P0')  
+        
+        # print current position if in verbose mode 
+        if self.verbose: print("position: ", self.queryPosition())
 
         # return the reponse of the first command 
         return response
@@ -173,15 +181,15 @@ if __name__ == '__main__':
 
     commandChain= [
           "WAIT 0.1",
-          "BP UP 1 SPEED 400",
+          "BP UP 1 SPEED 300",
           "QW DOWN 3 SPEED 300",
           "WAIT 1.5",
-          "BP UP 2 SPEED 400",
+          "BP UP 2 SPEED 300",
           "QW UP 3 SPEED 300",
-          "BP DOWN 3 SPEED 400",
+          "BP DOWN 3 SPEED 300",
           "WAIT 1.5"
         ]
-
+        
     print("GO TO 1mm")
     s.goToFirstLayerHeight(0.1)
 
