@@ -10,7 +10,7 @@ __all__ = ['Solus']
 
 
 class Solus(serial.Serial):
-    def __init__(self, hwid, verbose=True):
+    def __init__(self, hwid, verbose=False):
         super().__init__(baudrate=115200, timeout=None)
         self.verbose = verbose
         self.hwid = hwid
@@ -51,14 +51,29 @@ class Solus(serial.Serial):
         
     def printCycle(self, layerThicknessMm, commandChain):
         # Command chain is the series of commands for this layer 
-        # i.e. ['WAIT 0.1', 'BP UP 1 SPEED 400', 'QW DOWN 3 SPEED 300', 'WAIT 1.0', 'BP UP 2 SPEED 400', 'QW UP 3 SPEED 300', 'BP DOWN 2.9800 SPEED 400', 'WAIT 1.0']
+        # i.e. ['WAIT 0.1', 'BP UP 1 SPEED 400', 'QW DOWN 3 SPEED 300', 'WAIT 1.0', 
+        #       'BP UP 2 SPEED 400', 'QW UP 3 SPEED 300', 'BP DOWN 3.00 SPEED 400', 'WAIT 1.0']
 
-        # execute all user supplied commands 
-        for command in commandChain:
-            self.execute(command)
+        # find the index of the last BP command and save it. -1 means there was none 
+        lastBPindex = -1
+        for i in range(0,len(commandChain)):
+            if commandChain[i].startswith('BP'):
+                lastBPindex = i                     
 
-        # move up by layerThickness 
-        self.execute('BP UP {:.4f} SPEED 400'.format(layerThicknessMm))
+        # alter the last BP command (take off layer thickness), execute all others 
+        for i in range(0,len(commandChain)):
+            if i == lastBPindex:                
+                lastBpCommand = commandChain[lastBPindex].split()
+                distance = float(lastBpCommand[2])
+                speed = lastBpCommand[4]
+                newCommand = 'BP DOWN {:.4f} SPEED {}'.format(distance-layerThicknessMm, speed)
+                self.execute(newCommand)
+            else:
+                self.execute(commandChain[i])
+            
+        # move up by layerThicknessMm if no BP command was supplied 
+        if lastBPindex ==-1:
+            self.execute('BP UP {:.4f} SPEED 400'.format(layerThicknessMm)) 
             
     def execute(self, command):
         # Example: `WAIT 1.5` => `time.sleep(1.5)`
@@ -180,7 +195,9 @@ if __name__ == '__main__':
     print("GO TO 1mm")
     s.goToFirstLayerHeight(0.1)
 
-    for i in range(0,3):
-        s.printCycle(0.1, commandChain)
+    print(commandChain)
+    for i in range(0,5):
+        print("Layer", i)
+        s.printCycle(.01, commandChain)
 
     print("DONE")
