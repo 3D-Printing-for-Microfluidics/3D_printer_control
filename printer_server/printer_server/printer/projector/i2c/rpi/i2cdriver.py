@@ -218,7 +218,7 @@ class LightEngineI2C:
     # LED and PCB board settings
     ###################################
     def writeLedParam(self, register, param):
-        register = int(register).to_bytes(4, byteorder='big')
+        register = int(register).to_bytes(2, byteorder='big')
         param = int(param).to_bytes(4, byteorder='big')
         self.pi.i2c_write_device(self.led, register+param)
         time.sleep(self.I2C_IO_DELAY)
