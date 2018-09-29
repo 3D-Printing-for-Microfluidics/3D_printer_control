@@ -42,7 +42,10 @@ class Solus(serial.Serial):
         return response
         
     def goToZmin(self):
-        return self.send('G1 Z0 F800')   # send the platform to 0 
+        # send the platform to 0 
+        response = self.send('G1 Z-20 F800')
+        response = self.send('G1 Z0 F100')
+        return response
         
     def goToFirstLayerHeight(self, height):
         response =  self.send('G1 Z-{:.4f} F600'.format(height))        
@@ -93,11 +96,11 @@ class Solus(serial.Serial):
                 
     def pause(self):
         """What solus does after a print is paused"""
-        return self.moveZ('UP', 30, 400)
+        return self.moveZ('UP', 5, 400)
         
     def resume(self, layerThickness):
         """Resume after pausing"""
-        return self.moveZ('DOWN', 30-layerThickness, 400)
+        return self.moveZ('DOWN', 5-layerThickness, 400)
         
     def moveX(self, direction, distance, speed):
         """Move quartz window up/down a certain distance at a 
