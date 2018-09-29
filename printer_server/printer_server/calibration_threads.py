@@ -56,7 +56,7 @@ def thread_decorator(state, text):
                 # printer3d.state = state
                 socketio.emit(printer3d.state, dict(), namespace='/calibrate', broadcast=True)
             
-            printer3d.state = 'busy'
+            # printer3d.state = 'busy'
             message = {
                 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'text': text
@@ -94,7 +94,7 @@ class CalibrationThreads:
         self.solus.connect()
         self.solus.initialize()
         self.calibrationControl.initialize()
-        printer3d.state = "initialized"
+        # printer3d.state = "initialized"
 
     @thread_decorator('solus_done', 'Solus go to Z max')
     def goToZmax(self):
