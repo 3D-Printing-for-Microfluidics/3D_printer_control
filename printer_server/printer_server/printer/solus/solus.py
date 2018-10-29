@@ -30,25 +30,26 @@ class Solus(serial.Serial):
         
     def goToZmax(self):
         response =  self.send('G90')          # set positioning to absolute
-        response += self.send('G1 Z-65 F800') # send the platform to 65 mm above the quartz
+        response += self.send('G1 Z80 F800') # send the platform to 80 mm above the quartz
         return response
 
     def initialize(self):
         response =  self.send('$H')           # calibrate the axes     
         response =  self.send('G90')          # set positioning to absolute
         response += self.send('G21')          # set unit to mm
-        response += self.send('G1 X-3 F300')  # set unit to mm
+        response += self.send('G1 X0 F300')  # level the quartz window 
         response += self.goToZmax()           # go to top position
+        if self.verbose: 
+            print("Solus init complete")
         return response
         
     def goToZmin(self):
         # send the platform to 0 
-        response = self.send('G1 Z-20 F800')
-        response = self.send('G1 Z0 F100')
+        response = self.send('G1 Z0 F800')
         return response
         
     def goToFirstLayerHeight(self, height):
-        response =  self.send('G1 Z-{:.4f} F600'.format(height))        
+        response =  self.send('G1 Z{:.4f} F600'.format(height))        
         response += self.send('G91')    # set positioning to relative
         return response
         
@@ -122,7 +123,7 @@ class Solus(serial.Serial):
         :param distance: distance in millimeters.
         :param speed: Always treated as positive. The unit is mm/min.
         """
-        if direction == 'UP':
+        if direction == 'DOWN':
             distance = -distance
         return self.send('G1 Z{:.4f} F{:d}'.format(distance, abs(speed)))
         
@@ -167,14 +168,13 @@ class Solus(serial.Serial):
 def findUsbPort(hwid):
     ports = list(serial.tools.list_ports.comports())
     for p in ports:
-            if 'ttyUSB' in p.name:
+            if 'ttyACM0' in p.name:
                 print("Found", p.device)
-                if hwid in p.hwid:
-                    return p.device
+                return p.device
 
 
 if __name__ == '__main__':
-    s = Solus('1A86:7523')
+    s = Solus('1A86:7523', verbose=True)
     print("CONNECT")
     s.connect()
     print("INITIALIZE")
@@ -185,14 +185,11 @@ if __name__ == '__main__':
     s.goToZmax()
 
     commandChain= [
-          "WAIT 0.1",
           "BP UP 1 SPEED 300",
           "QW DOWN 3 SPEED 300",
-          "WAIT 1.5",
           "BP UP 2 SPEED 300",
           "QW UP 3 SPEED 300",
-          "BP DOWN 3 SPEED 300",
-          "WAIT 1.5"
+          "BP DOWN 3 SPEED 300"
         ]
         
     print("GO TO 1mm")
