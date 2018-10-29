@@ -141,7 +141,7 @@ class PrintingThreads:
         bring the build platform to home position in Z.
         """
         # self.solus.goToZmax()
-        self.solus.send('G1 Z-5 F100')
+        self.solus.send('G1 Z5 F100')
         
     @multithreading('paused', 'Pause Printing')
     def pause(self):
