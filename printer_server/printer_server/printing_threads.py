@@ -140,7 +140,8 @@ class PrintingThreads:
         is flat on the teflon film. Then tighten the screws and 
         bring the build platform to home position in Z.
         """
-        self.solus.goToZmax()
+        # self.solus.goToZmax()
+        self.solus.send('G1 Z-5 F100')
         
     @multithreading('paused', 'Pause Printing')
     def pause(self):
