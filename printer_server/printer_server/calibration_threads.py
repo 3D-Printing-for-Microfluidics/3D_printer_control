@@ -108,6 +108,12 @@ class CalibrationThreads:
         """
         self.solus.goToZmin()
 
+    @thread_decorator('solus_done', 'Solus moved Z axis')
+    def moveZ(self, direction, distance, speed):
+        """goToZmin -- Move main z stage to min position (down)
+        """
+        return self.solus.moveZ(direction, distance, speed)
+
     @thread_decorator('calibration_motor_done', 'Calibration move done')
     def calibrationMotorMove(self, axis, steps):
         """calibrationMotorMove -- Move specified calibration 

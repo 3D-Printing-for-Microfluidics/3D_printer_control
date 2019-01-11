@@ -44,6 +44,13 @@ def solus_go_to_top():
 def solus_go_to_bottom():
     calibrationThreads.goToZmin()
 
+@socketio.on('solus_move_Z', namespace='/calibrate')
+def solusMoveZ(message):
+    if all([message["direction"] != "UP", message["direction"] != "DOWN"]):
+        return "Invalid direction value (Valid values are UP/DOWN)"
+       
+    return calibrationThreads.moveZ(message["direction"], message["distance"], message["speed"])
+
 @socketio.on('calibration_motor', namespace='/calibrate')
 def calibrationMotorMove(message):
     calibrationThreads.calibrationMotorMove(
@@ -78,3 +85,39 @@ def handleUpload():
                 pass
     socketio.emit('calibration_image_bad', namespace='/calibrate', broadcast=True)
     return '' 
+
+
+##############################
+#          API               #
+##############################
+
+@blueprint.route("/calibrate/api", methods=['GET', 'POST'])
+def api():
+    try:
+        if request.method == 'GET':
+            callType = request.args.get("type")
+            if callType  is None:
+                return "Error: type not specified"
+            elif callType == "printerStage":
+                command = {"direction": request.args.get("direction"),
+                        "distance": float(request.args.get("distance")),
+                        "speed": int(request.args.get("speed"))}
+                print(solusMoveZ(command)) # use this line in debug mode
+                # return solusMoveZ(command) 
+            elif callType == "calibrationStage":
+                command = {"axis": request.args.get("axis"),
+                        "steps": request.args.get("steps")}
+                calibrationMotorMove(command)
+
+            elif callType == "lightEngine":
+                command = {"ledPower": request.args.get("power"), # led power
+                        "repeat": request.args.get("repeat"), # repeated exposures
+                        "exposure": request.args.get("exposure")} # exposure time (ms)
+                lightEngineProject(command)
+        else:
+            fb = open(imagePath, 'wb')
+            fb.write(request.data)
+            fb.close()
+    except Exception as e:
+        return "Error: " + str(e)
+    return "OK"
