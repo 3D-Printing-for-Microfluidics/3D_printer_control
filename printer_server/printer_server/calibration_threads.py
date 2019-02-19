@@ -13,9 +13,8 @@ from functools import wraps
 import os
 
 from printer_server.extensions import socketio
-from printer_server.hardware import printer3d
-from printer_server.hardware import calibrationControl
-
+from printer_server.config import printer3d, calibrationStages
+ 
 
 def thread_decorator(state, text):
     """Make decorators for the printer operation methods. 
@@ -53,10 +52,10 @@ def thread_decorator(state, text):
         def decorated_function(*args, **kwargs):
             def func(*args, **kwargs):
                 f(*args, **kwargs)
-                # printer3d.state = state
+                printer3d.state = state
                 socketio.emit(printer3d.state, dict(), namespace='/calibrate', broadcast=True)
             
-            # printer3d.state = 'busy'
+            printer3d.state = 'busy'
             message = {
                 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'text': text
@@ -82,19 +81,22 @@ class CalibrationThreads:
         self.printer3d = printer3d
         self.solus = printer3d.solus
         self.projector = printer3d.projector
-        self.calibrationControl = calibrationControl
+
+        self.calibrationStages = calibrationStages  
+
         self._thread = threading.Thread()
         
     @thread_decorator('initialized', 'Initialization complete')
-    def initialize(self):
+    def initialize(self, stage):
         """Establish USB connection with Solus, and find zero in Z 
         axis for build platform.
         """
-        # self.projector.connect()
-        self.solus.connect()
-        self.solus.initialize()
-        self.calibrationControl.initialize()
-        # printer3d.state = "initialized"
+        if stage == "solus":
+            self.solus.connect()
+        elif stage == "le":
+            self.projector.connect()
+        else:
+            self.calibrationStages[stage].initialize()
 
     @thread_decorator('solus_done', 'Solus go to Z max')
     def goToZmax(self):
@@ -112,14 +114,34 @@ class CalibrationThreads:
     def moveZ(self, direction, distance, speed):
         """goToZmin -- Move main z stage to min position (down)
         """
+        print("direction: {} {} distance: {} {} speed: {} {}".format(direction, type(direction),
+                                                                     distance, type(distance),
+                                                                     speed, type(speed)))
         return self.solus.moveZ(direction, distance, speed)
 
+    @thread_decorator("solus_done", "Solus set to relative mode")
+    def setRelative(self, stage="solus"):
+        """Set the stage to relative mode"""
+        if stage == "solus":
+            return self.solus.send("G91")
+        else:
+            return self.calibrationStages[stage].setRelative()
+
+    @thread_decorator("solus_done", "Solus set to absolute mode")
+    def setAbsolute(self, stage="solus"):
+        """Set the stage to absolute mode"""
+        if stage == "solus":
+            return self.solus.send("G90")
+        else:
+            return self.calibrationStages[stage].setAbsolute()
+
     @thread_decorator('calibration_motor_done', 'Calibration move done')
-    def calibrationMotorMove(self, axis, steps):
+    def calibrationStageMove(self, stage, steps):
         """calibrationMotorMove -- Move specified calibration 
         motor by specified number of steps
         """
-        self.calibrationControl.move(axis, steps)
+        print(stage, " ", steps)
+        self.calibrationStages[stage].move(steps)
            
     @thread_decorator('light_engine_stop_complete', 'Light engine stopped')
     def lightEngineStop(self):
@@ -135,6 +157,19 @@ class CalibrationThreads:
         self.projector.calibrateProject(image, ledPower, repeat, exposure)
         if repeat:      # repeat == 1 means show once, == 0 means repeat forever  
             self.projector.clear()
+
+
+    @thread_decorator("stage_homed", "Calibration stage homed")
+    def stageHome(self, stage):
+        if stage == "solus":
+            self.solus.initialize()
+        else:
+            self.calibrationStages[stage].home()
+
+    def calibrationStageGetPos(self, stage):
+        pos = self.calibrationStages[stage].getCurrentPos()
+        return pos
+
 
     @property
     def isBusy(self):

@@ -13,7 +13,7 @@ from functools import wraps
 import os
 
 from printer_server.extensions import db, socketio
-from printer_server.hardware import printer3d
+from printer_server.config import printer3d
 from printer_server.models import PrintRecord
 
 

@@ -10,7 +10,7 @@ __all__ = ['Solus']
 
 
 class Solus(serial.Serial):
-    def __init__(self, hwid, verbose=False):
+    def __init__(self, hwid, verbose=True):
         super().__init__(baudrate=115200, timeout=None)
         self.verbose = verbose
         self.hwid = hwid
@@ -30,6 +30,7 @@ class Solus(serial.Serial):
         
     def goToZmax(self):
         response =  self.send('G90')          # set positioning to absolute
+        # response += self.send('G1 Z-65 F800') # send the platform to 65 mm above the quartz
         response += self.send('G1 Z-65 F800') # send the platform to 65 mm above the quartz
         return response
 

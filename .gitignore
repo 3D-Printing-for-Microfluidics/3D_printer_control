@@ -14,4 +14,4 @@ env2/
 slices/
 error.txt
 printer_server/upload/current_job/
-
+*.pickle

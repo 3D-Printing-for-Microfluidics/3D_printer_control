@@ -5,7 +5,7 @@ from flask import Blueprint, request, render_template, flash
 from datetime import datetime
 
 from printer_server.settings import Config
-from printer_server.hardware import printer3d, PrintSettings
+from printer_server.config import printer3d, PrintSettings
 from printer_server.models import PrintJob, PrintRecord
 from printer_server.extensions import socketio
 from printer_server.utils import calcPageNum

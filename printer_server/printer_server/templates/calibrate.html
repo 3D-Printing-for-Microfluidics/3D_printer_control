@@ -12,79 +12,132 @@
 <link href="{{ url_for('static', filename='css/calibrate.css') }}" rel="stylesheet">
 {% endblock %}
 
+
 {% block page_content %}
 
+<div id="mydata" data-stages="{{jsonStageOrder}}"></div>
 <!-- Calibration Motor Control -->
 <div class="container motor-controls">
     <div class="row top-buffer align-items-center">
         <h3>Motor Controls</h3>
     </div>
-
-    <!-- Tip -->
-    <div class="row align-items-center">
-        <div class="col-3 text-left">
-            <h4>Tip</h3>
-        </div>
-        <div class="col-1">
-            <h5 class="col text-left" id='tip-state'>0</h5>
-        </div>
-        <div class="col-8 text-right">
-            <div class="btn-group" role="group" aria-label="Tip">
-                <button type="button" class="btn btn-primary mtr-cntrl-btn" >-1000</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-100</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-10</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">10</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">100</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">1000</button>
+    <hr>
+    {% for key in stageOrder %}
+        {% if '28byj48' == stages[key] %}
+            <div class="row align-items-center top-buffer {{key}}" id="{{key}}" data-type="{{stages[key]}}">
+                <div class="col-3 text-left">
+                    <h4>{{key}}</h3>
+                </div>
+                <div class="col-1">
+                    {% if 'Tip' == key %}
+                        <h5 class="col text-left" id='Tip-pos'>0</h5>
+                    {% elif 'Tilt' == key %}
+                        <h5 class="col text-left" id='Tilt-pos'>0</h5>
+                    {% elif 'Distance' == key %}
+                        <h5 class="col text-left" id='Distance-pos'>0</h5>
+                    {% endif %}
+                </div>
+                <div class="col-8 text-right">
+                    <div class="btn-group {{key}}-btn-group" role="group" aria-label="{{key}}">
+                        <button type="button" class="btn btn-primary mtr-cntrl-btn {{key}}-move-btn">-1000</button>
+                        <button type="button" class="btn btn-primary mtr-cntrl-btn {{key}}-move-btn">-100</button>
+                        <button type="button" class="btn btn-primary mtr-cntrl-btn {{key}}-move-btn">-10</button>
+                        <button type="button" class="btn btn-primary mtr-cntrl-btn {{key}}-move-btn">10</button>
+                        <button type="button" class="btn btn-primary mtr-cntrl-btn {{key}}-move-btn">100</button>
+                        <button type="button" class="btn btn-primary mtr-cntrl-btn {{key}}-move-btn">1000</button>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    <!-- Tilt -->
-    <div class="row align-items-center">
-        <div class="col-3 text-left">
-            <h4>Tilt</h3>
-        </div>
-        <div class="col-1">
-            <h5 class="col text-left" id='tilt-state'>0</h5>
-        </div>
-        <div class="col-8 text-right">
-            <div class="btn-group" role="group" aria-label="Tilt">
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-1000</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-100</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-10</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">10</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">100</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">1000</button>
+            <div class="row align-items-center top-buffer">
+                <div class="col-9"></div>
+                <div class="col-3" aria-label="{{key}}">
+                    <button type="button" class="btn btn-primary btn-block init-btn" id="{{key}}-init-btn">Initialize</button>
+                </div>
             </div>
-        </div>
-    </div>
-    <!-- Distance -->
-    <div class="row align-items-center">
-        <div class="col-3 text-left">
-            <h4>Distance</h3>
-        </div>
-        <div class="col-1">
-            <h5 class="col text-left" id='dist-state'>0</h5>
-        </div>
-        <div class="col-8 text-right">
-            <div class="btn-group" role="group" aria-label="Distance">
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-1000</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-100</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-10</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">10</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">100</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">1000</button>
+        {% elif 'kdc101' == stages[key] %}
+            <div class="row top-buffer align-items-center {{key}}" id="{{key}}" data-type="{{stages[key]}}">
+                <div class="col-3 text-left">
+                    <h4>{{key}}</h4>
+                </div>
+                <div class="col-1">
+                    {% if 'Tip' == key %}
+                        <h5 class="col text-left" id='Tip-pos'>0</h5>
+                    {% elif 'Tilt' == key %}
+                        <h5 class="col text-left" id='Tilt-pos'>0</h5>
+                    {% elif 'Distance' == key %}
+                        <h5 class="col text-left" id='Distance-pos'>0</h5>
+                    {% endif %}
+                </div>
+                <div class="col-8 text-right">
+                    <div class="btn-group {{key}}-btn-group" role="group" aria-label="{{key}}">
+                        <button type="button" class="btn btn-primary mtr-cntrl-btn {{key}}-move-btn">-1000</button>
+                        <button type="button" class="btn btn-primary mtr-cntrl-btn {{key}}-move-btn">-100</button>
+                        <button type="button" class="btn btn-primary mtr-cntrl-btn {{key}}-move-btn">-10</button>
+                        <button type="button" class="btn btn-primary mtr-cntrl-btn {{key}}-move-btn">10</button>
+                        <button type="button" class="btn btn-primary mtr-cntrl-btn {{key}}-move-btn">100</button>
+                        <button type="button" class="btn btn-primary mtr-cntrl-btn {{key}}-move-btn">1000</button>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
+            <div class="row align-items-center top-buffer">
+                <div class="col-6"></div>
+                <div class="col-3" aria-label="{{key}}">
+                    <button type="button" class="btn btn-primary btn-block init-btn" id="{{key}}-init-btn">Initialize</button>
+                </div>
+                <div class="col-3" aria-label="{{key}}">
+                    <button type="button" class="btn btn-primary btn-block home-btn" id="{{key}}-home-btn">Home</button>
+                </div>
+            </div>
+            <div class="row align-items-center top-buffer">
+                <div class="col-5"></div>
+                <div class="col-4 text-right">
+                    <div class="text_right">
+                        <input class="form-control" type="text" id="k-cube-dist-txt" placeholder="Distance (um)">
+                        <div class="invalid-feedback">
+                            Invalid value provided.
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3" aria-label="{{key}}">
+                    <button type="button" class="btn btn-primary btn-block goto-btn" id="{{key}}-goto-btn">Go To
+                        Position</button>
+                </div>
+            </div>
+            
+            <div class="row align-items-center top-buffer text-left">
+                <!-- <div class="col-1"></div> -->
+                <div class="col-4" aria-label="{{key}}">
+                    <h5 class="col text-left" id='{{key}}-last-saved-pos'>0</h5>
+                </div>
+                <!-- <div class="col-2"></div> -->
+                <div class="col-4" aria-label="{{key}}">
+                    <button type="button" class="btn btn-primary btn-block goto-saved-pos-btn" id="{{key}}-goto-saved-pos-btn">Go To Saved Position</button>
+                </div>
+                <div class="col-4" aria-label="{{key}}">
+                    <button type="button" class="btn btn-primary btn-block save-curr-pos-btn" id="{{key}}-save-curr-pos-btn">Save Current Position</button>
+                </div>
+            </div>
+        {% endif %}
+        <hr>
+    {% endfor %}
 </div>
-
 <!-- Solus Control -->
 <div class="container solus">
     <div class="row top-buffer align-items-center">
         <h3>Solus</h3>
     </div>
-    <div class="row align-items-center">
+    <div class="row align-items-center top-buffer">
+        <div class="col-6">
+            <h4>Setup</h4>
+        </div>
+        <div class="col-3" aria-label="solus">
+            <button type="button" class="btn btn-primary btn-block init-btn" id="solus-init-btn">Initialize</button>
+        </div>
+        <div class="col-3" aria-label="solus">
+            <button type="button" class="btn btn-primary btn-block home-btn" id="solus-home-btn">Home</button>
+        </div>
+    </div>  
+    <div class="row align-items-center top-buffer">
         <div class="col-6">
             <h4>Move to</h4>
         </div>
@@ -96,7 +149,7 @@
         </div>
     </div>  
 </div>
-
+<hr>
 
 <!-- Light Engine Control -->
 <div class="container top-buffer light-engine">
@@ -104,8 +157,16 @@
         <h3>Light Engine</h3>
     </div>
 
+    <div class="row align-items-center top-buffer">
+        <div class="col-6">
+            <h4>Setup</h4>
+        </div>
+        <div class="col-6" aria-label="le">
+            <button type="button" class="btn btn-primary btn-block init-btn" id="le-init-btn">Initialize</button>
+        </div>
+    </div>
     <!-- Upload Image -->
-    <div class="row align-items-center">
+    <div class="row align-items-center top-buffer">
         <h4 class="col-4 text-left">Image</h4>    
         <form class="col-5">
             <input type="file" class="form-control-file" name="file" accept=".png" id="file-picker">
@@ -114,7 +175,7 @@
             </div>
         </form>    
         <div class="col-3">
-            <button type="button" class="btn btn-primary btn-block" id="upload-btn">Upload</button>
+            <button type="button" class="btn btn-primary btn-block" id="le-upload-btn">Upload</button>
         </div>    
     </div>
 
@@ -148,23 +209,23 @@
     </div>
 
 </div>
-    
+<hr>    
 
 <!-- Auto Calibration -->
-<div class="container top-buffer">
+<!-- <div class="container top-buffer">
     <div class="row align-items-center">
         <h3>Auto Calibration</h3>
     </div>
 
     <!-- Repeat and Exposure Time -->
-    <div class="row align-items-center form-inline">
+    <!-- <div class="row align-items-center form-inline">
         <div class="col-6 form-group ip-input">
             <input class="form-control" type="text" placeholder="IP Address for Pi">
         </div>
         <div class="col-3"><button type="button" class="btn btn-primary btn-block" id="auto-calibrate-start">Start</button></div>
         <div class="col-3"><button type="button" class="btn btn-primary btn-block" id="auto-calibrate-stop">Stop</button></div>    
     </div>
-</div>
+</div> -->
 
 <!-- Additional Controls -->
 <div class="container top-buffer">
