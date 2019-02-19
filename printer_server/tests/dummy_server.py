@@ -12,7 +12,14 @@ import types
 # inject dummy modules for testing
 
 # dummy Solus module
-module_name = 'printer_server.printer.solus'
+module_name = 'printer_server.printer.solus.solus'
+dummy_module = types.ModuleType(module_name)
+sys.modules[module_name] = dummy_module
+_code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_solus.py'), 'rb').read()
+exec(_code, dummy_module.__dict__)
+
+# dummy Solus module
+module_name = 'printer_server.printer.solus_1_1'
 dummy_module = types.ModuleType(module_name)
 sys.modules[module_name] = dummy_module
 _code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_solus.py'), 'rb').read()
@@ -26,17 +33,28 @@ _code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_i2c.py'), 'rb').read()
 exec(_code, dummy_module.__dict__)
 
 # # dummy calibration control module 
-module_name = 'printer_server.printer.calibrationControl'
+# module_name = 'printer_server.printer.calibrationControl'
+# dummy_module = types.ModuleType(module_name)
+# sys.modules[module_name] = dummy_module
+# _code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_calibrationControl.py'), 'rb').read()
+# exec(_code, dummy_module.__dict__)
+# dummy calibration control module 
+module_name = 'printer_server.printer.calibrationControl.stepper_28byj48'
 dummy_module = types.ModuleType(module_name)
 sys.modules[module_name] = dummy_module
-_code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_calibrationControl.py'), 'rb').read()
+_code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_stepper_28byj48.py'), 'rb').read()
 exec(_code, dummy_module.__dict__)
-
+# dummy calibration control module 
+module_name = 'printer_server.printer.calibrationControl.kdc101_stage'
+dummy_module = types.ModuleType(module_name)
+sys.modules[module_name] = dummy_module
+_code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_kdc101_stage.py'), 'rb').read()
+exec(_code, dummy_module.__dict__)
 # dummy hardware module 
-module_name = 'printer_server.hardware'
+module_name = 'printer_server.config'
 dummy_module = types.ModuleType(module_name)    
 sys.modules[module_name] = dummy_module
-_code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_hardware.py'), 'rb').read()
+_code = open(os.path.join(TEST_DIR, 'dummy_files', 'dummy_config.py'), 'rb').read()
 exec(_code, dummy_module.__dict__)
 #########################################
 

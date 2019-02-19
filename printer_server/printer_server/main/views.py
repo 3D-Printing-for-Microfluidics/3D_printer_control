@@ -10,7 +10,7 @@ import glob
 import time
 
 from printer_server.settings import Config
-from printer_server.hardware import printer3d, PrintSettings
+from printer_server.config import printer3d, PrintSettings
 from printer_server.threads import printingThreads
 from printer_server.models import PrintJob, PrintRecord
 from printer_server.extensions import socketio
