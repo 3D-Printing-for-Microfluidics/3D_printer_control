@@ -54,25 +54,24 @@
         #. Light engine power setting - an integer between 0 and 1000
         #. Layer exposure time (ms)
         #. Layer thickness (um)
-        #. Number of duplications - If a number of consective layers 
+        #. Number of duplications - If a number of consecutive layers 
         share the same images and parameters, we can set 
         ``Number of duplications`` to reduce json file footprint.
         #. Solus command chain - command chain 
         to tell solus how to move BP and QW. 
         (Details: :ref:`solus_command_chain`)
 
-    #. Layers - a list of layer settings. Each item in the list 
-    is corresponding to multiple layers, when 
-    ``Number of duplications`` is greater than 1.
-
+    #. Layers - a list of layer settings. Any item in the list 
+    with ``Number of duplications`` greater than 1
+    corresponds to multiple identical layers. 
 
     .. _solus_command_chain:
 
     Solus command chain
     ^^^^^^^^^^^^^^^^^^^
 
-    The Solus movement starts from right after exposure, and ends 
-    right before another exposure. Here, a new API for moving build 
+    A Solus movement starts from right after exposure, and ends 
+    right before the next exposure. Here, a new API for moving the build 
     platform and quartz window is introduced. With the new API, any 
     arbitrary combination of movements can be implemented by 
     chaining a list of commands. 
@@ -95,19 +94,19 @@
     * Quartz Window (QW)
 
         * Move quartz window up 2 mm at 500 mm/min
-            * ``QW UP 1.5 SPEED 500``
+            * ``QW UP 2 SPEED 500``
 
         * Move quartz window down 1 mm at 600 mm/min
             * ``QW DOWN 1 SPEED 600``
 
     **Rules**
 
-    We can almost chain commands however we want to, but there are 
-    still some rules.
+    We can arbitrarily chain commands as long as the following 
+    rules are followed.
 
     * ``BP`` rules
 
-        #. Speed must be positive integer.
+        #. Speed must be a positive integer.
         #. Max speed: 800 mm/min
         #. The total distance of ``BP UP`` should be the same as 
         ``BP DOWN``. 
@@ -126,9 +125,9 @@
     .. Note::
         Because ``BP UP`` distance is equal to ``BP DOWN`` distance, 
         there is not a new layer of resin between the printed part 
-        and the teflon film. But it is taken care of by 
-        Solus.printCycle method, where it automatically reduce the 
-        last ``BP DOWN`` distance by the layer thickness.
+        and the teflon film. But it is taken care of by the 
+        Solus.printCycle method, which automatically reduces the 
+        last ``BP DOWN`` distance by the accumulated layer thicknesses.
 
 
     JSON with extra information and customized layer settings
@@ -168,6 +167,11 @@
             "Schema version": "0.1",
             "Image directory": "slices"
         }
+
+
+    JSON default and customized layer settings
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
         "Default settings": {
             "Comment": "Default settings for the Printer. Unless 
                         otherwise defined in the layer, these are 
@@ -209,7 +213,7 @@
             ],
             "Number of duplications": 2,
             "Comment": "This layer is duplicated twice, which means 
-                        it is actually for layer 2 and 3."
+                        it is actually for the second and third layers."
             },
             {
             "Images": [
@@ -241,7 +245,7 @@
                 400,
                 200
             ],
-            "Comment": "This layer exposes 2 images with different 
+            "Comment": "This layer exposes 2 images, each with different 
                         exposure times."
             },
             {
@@ -253,7 +257,7 @@
                 200,
                 400,
             ],
-            "Comment": "This layer exposes 2 images with different 
+            "Comment": "This layer exposes 2 images, each with different 
                         light engine power settings."
             },
             {
@@ -269,7 +273,7 @@
                 200,
                 400,
             ],
-            "Comment": "This layer exposes 2 images with different 
+            "Comment": "This layer exposes 2 images, each with different 
                         exposure times and light engine power 
                         settings."
             },
@@ -287,32 +291,33 @@
                 "WAIT 1.5"
             ],
             "Comment": "The layer has its own command chain to 
-                        control Solus."
+                        control the Solus."
             },
             {
             "Images": [
                 "0006.png"
             ],
-            "Comment": "A normal layer"
+            "Comment": "A normal layer that uses all of the default parameters."
             }
         ]
         }
 
-    We can customize any layer by override the default values. In 
+    We can customize any layer by overriding the default values. In 
     the above JSON file, the first list item in ``Layers`` contains 
     ``Layer exposure time (ms)`` and ``Layer thickness (um)``, 
     which means the first layer will have exposure time of 20000 ms 
     and layer thickness of 20 um. Note that a number of consective 
     layers can share one list item by making 
-    ``Number of duplications`` greater than 1. The purpose is to 
+    ``Number of duplications`` greater than 1. Its purpose is to 
     reduce repetitive information. For instance, in the second list 
     item above, ``Number of duplications`` is 2, which is mapped to 
-    layer 2 and 3. 
+    the second and third layers. 
 
-    Also, a layer can expose however many images. For every image, 
-    you can set exposure times and light engine power settings, 
-    repectively. If so, every image must have an exposure time. Same 
-    for light engine power setting. 
+    Also, a layer can expose an arbitrary number of images. For each  
+    image you can individually set the exposure times and/or light engine 
+    power settings, which overrides the default parameters. In this case,
+    every image must have its own exposure time and/or light engine power 
+    setting. 
 
 
     Format of A Print Job
@@ -322,7 +327,7 @@
     format the 3D printer accepts. This ZIP file should contain only 
     one JSON file, named ``print_settings.json``, and all the images 
     that will be used for this print job. The file structure in the 
-    ZIP file should be as following ::
+    ZIP file should be as follows ::
 
         .
         ├── print_settings.json
@@ -335,13 +340,12 @@
                 .
                 .
 
-    The name of the JSON file must be ``print_settings.json``, and 
-    the names of the images and image folder name need to match what 
-    is specified in the json file. 
+    The image directory name and image file names must match those 
+    specified in the json file. 
 
     .. Note::
         After the ZIP file is extracted, the JSON file directory will 
-        be used as the root directory. Image directory is relative 
+        be used as the root directory. The image directory is relative 
         to the root directory. 
 
 """
