@@ -1,110 +1,96 @@
 import RPi.GPIO as GPIO
 import time
+from .kdc101_stage import KDC101
+
+import serial
+import serial.tools.list_ports
 
 class CalibrationControl:
+    def __init__(self):
+        self.motors = ["Tip", "Tilt", "Distance"]
+        self.tipTilt = TipTilt_stage()
+        # self.dist = KDC101()
+        self.tipTilt.initialize()
+        # self.dist.initialize()
+        print("__init__ calibration Done")
+
+    def initialize(self): 
+        self.tipTilt.initialize()
+        # self.dist.initialize()
+    
+    def move(self, axis, um):
+        if axis == "Distance":
+            self.dist.move(um)
+        else:
+            self.tipTilt.move(axis, um)
+
+
+
+class TipTilt_stage(serial.Serial): 
 
     def __init__(self):
-
+        super().__init__(baudrate=115200, timeout=None)
         # Button parameters 
-        self.motors = ["Tip","Tilt","Distance"] # if you add a motor here, make sure to add it's pins below 
+        self.motors = ["Tip","Tilt"] # if you add a motor here, make sure to add it's pins below 
+        self.location = '1-1.1.3'
 
-        # Motor parameters 
-        self.spr = 4096     # From spec sheet we know that the motors have 4096 steps per revolution
-        self.dpr = 381      # We also know distance per revolution to be 381 um
-        self.delay = .003   # Min delay for 28BYJ-48 is 2 ms, we will set it at 4ms
-
-        # GPIO pins used for each motor 
-        self.pin_names = ['IN1','IN2','IN3','IN4']
-        self.pins = {
-            self.motors[0]:{            # tip 
-                self.pin_names[0]:14,    
-                self.pin_names[1]:15,   
-                self.pin_names[2]:18,   
-                self.pin_names[3]:4    
-            },
-            self.motors[1]:{            # tilt 
-                self.pin_names[0]:17,   
-                self.pin_names[1]:27,    
-                self.pin_names[2]:22,  
-                self.pin_names[3]:23    
-            },
-            self.motors[2]:{            # distance 
-                self.pin_names[0]:24,    
-                self.pin_names[1]:25,     
-                self.pin_names[2]:10,    
-                self.pin_names[3]:9    
-            }
-        }
-        
     def initialize(self):
-        # Setup GPIO
-        GPIO.setmode(GPIO.BCM)   
-        GPIO.setwarnings(False) # running GPIO.cleanup() for some reason leaves some pins on, even after turning them off. 
-                                # Without it, you always get a warning that pins are in use, so I'm disabling warnings here. 
-        for motor in self.pins:   
-            for pin in self.pins[motor]: 
-                GPIO.setup(self.pins[motor][pin], GPIO.OUT) # set every pin as output      
+        self.connect()
+        self.send('$X')     # Disable homing necessity
+        self.send('G91')    # Send relative mode    
 
-    # Set GPIO pins on specified motor to given pattern 
-    def setStep(self, motor, pinPattern):
-        for i in range(len(self.pin_names)):
-            GPIO.output(self.pins[motor][self.pin_names[i]], pinPattern[i])
+    def connect(self):
+        ports = list(serial.tools.list_ports.comports())
+        for p in ports:
+            if 'ttyUSB' in p.name:
+                print("Found", p.device, p.location)
+                if p.location == self.location:
+                    print(p.device)
+                    self.port = p.device
 
-    # Move the specified motor by specified steps 
-    def move(self, motor, steps): 
-        if steps > 0:    # forward motion 
-            for _ in range(0, steps):
-                self.setStep(motor, [1, 0, 0, 1])
-                time.sleep(self.delay)
-                self.setStep(motor, [1, 1, 0, 0])
-                time.sleep(self.delay)
-                self.setStep(motor, [0, 1, 1, 0])
-                time.sleep(self.delay)
-                self.setStep(motor, [0, 0, 1, 1])
-                time.sleep(self.delay)
-        else:           # backward motion 
-            for _ in range(0, abs(steps)):
-                self.setStep(motor, [1, 0, 0, 1])
-                time.sleep(self.delay)
-                self.setStep(motor, [0, 0, 1, 1])
-                time.sleep(self.delay)
-                self.setStep(motor, [0, 1, 1, 0])
-                time.sleep(self.delay)
-                self.setStep(motor, [1, 1, 0, 0])
-                time.sleep(self.delay)
-        # This turns off current to the coils so the motor does not get hot
-        self.setStep(motor, [0, 0, 0, 0]) 
+        if self.port is None:
+            raise ValueError('Tip Tilt not found')
+        elif self.is_open:
+            self.close()
+        self.open()
+        return self.send("G4 P0")
 
-    # Iteratively toggle each input to each motor. 
-    # You should be able to watch the LEDs flash in this order: A, B, C, D, C, B, A, off   
-    # If they go in some other order or don't light at all, the board has been wired incorrectly 
+    def move(self, axis, um):
+        mm = um / 1000
+        speed = 10  #mm/min
+        if(axis == 'Tip'):
+            axis = 'X'
+        else:
+            axis = 'Y'
+        command = 'G1 ' + axis + str(mm) + ' F' + str(speed)
+        print(command)
+        self.send(command)
+
+    def send(self, cmd):
+        # send the command to grbl
+        response = self.transmit(cmd)
+        
+        # send a G4 P0 command to wait for completion of previous command 
+        self.transmit('G4 P0')  
+
+        # return the reponse of the first command 
+        return response
+
+    def transmit(self, cmd):
+        self.write(bytes(cmd + '\r', encoding='ascii')) # write to serial tx buffer 
+        return self.receive()                           # wait for response from serial rx buffer
+
+    def receive(self):
+        response = b''
+        response += self.readline()     # wait for the first line to fill in the rx buffer 
+        while self.in_waiting:          # while there is more data in the rx buffer      
+            response += self.readline() # read next line from rx buffer 
+        return response.decode()        # return decoded byte response (as string)
+
     def test_sequence(self):
-        delay = .1
-        for m in self.motors:
-            self.setStep(m, [1,0,0,0])
-            time.sleep(delay)
-            self.setStep(m, [0,1,0,0])
-            time.sleep(delay)
-            self.setStep(m, [0,0,1,0])
-            time.sleep(delay)
-            self.setStep(m, [0,0,0,1])
-            time.sleep(delay)
-            self.setStep(m, [0,0,1,0])
-            time.sleep(delay)
-            self.setStep(m, [0,1,0,0])
-            time.sleep(delay)
-            self.setStep(m, [1,0,0,0])
-            time.sleep(delay)
-            self.setStep(m, [0,0,0,0])
-            time.sleep(delay)
+        pass
 
-    def __del__(self):
-        try: 
-            # always turn off all motor controls 
-            for m in self.motors: 
-                self.setStep(m, [0,0,0,0])
-        except:
-            pass
+
 
 if __name__ == '__main__':
     c=CalibrationControl()
