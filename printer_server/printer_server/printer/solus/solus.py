@@ -87,7 +87,7 @@ class Solus(serial.Serial):
         self.location = '1-1.2'
         self.regex = re.compile(r'^(BP|QW) (UP|DOWN) (-?\d+(\.\d+)?) SPEED (\d+)')
         self.encoder = Encoder(encoder_HWID)
-        self.lead_screw_pitch_mm = 1.5
+        self.lead_screw_pitch_mm = 0.635
         self.encoder_counts_per_revolution = 20000
         # self.encoder_print_file = None
         self.loadCellPin = 4    #Just a BCM GPIO Pin
