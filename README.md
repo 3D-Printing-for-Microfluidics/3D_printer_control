@@ -1,3 +1,15 @@
+# Purpose - 9/2/19 - GN
+
+This repository's `master` branch contains the code being actively used by the Raspberry Pi 3 B+ (RPi) on the HR3 3D printer. Going forward, the code in this branch should always be the active code being used on the RPi. Therefore all development focused on modifying and improving the actively used HR3 (and, soon, HR3.1) RPi code must be done on this branch.
+
+
+# To do
+
+- Change load cell Teensy and python code so that data errors are handled without generating malformed csv files
+- Fix format of file with encoder data that is recorded for each print run
+- Change motor control on front end so that arbitrary positions can be entered rather than only being able to jog to a position in at minimum 10 &mu;m increments
+
+
 # Running the dummy server
 
 ## Setup 
