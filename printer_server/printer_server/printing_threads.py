@@ -125,14 +125,20 @@ class PrintingThreads:
         """
         self.projector.connect()
         self.solus.connect()
+        self.solus.openEncoderFile('encoder_initialization_write_file.txt')
         self.solus.initialize()
+        self.solus.closeEncoderFile()
+
         
     @multithreading('planarizing', 'Planarization Step 1')
     def planarizationStep1(self):
         """Planarization Step 1 -- Lower the build platform to 
         zero in Z for planarization.
         """
+        print("Planarization Step 1")
+        self.solus.openEncoderFile('encoder_planarization_write_file.txt')
         self.solus.goToZmin()
+        self.solus.closeEncoderFile()
         
     @multithreading('planarized', 'Planarization Step 2')
     def planarizationStep2(self):
@@ -140,8 +146,14 @@ class PrintingThreads:
         is flat on the teflon film. Then tighten the screws and 
         bring the build platform to home position in Z.
         """
+        self.solus.openEncoderFile('encoder_planarization_write_file.txt')
+        self.solus.encoder.writeEncoder()
         # self.solus.goToZmax()
-        self.solus.send('G1 Z-5 F100')
+        print("Planarization Step 2")
+        self.solus.goToPlanarizationPullOff()
+        self.solus.closeEncoderFile()
+        # self.solus.send('G1 Z-5 F100')
+        print("Planarization Step 2 Done")
         
     @multithreading('paused', 'Pause Printing')
     def pause(self):
@@ -165,6 +177,8 @@ class PrintingThreads:
         """
         self.printingStopped.set()
         self._thread.join()
+        self.solus.closeEncoderFile()
+        self.solus.closeLoadCellFile()
         
     def start(self):
         """This method starts a new print. 
@@ -252,10 +266,16 @@ class PrintingThreads:
         self.printingStopped.clear()
         self.printingPaused.clear()
         self.projector.setLedAmplitude(100)
+
+        date_and_time = datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
+        encoder_print_file_name = 'encoder_print_file_' + date_and_time +'.txt'
+        load_cell_file_name = 'load_cell_print_file_' + date_and_time + '.txt'
+        self.solus.openEncoderFile(encoder_print_file_name)
+        self.solus.openLoadCellFile(load_cell_file_name)
         
         # Move build platform to the starting position
         if startingLayer == 1:
-            self.solus.goToFirstLayerHeight(self.printSettings.layerThicknessMm(1))
+            self.solus.goToFirstLayerHeight(1 + self.printSettings.layerThicknessMm(1))
         else:
             self.solus.resume(self.printSettings.layerThicknessMm(startingLayer))
             
@@ -266,6 +286,7 @@ class PrintingThreads:
                 self.pausedLayer = i # layer i has not been exposed
                 break
                 
+            self.solus.encoder_print_file.write("Layer %d \r\n" %(i))
             if i != startingLayer:
                 self.solus.printCycle(self.printSettings.layerThicknessMm(i),
                                       self.printSettings.solusCommandChain(i))
@@ -284,13 +305,14 @@ class PrintingThreads:
                           namespace='/printing', broadcase=True)
                           
         # Clean up
+        self.solus.stopLoadCell()
         self.projector.stop()
         self.projector.clear()
         if self.printingPaused.is_set():
             self.solus.pause()
         else:
             self.solus.goToZmax()
-            
+
             # save the end time to database
             with app.app_context():
                 latestPrintRecord = PrintRecord.query.\
@@ -308,6 +330,8 @@ class PrintingThreads:
                 }
                 socketio.emit(self.printer3d.state, message, 
                     namespace='/printing', broadcast=True)
+        self.solus.closeEncoderFile()
+        self.solus.closeLoadCellFile()
                 
     @property
     def isBusy(self):
