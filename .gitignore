@@ -8,10 +8,15 @@ env/
 geckodriver.log
 _build/
 *.db
+*.bak
 migrations/
 .vscode/
 env2/
 slices/
 error.txt
 printer_server/upload/current_job/
-
+printer_server/upload/print_history/
+printer_server/rpi/load_cell_print_file*
+printer_server/rpi/encoder_print_file*
+printer_server/rpi/encoder_initialization*
+printer_server/rpi/encoder_planarization*
