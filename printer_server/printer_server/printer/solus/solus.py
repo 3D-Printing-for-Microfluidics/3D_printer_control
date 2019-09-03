@@ -110,13 +110,13 @@ class Solus(serial.Serial):
         return diffTime        
 
     def openEncoderFile(self, file_name):
-        self.encoder_print_file = open(file_name, "a+")
+        self.encoder_print_file = open(str(file_name), "a+")
 
     def closeEncoderFile(self):
         self.encoder_print_file.close()
 
     def openLoadCellFile(self, file_name):
-        self.load_cell_file = open(file_name, "a+")
+        self.load_cell_file = open(str(file_name), "a+")
 
     def closeLoadCellFile(self):
         self.load_cell_file.close()
