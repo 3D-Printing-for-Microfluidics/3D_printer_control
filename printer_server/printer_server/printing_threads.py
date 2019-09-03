@@ -272,7 +272,7 @@ class PrintingThreads:
         date_and_time = datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
         self.logs_path_directory_for_this_run = self.logs_path / date_and_time
         self.logs_path_directory_for_this_run.mkdir()
-        encoder_print_file = self.logs_path_directory_for_this_run / 'encoder_print_file.txt'
+        encoder_print_file_name = self.logs_path_directory_for_this_run / 'encoder_print_file.txt'
         load_cell_file_name = self.logs_path_directory_for_this_run / 'load_cell_print_file.txt'
         self.solus.openEncoderFile(encoder_print_file_name)
         self.solus.openLoadCellFile(load_cell_file_name)
