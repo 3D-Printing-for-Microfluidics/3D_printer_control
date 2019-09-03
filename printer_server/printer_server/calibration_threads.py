@@ -109,11 +109,11 @@ class CalibrationThreads:
         self.solus.goToZmin()
 
     @thread_decorator('calibration_motor_done', 'Calibration move done')
-    def calibrationMotorMove(self, axis, steps):
+    def calibrationMotorMove(self, axis, um):
         """calibrationMotorMove -- Move specified calibration 
         motor by specified number of steps
         """
-        self.calibrationControl.move(axis, steps)
+        self.calibrationControl.move(axis, um)
            
     @thread_decorator('light_engine_stop_complete', 'Light engine stopped')
     def lightEngineStop(self):
