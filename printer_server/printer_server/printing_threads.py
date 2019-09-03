@@ -11,6 +11,7 @@ import threading
 from datetime import datetime
 from functools import wraps
 import os
+from pathlib import Path
 
 from printer_server.extensions import db, socketio
 from printer_server.hardware import printer3d
@@ -117,6 +118,7 @@ class PrintingThreads:
         self.printingPaused = threading.Event()
         self.pausedLayer = 1
         self._thread = threading.Thread()
+        self.logs_path = Path.cwd().parent / 'logs'
         
     @multithreading('initialized', 'Initialize')
     def initialize(self):
@@ -268,8 +270,10 @@ class PrintingThreads:
         self.projector.setLedAmplitude(100)
 
         date_and_time = datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
-        encoder_print_file_name = 'encoder_print_file_' + date_and_time +'.txt'
-        load_cell_file_name = 'load_cell_print_file_' + date_and_time + '.txt'
+        self.logs_path_directory_for_this_run = self.logs_path / date_and_time
+        self.logs_path_directory_for_this_run.mkdir()
+        encoder_print_file = self.logs_path_directory_for_this_run / 'encoder_print_file.txt'
+        load_cell_file_name = self.logs_path_directory_for_this_run / 'load_cell_print_file.txt'
         self.solus.openEncoderFile(encoder_print_file_name)
         self.solus.openLoadCellFile(load_cell_file_name)
         
