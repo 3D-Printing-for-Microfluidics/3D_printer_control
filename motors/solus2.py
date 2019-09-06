@@ -1,3 +1,6 @@
+"""Code for HR2 (or maybe HR1)
+"""
+
 # -*- coding: utf-8 -*-
 """Solus module."""
 import serial

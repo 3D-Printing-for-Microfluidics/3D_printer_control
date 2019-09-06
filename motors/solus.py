@@ -1,3 +1,6 @@
+"""Code for HR1 (or maybe HR2)
+"""
+
 import serial
 import serial.tools.list_ports
 import time
