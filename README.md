@@ -1,6 +1,10 @@
+
+
 # Purpose - 9/2/19 - GN
 
 This repository's `master` branch contains the code being actively used by the Raspberry Pi 3 B+ (RPi) on the HR3 3D printer. Going forward, the code in this branch should always be the active code being used on the RPi. Therefore all development focused on modifying and improving the actively used HR3 (and, soon, HR3.1) RPi code must be done on this branch.
+
+**The `HR3P2` branch has the current software in development for the new HR3.2 printer.** 
 
 
 # To do
