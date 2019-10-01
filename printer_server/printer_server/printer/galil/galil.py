@@ -166,14 +166,17 @@ class Galil():
         return self.g.GProgramDownloadFile(filename)
 
     def send(self, command):
-        if self.verbose: print("Sent : '{}'".format(command))                 # print send command if in verbose mode
+        if self.verbose: print("Sent : '{}'".format(command))           # print send command if in verbose mode
         try:
             response = self.g.GCommand(command)                         # send the command and save the response
             response = ''.join(response)                                # join the returned char array into a string
             if self.verbose and response != '':
                 print("Reply: '{}'".format(response))                   # print the response if in verbose mode
             return response                                             # return the response
-        except gclib.GclibError as error:                               # if there is an error, return the error
+        except gclib.GclibError as error:                               # if there is an error
+            error_code = self.g.GCommand("TC 1")                        # get the human readable error code
+            if error_code not in ('', "0"):
+                error = error_code
             print("Error: Last command '{}' returned error '{}'".format(command, error))
             return error
 
@@ -251,7 +254,7 @@ class Galil():
 if __name__ == '__main__':
     g = Galil(verbose=True)
     g.connect()
-    g.configure()
+    # g.configure()
 
     try:
         while True:
