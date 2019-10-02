@@ -287,22 +287,6 @@ class Galil():
 if __name__ == '__main__':
     g = Galil(verbose=False)
     g.connect()
-    # g.configure()
-    # print(g.getPosition())
-    # g.home()
-    print(g.getPosition())
-    g.relMove(speed=10, mm=20)
-    print(g.getPosition())
-    g.relMove(speed=10, mm=-20)
-    print(g.getPosition())
-    g.absMove(speed=10, mm=-20)
-    print(g.getPosition())
-    g.absMove(speed=10, mm=0)
-    print(g.getPosition())
-
-    # g.interactiveMode()
-
+    # g.configure()         # be careful running this
+    g.interactiveMode()
     print("Done")
-
-
-## Add TC - tell error code - will tell you why things aren't working
