@@ -8,13 +8,11 @@
     "Layer exposure time (ms)": 1000,
     "Layer thickness (um)": 10,
     "Number of duplications": 1,
-    "Solus command chain": [
+    "Galil command chain": [
       "WAIT 0.1",
       "BP UP 1 SPEED 300",
-      "QW DOWN 6 SPEED 400",
       "WAIT 1.5",
       "BP UP 2 SPEED 400",
-      "QW UP 6 SPEED 400",
       "BP DOWN 3 SPEED 400",
       "WAIT 1.5"
     ]

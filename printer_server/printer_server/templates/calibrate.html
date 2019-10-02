@@ -79,22 +79,22 @@
     </div>
 </div>
 
-<!-- Solus Control -->
-<div class="container solus">
+<!-- Galil Control -->
+<div class="container galil">
     <div class="row top-buffer align-items-center">
-        <h3>Solus</h3>
+        <h3>Galil Controller</h3>
     </div>
     <div class="row align-items-center">
         <div class="col-6">
             <h4>Move to</h4>
         </div>
         <div class="col-3">
-            <button type="button" class="btn btn-primary btn-block" id="solus-top-btn">Top</button>
+            <button type="button" class="btn btn-primary btn-block" id="galil-top-btn">Top</button>
         </div>
         <div class="col-3">
-            <button type="button" class="btn btn-primary btn-block" id="solus-bottom-btn">Bottom</button>
+            <button type="button" class="btn btn-primary btn-block" id="galil-bottom-btn">Bottom</button>
         </div>
-    </div>  
+    </div>
 </div>
 
 
@@ -106,16 +106,16 @@
 
     <!-- Upload Image -->
     <div class="row align-items-center">
-        <h4 class="col-4 text-left">Image</h4>    
+        <h4 class="col-4 text-left">Image</h4>
         <form class="col-5">
             <input type="file" class="form-control-file" name="file" accept=".png" id="file-picker">
             <div class="invalid-feedback">
                 Please provide an 8-bit grayscale PNG file.
             </div>
-        </form>    
+        </form>
         <div class="col-3">
             <button type="button" class="btn btn-primary btn-block" id="upload-btn">Upload</button>
-        </div>    
+        </div>
     </div>
 
     <!-- LED Power -->
@@ -127,7 +127,7 @@
 
     <!-- Repeat and Exposure Time -->
     <div class="row align-items-center">
-        <h4 class="col-4 text-left">Exposure</h4>    
+        <h4 class="col-4 text-left">Exposure</h4>
         <div class="col-2 form-group text-center">
             <input class="form-check-input" type="checkbox" value="" id="repeat-chkbx">
             <label class="form-check-label" for="repeat-chkbx">Repeat</label>
@@ -148,7 +148,7 @@
     </div>
 
 </div>
-    
+
 
 <!-- Auto Calibration -->
 <div class="container top-buffer">
@@ -162,7 +162,7 @@
             <input class="form-control" type="text" placeholder="IP Address for Pi">
         </div>
         <div class="col-3"><button type="button" class="btn btn-primary btn-block" id="auto-calibrate-start">Start</button></div>
-        <div class="col-3"><button type="button" class="btn btn-primary btn-block" id="auto-calibrate-stop">Stop</button></div>    
+        <div class="col-3"><button type="button" class="btn btn-primary btn-block" id="auto-calibrate-stop">Stop</button></div>
     </div>
 </div>
 
@@ -178,7 +178,7 @@
         <div class="col-3"><button type="button" class="btn btn-warning btn-block" id="reset-printer-state">Reset</button></div>
     </div>
 </div>
-    
+
 {% endblock %}
 
 {% block scripts %}

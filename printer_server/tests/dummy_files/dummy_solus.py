@@ -9,9 +9,8 @@ class Solus:
         self.hwid = hwid
         self.regex = re.compile(r'^(BP|QW) (UP|DOWN) (-?\d+(\.\d+)?) SPEED (\d+)')
 
-
     def connect(self):
-        print("Solus: connect()")        
+        print("Solus: connect()")
 
     def initialize(self):
         print("Solus: initialize()")
@@ -24,14 +23,14 @@ class Solus:
     def goToZmax(self):
         print("Solus: goToZmax()")
         time.sleep(1)
-        
+
     def goToFirstLayerHeight(self, *args):
         print("Solus: goToFirstLayerHeight()")
         time.sleep(1)
-        
+
     def resume(self, *args):
         print("Solus: resume()")
-        
+
     def printCycle(self, layerThicknessMm, commandChain):
         # TODO: explain the code here
         for i in range(len(commandChain)-1, -1, -1):
@@ -40,7 +39,7 @@ class Solus:
                 break
             if i == 0:
                 a = -1
-                
+
         if a == -1:
             commandChain.append('BP UP {:.4f} SPEED 400'.format(layerThicknessMm))
         else:
@@ -52,16 +51,16 @@ class Solus:
             else:
                 newCommand = 'BP DOWN {:.4f} SPEED {}'.format(distance-layerThicknessMm, speed)
             commandChain[a] = newCommand
-            
+
         for command in commandChain:
             self.execute(command)
-            
+
     def execute(self, command):
         # Example: `WAIT 1.5` => `time.sleep(1.5)`
         if command.startswith('WAIT'):
             time.sleep(float(command.split()[1]))
             return
-            
+
         m = self.regex.fullmatch(command)
         if m:
             direction = m.group(2)
@@ -73,9 +72,9 @@ class Solus:
                 self.moveX(direction, distance, speed)
 
     def moveX(self, direction, distance, speed):
-        """Move quartz window up/down a certain distance at a 
-        given speed. 
-        
+        """Move quartz window up/down a certain distance at a
+        given speed.
+
         :param str direction: can only be 'UP' or 'DOWN'
         :param distance: distance in millimeters.
         :param speed: Always treated as positive. The unit is mm/min.
@@ -83,11 +82,11 @@ class Solus:
         if direction == 'UP':
             distance = -distance
         print('Solus: G1 X{:.4f} F{:d}'.format(distance, abs(speed)))
-        
+
     def moveZ(self, direction, distance, speed):
-        """Move build platform up/down a certain distance at a 
-        given speed. 
-        
+        """Move build platform up/down a certain distance at a
+        given speed.
+
         :param str direction: can only be 'UP' or 'DOWN'
         :param distance: distance in millimeters.
         :param speed: Always treated as positive. The unit is mm/min.
@@ -101,6 +100,6 @@ class Solus:
 
     def pause(self):
         print("Solus: pause()")
-        
+
     def __del__(self):
         pass

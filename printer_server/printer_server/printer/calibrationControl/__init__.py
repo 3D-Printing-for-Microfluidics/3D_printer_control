@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
-"""The solus module"""
+"""The calibration control module"""
 
 from .calibrationControl import CalibrationControl

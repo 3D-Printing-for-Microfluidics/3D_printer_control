@@ -9,8 +9,8 @@ JSON File
 Boilerplate
 ^^^^^^^^^^^
 
-The JSON file contains all the information needed for a print 
-besides the images. Here is a most simplified version, namely, 
+The JSON file contains all the information needed for a print
+besides the images. Here is a most simplified version, namely,
 all the entries are necessary. ::
 
     {
@@ -23,13 +23,11 @@ all the entries are necessary. ::
         "Layer exposure time (ms)": 400,
         "Layer thickness (um)": 10,
         "Number of duplications": 1,
-        "Solus command chain": [
+        "Galil command chain": [
           "WAIT 0.1",
           "BP UP 1 SPEED 300",
-          "QW DOWN 6 SPEED 400",
           "WAIT 1.5",
           "BP UP 2 SPEED 400",
-          "QW UP 6 SPEED 400",
           "BP DOWN 3 SPEED 400",
           "WAIT 1.5"
         ]
@@ -55,28 +53,28 @@ all the entries are necessary. ::
     #. Light engine power setting - an integer between 0 and 1000
     #. Layer exposure time (ms)
     #. Layer thickness (um)
-    #. Number of duplications - If a number of consective layers 
-       share the same images and parameters, we can set 
+    #. Number of duplications - If a number of consective layers
+       share the same images and parameters, we can set
        ``Number of duplications`` to reduce json file footprint.
-    #. Solus command chain - command chain 
-       to tell solus how to move BP and QW. 
-       (Details: :ref:`solus_command_chain`)
+    #. Galil command chain - command chain
+       to tell Galil controller how to move BP.
+       (Details: :ref:`galil_command_chain`)
 
-#. Layers - a list of layer settings. Each item in the list 
-   is corresponding to multiple layers, when 
+#. Layers - a list of layer settings. Each item in the list
+   is corresponding to multiple layers, when
    ``Number of duplications`` is greater than 1.
 
 
-.. _solus_command_chain:
+.. _galil_command_chain:
 
-Solus command chain
+Galil command chain
 ^^^^^^^^^^^^^^^^^^^
 
-The Solus movement starts from right after exposure, and ends 
-right before another exposure. Here, a new API for moving build 
-platform and quartz window is introduced. With the new API, any 
-arbitrary combination of movements can be implemented by 
-chaining a list of commands. 
+The Galil movement starts from right after exposure, and ends
+right before another exposure. Here, a new API for moving the
+build platform is introduced. With the new API, any
+arbitrary combination of movements can be implemented by
+chaining a list of commands.
 
 **Command format examples**
 
@@ -93,98 +91,79 @@ chaining a list of commands.
     * Move build platform down 1.5 mm at 400 mm/min
         * ``BP DOWN 1.5 SPEED 400``
 
-* Quartz Window (QW)
-
-    * Move quartz window up 2 mm at 500 mm/min
-        * ``QW UP 1.5 SPEED 500``
-
-    * Move quartz window down 1 mm at 600 mm/min
-        * ``QW DOWN 1 SPEED 600``
-
 **Rules**
 
-We can almost chain commands however we want to, but there are 
+We can almost chain commands however we want to, but there are
 still some rules.
 
 * ``BP`` rules
 
     #. Speed must be positive integer.
     #. Max speed: 800 mm/min
-    #. The total distance of ``BP UP`` should be the same as 
-       ``BP DOWN``. 
-    #. The build platform absolute position should always be 
-       between layer position and 90 mm. 
-
-* ``QW`` rules
-
-    #. Speed must be positive integer.
-    #. Max speed: 800 mm/min
-    #. The total distance of ``QW UP`` should be the same as 
-       ``QW DOWN``.
-    #. The quartz window absolute position should always be 
-       between 0 and 6 mm. 
+    #. The total distance of ``BP UP`` should be the same as
+       ``BP DOWN``.
+    #. The build platform absolute position should always be
+       between layer position and 90 mm.
 
 .. Note::
-    Because ``BP UP`` distance is equal to ``BP DOWN`` distance, 
-    there is not a new layer of resin between the printed part 
-    and the teflon film. But it is taken care of by 
-    Solus.printCycle method, where it automatically reduce the 
+    Because ``BP UP`` distance is equal to ``BP DOWN`` distance,
+    there is not a new layer of resin between the printed part
+    and the teflon film. But it is taken care of by
+    Galil.printCycle method, where it automatically reduce the
     last ``BP DOWN`` distance by the layer thickness.
 
 
 JSON with extra information and customized layer settings
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Besides basic information, we can add detailed description under 
-other entries. This extra information does not affect the print 
+Besides basic information, we can add detailed description under
+other entries. This extra information does not affect the print
 in any way. Example ::
 
     {
       "Design": {
-        "Purpose": "String with short statement about design's 
+        "Purpose": "String with short statement about design's
                     purpose.",
-        "Description": "String containing description of design 
-                        to be printed with this JSON file. Could 
-                        be multi-line by using '\\n' to separate 
+        "Description": "String containing description of design
+                        to be printed with this JSON file. Could
+                        be multi-line by using '\\n' to separate
                         lines.",
-        "Resin": "Resin that this design is intended to be used 
-                  with. Example: PEGDA with 2% NPS and 1% 
+        "Resin": "Resin that this design is intended to be used
+                  with. Example: PEGDA with 2% NPS and 1%
                   Irgacure 819.",
-        "3D printer": "3D printer that this design is intended 
+        "3D printer": "3D printer that this design is intended
                        to be printed on.",
-        "Design file": "<filename> (OpenSCAD or other 3D CAD file 
+        "Design file": "<filename> (OpenSCAD or other 3D CAD file
                         containing design)",
         "STL file": "<filename>",
-        "Slicer": "Specify which slicer was used to create png 
+        "Slicer": "Specify which slicer was used to create png
                    images from STL file.",
         "Date": "Date file was sliced."
       },
       "Header": {
-        "Comment": "This section contains information about the 
-                    schema and the directory where to find images, 
-                    which is specified relative to the directory 
-                    in which this json file resides. If the json 
-                    file is in the same directory as the png 
+        "Comment": "This section contains information about the
+                    schema and the directory where to find images,
+                    which is specified relative to the directory
+                    in which this json file resides. If the json
+                    file is in the same directory as the png
                     images, this would be `.`",
         "Schema version": "0.1",
         "Image directory": "slices"
       }
       "Default settings": {
-        "Comment": "Default settings for the Printer. Unless 
-                    otherwise defined in the layer, these are 
-                    the values that are to be used for each 
+        "Comment": "Default settings for the Printer. Unless
+                    otherwise defined in the layer, these are
+                    the values that are to be used for each
                     layer.",
         "Light engine power setting": 100,
         "Layer exposure time (ms)": 400,
         "Layer thickness (um)": 10,
         "Number of duplications": 1,
-        "Solus command chain": [
+        "Galil command chain": [
           "WAIT 0.1",
           "BP UP 1 SPEED 300",
-          "QW DOWN 6 SPEED 400",
           "WAIT 1.5",
           "BP UP 2 SPEED 400",
-          "QW UP 6 SPEED 400",
           "BP DOWN 3 SPEED 400",
           "WAIT 1.5"
         ]
@@ -198,7 +177,7 @@ in any way. Example ::
             20000
           ],
           "Layer thickness (um)": 20,
-          "Comment": "This layer has a custom exposure time and 
+          "Comment": "This layer has a custom exposure time and
                       layer thickness."
         },
         {
@@ -209,7 +188,7 @@ in any way. Example ::
             10000
           ],
           "Number of duplications": 2,
-          "Comment": "This layer is duplicated twice, which means 
+          "Comment": "This layer is duplicated twice, which means
                       it is actually for layer 2 and 3."
         },
         {
@@ -222,7 +201,7 @@ in any way. Example ::
           "Light engine power setting": [
             200
           ],
-          "Comment": "This layer has custom light engine power 
+          "Comment": "This layer has custom light engine power
                       setting."
         },
         {
@@ -230,7 +209,7 @@ in any way. Example ::
             "0001.png",
             "0001a.png"
           ],
-          "Comment": "This layer exposes 2 images using default 
+          "Comment": "This layer exposes 2 images using default
                       settings."
         },
         {
@@ -242,7 +221,7 @@ in any way. Example ::
             400,
             200
           ],
-          "Comment": "This layer exposes 2 images with different 
+          "Comment": "This layer exposes 2 images with different
                       exposure times."
         },
         {
@@ -254,7 +233,7 @@ in any way. Example ::
             200,
             400,
           ],
-          "Comment": "This layer exposes 2 images with different 
+          "Comment": "This layer exposes 2 images with different
                       light engine power settings."
         },
         {
@@ -270,25 +249,23 @@ in any way. Example ::
             200,
             400,
           ],
-          "Comment": "This layer exposes 2 images with different 
-                      exposure times and light engine power 
+          "Comment": "This layer exposes 2 images with different
+                      exposure times and light engine power
                       settings."
         },
         {
           "Images": [
             "0005.png"
           ],
-          "Solus command chain": [
+          "Galil command chain": [
             "WAIT 0.1",
             "BP UP 3 SPEED 300",
-            "QW DOWN 6 SPEED 400",
             "WAIT 1.5",
-            "QW UP 6 SPEED 400",
             "BP DOWN 3 SPEED 400",
             "WAIT 1.5"
           ],
-          "Comment": "The layer has its own command chain to 
-                      control Solus."
+          "Comment": "The layer has its own command chain to
+                      control the Galil controller."
         },
         {
           "Images": [
@@ -299,30 +276,30 @@ in any way. Example ::
       ]
     }
 
-We can customize any layer by override the default values. In 
-the above JSON file, the first list item in ``Layers`` contains 
-``Layer exposure time (ms)`` and ``Layer thickness (um)``, 
-which means the first layer will have exposure time of 20000 ms 
-and layer thickness of 20 um. Note that a number of consective 
-layers can share one list item by making 
-``Number of duplications`` greater than 1. The purpose is to 
-reduce repetitive information. For instance, in the second list 
-item above, ``Number of duplications`` is 2, which is mapped to 
-layer 2 and 3. 
+We can customize any layer by override the default values. In
+the above JSON file, the first list item in ``Layers`` contains
+``Layer exposure time (ms)`` and ``Layer thickness (um)``,
+which means the first layer will have exposure time of 20000 ms
+and layer thickness of 20 um. Note that a number of consective
+layers can share one list item by making
+``Number of duplications`` greater than 1. The purpose is to
+reduce repetitive information. For instance, in the second list
+item above, ``Number of duplications`` is 2, which is mapped to
+layer 2 and 3.
 
-Also, a layer can expose however many images. For every image, 
-you can set exposure times and light engine power settings, 
-repectively. If so, every image must have an exposure time. Same 
-for light engine power setting. 
+Also, a layer can expose however many images. For every image,
+you can set exposure times and light engine power settings,
+repectively. If so, every image must have an exposure time. Same
+for light engine power setting.
 
 
 Format of A Print Job
 ---------------------
 
-To submit a print job to the 3D printer, a ZIP file is the only 
-format the 3D printer accepts. This ZIP file should contain only 
-one JSON file, named ``print_settings.json``, and all the images 
-that will be used for this print job. The file structure in the 
+To submit a print job to the 3D printer, a ZIP file is the only
+format the 3D printer accepts. This ZIP file should contain only
+one JSON file, named ``print_settings.json``, and all the images
+that will be used for this print job. The file structure in the
 ZIP file should be as following ::
 
     .
@@ -336,14 +313,14 @@ ZIP file should be as following ::
             .
             .
 
-The name of the JSON file must be ``print_settings.json``, and 
-the names of the images and image folder name need to match what 
-is specified in the json file. 
+The name of the JSON file must be ``print_settings.json``, and
+the names of the images and image folder name need to match what
+is specified in the json file.
 
 .. Note::
-    After the ZIP file is extracted, the JSON file directory will 
-    be used as the root directory. Image directory is relative 
-    to the root directory. 
+    After the ZIP file is extracted, the JSON file directory will
+    be used as the root directory. Image directory is relative
+    to the root directory.
 
 """
 
@@ -356,21 +333,21 @@ import shutil
 
 
 class PrintSettings:
-    """The PrintSettings class wraps the dictionary loaded from 
-    the JSON file. It also provides some utility functions, 
-    which makes it easy to get parameter values from a nested 
-    dictionary. 
-    
+    """The PrintSettings class wraps the dictionary loaded from
+    the JSON file. It also provides some utility functions,
+    which makes it easy to get parameter values from a nested
+    dictionary.
+
     :param dict settings: a dictionary of print settings.
     """
-    
+
     waitRegex = re.compile(r'WAIT (-?\d+(\.\d+)?)')
-    moveRegex = re.compile(r'^(BP|QW) (UP|DOWN) (-?\d+(\.\d+)?) SPEED (\d+)')
-    
+    moveRegex = re.compile(r'^(BP) (UP|DOWN) (-?\d+(\.\d+)?) SPEED (\d+)')
+
     def __init__(self, settings):
         self.__settings = settings
-        
-        # Puts the number of duplications for each image into a 
+
+        # Puts the number of duplications for each image into a
         # list
         self.__listOfDuplication = list()
         for layer in self.__settings['Layers']:
@@ -380,24 +357,24 @@ class PrintSettings:
                 numOfDup = self.__settings['Default settings']\
                                          ['Number of duplications']
             self.__listOfDuplication.append(numOfDup)
-            
-        # Creates another list where each value is corresponding 
-        # to only one layer such that we can quickly look up 
+
+        # Creates another list where each value is corresponding
+        # to only one layer such that we can quickly look up
         # layer parameters.
         self.__mapOfLayers = list()
         for i, dup in enumerate(self.__listOfDuplication):
             self.__mapOfLayers += [i] * dup
-            
+
     @classmethod
     def fromFile(cls, filename):
-        """Create a PrintSettings object from a json file. 
-        
+        """Create a PrintSettings object from a json file.
+
         :param str filename: JSON file that has the print settings
         """
         with open(filename, 'r') as f:
             settings = json.load(f)
         return cls(settings)
-        
+
     @property
     def totalLayerNum(self):
         """
@@ -405,11 +382,11 @@ class PrintSettings:
         :rtype: int
         """
         return sum(self.__listOfDuplication)
-        
+
     def __getLayerParam(self, layerNum, paramName):
-        """Utility function to get a specific parameter for 
-        a given layer. 
-        
+        """Utility function to get a specific parameter for
+        a given layer.
+
         :param int layerNum: the index of a layer, starting with 1
         :param str paramName: parameter name
         :returns: a layer parameter value
@@ -417,32 +394,32 @@ class PrintSettings:
         try:
             i = self.__mapOfLayers[layerNum-1]
             return self.__settings['Layers'][i][paramName]
-        except KeyError: # TODO: This key error gets caught when key doesn't exist or when it is wrong. That means it 
-                         # is possible for a user to think they are putting in good information but the software will 
-                         # ignore it and keep running without notification. Validation should be more robust to 
-                         # prevent this 
+        except KeyError: # TODO: This key error gets caught when key doesn't exist or when it is wrong. That means it
+                         # is possible for a user to think they are putting in good information but the software will
+                         # ignore it and keep running without notification. Validation should be more robust to
+                         # prevent this
             return self.__settings['Default settings'][paramName]
-            
+
     def layerThicknessMm(self, layerNum):
         """
         :param int layerNum: the index of a layer, starting with 1
-        :returns: the layer thickness for the specified layer in 
+        :returns: the layer thickness for the specified layer in
                   millimeters
         :rtype: float
         """
         return self.__getLayerParam(
-            layerNum, 
+            layerNum,
             'Layer thickness (um)'
         ) * 1e-3
-        
-    def solusCommandChain(self, layerNum):
+
+    def galilCommandChain(self, layerNum):
         """
         :param int layerNum: the index of a layer, starting with 1
-        :returns: a list of Solus commands
+        :returns: a list of Galil commands
         :rtype: list
         """
-        return self.__getLayerParam(layerNum, 'Solus command chain')
-        
+        return self.__getLayerParam(layerNum, 'Galil command chain')
+
     def images(self, layerNum):
         """
         :param int layerNum: the index of a layer, starting with 1
@@ -451,11 +428,11 @@ class PrintSettings:
         """
         return [
             os.path.join(
-                self.__settings['Header']['Image directory'], 
+                self.__settings['Header']['Image directory'],
                 im
             ) for im in self.__getLayerParam(layerNum, 'Images')
         ]
-        
+
     def exposureTimeMs(self, layerNum):
         """
         :param int layerNum: the index of a layer, starting with 1
@@ -466,7 +443,7 @@ class PrintSettings:
         if not isinstance(temp, list):
             temp = [temp] * len(self.__getLayerParam(layerNum, 'Images'))
         return temp
-        
+
     def ledPowers(self, layerNum):
         """
         :param int layerNum: the index of a layer, starting with 1
@@ -477,28 +454,27 @@ class PrintSettings:
         if not isinstance(temp, list):
             temp = [temp] * len(self.__getLayerParam(layerNum, 'Images'))
         return temp
-        
+
     # TODO: benchmark this method on RPi
     @classmethod
     def validate(cls, filename, path):
 
-        """This method validates the (.zip) file of a print job. 
-        
+        """This method validates the (.zip) file of a print job.
+
         What does it check?
-        
-        #. The ZIP file is not corrupted. 
+
+        #. The ZIP file is not corrupted.
         #. There is only one JSON file named ``print_settings.json``.
-        #. The JSON file can be successfully loaded, and it 
+        #. The JSON file can be successfully loaded, and it
            contains all the necessary entries.
         #. The values of these entries are the correct type.
         #. The images used actually exist.
-        #. The Solus command chain syntax is correct, and the BP and 
-           QW moving up and down distance is the same.
-        
-        :param str filename: a zip file with directory tree as 
+        #. The Galil command chain syntax is correct.
+
+        :param str filename: a zip file with directory tree as
                              following
-        :param str path: a directory to extract all files, which 
-                         should be ``os.path.join(Config.UPLOAD_FOLDER, 'tmp')``. 
+        :param str path: a directory to extract all files, which
+                         should be ``os.path.join(Config.UPLOAD_FOLDER, 'tmp')``.
                          Extracted files will be removed afterwards.
         :returns: whether it passes validation or not
         :rtype: boolean
@@ -510,7 +486,7 @@ class PrintSettings:
                 assert len(jsonFiles) == 1
                 jsonFile = jsonFiles[0]
                 zf.extract(jsonFile, path=path)
-                
+
             settings = cls.fromFile(os.path.join(path, jsonFile))
             shutil.rmtree(path)
             jsonDir = os.path.dirname(jsonFile)
@@ -520,62 +496,61 @@ class PrintSettings:
         except json.decoder.JSONDecodeError:
             shutil.rmtree(path)
             return False
-        except:
-            return False
-            
+        # except:
+        #     return False
+
         return True
-        
+
     def checkDefault(self):
         assert isinstance(self.__settings['Default settings']['Light engine power setting'], int)
         assert isinstance(self.__settings['Default settings']['Layer exposure time (ms)'], int)
         float(self.__settings['Default settings']['Layer thickness (um)'])
         assert isinstance(self.__settings['Default settings']['Number of duplications'], int)
-        self.checkSolusCommandChain(self.__settings['Default settings']['Solus command chain'])
-        
+        self.checkGalilCommandChain(self.__settings['Default settings']['Galil command chain'])
+
     def checkLayers(self, jsonDir, files):
         for layer in self.__settings['Layers']:
             for image in layer['Images']:
                 assert os.path.join(jsonDir, self.__settings['Header']['Image directory'], image) in files
-                
+
             try:
-                # Check to make sure there is the same number of images and LED powers 
+                # Check to make sure there is the same number of images and LED powers
                 assert len(layer['Light engine power setting']) == len(layer['Images'])
                 for i in layer['Light engine power setting']:
                     assert isinstance(i, int)
             except KeyError:
                 pass
-                
+
             try:
-                # Check to make sure there is the same number of images and exposure times 
+                # Check to make sure there is the same number of images and exposure times
                 assert len(layer['Layer exposure time (ms)']) == len(layer['Images'])
                 for i in layer['Layer exposure time (ms)']:
                     assert isinstance(i, int)
             except KeyError:
                 pass
-                
+
             try:
                 float(layer['Layer thickness (um)'])
             except KeyError:
                 pass
-                
+
             try:
                 assert isinstance(layer['Number of duplications'], int)
             except KeyError:
                 pass
-            
+
             try:
-                self.checkSolusCommandChain(layer['Solus command chain'])
+                self.checkGalilCommandChain(layer['Galil command chain'])
             except KeyError:
                 pass
-                
-    def checkSolusCommandChain(self, commandChain):
+
+    def checkGalilCommandChain(self, commandChain):
         distanceBP = 0
-        distanceQW = 0
-        
+
         for command in commandChain:
             m1 = self.waitRegex.fullmatch(command)
             m2 = self.moveRegex.fullmatch(command)
-            
+
             if m1:
                 continue
             elif m2:
@@ -585,16 +560,8 @@ class PrintSettings:
                     sign = 1
                 if m2.group(1) == 'BP':
                     distanceBP += sign * float(m2.group(3))
-                else:
-                    distanceQW += sign * float(m2.group(3))
-                    if distanceQW > 3:  # max travel for quartz window is 3mm
-                        raise AssertionError # fail if you try to move more than 3mm
             else:
                 raise AssertionError
-                
-        if distanceBP != 0 or distanceQW != 0:
+
+        if distanceBP != 0:
             raise AssertionError
-
-
-
-

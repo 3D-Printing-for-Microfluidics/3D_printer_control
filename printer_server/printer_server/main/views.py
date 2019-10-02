@@ -2,12 +2,13 @@
 """Main view."""
 import os
 import shutil
-from flask import Blueprint, request, redirect, url_for, render_template
-from werkzeug.utils import secure_filename
+# from flask import Blueprint, request, redirect, url_for, render_template
+# from werkzeug.utils import secure_filename
 from datetime import datetime
 from zipfile import ZipFile
 import glob
 import time
+from flask import Blueprint, request, render_template
 
 from printer_server.settings import Config
 from printer_server.hardware import printer3d, PrintSettings
@@ -30,20 +31,20 @@ def connect():
 
 
 @socketio.on('initialize', namespace='/printing')
-def initialize(message):
+def initialize():
     if printer3d.state is 'uninitialized':
         printingThreads.initialize()
 
 
 @socketio.on('planarization step 1', namespace='/printing')
-def planarizationStep1(message):
+def planarizationStep1():
     printer_states = ['initialized', 'planarized', 'completed', 'stopped']
     if printer3d.state in printer_states:
         printingThreads.planarizationStep1()
 
 
 @socketio.on('planarization step 2', namespace='/printing')
-def planarizationStep2(message):
+def planarizationStep2():
     if printer3d.state is 'planarizing':
         printingThreads.planarizationStep2()
 
@@ -52,13 +53,13 @@ def planarizationStep2(message):
 def start(message):
     if printer3d.state is 'planarized':
         jobId = message['job']
-        
+
         if jobId:
             # Prepares and archive all the files and information needed for the print job
             job = PrintJob.query.get(jobId)
             if not job:
                 return
-            
+
             # Removes the `current_job` folder to get a fresh start
             try:
                 shutil.rmtree(os.path.join(Config.UPLOAD_FOLDER, 'current_job'))
@@ -66,7 +67,7 @@ def start(message):
                 pass
             except:
                 pass
-                
+
             _zipFile = os.path.join(Config.UPLOAD_FOLDER, 'queue', job.zip_filename)
             with ZipFile(_zipFile, 'r') as f:
                 f.extractall(path=os.path.join(Config.UPLOAD_FOLDER, 'current_job'))
@@ -75,17 +76,17 @@ def start(message):
                     shutil.rmtree(os.path.join(Config.UPLOAD_FOLDER, 'current_job', '__MACOSX'))
                 except FileNotFoundError:
                     pass
-                    
+
             # Moves the zip file in `queue` folder to `print_history` folder
             os.rename(_zipFile, os.path.join(Config.UPLOAD_FOLDER, 'print_history', job.zip_filename))
-            
+
             # Saves a print record in the database
             printRecord = PrintRecord(original_filename=job.original_filename,
-                                      upload_time = job.upload_time,
-                                      upload_ip = job.upload_ip,
+                                      upload_time=job.upload_time,
+                                      upload_ip=job.upload_ip,
                                       start_ip=request.remote_addr)
             printRecord.save(commit=False)
-            
+
             # Sends a `job selected` message to clients via sockets
             message = {
                 'job': jobId,
@@ -93,33 +94,34 @@ def start(message):
                 'text': 'Print Job ({}) selected'.format(job.original_filename)
             }
             # Once the job is selected and started, it will be deleted for queue.
-            # Therefore, we can use the `job deleted` event here, but with a 
-            # different message. 
-            socketio.emit('job deleted', message, 
-                namespace='/printing', broadcast=True)
+            # Therefore, we can use the `job deleted` event here, but with a
+            # different message.
+            socketio.emit('job deleted', message,
+                          namespace='/printing', broadcast=True)
             job.delete()
-            
-            printSettingsFile = glob.glob(os.path.join(Config.UPLOAD_FOLDER, 
-                'current_job', '**/print_settings.json'), recursive=True)[0]
+
+            printSettingsFile = glob.glob(os.path.join(Config.UPLOAD_FOLDER,
+                                                       'current_job', '**/print_settings.json'),
+                                          recursive=True)[0]
             printingThreads.printSettings = PrintSettings.fromFile(printSettingsFile)
             printingThreads.jsonDir = os.path.dirname(printSettingsFile)
             printingThreads.start()
 
 
 @socketio.on('pause', namespace='/printing')
-def pause(message):
+def pause():
     if printer3d.state is 'printing':
         printingThreads.pause()
 
 
 @socketio.on('resume', namespace='/printing')
-def resume(message):
+def resume():
     if printer3d.state is 'paused':
         printingThreads.resume()
 
 
 @socketio.on('stop', namespace='/printing')
-def stop(message):
+def stop():
     if printer3d.state is 'printing' or printer3d.state is 'paused':
         printingThreads.stop()
 
@@ -132,17 +134,17 @@ def shutdown(message):
             'text': 'Shutting down'
         }
         socketio.emit('shutting down', message,
-            namespace='/printing', broadcast=True)
+                      namespace='/printing', broadcast=True)
 
         func = request.environ.get('werkzeug.server.shutdown')
         if func is None:
             raise RuntimeError('Not running with the Werkzeug Server')
-            
-        printer3d.solus.__del__()
-        printer3d.projector.__del__()
-        
+
+        # printer3d.galil.__del__()     # TODO: use atexit here
+        # printer3d.projector.__del__() # TODO: use atexit here
+
         socketio.emit('shutdown completed', dict(),
-            namespace='/printing', broadcast=True)
+                      namespace='/printing', broadcast=True)
         time.sleep(1)
         func()
 
@@ -152,4 +154,4 @@ def shutdown(message):
             'text': "Try to shutdown 3D printer when it's busy"
         }
         socketio.emit('shutdown failed', message,
-            namespace='/printing', broadcast=True)
+                      namespace='/printing', broadcast=True)
