@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """The app module, containing the app factory function."""
-from flask import Flask, render_template
-from werkzeug.contrib.fixers import ProxyFix
 import logging
+from werkzeug.contrib.fixers import ProxyFix
+from flask import Flask, render_template
 from flask.logging import default_handler
-
 from printer_server.extensions import db, migrate, socketio
 from printer_server import commands, models, main, digital, calibrate
 from printer_server.settings import ProdConfig

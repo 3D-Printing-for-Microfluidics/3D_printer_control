@@ -31,7 +31,7 @@ class TipTilt_stage(serial.Serial):
     def __init__(self):
         super().__init__(baudrate=115200, timeout=None)
         # Button parameters
-        self.motors = ["Tip","Tilt"] # if you add a motor here, make sure to add it's pins below
+        self.motors = ["Tip", "Tilt"] # if you add a motor here, make sure to add it's pins below
         self.location = '1-1.1.3'
 
     def initialize(self):
@@ -58,7 +58,7 @@ class TipTilt_stage(serial.Serial):
     def move(self, axis, um):
         mm = um / 1000
         speed = 10  #mm/min
-        if(axis == 'Tip'):
+        if axis == 'Tip':
             axis = 'X'
         else:
             axis = 'Y'
@@ -93,5 +93,5 @@ class TipTilt_stage(serial.Serial):
 
 
 if __name__ == '__main__':
-    c=CalibrationControl()
+    c = CalibrationControl()
     # c.test_sequence()

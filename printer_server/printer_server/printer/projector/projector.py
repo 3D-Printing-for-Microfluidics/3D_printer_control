@@ -70,7 +70,7 @@ class Projector:
         max_time = 10000
         n = int(exposureTime // max_time)
         if exposureTime % max_time != 0:
-            exposureTime = [max_time] * n + [ exposureTime % max_time ]
+            exposureTime = [max_time] * n + [exposureTime % max_time]
         else:
             exposureTime = [max_time] * n
 
@@ -138,6 +138,6 @@ class Projector:
 
 if __name__ == '__main__':
     projectorResolution = (2560, 1600)
-    p=Projector(projectorResolution)
+    p = Projector(projectorResolution)
     p.connect()
     p.calibrateProject("calibrate.png", 100, 0, 1000)
