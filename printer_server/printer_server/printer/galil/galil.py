@@ -203,24 +203,24 @@ class Galil():
         self.send("TM 1000.0000")   # set sampling period of control loop - TM 1000 will actually set an update rate of 976 microseconds (this is the default value). Thus the value returned by the TIME operand will be off by 2.4% of the actual time
         self.send("AG 1")           # sets the amplifier current/voltage gain for the internal amplifier - for DMC-3x012 "0" -> 0.4 A/V, "1" -> 0.8 A/V, "2" -> 1.6 A/V
         self.send("OF 0.0000")      # sets a bias voltage in the command output - useful to hold stage when upright if necessary
-        self.send("AU 0.0")         # sets the amplifier current loop gain for internal amplifiers - see command reference for appropriate values
+        self.send("AU 8.0")         # sets the amplifier current loop gain for internal amplifiers - see command reference for appropriate values
         self.send("LD 0")           # enable both forward and rear limit switches
         self.send("OE 1")           # sets the Off On Error function for the controller - if position exceeds this error, motor will shut off
-        self.send("ER 8000")        # sets error limit - motor will shut down if this is exceeded. Can see current error with TE
+        self.send("ER 4000")        # sets error limit - motor will shut down if this is exceeded. Can see current error with TE
         self.send("CN -1")          # sets limit switchtes to be treated as active high
         self.send("AF 0")           # configures analog feedback mode for the PID filter - "0" means use analog
-        self.send("CE 0")           # configures the encoder - "0" means use normal quadrature
-        self.send("MT 1.0")         # selects the type of the motor and the polarity of the drive signal - "1" means servo motor with normal signal
+        self.send("CE 2")           # configures the encoder - "0" means use normal quadrature, "2" means reversed quadrature
+        self.send("MT -1.0")         # selects the type of the motor and the polarity of the drive signal - "1" means servo motor with normal signal, "-1" means reversed polarity
         self.send("BW 0")           # sets the delay between when the brake is turned on and when the amp is turned off (in samples)
         self.send("FL 2147483647")  # sets forward software limit - this value effectively disables the limit
         self.send("BL -2147483648") # sets the reverse software limit - thisvalue effectively disables the limit
-        self.send("TK 8.5")         # sets peak torque limit (may momentarily exceed TL below) - see command reference to learn how to calculate
+        self.send("TK 8.5002")      # sets peak torque limit (may momentarily exceed TL below) - see command reference to learn how to calculate
         self.send("TL 4.2")         # sets torque limit
 
         # Tuning
-        # self.send("KP 20")        # sets the proportional constant in the controller filter
-        # self.send("KI 1")         # sets the integral gain of the control loop
-        # self.send("KD 64.00")     # sets the derivative constant in the control filter
+        self.send("KP 59.6250")     # sets the proportional constant in the controller filter
+        self.send("KI 2.8711")      # sets the integral gain of the control loop
+        self.send("KD 445.8750")    # sets the derivative constant in the control filter
         self.send("IL 9.9982")      # limits the effect of the integrator gain in the filter to a certain voltage
         self.send("PL 0.0000")      # adds a low-pass filter in series with the PID compensation
         self.send("NB 0.5")         # sets real part of the notch poles - controls the range of frequencies that will be attenuated
