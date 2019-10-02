@@ -46,7 +46,6 @@ class Galil():
         print("Searching for {} controller...".format(self.controller_name))
         available = self.g.GAddresses()
         self.address = None
-
         # If there is more than one controller connected, this will only connect to the first
         for address in sorted(available.keys()):
             if self.controller_name in available[address]:
@@ -57,9 +56,8 @@ class Galil():
                 self.g.GOpen("{} --direct".format(self.address))
                 if self.verbose: print("GInfo returned:", self.g.GInfo())
                 self.connected = True
-                return True
-        print(self.controller_name, "not found.")
-        return False    # no controller found
+                return
+        exit("{} not found.".format(self.controller_name))
 
     # convert mm to counts for the specified axis
     def mmToCnts(self, mm, axis="A"):
@@ -287,6 +285,4 @@ class Galil():
 if __name__ == '__main__':
     g = Galil(verbose=False)
     g.connect()
-    # g.configure()         # be careful running this
     g.interactiveMode()
-    print("Done")
