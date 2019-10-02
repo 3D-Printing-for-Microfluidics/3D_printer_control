@@ -45,6 +45,7 @@ class Galil():
 
         # connection parameters
         self.connected = False
+        self.homed = False
         self.controller_name = "DMC31010"   # controller to search for
         self.g = gclib.py()                 # make an instance of the gclib python class
         atexit.register(self.disconnect)    # register disconnect to always run at interpreter end
@@ -59,16 +60,13 @@ class Galil():
         # self.printTimer = 0
 
     def initialize(self):
-        # dummy for now, to satisfy old Solus method
-        pass
+        self.motorOn()
 
     def goToZmax(self):
-        # dummy for now, to satisfy old Solus method
-        pass
+        self.absMove(speed=20, cnts=-240000)
 
     def goToZmin(self):
-        # dummy for now, to satisfy old Solus method
-        pass
+        self.absMove(speed=20, cnts=240000)
 
     def resume(self, layerThickness):
         # dummy for now, to satisfy old Solus method
@@ -168,6 +166,13 @@ class Galil():
             print("Error: Last command '{}' returned error '{}'".format(command, error))
             return error
 
+    # check both limit switches, return a tuple with their trip values
+    def checkLimits(self, axis="A"):
+        a = convertAxis(axis)
+        lf = self.send("MG _LF{}".format(a))
+        lr = self.send("MG _LR{}".format(a))
+        return bool(lf == "0.0000"), bool(lr == "0.0000")
+
     # read the current position of the specified encoder
     def getPosition(self, axis="A"):
         if axis is None:                                        # if no axis is specified
@@ -214,11 +219,16 @@ class Galil():
     # run the Galil homing routine
     def home(self, axis="A"):
         a = convertAxis(axis)                                   # check that the axis is valid
+        self.relMove(speed=20, mm=-self.travel["A"])            # move up until the limit switch is triggered
+        self.g.GMotionComplete(a)                               # block until motion planning is complete
+        self.motorOn()                                          # turn motor back on (limit switch was tripped, which turns it off)
         self.send("HM")                                         # send home command
         self.send("BGA")                                        # start homing
-        self.g.GMotionComplete(a)                               # block until motion is complete
+        self.waitForMotionComplete(0)                           # block until motion is complete (encoder is set to 0 at end of homing)
+        self.homed = True                                       # update class homed status
 
     # blocking call to relative move an axis the specified distance at speed (in mm/sec)
+    # pylint: disable=too-many-arguments
     def relMove(self, speed, mm=None, cnts=None, acceleration=None, axis="A"):
         a = convertAxis(axis)                                   # check that the axis is valid
         old_speed = self.getSpeed()                             # record the previous speed
@@ -230,10 +240,6 @@ class Galil():
             cnts = self.mmToCnts(mm)                            # convert to counts
         if cnts is not None:                                    # if counts has been calculated or supplied
             start_position = self.getPosition()                 # save the starting position
-            # self.send("PR{}={}".format(a, -8000))               # move down 1mm
-            # self.send("BG{}".format(a))                         # begin motion
-            # self.g.GMotionComplete(a)                           # block until motion is complete
-            # self.send("PR{}={}".format(a, 8000 + cnts))         # move up 1mm + the desired distance
             self.send("PR{}={}".format(a, cnts))                # move desired distance
             self.send("BG{}".format(a))                         # begin motion
             self.waitForMotionComplete(start_position + cnts)   # block until motion is complete
@@ -242,7 +248,10 @@ class Galil():
             self.setAcceleration(old_acceleration)              # change it back to the old value
 
     # blocking call to move specified axis to absolute position at speed (in mm/sec)
+    # pylint: disable=too-many-arguments
     def absMove(self, speed, mm=None, cnts=None, acceleration=None, axis="A"):
+        if not self.homed:
+            exit("Must home before using absolute movements!")  # make sure stage is homed before any absolute moves are tried
         a = convertAxis(axis)                                   # check that the axis is valid
         old_speed = self.getSpeed()                             # record the previous speed
         old_acceleration = self.getAcceleration()               # record the previous acceleration
@@ -252,11 +261,7 @@ class Galil():
         if mm is not None:                                      # if mm were supplied
             cnts = self.mmToCnts(mm)                            # convert to counts
         if cnts is not None:                                    # if counts has been calculated or supplied
-            # self.send("PA{}={}".format(a, cnts - 8000))         # move down the distance you want, and then 1mm further
-            # self.send("BG{}".format(a))                         # begin motion
-            # self.g.GMotionComplete(a)                           # block until motion is complete
-            # self.send("PR{}={}".format(a, 8000))                # move up 1mm
-            self.send("PR{}={}".format(cnts, 8000))             # move to target position
+            self.send("PA{}={}".format(a, cnts))                # move to target position
             self.send("BG{}".format(a))                         # begin motion
             self.waitForMotionComplete(cnts)                    # wait for physical motion to complete
         self.setSpeed(old_speed)                                # restore previous speed
@@ -264,7 +269,7 @@ class Galil():
             self.setAcceleration(old_acceleration)              # change it back to the old value
 
     # blocks execution until the encoder reading reaches the specified value. Also logs all position data
-    def waitForMotionComplete(self, cnts):
+    def waitForMotionComplete(self, cnts, axis="A"):
         start_time = time.time()
         last_position = self.getPosition()                      # save the last position
         self.data[self.move_num] = []
@@ -274,6 +279,10 @@ class Galil():
         while counter <= 10:                                    # only proceed when 10 good consecutive counts have been read
             time.sleep(0.001)                                   # wait 1 ms
             last_position = self.getPosition()                  # read position again
+            if any(self.checkLimits()):                         # finish early if a limit is tripped
+                print("Limit switch triggered")                 # notify user of limit
+                self.g.GMotionComplete(axis)                    # wait for controller planning to finish
+                return
             self.data[self.move_num].append({'time' : time.time(), 'position' : last_position})
             if int(cnts - 1) <= last_position <= int(cnts + 1):
                 counter += 1
@@ -315,44 +324,44 @@ class Galil():
     def configure(self):
         # Setup
         self.send("MO")             # turns off motors (motors must be off to set some of these values)
-        self.send("TM 1000.0000")   # set sampling period of control loop - TM 1000 will actually set an update rate of 976 microseconds (this is the default value). Thus the value returned by the TIME operand will be off by 2.4% of the actual time
-        self.send("AG 1")           # sets the amplifier current/voltage gain for the internal amplifier - for DMC-3x012 "0" -> 0.4 A/V, "1" -> 0.8 A/V, "2" -> 1.6 A/V
-        self.send("OF 0.0000")      # sets a bias voltage in the command output - useful to hold stage when upright if necessary
-        self.send("AU 8.0")         # sets the amplifier current loop gain for internal amplifiers - see command reference for appropriate values
-        self.send("LD 0")           # enable both forward and rear limit switches
-        self.send("OE 1")           # sets the Off On Error function for the controller - if position exceeds this error, motor will shut off
-        self.send("ER 4000")        # sets error limit - motor will shut down if this is exceeded. Can see current error with TE
-        self.send("CN -1")          # sets limit switchtes to be treated as active high
         self.send("AF 0")           # configures analog feedback mode for the PID filter - "0" means use analog
-        self.send("CE 2")           # configures the encoder - "0" means use normal quadrature, "2" means reversed quadrature
-        self.send("MT -1.0")        # selects the type of the motor and the polarity of the drive signal - "1" means servo motor with normal signal, "-1" means reversed polarity
-        self.send("BW 0")           # sets the delay between when the brake is turned on and when the amp is turned off (in samples)
-        self.send("FL 2147483647")  # sets forward software limit - this value effectively disables the limit
+        self.send("AG 1")           # sets the amplifier current/voltage gain for the internal amplifier - for DMC-3x012 "0" -> 0.4 A/V, "1" -> 0.8 A/V, "2" -> 1.6 A/V
+        self.send("AU 8.0")         # sets the amplifier current loop gain for internal amplifiers - see command reference for appropriate values
         self.send("BL -2147483648") # sets the reverse software limit - thisvalue effectively disables the limit
+        self.send("BM 5333.3333")   # sets brushless modulus - counts/revolution of the motor divided by the number of pole pairs of the motor. For a linear motor, it is the number of encoder counts per magnetic phase
+        self.send("BW 0")           # sets the delay between when the brake is turned on and when the amp is turned off (in samples)
+        self.send("CE 0")           # configures the encoder - "0" means use normal quadrature, "2" means reversed quadrature
+        self.send("CN 1")           # sets limit switchtes to be treated as active high
+        self.send("ER 4000")        # sets error limit - motor will shut down if this is exceeded. Can see current error with TE
+        self.send("FA 0")           # sets the acceleration feedforward coefficient
+        self.send("FL 2147483647")  # sets forward software limit - this value effectively disables the limit
+        self.send("FV 0")           # sets the velocity feedforward coefficient
+        self.send("HV 4000")        # sets the slew speed for the FI final move to the index and all but the first stage of HM
+        self.send("IT 0.5000")      # sets the bandwidth of the motion smooting filter - see command reference for details
+        self.send("LC 0")           # enables low current mode for stepper motors. Low current mode reduces the holding current of the stepper motors while at rest. "0" means use full current
+        self.send("LD 0")           # enable both forward and rear limit switches
+        self.send("MT 1.0")         # selects the type of the motor and the polarity of the drive signal - "1" means servo motor with normal signal, "-1" means reversed polarity
+        self.send("NB 0.5")         # sets real part of the notch poles - controls the range of frequencies that will be attenuated
+        self.send("NF 0")           # sets the frequency of the notch filter, which is placed in series with the PID compensation
+        self.send("OE 1")           # sets the Off On Error function for the controller - if position exceeds this error, motor will shut off
+        self.send("OF 0.0000")      # sets a bias voltage in the command output - useful to hold stage when upright if necessary
+        self.send("PL 0.0000")      # adds a low-pass filter in series with the PID compensation
+        self.send("SD 256000")      # sets the switch decelleration
+        self.send("TM 1000.0000")   # set sampling period of control loop - TM 1000 will actually set an update rate of 976 microseconds (this is the default value). Thus the value returned by the TIME operand will be off by 2.4% of the actual time
         self.send("TK 8.5002")      # sets peak torque limit (may momentarily exceed TL below) - see command reference to learn how to calculate
         self.send("TL 4.2")         # sets torque limit
+        self.send("YA 2")           # specifies the microstepping resolution of the step drive in microsteps per full motor step - "2" means use half stepping
 
         # Tuning
         self.send("KP 59.6250")     # sets the proportional constant in the controller filter
         self.send("KI 2.8711")      # sets the integral gain of the control loop
         self.send("KD 445.8750")    # sets the derivative constant in the control filter
         self.send("IL 9.9982")      # limits the effect of the integrator gain in the filter to a certain voltage
-        self.send("PL 0.0000")      # adds a low-pass filter in series with the PID compensation
-        self.send("NB 0.5")         # sets real part of the notch poles - controls the range of frequencies that will be attenuated
-        self.send("NF 0")           # sets the frequency of the notch filter, which is placed in series with the PID compensation
 
-        # Motion Settings
-        self.send("SD 256000")      # sets the switch decelleration
-        self.send("FA 0")           # sets the acceleration feedforward coefficient
-        self.send("FV 0")           # sets the velocity feedforward coefficient
-        self.send("HV 4000")        # sets the slew speed for the FI final move to the index and all but the first stage of HM
-        self.send("IT 0.5000")      # sets the bandwidth of the motion smooting filter - see command reference for details
-        self.send("LC 0")           # enables low current mode for stepper motors. Low current mode reduces the holding current of the stepper motors while at rest. "0" means use full current
-        self.send("YA 2")           # specifies the microstepping resolution of the step drive in microsteps per full motor step - "2" means use half stepping
-        self.send("BM 5333.3333")   # sets brushless modulus - counts/revolution of the motor divided by the number of pole pairs of the motor. For a linear motor, it is the number of encoder counts per magnetic phase
-        self.send("BX< 200")        # run initialization of sinusoidal amplifier and limit initialization time to 200ms
-        # self.send("BI 0")           # don't use the dedicated hall inputs to run initialization of the sinusoidal driver - better to use the automated tool than this
-        self.send("BZ -4")          # don't use the dedicated hall inputs to run initialization of the sinusoidal driver - better to use the automated tool than this
+        # Sine amp initialization
+        # self.send("BI -1")          # don't use the dedicated hall inputs to run initialization of the sinusoidal driver - better to use the automated tool than this
+        # self.send("BX< 200")        # run initialization of sinusoidal amplifier and limit initialization time to 200ms
+        # self.send("BZ -4")          # don't use the dedicated hall inputs to run initialization of the sinusoidal driver - better to use the automated tool than this
 
     # downlaod a DMC file to the controller
     def downloadProgram(self, filename):
@@ -379,6 +388,7 @@ if __name__ == '__main__':
     g.interactiveMode()
 
     # g.motorOn()
+    # g.home()
     # for _ in range(5):
     #     g.relMove(speed=10, mm=10)
     #     g.relMove(speed=10, mm=-10)
@@ -468,3 +478,25 @@ if __name__ == '__main__':
 
 #     def writeEncoder(self, value=0):
 #         self.write(value.encode())
+
+
+
+"""
+
+Homing fails if above hall sensor
+
+how to tell when physical motion to complete
+
+
+make sure you are on the right side of the switch
+
+
+sensor is backwards
+
+CE - invert encoder
+invert switches
+
+
+
+
+"""
