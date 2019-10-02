@@ -455,7 +455,6 @@ class PrintSettings:
             temp = [temp] * len(self.__getLayerParam(layerNum, 'Images'))
         return temp
 
-    # TODO: benchmark this method on RPi
     @classmethod
     def validate(cls, filename, path):
 
@@ -545,23 +544,24 @@ class PrintSettings:
                 pass
 
     def checkGalilCommandChain(self, commandChain):
-        distanceBP = 0
+        # distanceBP = 0
 
-        for command in commandChain:
-            m1 = self.waitRegex.fullmatch(command)
-            m2 = self.moveRegex.fullmatch(command)
+        # for command in commandChain:
+        #     m1 = self.waitRegex.fullmatch(command)
+        #     m2 = self.moveRegex.fullmatch(command)
 
-            if m1:
-                continue
-            elif m2:
-                if m2.group(2) == 'UP':
-                    sign = -1
-                else:
-                    sign = 1
-                if m2.group(1) == 'BP':
-                    distanceBP += sign * float(m2.group(3))
-            else:
-                raise AssertionError
+        #     if m1:
+        #         continue
+        #     elif m2:
+        #         if m2.group(2) == 'UP':
+        #             sign = -1
+        #         else:
+        #             sign = 1
+        #         if m2.group(1) == 'BP':
+        #             distanceBP += sign * float(m2.group(3))
+        #     else:
+        #         raise AssertionError
 
-        if distanceBP != 0:
-            raise AssertionError
+        # if distanceBP != 0:
+        #     raise AssertionError
+        pass

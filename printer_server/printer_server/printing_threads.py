@@ -127,8 +127,9 @@ class PrintingThreads:
         """
         self.projector.connect()
         self.galil.connect()
+        self.galil.motorOn()
+        self.galil.home()
         # self.galil.openEncoderFile('encoder_initialization_write_file.txt')
-        self.galil.initialize()
         # self.galil.closeEncoderFile()
 
 
@@ -150,7 +151,7 @@ class PrintingThreads:
         """
         # self.galil.openEncoderFile('encoder_planarization_write_file.txt')
         # self.galil.encoder.writeEncoder()
-        # self.galil.goToZmax()
+        self.galil.goToZmax()
         print("Planarization Step 2")
         # self.galil.goToPlanarizationPullOff()
         # self.galil.closeEncoderFile()
@@ -195,12 +196,10 @@ class PrintingThreads:
             'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'text': 'Start Printing'
         }
-        socketio.emit(self.printer3d.state, message,
-                      namespace='/printing', broadcast=True)
+        socketio.emit(self.printer3d.state, message, namespace='/printing', broadcast=True)
 
         app = db.get_app()
-        self._thread = threading.Thread(target=self.startPrinting,
-                                        args=(1, app))
+        self._thread = threading.Thread(target=self.startPrinting, args=(1, app))
         self._thread.start()
 
     def resume(self):
@@ -216,12 +215,10 @@ class PrintingThreads:
             'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'text': 'Resume Printing'
         }
-        socketio.emit(self.printer3d.state, message,
-                      namespace='/printing', broadcast=True)
+        socketio.emit(self.printer3d.state, message, namespace='/printing', broadcast=True)
 
         app = db.get_app()
-        self._thread = threading.Thread(target=self.startPrinting,
-                                        args=(self.pausedLayer, app))
+        self._thread = threading.Thread(target=self.startPrinting, args=(self.pausedLayer, app))
         self._thread.start()
 
     def startPrinting(self, startingLayer, app):
@@ -269,9 +266,9 @@ class PrintingThreads:
         self.printingPaused.clear()
         self.projector.setLedAmplitude(100)
 
-        date_and_time = datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
-        self.logs_path_directory_for_this_run = self.logs_path / date_and_time
-        self.logs_path_directory_for_this_run.mkdir()
+        # date_and_time = datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
+        # self.logs_path_directory_for_this_run = self.logs_path / date_and_time
+        # self.logs_path_directory_for_this_run.mkdir()
         # encoder_print_file_name = self.logs_path_directory_for_this_run / 'encoder_print_file.txt'
         # load_cell_file_name = self.logs_path_directory_for_this_run / 'load_cell_print_file.txt'
         # self.galil.openEncoderFile(encoder_print_file_name)
@@ -292,15 +289,11 @@ class PrintingThreads:
 
             # self.galil.encoder_print_file.write("Layer %d \r\n" %(i))
             if i != startingLayer:
-                self.galil.printCycle(self.printSettings.layerThicknessMm(i),
-                                      self.printSettings.galilCommandChain(i))
+                self.galil.printCycle(self.printSettings.layerThicknessMm(i), self.printSettings.galilCommandChain(i))
 
-            images = [os.path.join(self.jsonDir, im)
-                      for im in self.printSettings.images(i)]
+            images = [os.path.join(self.jsonDir, im) for im in self.printSettings.images(i)]
 
-            self.projector.projectMulti(images,
-                                        self.printSettings.exposureTimeMs(i),
-                                        self.printSettings.ledPowers(i))
+            self.projector.projectMulti(images, self.printSettings.exposureTimeMs(i), self.printSettings.ledPowers(i))
 
             socketio.emit('print progress',
                           {'percent': int(100*i/totalLayerNum),

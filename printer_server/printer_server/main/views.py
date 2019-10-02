@@ -31,27 +31,30 @@ def connect():
 
 
 @socketio.on('initialize', namespace='/printing')
-def initialize():
-    if printer3d.state is 'uninitialized':
+# pylint: disable=unused-argument
+def initialize(message):
+    if printer3d.state == 'uninitialized':
         printingThreads.initialize()
 
 
 @socketio.on('planarization step 1', namespace='/printing')
-def planarizationStep1():
+# pylint: disable=unused-argument
+def planarizationStep1(message):
     printer_states = ['initialized', 'planarized', 'completed', 'stopped']
     if printer3d.state in printer_states:
         printingThreads.planarizationStep1()
 
 
 @socketio.on('planarization step 2', namespace='/printing')
-def planarizationStep2():
+# pylint: disable=unused-argument
+def planarizationStep2(message):
     if printer3d.state is 'planarizing':
         printingThreads.planarizationStep2()
 
 
 @socketio.on('start', namespace='/printing')
 def start(message):
-    if printer3d.state is 'planarized':
+    if printer3d.state == 'planarized':
         jobId = message['job']
 
         if jobId:
@@ -109,19 +112,22 @@ def start(message):
 
 
 @socketio.on('pause', namespace='/printing')
-def pause():
+# pylint: disable=unused-argument
+def pause(message):
     if printer3d.state is 'printing':
         printingThreads.pause()
 
 
 @socketio.on('resume', namespace='/printing')
-def resume():
+# pylint: disable=unused-argument
+def resume(message):
     if printer3d.state is 'paused':
         printingThreads.resume()
 
 
 @socketio.on('stop', namespace='/printing')
-def stop():
+# pylint: disable=unused-argument
+def stop(message):
     if printer3d.state is 'printing' or printer3d.state is 'paused':
         printingThreads.stop()
 

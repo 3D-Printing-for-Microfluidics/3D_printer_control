@@ -25,23 +25,27 @@ def index():
 
 # If hardware isn't initialized, initialize it
 @socketio.on('initialize', namespace='/calibrate')
-def initialize():
-    if printer3d.state is 'uninitialized':
+# pylint: disable=unused-argument
+def initialize(message):
+    if printer3d.state == 'uninitialized':
         calibrationThreads.initialize()
     else:
         socketio.emit('initialized', namespace='/calibrate', broadcast=True)
 
 # Reset printer state, necessary if hardware has been powered down
 @socketio.on('reset_printer_state', namespace='/calibrate')
-def resetPrinterState():
+# pylint: disable=unused-argument
+def resetPrinterState(message):
     printer3d.state = 'uninitialized'
 
 @socketio.on('galil_go_to_top', namespace='/calibrate')
-def galil_go_to_top():
+# pylint: disable=unused-argument
+def galil_go_to_top(message):
     calibrationThreads.goToZmax()
 
 @socketio.on('galil_go_to_bottom', namespace='/calibrate')
-def galil_go_to_bottom():
+# pylint: disable=unused-argument
+def galil_go_to_bottom(message):
     calibrationThreads.goToZmin()
 
 @socketio.on('calibration_motor', namespace='/calibrate')
@@ -51,7 +55,8 @@ def calibrationMotorMove(message):
         int(message["steps"]))
 
 @socketio.on('light_engine_stop', namespace='/calibrate')
-def lightEngineStop():
+# pylint: disable=unused-argument
+def lightEngineStop(message):
     calibrationThreads.lightEngineStop()
 
 @socketio.on('light_engine_start', namespace='/calibrate')
@@ -63,7 +68,8 @@ def lightEngineProject(message):
         int(message["exposure"]))
 
 @blueprint.route('handle-calibration-upload', methods=['POST'])
-def handleUpload():
+# pylint: disable=unused-argument
+def handleUpload(message):
     if 'file' in request.files:             # Check if the post request has the file part
         file = request.files['file']        # Get the file
         if file.filename != '' and file:    # File part of request actually has a file

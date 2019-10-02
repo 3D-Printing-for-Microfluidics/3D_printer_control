@@ -80,7 +80,10 @@ class Galil():
         pass
 
     def printCycle(self, layerThicknessMm, commandChain):
-        pass
+        self.relMove(speed=25, mm=1)
+        self.relMove(speed=25, mm=layerThicknessMm - 1)
+
+
 
     def pause(self):
         pass
