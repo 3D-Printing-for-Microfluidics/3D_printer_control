@@ -22,6 +22,15 @@ def convertAxis(axis):
         return 'C'
     raise ValueError('Invalid axis supplied')
 
+# return the value for the specified axis
+def parseResponseString(string, axis="A"):
+    string = string.replace(',', '')                # get rid of commas in response
+    array = string.split()                          # split axes into an array
+    axis = convertAxis(axis)                        # sterilize axis input
+    axis_index = ord(axis.lower()) - 97             # converts A B C to 0 1 2
+    value = array[axis_index]                       # index into the axis we want
+    return int(value)
+
 class Galil():
     def __init__(self, address=None, verbose=False):
         self.verbose = verbose
@@ -106,7 +115,9 @@ class Galil():
     # get the acceleration for the specified axis (mm/sec^2)
     def getAcceleration(self, axis="A"):
         a = convertAxis(axis)                                   # check that the axis is valid
-        return self.send("AC{} ?".format(a))                    # return the acceleration
+        response = self.send("AC ?")                            # query the acceleration for all axes
+        acc = parseResponseString(response, a)                  # pull out the acceleration value for the axis we care about
+        return int(acc)/self.ctspmm[a]                          # convert acceleration from cnts/sec^2 to mm/sec^2
 
     # set the acceleration for the specified axis (mm/sec^2)
     def setAcceleration(self, acceleration, axis="A"):
@@ -117,7 +128,9 @@ class Galil():
     # get the speed for the specified axis (mm/sec)
     def getSpeed(self, axis="A"):
         a = convertAxis(axis)                                   # check that the axis is valid
-        return self.send("SP{} ?".format(a))                    # return the speed
+        response = self.send("SP ?")                            # query the speed for all axes
+        speed = parseResponseString(response, a)                # pull out the speed value for the axis we care about
+        return int(speed)/self.ctspmm[a]                        # convert speed from cnts/sec to mm/sec
 
     # set the speed for the specified axis (mm/sec)
     def setSpeed(self, speed, axis="A"):
@@ -143,10 +156,11 @@ class Galil():
             cnts = self.mmToCnts(mm)                            # convert to counts
         if cnts is not None:                                    # if counts has been calculated or supplied
             start_position = self.getPosition()                 # save the starting position
-            self.send("PR{}={}".format(a, -8000))               # move down 1mm
-            self.send("BG{}".format(a))                         # begin motion
-            self.g.GMotionComplete(a)                           # block until motion is complete
-            self.send("PR{}={}".format(a, 8000 + cnts))         # move up 1mm + the desired distance
+            # self.send("PR{}={}".format(a, -8000))               # move down 1mm
+            # self.send("BG{}".format(a))                         # begin motion
+            # self.g.GMotionComplete(a)                           # block until motion is complete
+            # self.send("PR{}={}".format(a, 8000 + cnts))         # move up 1mm + the desired distance
+            self.send("PR{}={}".format(a, cnts))                # move desired distance
             self.send("BG{}".format(a))                         # begin motion
             self.waitForMotionComplete(start_position + cnts)   # block until motion is complete
         self.setSpeed(old_speed)                                # restore previous speed
@@ -164,10 +178,11 @@ class Galil():
         if mm is not None:                                      # if mm were supplied
             cnts = self.mmToCnts(mm)                            # convert to counts
         if cnts is not None:                                    # if counts has been calculated or supplied
-            self.send("PA{}={}".format(a, cnts - 8000))         # move down the distance you want, and then 1mm further
-            self.send("BG{}".format(a))                         # begin motion
-            self.g.GMotionComplete(a)                           # block until motion is complete
-            self.send("PR{}={}".format(a, 8000))                # move up 1mm
+            # self.send("PA{}={}".format(a, cnts - 8000))         # move down the distance you want, and then 1mm further
+            # self.send("BG{}".format(a))                         # begin motion
+            # self.g.GMotionComplete(a)                           # block until motion is complete
+            # self.send("PR{}={}".format(a, 8000))                # move up 1mm
+            self.send("PR{}={}".format(cnts, 8000))             # move to target position
             self.send("BG{}".format(a))                         # begin motion
             self.waitForMotionComplete(cnts)                    # wait for physical motion to complete
         self.setSpeed(old_speed)                                # restore previous speed
@@ -272,13 +287,15 @@ class Galil():
 
     # interactive mode - will return a prompt you can issue Galil commands to. Exits with KeyboardInterrupt
     def interactiveMode(self):
+        if not self.connected:
+            exit("Must be connected to Galil controller to run interactive mode")
         try:
             while True:
                 cmd = input("Give Galil a command>> ")
                 cmd.strip()
-                self.send(cmd.upper())
+                print(self.send(cmd.upper()))
         except KeyboardInterrupt:
-            pass
+            print("\nExited by KeyboardInterrupt")
 
 
 # runs if called from the console
@@ -286,3 +303,8 @@ if __name__ == '__main__':
     g = Galil(verbose=False)
     g.connect()
     g.interactiveMode()
+
+    # g.motorOn()
+    # for _ in range(5):
+    #     g.relMove(speed=10, mm=10)
+    #     g.relMove(speed=10, mm=-10)
