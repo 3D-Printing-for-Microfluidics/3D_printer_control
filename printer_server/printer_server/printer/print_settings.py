@@ -394,7 +394,7 @@ class PrintSettings:
         try:
             i = self.__mapOfLayers[layerNum-1]
             return self.__settings['Layers'][i][paramName]
-        except KeyError: # TODO: This key error gets caught when key doesn't exist or when it is wrong. That means it
+        except KeyError: # TODO: This key error gets caught when key doesn't exist OR when it is wrong. That means it
                          # is possible for a user to think they are putting in good information but the software will
                          # ignore it and keep running without notification. Validation should be more robust to
                          # prevent this

@@ -18,7 +18,6 @@ class Projector:
         # self.i2c = LightEngineI2C()
 
         # atexit.register(self.i2c.disconnectServer)
-        atexit.register(self.screenThread.stop)
         atexit.register(self.stop)
 
     def connect(self):
@@ -27,6 +26,7 @@ class Projector:
         """
         self.screenThread = ScreenThread(self.resolution, self.fullscreen)
         self.screenThread.start()
+        atexit.register(self.screenThread.stop)
         # self.i2c.connect()
 
     def start(self):
