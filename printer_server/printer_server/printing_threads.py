@@ -117,7 +117,7 @@ class PrintingThreads:
         self.printingStopped = threading.Event()
         self.printingPaused = threading.Event()
         self.pausedLayer = 1
-        self._thread = threading.Thread()
+        self._thread = None # will be initialized later on start
         self.logs_path = Path.cwd().parent / 'logs'
 
     @multithreading('initialized', 'Initialize')
@@ -138,7 +138,7 @@ class PrintingThreads:
         """Planarization Step 1 -- Lower the build platform to
         zero in Z for planarization.
         """
-        print("Planarization Step 1")
+        # print("Planarization Step 1")
         # self.galil.openEncoderFile('encoder_planarization_write_file.txt')
         self.galil.goToZmin()
         # self.galil.closeEncoderFile()
@@ -152,11 +152,11 @@ class PrintingThreads:
         # self.galil.openEncoderFile('encoder_planarization_write_file.txt')
         # self.galil.encoder.writeEncoder()
         self.galil.goToZmax()
-        print("Planarization Step 2")
+        # print("Planarization Step 2")
         # self.galil.goToPlanarizationPullOff()
         # self.galil.closeEncoderFile()
         # self.galil.send('G1 Z-5 F100')
-        print("Planarization Step 2 Done")
+        # print("Planarization Step 2 Done")
 
     @multithreading('paused', 'Pause Printing')
     def pause(self):

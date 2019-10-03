@@ -114,21 +114,21 @@ def start(message):
 @socketio.on('pause', namespace='/printing')
 # pylint: disable=unused-argument
 def pause(message):
-    if printer3d.state is 'printing':
+    if printer3d.state == 'printing':
         printingThreads.pause()
 
 
 @socketio.on('resume', namespace='/printing')
 # pylint: disable=unused-argument
 def resume(message):
-    if printer3d.state is 'paused':
+    if printer3d.state == 'paused':
         printingThreads.resume()
 
 
 @socketio.on('stop', namespace='/printing')
 # pylint: disable=unused-argument
 def stop(message):
-    if printer3d.state is 'printing' or printer3d.state is 'paused':
+    if printer3d.state == 'printing' or printer3d.state == 'paused':
         printingThreads.stop()
 
 

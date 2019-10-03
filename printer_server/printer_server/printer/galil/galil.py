@@ -63,25 +63,25 @@ class Galil():
         self.motorOn()
 
     def goToZmax(self):
-        self.absMove(speed=20, cnts=-240000)
+        self.absMove(speed=20, cnts=-492508)
 
     def goToZmin(self):
-        self.absMove(speed=20, cnts=240000)
+        # self.absMove(speed=20, cnts=330981) # real zmin
+        self.absMove(speed=20, cnts=128000)
 
     def resume(self, layerThickness):
         # dummy for now, to satisfy old Solus method
         pass
 
     def goToFirstLayerHeight(self, height):
-        # dummy for now, to satisfy old Solus method
-        pass
+        self.absMove(speed=20, cnts=128000)
 
     def goToPlanarizationPullOff(self):
         pass
 
     def printCycle(self, layerThicknessMm, commandChain):
-        self.relMove(speed=25, mm=1)
-        self.relMove(speed=25, mm=layerThicknessMm - 1)
+        self.relMove(speed=25, mm=-1)
+        self.relMove(speed=25, mm=1-layerThicknessMm)
 
 
 
