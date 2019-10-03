@@ -10,11 +10,10 @@ from .projector_screen import ScreenThread
 
 
 class Projector:
-    """
-    """
     def __init__(self, resolution, fullscreen=True):
         self.resolution = resolution
         self.fullscreen = fullscreen
+        self.screenThread = None
         # self.i2c = LightEngineI2C()
 
     def connect(self):
@@ -85,6 +84,7 @@ class Projector:
             time.sleep(0.1 + t * 1e-3)
             self.stop()
 
+    # pylint: disable=unused-argument, unused-variable, too-many-arguments, no-self-use
     def sendSequence(self, exposure, repeat=1, bitdepth=7, vsync=1, darktime=0, bitposition=0):
         """Generate and send control sequence
 

@@ -24,10 +24,12 @@ class Solus:
         print("Solus: goToZmax()")
         time.sleep(1)
 
+    # pylint: disable=unused-argument
     def goToFirstLayerHeight(self, *args):
         print("Solus: goToFirstLayerHeight()")
         time.sleep(1)
 
+    # pylint: disable=unused-argument
     def resume(self, *args):
         print("Solus: resume()")
 

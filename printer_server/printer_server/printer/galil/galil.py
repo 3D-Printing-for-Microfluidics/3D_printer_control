@@ -73,56 +73,20 @@ class Galil():
         # dummy for now, to satisfy old Solus method
         pass
 
+    # pylint: disable=unused-argument
     def goToFirstLayerHeight(self, height):
         self.absMove(speed=20, cnts=128000)
 
     def goToPlanarizationPullOff(self):
         pass
 
+    # pylint: disable=unused-argument
     def printCycle(self, layerThicknessMm, commandChain):
         self.relMove(speed=25, mm=-1)
         self.relMove(speed=25, mm=1-layerThicknessMm)
 
-
-
     def pause(self):
         pass
-    # def initializeLoadCell(self):
-    #     GPIO.setmode(GPIO.BCM)
-    #     GPIO.setwarnings(False)
-    #     GPIO.setup(self.loadCellPin, GPIO.OUT)
-    #     GPIO.output(self.loadCellPin, 0)
-
-    # def startLoadCell(self):
-    #     GPIO.output(self.loadCellPin, 1)
-
-    # def stopLoadCell(self):
-    #     GPIO.output(self.loadCellPin, 0)
-
-    # def getTimeRelative(self):
-    #     diffTime = time.time() - self.printTimer
-    #     return diffTime
-
-    # def openEncoderFile(self, file_name):
-    #     self.encoder_print_file = open(str(file_name), "a+")
-
-    # def closeEncoderFile(self):
-    #     self.encoder_print_file.close()
-
-    # def openLoadCellFile(self, file_name):
-    #     self.load_cell_file = open(str(file_name), "a+")
-
-    # def closeLoadCellFile(self):
-    #     self.load_cell_file.close()
-
-
-
-
-
-
-
-
-
 
     # find and connect to the Galil controller
     def connect(self):
@@ -395,111 +359,3 @@ if __name__ == '__main__':
     # for _ in range(5):
     #     g.relMove(speed=10, mm=10)
     #     g.relMove(speed=10, mm=-10)
-
-
-
-
-# import serial
-# import serial.tools.list_ports
-# import serial.serialutil
-
-# import RPi.GPIO as GPIO
-
-# encoder_HWID = '16C0:0483'      ##This is the HWID of the Teensy
-
-# def findACMport(hwid):
-#     ports = list(serial.tools.list_ports.comports())
-#     for p in ports:
-#         if 'ttyACM' in p.name:
-#             print("Found", p.device)
-#             if hwid in p.hwid:
-#                 return p.device
-
-# class Encoder(serial.Serial):
-#     def __init__(self, hwid, verbose=False):
-#         super().__init__(baudrate=115200, timeout=None)
-#         time.sleep(.5)
-#         self.verbose = verbose
-#         self.hwid = hwid
-
-#     def connect(self):
-#         self.port = findACMport(self.hwid)
-#         print("self.port: ", self.port)
-#         if self.port is None:
-#             raise ValueError('Encoder not found')
-#         elif self.is_open:
-#             self.close()
-#         print("Connecting to Encoder Port:", self.port)
-#         self.open()
-#         time.sleep(.1)
-#         # self.flush()
-#         # self.reset_input_buffer()
-#         # self.reset_output_buffer()
-
-#     def readEncoder(self):
-#         # print("encoder read 1")
-#         # self.flushInput()
-#         # self.flushOutput()
-#         self.write('1'.encode())
-#         self.flushInput()
-#         # self.flushOutput()
-#         # self.write(1)
-#         # time.sleep(.125)
-#         # print("encoder read 2")
-#         # for i in range(10):
-#         #     data = self.readline()
-#         #     print(i, data)
-#         # garbage = self.readline()
-#         data = self.readline()
-#         # data2 = self.readline()
-#         # data3 = self.readline()
-#         # data4 = self.readline()
-#         # data = self.readall()
-#         # data2 = self.read()
-#         # print(data2)
-#         # print("readline: ", data)
-#         # print("data2: ", data2)
-#         # print("data3: ", data3)
-#         # print("data4: ", data4)
-#         data = data.decode()
-#         print("decoded: ", data)
-#         data = data.strip()
-#         print("stripped: ", data)
-#         print("data: ", data)
-#         if data:
-#             print("a")
-#             counts = int(data)
-#         else:
-#             print("b")
-#             counts = -1
-#         # self.flush()
-#         # self.reset_input_buffer()
-#         # self.reset_output_buffer()
-#         print(counts)
-#         return counts
-#         # return int.from_bytes(data)
-
-#     def writeEncoder(self, value=0):
-#         self.write(value.encode())
-
-
-
-"""
-
-Homing fails if above hall sensor
-
-how to tell when physical motion to complete
-
-
-make sure you are on the right side of the switch
-
-
-sensor is backwards
-
-CE - invert encoder
-invert switches
-
-
-
-
-"""

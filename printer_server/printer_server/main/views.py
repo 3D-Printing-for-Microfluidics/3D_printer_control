@@ -68,8 +68,8 @@ def start(message):
                 shutil.rmtree(os.path.join(Config.UPLOAD_FOLDER, 'current_job'))
             except FileNotFoundError:
                 pass
-            except:
-                pass
+            # except:
+            #     pass
 
             _zipFile = os.path.join(Config.UPLOAD_FOLDER, 'queue', job.zip_filename)
             with ZipFile(_zipFile, 'r') as f:
@@ -146,8 +146,9 @@ def shutdown(message):
         if func is None:
             raise RuntimeError('Not running with the Werkzeug Server')
 
-        # printer3d.galil.__del__()     # TODO: use atexit here
-        # printer3d.projector.__del__() # TODO: use atexit here
+        # TODO: use atexit here
+        # printer3d.galil.__del__()
+        # printer3d.projector.__del__()
 
         socketio.emit('shutdown completed', dict(),
                       namespace='/printing', broadcast=True)

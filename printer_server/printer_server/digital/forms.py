@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """User forms."""
 from flask_wtf import FlaskForm
-from wtforms import PasswordField, StringField, FileField, SubmitField, IntegerField
+from wtforms import PasswordField, StringField
+# from wtforms import FileField, SubmitField, IntegerField
 from wtforms.validators import DataRequired, Email, EqualTo, Length
 
 from printer_server.models import User
@@ -38,4 +39,3 @@ class RegisterForm(FlaskForm):
             self.email.errors.append('Email already registered')
             return False
         return True
-

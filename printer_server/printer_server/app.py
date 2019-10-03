@@ -10,7 +10,6 @@ from printer_server.settings import ProdConfig
 from printer_server.hardware import printer3d
 from printer_server.logging_handler import SQLAlchemyHandler
 
-
 def create_app(config_object=ProdConfig):
     """An application factory, as explained here: http://flask.pocoo.org/docs/patterns/appfactories/.
 
@@ -28,22 +27,17 @@ def create_app(config_object=ProdConfig):
     register_logger(app)
     return app
 
-
 def register_extensions(app):
     """Register Flask extensions."""
     db.init_app(app)
     migrate.init_app(app, db)
     socketio.init_app(app)
-    return None
-
 
 def register_blueprints(app):
     """Register Flask blueprints."""
     app.register_blueprint(main.views.blueprint)
     app.register_blueprint(digital.views.blueprint)
     app.register_blueprint(calibrate.views.blueprint)
-    return None
-
 
 def register_errorhandlers(app):
     """Register error handlers."""
@@ -54,8 +48,6 @@ def register_errorhandlers(app):
         return render_template('{0}.html'.format(error_code)), error_code
     for errcode in [404, 500]:
         app.errorhandler(errcode)(render_error)
-    return None
-
 
 def register_shellcontext(app):
     """Register shell context objects."""
@@ -67,7 +59,6 @@ def register_shellcontext(app):
 
     app.shell_context_processor(shell_context)
 
-
 def register_commands(app):
     """Register Click commands."""
     app.cli.add_command(commands.test)
@@ -75,11 +66,9 @@ def register_commands(app):
     app.cli.add_command(commands.clean)
     app.cli.add_command(commands.urls)
 
-
 def register_hardware(app):
     app.printer3d = printer3d
     printer3d.init_app(app)
-
 
 def register_logger(app):
     if not app.debug:

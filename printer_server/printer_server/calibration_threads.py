@@ -17,6 +17,7 @@ from printer_server.hardware import printer3d
 from printer_server.hardware import calibrationControl
 
 
+# pylint: disable=unused-argument
 def thread_decorator(state, text):
     """Make decorators for the printer operation methods.
     The wrapped methods will push the 3D printer state changes
@@ -83,7 +84,7 @@ class CalibrationThreads:
         self.galil = printer3d.galil
         self.projector = printer3d.projector
         self.calibrationControl = calibrationControl
-        self._thread = threading.Thread()
+        self._thread = None
 
     @thread_decorator('initialized', 'Initialization complete')
     def initialize(self):

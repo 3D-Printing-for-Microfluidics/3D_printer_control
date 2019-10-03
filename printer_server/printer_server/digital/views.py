@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Digital view."""
 import os
-from flask import Blueprint, request, render_template, flash
 from datetime import datetime
-
+from flask import Blueprint, request, render_template, flash
 from printer_server.settings import Config
-from printer_server.hardware import printer3d, PrintSettings
+# from printer_server.hardware import printer3d, PrintSettings
+from printer_server.hardware import PrintSettings
 from printer_server.models import PrintJob, PrintRecord
 from printer_server.extensions import socketio
 from printer_server.utils import calcPageNum
@@ -15,32 +15,24 @@ blueprint = Blueprint('digital', __name__, url_prefix='/', static_folder='../sta
 
 @blueprint.route('handle-upload', methods=['POST'])
 def handleUpload():
-    form = request.form
+    # form = request.form
 
-    for i, file in enumerate(request.files.getlist('file')):
+    for _, file in enumerate(request.files.getlist('file')):
         uploadTime = datetime.now()
-        newFilename = os.path.join(Config.UPLOAD_FOLDER, 'queue',
-            '{}.zip'.format(uploadTime.strftime('job-%Y-%m-%dT%H-%M-%S.%f')))
+        newFilename = os.path.join(Config.UPLOAD_FOLDER, 'queue', '{}.zip'.format(uploadTime.strftime('job-%Y-%m-%dT%H-%M-%S.%f')))
         file.save(newFilename)
 
-        if not PrintSettings.validate(
-            newFilename,
-            path=os.path.join(Config.UPLOAD_FOLDER, 'tmp')
-            ):
-            socketio.emit('my error',
-                {'text': 'Job validation failed', 'category': 'danger'},
-                namespace='/printing')
+        if not PrintSettings.validate(newFilename, path=os.path.join(Config.UPLOAD_FOLDER, 'tmp')):
+            socketio.emit('my error', {'text': 'Job validation failed', 'category': 'danger'}, namespace='/printing')
             os.remove(newFilename)
         else:
-            newJob = PrintJob(original_filename=file.filename,
-                              upload_time=uploadTime,
-                              upload_ip=request.remote_addr).save()
+            newJob = PrintJob(original_filename=file.filename, upload_time=uploadTime, upload_ip=request.remote_addr).save()
             socketio.emit('job uploaded',
-                {'id': newJob.id,
-                 'name': file.filename,
-                 'uploadTime': uploadTime.strftime("%Y-%m-%d %H:%M:%S"),
-                 'uploadIP': request.remote_addr},
-                 namespace='/printing', broadcast=True)
+                          {'id': newJob.id,
+                           'name': file.filename,
+                           'uploadTime': uploadTime.strftime("%Y-%m-%d %H:%M:%S"),
+                           'uploadIP': request.remote_addr},
+                          namespace='/printing', broadcast=True)
     return ''
 
 
@@ -55,8 +47,7 @@ def deleteJob(message):
         'text': 'Print Job ({}) Deleted'.format(job.original_filename)
     }
     job.delete()
-    socketio.emit('job deleted', message,
-        namespace='/printing', broadcast=True)
+    socketio.emit('job deleted', message, namespace='/printing', broadcast=True)
 
 
 @blueprint.route('print-history')
@@ -69,7 +60,7 @@ def printHistroy():
     try:
         startDate = request.args.get('start', '')
         if startDate:
-            temp =[int(i) for i in startDate.split('-')]
+            temp = [int(i) for i in startDate.split('-')]
             _startDate = datetime(*temp)
             _q = _q.filter(_PR.start_time >= _startDate)
     except ValueError:
@@ -78,7 +69,7 @@ def printHistroy():
     try:
         endDate = request.args.get('end', '')
         if endDate:
-            temp =[int(i) for i in endDate.split('-')]
+            temp = [int(i) for i in endDate.split('-')]
             _endDate = datetime(*temp)
             _q = _q.filter(_PR.start_time <= _endDate)
     except ValueError:
@@ -92,7 +83,5 @@ def printHistroy():
                            endPage=endPage,
                            startDate=startDate,
                            endDate=endDate)
-
-
 
 # TODO: add re-print feature
