@@ -102,6 +102,3 @@ class Solus:
 
     def pause(self):
         print("Solus: pause()")
-
-    def __del__(self):
-        pass

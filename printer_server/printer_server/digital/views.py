@@ -83,5 +83,3 @@ def printHistroy():
                            endPage=endPage,
                            startDate=startDate,
                            endDate=endDate)
-
-# TODO: add re-print feature

@@ -146,10 +146,6 @@ def shutdown(message):
         if func is None:
             raise RuntimeError('Not running with the Werkzeug Server')
 
-        # TODO: use atexit here
-        # printer3d.galil.__del__()
-        # printer3d.projector.__del__()
-
         socketio.emit('shutdown completed', dict(),
                       namespace='/printing', broadcast=True)
         time.sleep(1)

@@ -4,6 +4,7 @@ Projector
 =========
 """
 import time
+import atexit
 
 from .projector_screen import ScreenThread
 # from .i2c import LightEngineI2C
@@ -15,6 +16,10 @@ class Projector:
         self.fullscreen = fullscreen
         self.screenThread = None
         # self.i2c = LightEngineI2C()
+
+        # atexit.register(self.i2c.disconnectServer)
+        atexit.register(self.screenThread.stop)
+        atexit.register(self.stop)
 
     def connect(self):
         """Create a :py:class:ScreenThread object and run it.
@@ -127,13 +132,13 @@ class Projector:
         """Clear the projector screen to be black"""
         self.screenThread.screen.clear()
 
-    def __del__(self):
-        try:
-            self.stop()
-            self.screenThread.stop()
-            # self.i2c.disconnectServer()
-        except AttributeError:
-            pass
+    # def __del__(self):
+    #     try:
+    #         self.stop()
+    #         self.screenThread.stop()
+    #         # self.i2c.disconnectServer()
+    #     except AttributeError:
+    #         pass
 
 
 if __name__ == '__main__':
