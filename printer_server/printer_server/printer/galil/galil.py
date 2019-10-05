@@ -63,7 +63,7 @@ class Galil():
         self.motorOn()
 
     def goToZmax(self):
-        self.absMove(speed=20, cnts=-492508)
+        self.absMove(speed=20, cnts=-444498)
 
     def goToZmin(self):
         # self.absMove(speed=20, cnts=330981) # real zmin
