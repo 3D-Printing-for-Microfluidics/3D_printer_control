@@ -16,6 +16,7 @@ from pathlib import Path
 from printer_server.extensions import db, socketio
 from printer_server.hardware import printer3d
 from printer_server.models import PrintRecord
+# from printer_server.hardware import calibrationControl
 
 
 def multithreading(state, text):
@@ -111,6 +112,7 @@ class PrintingThreads:
     def __init__(self):
         self.printer3d = printer3d
         self.galil = printer3d.galil
+        # self.calibrationControl = calibrationControl
         self.projector = printer3d.projector
         self.printSettings = None
         self.jsonDir = None
@@ -126,6 +128,7 @@ class PrintingThreads:
         and find zero in Z axis for build platform.
         """
         self.projector.connect()
+        # self.calibrationControl.initialize()
         self.galil.connect()
         self.galil.motorOn()
         self.galil.home()

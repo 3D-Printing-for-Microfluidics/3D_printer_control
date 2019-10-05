@@ -3,7 +3,7 @@
 from printer_server.printer.galil import Galil
 from printer_server.printer.projector import Projector
 from printer_server.printer.print_settings import PrintSettings
-from printer_server.printer.calibrationControl import CalibrationControl
+# from printer_server.printer.calibrationControl import CalibrationControl
 
 
 projectorResolution = (2560, 1600)
@@ -19,4 +19,4 @@ class Printer3D:
         pass
 
 printer3d = Printer3D()
-calibrationControl = CalibrationControl()
+# calibrationControl = CalibrationControl()

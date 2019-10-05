@@ -14,7 +14,7 @@ from functools import wraps
 
 from printer_server.extensions import socketio
 from printer_server.hardware import printer3d
-from printer_server.hardware import calibrationControl
+# from printer_server.hardware import calibrationControl
 
 
 # pylint: disable=unused-argument
@@ -83,7 +83,7 @@ class CalibrationThreads:
         self.printer3d = printer3d
         self.galil = printer3d.galil
         self.projector = printer3d.projector
-        self.calibrationControl = calibrationControl
+        # self.calibrationControl = calibrationControl
         self._thread = None
 
     @thread_decorator('initialized', 'Initialization complete')
@@ -94,7 +94,7 @@ class CalibrationThreads:
         # self.projector.connect()
         self.galil.connect()
         self.galil.initialize()
-        self.calibrationControl.initialize()
+        # self.calibrationControl.initialize()
         # printer3d.state = "initialized"
 
     @thread_decorator('galil_done', 'Galil go to Z max')
@@ -114,7 +114,8 @@ class CalibrationThreads:
         """calibrationMotorMove -- Move specified calibration
         motor by specified number of steps
         """
-        self.calibrationControl.move(axis, um)
+        # self.calibrationControl.move(axis, um)
+        pass
 
     @thread_decorator('light_engine_stop_complete', 'Light engine stopped')
     def lightEngineStop(self):

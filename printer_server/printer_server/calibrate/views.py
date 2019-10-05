@@ -26,7 +26,7 @@ def index():
 # If hardware isn't initialized, initialize it
 @socketio.on('initialize', namespace='/calibrate')
 # pylint: disable=unused-argument
-def initialize(message):
+def initialize():
     if printer3d.state == 'uninitialized':
         calibrationThreads.initialize()
     else:
@@ -40,12 +40,12 @@ def resetPrinterState(message):
 
 @socketio.on('galil_go_to_top', namespace='/calibrate')
 # pylint: disable=unused-argument
-def galil_go_to_top(message):
+def galil_go_to_top():
     calibrationThreads.goToZmax()
 
 @socketio.on('galil_go_to_bottom', namespace='/calibrate')
 # pylint: disable=unused-argument
-def galil_go_to_bottom(message):
+def galil_go_to_bottom():
     calibrationThreads.goToZmin()
 
 @socketio.on('calibration_motor', namespace='/calibrate')
@@ -56,7 +56,7 @@ def calibrationMotorMove(message):
 
 @socketio.on('light_engine_stop', namespace='/calibrate')
 # pylint: disable=unused-argument
-def lightEngineStop(message):
+def lightEngineStop():
     calibrationThreads.lightEngineStop()
 
 @socketio.on('light_engine_start', namespace='/calibrate')

@@ -1,32 +1,7 @@
-# import RPi.GPIO as GPIO
-# from .kdc101_stage import KDC101
-
 import serial
 import serial.tools.list_ports
 
-class CalibrationControl:
-    def __init__(self):
-        self.motors = ["Tip", "Tilt", "Distance"]
-        self.tipTilt = TipTilt_stage()
-        # self.dist = KDC101()
-        # self.tipTilt.initialize()
-        # self.dist.initialize()
-        print("__init__ calibration Done")
-
-    def initialize(self):
-        self.tipTilt.initialize()
-        # self.dist.initialize()
-
-    def move(self, axis, um):
-        if axis == "Distance":
-            # self.dist.move(um)
-            pass
-        else:
-            self.tipTilt.move(axis, um)
-
-
-
-class TipTilt_stage(serial.Serial):
+class TipTilt(serial.Serial):
 
     def __init__(self):
         super().__init__(baudrate=115200, timeout=None)
@@ -89,9 +64,3 @@ class TipTilt_stage(serial.Serial):
 
     def test_sequence(self):
         pass
-
-
-
-if __name__ == '__main__':
-    c = CalibrationControl()
-    # c.test_sequence()
