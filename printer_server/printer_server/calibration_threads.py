@@ -92,22 +92,25 @@ class CalibrationThreads:
         axis for build platform.
         """
         # self.projector.connect()
-        self.galil.connect()
-        self.galil.initialize()
+        # self.galil.connect()
+        # self.galil.initialize()
         # self.calibrationControl.initialize()
         # printer3d.state = "initialized"
+        pass
 
     @thread_decorator('galil_done', 'Galil go to Z max')
     def goToZmax(self):
         """goToZmax -- Move main Z stage to max position (up)
         """
         self.galil.goToZmax()
+        print("sent galil done")
 
     @thread_decorator('galil_done', 'Galil go to Z min')
     def goToZmin(self):
         """goToZmin -- Move main z stage to min position (down)
         """
         self.galil.goToZmin()
+        print("sent galil done")
 
     @thread_decorator('calibration_motor_done', 'Calibration move done')
     def calibrationMotorMove(self, axis, um):

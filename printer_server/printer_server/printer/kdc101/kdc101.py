@@ -31,7 +31,6 @@ class KDC101():
                                     timeout=0.1)
         self.scheduler = BackgroundScheduler()
         self.serverAliveJob = None
-        atexit.register(self.scheduler.shutdown, wait=False)
         atexit.register(self.KDC101.close)
         atexit.register(self.enableStage, enable=False)
 
@@ -103,6 +102,7 @@ class KDC101():
         # set up the heartbeat messgaes
         self.serverAliveJob = self.scheduler.add_job(self.sendServerAlive, 'interval', seconds=.9)
         self.scheduler.start()
+        atexit.register(self.scheduler.shutdown, wait=False)
 
     def sendServerAlive(self):
         self.KDC101.write(pack('<HBBBB', 0x0492, 0x00, 0x00, self.destination, self.source))
@@ -124,6 +124,7 @@ class KDC101():
         for _, device in enumerate(x):
             if "K-Cube" in device.product:
                 return device.device
+        return None                                # stage not found
 
     def flushUSB(self):
         self.KDC101.flushInput()

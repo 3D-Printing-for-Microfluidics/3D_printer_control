@@ -63,11 +63,17 @@ class Galil():
         self.motorOn()
 
     def goToZmax(self):
-        self.absMove(speed=20, cnts=-444498)
+        top_position = -444498
+        self.absMove(speed=20, cnts=top_position)
+        self.waitForMotionComplete(top_position)
+        print("motion complete")
 
     def goToZmin(self):
+        bottom_position = 128000
         # self.absMove(speed=20, cnts=330981) # real zmin
-        self.absMove(speed=20, cnts=128000)
+        self.absMove(speed=20, cnts=bottom_position)
+        self.waitForMotionComplete(bottom_position)
+        print("motion complete")
 
     def resume(self, layerThickness):
         # dummy for now, to satisfy old Solus method

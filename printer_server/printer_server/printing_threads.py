@@ -112,14 +112,15 @@ class PrintingThreads:
     def __init__(self):
         self.printer3d = printer3d
         self.galil = printer3d.galil
-        # self.calibrationControl = calibrationControl
         self.projector = printer3d.projector
+        self.kdc = printer3d.kdc
+        self.tiptilt = printer3d.tiptilt
         self.printSettings = None
         self.jsonDir = None
         self.printingStopped = threading.Event()
         self.printingPaused = threading.Event()
         self.pausedLayer = 1
-        self._thread = None # will be initialized later on start
+        self._thread = None                         # will be initialized later on start
         self.logs_path = Path.cwd().parent / 'logs'
 
     @multithreading('initialized', 'Initialize')
@@ -128,7 +129,6 @@ class PrintingThreads:
         and find zero in Z axis for build platform.
         """
         self.projector.connect()
-        # self.calibrationControl.initialize()
         self.galil.connect()
         self.galil.motorOn()
         self.galil.home()
