@@ -9,39 +9,67 @@ import atexit
 import socket
 from .projector_screen import ScreenThread
 
-
-# host = "192.168.0.10"
-# print("Host", host)
-# port = 5000                   # The same port as used by the server
-# s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# s.connect((host, port))
-# s.sendall(b'"SET AMPLITUDE 100\r\n\r\n')
-# data = s.recv(1024)
-# s.close()
-# print('Received', repr(data))
-
-
-
+# pylint:disable=too-many-public-methods
 class Visitech:
     def __init__(self, resolution, fullscreen=True):
         self.resolution = resolution
         self.fullscreen = fullscreen
-        self.screenThread = None
-        # self.i2c = LightEngineI2C()
+        self.max_exp_time = 10000                   # max single projection time in ms
+
+        # start the screen thread
+        self.screenThread = ScreenThread(self.resolution, self.fullscreen)
+        self.screenThread.start()
 
         # start TCP connection with default settings
         self.host = "192.168.0.10"
         self.port = 5000
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.host, self.port))
+
+        # set default state for light engine
+        self.set_video_source("HDMI")
+        self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
+
+        # register exit handlers
         atexit.register(self.socket.close)              # close the TCP conenction on exit
-        atexit.register(self.start_sequencer)           # make sure DMD is stopped on exit
+        atexit.register(self.stop_sequencer)            # make sure DMD is stopped on exit
+        atexit.register(self.screenThread.stop)         # stop screen thread on exit
 
     def send(self, data):
         """
         Send the data through the open TCP connection.
 
-        Returns the reply from the Visitech
+        Returns the reply from the Visitech, with the +OK stripped if present. Error codes
+        will remain in the output if present.
+
+        Here is a list of possible errors:
+
+        - NOT_CONNECTED -1 Lost connection with onboard DLP controller or LED driver.
+        - OUT_OF_MEMORY -2 Onboard computer out of memory.
+        - OPEN_DEVICE_FAILED -3 Could not open device for writing.
+        - I2C_SEND_FAILED -4 I2C communication with onboard controller failed.
+        - I2C_READ_FAILED -5 I2C communication with onboard controller failed.
+        - I2C_DEVICE_LIST_FAILED -6 Could not enumerate I2C devices on bus.
+        - I2C_DEVICE_LIST_EMPTY -7 I2C device list is empty.
+        - I2C_READ_SHORT -8 I2C communication corrupt, read were too short.
+        - I2C_WRITE_SHORT -9 I2C communication corrupt, write were too short.
+        - I2C_MASTER_SET_FAIL -10 I2C communication issue, could not set self as bus master.
+        - TO_HIGH_LED_AMPLITUDE -11 LED amplitude value too high to set. 0-2000 is acceptable range.
+        - SEQUENCE_FILE_ERROR -12 Sequence file is not valid.
+        - SEQUENCE_NUM_ARGS -13 Sequence file has too many arguments.
+        - SEQUENCE_TOO_MANY_PATTERNS -14 Sequence file has too many patterns.
+        - STRESS_TEST_FAILED -15 Stress test has failed.
+        - ARGUMENT_INVALID -16 Argument is invalid.
+        - ARGUMENT_OUT_OF_RANGE -17 Argument is out of range.
+        - TEST_FAILED -19 Self test has failed.
+        - DEVICE_COMMUNICATION_FAILED -20 Internal communication error.
+        - OPEN_FILE_FAILED -21 Could not open internal file. SD card may be corrupt.
+        - INVALID_ARGUMENT -1000 Invalid serialization protocol argument sent.
+        - INVALID_COMMAND -1001 Invalid serialization protocol command sent.
+        - RUNTIME_ERROR -1002 Unknown runtime error. See message.
+        - I2C_BUS_DOWN -1003 Onboard CPU is not connected to any devices.
+
+        These error codes will also appear when using GET LOGS if any is available.
         """
 
         self.socket.sendall(data + "\r\n\r\n")
@@ -89,7 +117,6 @@ class Visitech:
         """
         return self.send("SET LIGHT ON")
 
-
     def led_driver_disable(self):
         """
         Turns off the LED driver. When off the LED driver will not output current to the LED, even when a
@@ -125,7 +152,7 @@ class Visitech:
 
         Return type +OK and ON or OFF
         """
-        return self.send("GET VERSION")
+        return self.send("SET AMPLITUDE {}".format(amplitude))
 
     def get_led_amplitude(self):
         """
@@ -143,7 +170,6 @@ class Visitech:
         """
         return self.send("SET OCP {}".format(value))
 
-
     def get_led_driver_ocp(self):
         """
         Get the OCP value for the LED in Amps. Not recommended to adjust higher than default settings.
@@ -152,7 +178,6 @@ class Visitech:
         Return type +OK and set value
         """
         return self.send("GET OCP")
-
 
     def set_led_driver_regulation_mode(self, mode):
         """
@@ -166,7 +191,6 @@ class Visitech:
         """
         return self.send("SET REG MODE {}".format(mode))
 
-
     def get_led_driver_regulation_mode(self):
         """
         Get the regulation mode to be used for controlling light output from LED.
@@ -174,7 +198,6 @@ class Visitech:
         Return type +OK and current set mode: CURRENT/LIGHT/COMBINED
         """
         return self.send("GET REG MODE")
-
 
     def get_led_driver_current(self):
         """
@@ -298,7 +321,7 @@ class Visitech:
 
         Return type +OK and mode
         """
-        return self.send("")
+        return self.send("GET OPERATION MODE")
 
     # pylint: disable=too-many-arguments
     def set_sequencer_lut_definition(self, exposure, darktime=0, clear=1, bitdepth=7, wait_for_trigger=1, pattern_index=1, bit_index=0):
@@ -341,7 +364,7 @@ class Visitech:
         """
         return self.send("SET LUT CONFIG {} {}".format(num_sequences, repeats))
 
-    def function_name(self, pattern_index, bitmap_size, bitmap_data):
+    def upload_image(self, pattern_index, bitmap_size, bitmap_data):
         """
         Upload 24-bit bitmap to DMD controller. Non-compressed, with a standard header bitmap must be
         used. Keep in mind that a 24-bit bitmap can contain 24x 1-bit bitmaps if black&white exposure is
@@ -420,87 +443,40 @@ class Visitech:
         """
         return self.send("GET LOGS")
 
-    # def projectMulti(self, images, exposureTimes, ledPowers):
-    #     """Project multiple images with its own expoure time and
-    #     and LED power setting.
+    def split_exposure_time(self, exposure):
+        """
+        Split a long exposure time into an array of smaller exposure times.
+        """
+        n = int(exposure // self.max_exp_time)
+        if exposure % self.max_exp_time != 0:
+            exposure = [self.max_exp_time] * n + [exposure % self.max_exp_time]
+        else:
+            exposure = [self.max_exp_time] * n
+        return exposure
 
-    #     :param list images: a list of image filenames
-    #     :param list exposureTimes: a list of exposure times (ms)
-    #     :param list ledPowers: a list of led power settings
-    #                            (0-1000)
-    #     """
-    #     for im, exposureTime, ledPower in zip(images, exposureTimes, ledPowers):
-    #         self.project(im, exposureTime, ledPower)
+    def clear_image(self):
+        """
+        Blank the virtual screen that provides the image to the projector.
+        Sets full image to black.
+        """
+        self.screenThread.screen.clear()
 
-    # def project(self, image, exposureTime, ledPower):
-    #     """Poject a image for a period of t (ms).
-
-    #     :param image: an 8-bit grayscale image filename
-    #     :param int exposureTime: exposure time (ms)
-    #     :param int ledPower: LED power setting (0-1000)
-    #     """
-    #     max_time = 10000
-    #     n = int(exposureTime // max_time)
-    #     if exposureTime % max_time != 0:
-    #         exposureTime = [max_time] * n + [exposureTime % max_time]
-    #     else:
-    #         exposureTime = [max_time] * n
-
-    #     if ledPower != self.ledPower:
-    #         self.setLedAmplitude(ledPower)
-
-    #     for t in exposureTime:
-    #         self.sendSequence(t)
-    #         self.screenThread.screen.draw(image)
-    #         time.sleep(0.1)
-    #         self.start()
-    #         time.sleep(0.1 + t * 1e-3)
-    #         self.stop()
-
-    # # pylint: disable=unused-argument, unused-variable, too-many-arguments, no-self-use
-    # def sendSequence(self, exposure, repeat=1, bitdepth=7, vsync=1, darktime=0, bitposition=0):
-    #     """Generate and send control sequence
-
-    #     :param int exposure: exposure time (ms)
-    #     :param int repeat: number of times to repeat pattern sequence
-    #                        0 - repeat forever, (1-4294967296) - repeat
-    #                        n times
-    #     :param int bitdepth: image bit depth. 7 means 8 bits
-    #     :param int vsync: 1 = Wait for VSYNC before displaying the
-    #                       pattern, 0 = Continue running after previous
-    #                       pattern
-    #     :param int darktime: (0-2^24) Dark display time following exposure
-    #     :param int bitposition: see DLPC900 datasheet
-
-    #     """
-    #     exptime = int(exposure * 1e3)   # convert to us
-    #     sequence = [[exptime, bitdepth, 1, vsync, darktime, bitposition, 0]]
-    #     # self.i2c.parseSendSequence(sequence, repeat)
-
-    # def calibrateProject(self, image, ledPower, repeat, exposureTime):
-    #     """Enable continuous projection of an image for
-    #     calibration
-
-    #     :param image: an 8-bit grayscale image filename
-    #     :param int ledPower: LED power setting (0-1000)
-    #     :param int repeat: 0 repeats forever, 1 repeat
-    #                        once (normal operation)
-    #     :param int exposureTime: exposure time (ms).
-    #     """
-    #     if repeat != 0:
-    #         self.project(image, exposureTime, ledPower)
-    #     else:
-    #         self.setLedAmplitude(ledPower)
-    #         self.sendSequence(exposureTime, repeat)
-    #         self.screenThread.screen.draw(image)
-    #         time.sleep(0.1)
-    #         self.start()
-
-    # def clear(self):
-    #     """Clear the projector screen to be black"""
-    #     self.screenThread.screen.clear()
+    def project(self, image, exposure, power, repeats=1):
+        """
+        Call all of the necessary methods to project an image, and block until projection
+        is complete.
+        """
+        self.set_led_amplitude(power)
+        for t in self.split_exposure_time(exposure):
+            self.set_sequencer_lut_definition(exposure=t)
+            self.set_sequencer_lut_config(repeats=repeats)
+            self.screenThread.screen.draw(image)
+            time.sleep(0.1)
+            self.start_sequencer()
+            time.sleep(0.1 + t * 1e-3)
+            self.stop_sequencer()
 
 if __name__ == '__main__':
     projectorResolution = (2560, 1600)
     p = Visitech(projectorResolution)
-    # p.calibrateProject("calibrate.png", 100, 0, 1000)
+    p.project("calibrate.png", 1000, 100)
