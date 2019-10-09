@@ -11,20 +11,76 @@ from .projector_screen import ScreenThread
 
 # pylint:disable=too-many-public-methods
 class Visitech:
+    """
+    This is the new VIsitech driver which runs based on their Ethernet interface and API.
+    Commands are sent over a TCP connection.
+
+    Here is a list of possible errors for different commands:
+
+    - NOT_CONNECTED -1 Lost connection with onboard DLP controller or LED driver.
+    - OUT_OF_MEMORY -2 Onboard computer out of memory.
+    - OPEN_DEVICE_FAILED -3 Could not open device for writing.
+    - I2C_SEND_FAILED -4 I2C communication with onboard controller failed.
+    - I2C_READ_FAILED -5 I2C communication with onboard controller failed.
+    - I2C_DEVICE_LIST_FAILED -6 Could not enumerate I2C devices on bus.
+    - I2C_DEVICE_LIST_EMPTY -7 I2C device list is empty.
+    - I2C_READ_SHORT -8 I2C communication corrupt, read were too short.
+    - I2C_WRITE_SHORT -9 I2C communication corrupt, write were too short.
+    - I2C_MASTER_SET_FAIL -10 I2C communication issue, could not set self as bus master.
+    - TO_HIGH_LED_AMPLITUDE -11 LED amplitude value too high to set. 0-2000 is acceptable range.
+    - SEQUENCE_FILE_ERROR -12 Sequence file is not valid.
+    - SEQUENCE_NUM_ARGS -13 Sequence file has too many arguments.
+    - SEQUENCE_TOO_MANY_PATTERNS -14 Sequence file has too many patterns.
+    - STRESS_TEST_FAILED -15 Stress test has failed.
+    - ARGUMENT_INVALID -16 Argument is invalid.
+    - ARGUMENT_OUT_OF_RANGE -17 Argument is out of range.
+    - TEST_FAILED -19 Self test has failed.
+    - DEVICE_COMMUNICATION_FAILED -20 Internal communication error.
+    - OPEN_FILE_FAILED -21 Could not open internal file. SD card may be corrupt.
+    - INVALID_ARGUMENT -1000 Invalid serialization protocol argument sent.
+    - INVALID_COMMAND -1001 Invalid serialization protocol command sent.
+    - RUNTIME_ERROR -1002 Unknown runtime error. See message.
+    - I2C_BUS_DOWN -1003 Onboard CPU is not connected to any devices.
+
+    These error codes will also appear when using GET LOGS if any is available.
+
+    There are two commands not documented in the API but are present on the device that I have implemented:
+
+    GET LED TEMP
+    GET BOARD TEMP
+
+    There are several commands not documented in the API but are present on the device that I have not
+    implemented. I am not sure what these do and they shouldn't be used:
+
+    PING
+    GET LBREG
+    SET LBREG
+    FACTORY SET NORMALIZATION VALUE
+
+    There are two commands in the API that are incorrect:
+
+    SET INPUT SOURCE - not implemented at all - replaced with INIT HDMI and INIT DISPLAYPORT
+    GET INPUT SOURCE - actually implemented as GET VIDEO SOURCE
+
+    """
+
     def __init__(self, resolution, fullscreen=True):
         self.resolution = resolution
         self.fullscreen = fullscreen
         self.max_exp_time = 10000                   # max single projection time in ms
 
-        # start the screen thread
-        self.screenThread = ScreenThread(self.resolution, self.fullscreen)
-        self.screenThread.start()
-
         # start TCP connection with default settings
         self.host = "192.168.0.10"
         self.port = 5000
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((self.host, self.port))
+        try:
+            self.socket.connect((self.host, self.port))
+        except OSError:
+            exit("Light engine not found. It it plugged in and powered on?")
+
+        # start the screen thread - this thread hangs if exited on an interrupt
+        self.screenThread = ScreenThread(self.resolution, self.fullscreen)
+        self.screenThread.start()
 
         # set default state for light engine
         self.set_video_source("HDMI")
@@ -42,39 +98,14 @@ class Visitech:
         Returns the reply from the Visitech, with the +OK stripped if present. Error codes
         will remain in the output if present.
 
-        Here is a list of possible errors:
-
-        - NOT_CONNECTED -1 Lost connection with onboard DLP controller or LED driver.
-        - OUT_OF_MEMORY -2 Onboard computer out of memory.
-        - OPEN_DEVICE_FAILED -3 Could not open device for writing.
-        - I2C_SEND_FAILED -4 I2C communication with onboard controller failed.
-        - I2C_READ_FAILED -5 I2C communication with onboard controller failed.
-        - I2C_DEVICE_LIST_FAILED -6 Could not enumerate I2C devices on bus.
-        - I2C_DEVICE_LIST_EMPTY -7 I2C device list is empty.
-        - I2C_READ_SHORT -8 I2C communication corrupt, read were too short.
-        - I2C_WRITE_SHORT -9 I2C communication corrupt, write were too short.
-        - I2C_MASTER_SET_FAIL -10 I2C communication issue, could not set self as bus master.
-        - TO_HIGH_LED_AMPLITUDE -11 LED amplitude value too high to set. 0-2000 is acceptable range.
-        - SEQUENCE_FILE_ERROR -12 Sequence file is not valid.
-        - SEQUENCE_NUM_ARGS -13 Sequence file has too many arguments.
-        - SEQUENCE_TOO_MANY_PATTERNS -14 Sequence file has too many patterns.
-        - STRESS_TEST_FAILED -15 Stress test has failed.
-        - ARGUMENT_INVALID -16 Argument is invalid.
-        - ARGUMENT_OUT_OF_RANGE -17 Argument is out of range.
-        - TEST_FAILED -19 Self test has failed.
-        - DEVICE_COMMUNICATION_FAILED -20 Internal communication error.
-        - OPEN_FILE_FAILED -21 Could not open internal file. SD card may be corrupt.
-        - INVALID_ARGUMENT -1000 Invalid serialization protocol argument sent.
-        - INVALID_COMMAND -1001 Invalid serialization protocol command sent.
-        - RUNTIME_ERROR -1002 Unknown runtime error. See message.
-        - I2C_BUS_DOWN -1003 Onboard CPU is not connected to any devices.
-
-        These error codes will also appear when using GET LOGS if any is available.
         """
-
-        self.socket.sendall(data + "\r\n\r\n")
+        data += "\r\n\r\n"
+        self.socket.sendall(data.encode())
         reply = self.socket.recv(1024)
-        print('Received', repr(data))
+        print('Sent', repr(data))
+        print('Reply', repr(reply.decode()))
+        # print('Sent', str(data).replace("\r\n", " "))
+        # print('Reply', str(reply.decode()).replace("\r\n", " "))
         return reply
 
     def load_defaults(self):
@@ -99,7 +130,8 @@ class Visitech:
 
     def get_version(self):
         """
-        Get the version number of the firmware running on the LRS, in the format “1.1.0”. The version number is set when changes are made in according to these rules: Micro version is increased when a bug
+        Get the version number of the firmware running on the LRS, in the format “1.1.0”. The version number
+        is set when changes are made in according to these rules: Micro version is increased when a bug
         has been fixed. Minor version is increased when a new feature is added in a backwards compatible
         way. Major version is increased when new features or changes requires the API to be broken and the
         end-user will have to make changes accordingly in their own systems to suit.
@@ -216,6 +248,22 @@ class Visitech:
         """
         return self.send("GET LIGHT FEEDBACK")
 
+    def get_led_temp(self):
+        """
+        Get the LED temperature from the LED driver.
+
+        Return type +OK and temperature value.
+        """
+        return self.send("GET LED TEMP")
+
+    def get_led_driver_board_temp(self):
+        """
+        Get the temperature of the LED driver board from the LED driver.
+
+        Return type +OK and temperature value.
+        """
+        return self.send("GET BOARD TEMP")
+
     def set_led_driver_board_temp_limit(self, temperature):
         """
         Set the temperature limit for the LED driver in Celsius. It is not recommended to exceed the default
@@ -307,6 +355,7 @@ class Visitech:
         Set the operation mode of the DMD.
 
         Available modes:
+        -VIDEO_MODE - not documented in API but present
         -VIDEO_PATTERN_MODE - Use video input, must define pattern LUT also. To enable this mode the
         HDMI or Displayport must be inited before setting mode.
         -PATTERN_ON_THE_FLY_MODE - Upload images via this protocol.
@@ -391,7 +440,12 @@ class Visitech:
 
         Return type +OK
         """
-        return self.send("SET INPUT SOURCE {}".format(source))
+
+        # workaround for incorrect API - SET VIDEO SOURCE wasn't actually implemented
+        # return self.send("SET INPUT SOURCE {}".format(source))
+        if source == "DISPLAYPORT":
+            return self.send("INIT DISPLAYPORT")
+        return self.send("INIT HDMI")
 
     def get_video_source(self):
         """
@@ -399,7 +453,9 @@ class Visitech:
 
         Return type +OK and source: HDMI/DISPLAYPORT/NONE
         """
-        return self.send("GET VIDEO SOURCE")
+        # workaround for incorrect API - command was documented incorrectly
+        # return self.send("GET VIDEO SOURCE")
+        return self.send("GET INPUT SOURCE")
 
     def set_pixel_mode(self, mode):
         """
@@ -479,4 +535,4 @@ class Visitech:
 if __name__ == '__main__':
     projectorResolution = (2560, 1600)
     p = Visitech(projectorResolution)
-    p.project("calibrate.png", 1000, 100)
+    p.project("calibrate.png", exposure=1000, power=100)
