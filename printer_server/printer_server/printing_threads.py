@@ -132,6 +132,9 @@ class PrintingThreads:
         self.galil.connect()
         self.galil.motorOn()
         self.galil.home()
+        self.tiptilt.initialize()
+        self.kdc.initialize()
+
         # self.galil.openEncoderFile('encoder_initialization_write_file.txt')
         # self.galil.closeEncoderFile()
 

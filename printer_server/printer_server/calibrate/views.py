@@ -50,9 +50,12 @@ def galil_go_to_bottom():
 
 @socketio.on('calibration_motor', namespace='/calibrate')
 def calibrationMotorMove(message):
-    calibrationThreads.calibrationMotorMove(
-        message["axis"],
-        int(message["steps"]))
+
+    axis = message["axis"]
+    distance = int(message["steps"])
+    calibrationThreads.calibrationMotorMove(axis, distance)
+
+
 
 @socketio.on('light_engine_stop', namespace='/calibrate')
 # pylint: disable=unused-argument

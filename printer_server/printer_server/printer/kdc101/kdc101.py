@@ -74,7 +74,7 @@ class KDC101():
             return False
 
         self.KDC101.write(pack('<HBBBBHi', code, 0x06, 0x00, self.destination|0x80, self.source, self.Channel, dUnitpos))
-        print('Moving stage')
+        print('Moving stage', pos, "...")
         self.confirmMoveFinished()
         return True
 
@@ -136,7 +136,6 @@ class KDC101():
 
         #Read back position returns by the cube; Rx message MGMSG_MOT_GET_POSCOUNTER
         _, _, position_dUnits = unpack('<6sHI', self.KDC101.read(12)) # first two returns are header and chan_dent
-        # import pdb; pdb.set_trace()
         getpos = position_dUnits/float(self.Device_Unit_SF)
         if int(getpos) == 125203:
             getpos = 0.0
@@ -152,6 +151,7 @@ if __name__ == "__main__":
 
     for _ in range(2):
         print(kc.getCurrentPos())
-        kc.move(500)
+        kc.move(1000)
         print(kc.getCurrentPos())
-        kc.move(-500)
+        kc.move(-1000)
+        print(kc.getCurrentPos())
