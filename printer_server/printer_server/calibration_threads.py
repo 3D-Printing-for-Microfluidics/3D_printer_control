@@ -117,8 +117,12 @@ class CalibrationThreads:
         """calibrationMotorMove -- Move specified calibration
         motor by specified number of steps
         """
-        # self.calibrationControl.move(axis, um)
-        pass
+        print("axis:{}, dist:{}".format(axis, um))
+        if axis == "Distance":
+            self.printer3d.kdc.move(um)
+        else:
+            self.printer3d.tiptilt.move(axis, um)
+
 
     @thread_decorator('light_engine_stop_complete', 'Light engine stopped')
     def lightEngineStop(self):
