@@ -7,7 +7,7 @@ var enable_all_buttons = function(){
 }
 
 var disable_calibration_motor_buttons = function(){
-    $('.motor-controls button').prop('disabled', true);
+    // $('.motor-controls button').prop('disabled', true);
 }
 
 var enable_calibration_motor_buttons = function(){
@@ -15,7 +15,7 @@ var enable_calibration_motor_buttons = function(){
 }
 
 var disable_galil_buttons = function(){
-    $('.galil button').prop('disabled', true);
+    // $('.galil button').prop('disabled', true);
 }
 
 var enable_galil_buttons = function(){
@@ -27,7 +27,7 @@ var enable_upload_buttons = function(){
 }
 
 var disable_upload_buttons = function(){
-    $('.light-engine button').prop('disabled', true);
+    // $('.light-engine button').prop('disabled', true);
 }
 
 var enable_upload_button = function(){
@@ -35,11 +35,11 @@ var enable_upload_button = function(){
 }
 
 var disable_upload_button = function(){
-    $('#upload-btn').prop('disabled', true);
+    // $('#upload-btn').prop('disabled', true);
 }
 
 var disable_project_start_button = function(){
-    $('#le-start-btn').prop('disabled', true);
+    // $('#le-start-btn').prop('disabled', true);
 }
 
 var enable_project_start_button = function(){
@@ -52,8 +52,8 @@ var enable_project_start_stop_buttons = function(){
 }
 
 var disable_project_start_stop_buttons = function(){
-    $('#le-start-btn').prop('disabled', true);
-    $('#le-stop-btn').prop('disabled', true);
+    // $('#le-start-btn').prop('disabled', true);
+    // $('#le-stop-btn').prop('disabled', true);
 }
 
 $(document).ready(function(){
