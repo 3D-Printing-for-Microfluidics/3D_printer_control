@@ -84,6 +84,7 @@ class Visitech:
 
         # set default state for light engine
         self.set_video_source("HDMI")
+        self.set_led_driver_regulation_mode("LIGHT")
         self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
 
         # register exit handlers
@@ -373,7 +374,7 @@ class Visitech:
         return self.send("GET OPERATION MODE")
 
     # pylint: disable=too-many-arguments
-    def set_sequencer_lut_definition(self, exposure, darktime=0, clear=1, bitdepth=7, wait_for_trigger=1, pattern_index=1, bit_index=0):
+    def set_sequencer_lut_definition(self, exposure, darktime=0, clear=1, bitdepth=7, wait_for_trigger=1, pattern_index=0, bit_index=0):
         """
         Set the LUT definition of the DMD controller. Each line represents one pattern. Parameters are
         seperated by comma and are as following:
@@ -440,7 +441,7 @@ class Visitech:
 
         Return type +OK
         """
-
+        time.sleep(5)                               # must wait for at least 5 seconds to read or write display mode
         # workaround for incorrect API - SET VIDEO SOURCE wasn't actually implemented
         # return self.send("SET INPUT SOURCE {}".format(source))
         if source == "DISPLAYPORT":
@@ -528,23 +529,20 @@ class Visitech:
 
         if repeats == 0:    # if continuous display is desired
             self.set_sequencer_lut_definition(33100, 0, 0, 7, 0, 0, 0)  # this provides the minimum blanking of 233 us of the full 33333 us cycle (at 30Hz on HDMI)
-            self.set_sequencer_lut_config(repeats=repeats)
-            self.screenThread.screen.draw(image)
-            self.start_sequencer()
+            self.set_sequencer_lut_config(repeats=repeats)              # 0 means repeat forever
+            self.screenThread.screen.draw(image)                        # draw to virtual screen
+            self.start_sequencer()                                      # start the sequencer and don't stop it (will be stopped on program exit)
         else:               # normal display is desired
             for t in self.split_exposure_time(exposure):
-                print("t", t)
-                self.set_sequencer_lut_definition(exposure=t)
-                self.set_sequencer_lut_config(repeats=repeats)
-                self.screenThread.screen.draw(image)
+                self.set_sequencer_lut_definition(exposure=t*1000)      # the TI board expects exposure in microseconds
+                self.set_sequencer_lut_config(repeats=repeats)          # set the number of repetitions
+                self.screenThread.screen.draw(image)                    # draw to the virtual screen
                 time.sleep(0.1)
-                print("start exposure")
-                self.start_sequencer()
+                self.start_sequencer()                                  # start the sequencer
                 time.sleep(0.1 + t * 1e-3)
-                self.stop_sequencer()
-                print("stop exposure")
+                self.stop_sequencer()                                   # stop the sequencer
 
 if __name__ == '__main__':
     projectorResolution = (2560, 1600)
     p = Visitech(projectorResolution)
-    p.project("calibrate.png", exposure=1000, power=100)
+    p.project("images/calibrate.png", exposure=1000, power=100)
