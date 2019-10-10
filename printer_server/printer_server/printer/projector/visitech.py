@@ -522,15 +522,27 @@ class Visitech:
         Call all of the necessary methods to project an image, and block until projection
         is complete.
         """
+        print("start exposure")
         self.set_led_amplitude(power)
-        for t in self.split_exposure_time(exposure):
-            self.set_sequencer_lut_definition(exposure=t)
+        print("exp time", exposure)
+
+        if repeats == 0:    # if continuous display is desired
+            self.set_sequencer_lut_definition(33100, 0, 0, 7, 0, 0, 0)  # this provides the minimum blanking of 233 us of the full 33333 us cycle (at 30Hz on HDMI)
             self.set_sequencer_lut_config(repeats=repeats)
             self.screenThread.screen.draw(image)
-            time.sleep(0.1)
             self.start_sequencer()
-            time.sleep(0.1 + t * 1e-3)
-            self.stop_sequencer()
+        else:               # normal display is desired
+            for t in self.split_exposure_time(exposure):
+                print("t", t)
+                self.set_sequencer_lut_definition(exposure=t)
+                self.set_sequencer_lut_config(repeats=repeats)
+                self.screenThread.screen.draw(image)
+                time.sleep(0.1)
+                print("start exposure")
+                self.start_sequencer()
+                time.sleep(0.1 + t * 1e-3)
+                self.stop_sequencer()
+                print("stop exposure")
 
 if __name__ == '__main__':
     projectorResolution = (2560, 1600)
