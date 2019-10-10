@@ -3,7 +3,6 @@
 import time
 import json
 import atexit
-import gclib
 
 # remove bad chars from file name
 def cleanFileName(name):
@@ -33,6 +32,8 @@ def parseResponseString(string, axis="A"):
 
 class Galil():
     def __init__(self, address=None, verbose=False):
+        import gclib
+
         self.verbose = verbose
         self.address = address
 

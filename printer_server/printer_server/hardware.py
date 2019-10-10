@@ -1,18 +1,28 @@
 # -*- coding: utf-8 -*-
 """Hardware module. It integrates the hardware modules into a Printer3D."""
-from printer_server.printer.galil import Galil
-from printer_server.printer.projector import Projector
-from printer_server.printer.kdc101 import KDC101
-from printer_server.printer.tiptilt import TipTilt
+from printer_server.printer.galil import Galil, Galil_dummy
+from printer_server.printer.projector import Projector, Projector_dummy
+from printer_server.printer.kdc101 import KDC101, KDC101_dummy
+from printer_server.printer.tiptilt import TipTilt, TipTilt_dummy
 from printer_server.printer.print_settings import PrintSettings
 
 projectorResolution = (2560, 1600)
 
 class Printer3D:
-    state = 'uninitialized'
-    galil = Galil()
-    projector = Projector(projectorResolution)
-    kdc = KDC101()
-    tiptilt = TipTilt(verbose=True)
+    def __init__(self, dummy=False):
+        self.dummy = dummy
 
-printer3d = Printer3D()
+        if self.dummy:
+            self.state = 'uninitialized'
+            self.galil = Galil_dummy()
+            self.projector = Projector_dummy(projectorResolution)
+            self.kdc = KDC101_dummy()
+            self.tiptilt = TipTilt_dummy(verbose=True)
+        else:
+            self.state = 'uninitialized'
+            self.galil = Galil()
+            self.projector = Projector(projectorResolution)
+            self.kdc = KDC101()
+            self.tiptilt = TipTilt(verbose=True)
+
+printer3d = Printer3D(dummy=False)
