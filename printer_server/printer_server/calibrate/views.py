@@ -50,12 +50,9 @@ def galil_go_to_bottom():
 
 @socketio.on('calibration_motor', namespace='/calibrate')
 def calibrationMotorMove(message):
-
     axis = message["axis"]
     distance = int(message["steps"])
     calibrationThreads.calibrationMotorMove(axis, distance)
-
-
 
 @socketio.on('light_engine_stop', namespace='/calibrate')
 # pylint: disable=unused-argument
@@ -71,8 +68,7 @@ def lightEngineProject(message):
         int(message["exposure"]))
 
 @blueprint.route('handle-calibration-upload', methods=['POST'])
-# pylint: disable=unused-argument
-def handleUpload(message):
+def handleUpload():
     if 'file' in request.files:             # Check if the post request has the file part
         file = request.files['file']        # Get the file
         if file.filename != '' and file:    # File part of request actually has a file
