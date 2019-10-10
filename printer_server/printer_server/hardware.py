@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Hardware module. It integrates the Galil controller and Projector into a Printer3D."""
 from printer_server.printer.galil import Galil
-from printer_server.printer.projector import Visitech
+from printer_server.printer.projector import Projector
 from printer_server.printer.kdc101 import KDC101
 from printer_server.printer.tiptilt import TipTilt
 from printer_server.printer.print_settings import PrintSettings
@@ -12,7 +12,7 @@ projectorResolution = (2560, 1600)
 class Printer3D:
     state = 'uninitialized'
     galil = Galil()
-    projector = Visitech(projectorResolution)
+    projector = Projector(projectorResolution)
     kdc = KDC101()
     tiptilt = TipTilt()
 

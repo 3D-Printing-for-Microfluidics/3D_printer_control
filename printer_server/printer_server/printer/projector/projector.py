@@ -10,7 +10,7 @@ import socket
 from .screen import ScreenThread
 
 # pylint:disable=too-many-public-methods
-class Visitech:
+class Projector:
     """
     This is the new VIsitech driver which runs based on their Ethernet interface and API.
     Commands are sent over a TCP connection.
@@ -96,7 +96,7 @@ class Visitech:
         """
         Send the data through the open TCP connection.
 
-        Returns the reply from the Visitech, with the +OK stripped if present. Error codes
+        Returns the reply from the Projector, with the +OK stripped if present. Error codes
         will remain in the output if present.
 
         """
@@ -544,5 +544,5 @@ class Visitech:
 
 if __name__ == '__main__':
     projectorResolution = (2560, 1600)
-    p = Visitech(projectorResolution)
+    p = Projector(projectorResolution)
     p.project("images/calibrate.png", exposure=1000, power=100)
