@@ -63,7 +63,7 @@ class Galil():
         self.motorOn()
 
     def goToZmax(self):
-        top_position = -444498
+        top_position = -400000
         self.absMove(speed=20, cnts=top_position)
         self.waitForMotionComplete(top_position)
         print("motion complete")

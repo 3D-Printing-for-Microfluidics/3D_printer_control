@@ -128,12 +128,13 @@ class PrintingThreads:
         """Establish Ethernet connection with Galil controler,
         and find zero in Z axis for build platform.
         """
+        self.tiptilt.connect()
+        self.kdc.initialize()
         self.projector.connect()
         self.galil.connect()
         self.galil.motorOn()
         self.galil.home()
-        self.tiptilt.initialize()
-        self.kdc.initialize()
+        self.galil.goToZmax()
 
         # self.galil.openEncoderFile('encoder_initialization_write_file.txt')
         # self.galil.closeEncoderFile()
@@ -270,7 +271,6 @@ class PrintingThreads:
         # Initialize parameters
         self.printingStopped.clear()
         self.printingPaused.clear()
-        self.projector.setLedAmplitude(100)
 
         # date_and_time = datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
         # self.logs_path_directory_for_this_run = self.logs_path / date_and_time
@@ -309,8 +309,8 @@ class PrintingThreads:
 
         # Clean up
         # self.galil.stopLoadCell()
-        self.projector.stop()
-        self.projector.clear()
+        self.projector.stop_sequencer()
+        self.projector.screenThread.screen.clear()
         if self.printingPaused.is_set():
             self.galil.pause()
         else:

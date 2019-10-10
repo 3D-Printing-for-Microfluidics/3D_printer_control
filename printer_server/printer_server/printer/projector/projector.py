@@ -69,17 +69,27 @@ class Projector:
         self.fullscreen = fullscreen
         self.max_exp_time = 10000                   # max single projection time in ms
 
-        # start TCP connection with default settings
+        # setup TCP connection
         self.host = "192.168.0.10"
         self.port = 5000
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # setup screen thread
+        self.screenThread = ScreenThread(self.resolution, self.fullscreen)
+
+        # register exit handlers
+        atexit.register(self.socket.close)              # close the TCP conenction on exit
+        atexit.register(self.stop_sequencer)            # make sure DMD is stopped on exit
+        atexit.register(self.screenThread.stop)         # stop screen thread on exit
+
+    def connect(self):
+        # start TCP connection
         try:
             self.socket.connect((self.host, self.port))
         except OSError:
             exit("Light engine not found. It it plugged in and powered on?")
 
-        # start the screen thread - this thread hangs if exited on an interrupt
-        self.screenThread = ScreenThread(self.resolution, self.fullscreen)
+        # start screen thread
         self.screenThread.start()
 
         # set default state for light engine
@@ -87,10 +97,6 @@ class Projector:
         self.set_led_driver_regulation_mode("LIGHT")
         self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
 
-        # register exit handlers
-        atexit.register(self.socket.close)              # close the TCP conenction on exit
-        atexit.register(self.stop_sequencer)            # make sure DMD is stopped on exit
-        atexit.register(self.screenThread.stop)         # stop screen thread on exit
 
     def send(self, data):
         """
@@ -103,10 +109,10 @@ class Projector:
         data += "\r\n\r\n"
         self.socket.sendall(data.encode())
         reply = self.socket.recv(1024)
-        print('Sent', repr(data))
-        print('Reply', repr(reply.decode()))
-        # print('Sent', str(data).replace("\r\n", " "))
-        # print('Reply', str(reply.decode()).replace("\r\n", " "))
+        # print('Sent', repr(data))
+        # print('Reply', repr(reply.decode()))
+        print('Sent', str(data).replace("\r\n", " "))
+        print('Reply', str(reply.decode()).replace("\r\n", " "))
         return reply
 
     def load_defaults(self):
@@ -541,6 +547,18 @@ class Projector:
                 self.start_sequencer()                                  # start the sequencer
                 time.sleep(0.1 + t * 1e-3)
                 self.stop_sequencer()                                   # stop the sequencer
+
+    def projectMulti(self, images, exposureTimes, ledPowers):
+        """Project multiple images with its own expoure time and
+        and LED power setting.
+
+        :param list images: a list of image filenames
+        :param list exposureTimes: a list of exposure times (ms)
+        :param list ledPowers: a list of led power settings
+                            (0-1000)
+        """
+        for image, expTime, power in zip(images, exposureTimes, ledPowers):
+            self.project(image, expTime, power)
 
 if __name__ == '__main__':
     projectorResolution = (2560, 1600)

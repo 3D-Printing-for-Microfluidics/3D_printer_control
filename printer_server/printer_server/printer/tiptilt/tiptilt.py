@@ -7,27 +7,26 @@ class TipTilt(serial.Serial):
         super().__init__(baudrate=115200, timeout=None)
         # Button parameters
         self.motors = ["Tip", "Tilt"] # if you add a motor here, make sure to add it's pins below
-        self.location = '1-1.1.3'
-
-    def initialize(self):
-        self.connect()
-        self.send('$X')     # Disable homing necessity
-        self.send('G91')    # Send relative mode
+        # self.location = '1-1.1.3'
 
     def connect(self):
         ports = list(serial.tools.list_ports.comports())
         for p in ports:
             if 'ttyUSB' in p.name:
                 print("Found", p.device, p.location)
-                if p.location == self.location:
-                    print(p.device)
-                    self.port = p.device
+                # if p.location == self.location:
+                print(p.device)
+                self.port = p.device
 
         if self.port is None:
             raise ValueError('Tip Tilt not found')
-        elif self.is_open:
+        if self.is_open:
             self.close()
         self.open()
+
+        self.send('$X')     # Disable homing necessity
+        self.send('G91')    # Send relative mode
+
         return self.send("G4 P0")
 
     def move(self, axis, um):

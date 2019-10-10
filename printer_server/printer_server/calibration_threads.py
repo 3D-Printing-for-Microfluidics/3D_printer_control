@@ -128,16 +128,16 @@ class CalibrationThreads:
     def lightEngineStop(self):
         """lightEngineStop -- Turn off the LED in the light engine
         """
-        self.projector.stop()
-        self.projector.clear()
+        self.projector.stop_sequencer()
+        self.projector.screenThread.screen.clear()
 
     @thread_decorator('light_engine_start_complete', 'Light engine started')
     def lightEngineProject(self, image, ledPower, repeat, exposure):
         """lightEngineProject -- Project the image with the given settings
         """
-        self.projector.calibrateProject(image, ledPower, repeat, exposure)
+        self.projector.project(image, exposure, ledPower, repeat)
         if repeat:      # repeat == 1 means show once, == 0 means repeat forever
-            self.projector.clear()
+            self.projector.screenThread.screen.clear()
 
     @property
     def isBusy(self):
