@@ -7,7 +7,7 @@ Projector
 import time
 import atexit
 import socket
-from .projector_screen import ScreenThread
+from .screen import ScreenThread
 
 # pylint:disable=too-many-public-methods
 class Visitech:
