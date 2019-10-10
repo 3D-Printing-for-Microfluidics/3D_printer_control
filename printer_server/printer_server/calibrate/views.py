@@ -25,12 +25,8 @@ def index():
 
 # If hardware isn't initialized, initialize it
 @socketio.on('initialize', namespace='/calibrate')
-# pylint: disable=unused-argument
 def initialize():
-    if printer3d.state == 'uninitialized':
-        calibrationThreads.initialize()
-    else:
-        socketio.emit('initialized', namespace='/calibrate', broadcast=True)
+    socketio.emit('initialized', namespace='/calibrate', broadcast=True)
 
 # Reset printer state, necessary if hardware has been powered down
 @socketio.on('reset_printer_state', namespace='/calibrate')

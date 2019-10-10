@@ -86,18 +86,6 @@ class CalibrationThreads:
         # self.calibrationControl = calibrationControl
         self._thread = None
 
-    @thread_decorator('initialized', 'Initialization complete')
-    def initialize(self):
-        """Establish Ethernet connection with Galil controller, and find zero in Z
-        axis for build platform.
-        """
-        # self.projector.connect()
-        # self.galil.connect()
-        # self.galil.initialize()
-        # self.calibrationControl.initialize()
-        # printer3d.state = "initialized"
-        pass
-
     @thread_decorator('galil_done', 'Galil go to Z max')
     def goToZmax(self):
         """goToZmax -- Move main Z stage to max position (up)

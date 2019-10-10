@@ -68,7 +68,6 @@ def register_commands(app):
 
 def register_hardware(app):
     app.printer3d = printer3d
-    printer3d.init_app(app)
 
 def register_logger(app):
     if not app.debug:
