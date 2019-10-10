@@ -50,15 +50,6 @@ class Galil():
         self.g = gclib.py()                 # make an instance of the gclib python class
         atexit.register(self.disconnect)    # register disconnect to always run at interpreter end
 
-
-
-        # self.encoder = Encoder(encoder_HWID)
-        # self.lead_screw_pitch_mm = 0.635
-        # self.encoder_counts_per_revolution = 20000
-        # # self.encoder_print_file = None
-        # self.loadCellPin = 4    #Just a BCM GPIO Pin
-        # self.printTimer = 0
-
     def initialize(self):
         self.motorOn()
 
