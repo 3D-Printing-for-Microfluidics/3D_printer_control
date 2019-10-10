@@ -32,7 +32,10 @@ def parseResponseString(string, axis="A"):
 
 class Galil():
     def __init__(self, address=None, verbose=False):
+
+        # import here so test system doesn't have to install gclib
         import gclib
+        self.gclib_error = gclib.GclibError
 
         self.verbose = verbose
         self.address = address
@@ -124,7 +127,7 @@ class Galil():
             if self.verbose and response != '':
                 print("Reply: '{}'".format(response))           # print the response if in verbose mode
             return response                                     # return the response
-        except gclib.GclibError as error:                       # if there is an error
+        except self.gclib_error as error:                       # if there is an error
             error_code = self.g.GCommand("TC 1")                # get the human readable error code
             if error_code not in ('', "0"):
                 error = error_code
@@ -282,7 +285,7 @@ class Galil():
                 self.connected = False
                 self.g.GClose()                                 # don't forget to close connections!
                 if self.verbose: print("Disconnected from", self.controller_name)
-            except gclib.GclibError as e:
+            except self.gclib_error as e:
                 print('Unexpected GclibError on disconnect:', e)
 
     # this only needs to be run once on power up. It will turn off motors which may cause movement, BE CAREFUL
