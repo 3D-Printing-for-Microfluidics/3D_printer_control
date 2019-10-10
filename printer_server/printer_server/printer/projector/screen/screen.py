@@ -58,7 +58,6 @@ class Screen:
         # substitute it with a plain white image.
         try:
             pilImage = Image.open(fn)
-            print("Drawing image")
         except (OSError, FileNotFoundError):
             print("Image not found, drawing white")
             pilImage = Image.new(mode='L',
