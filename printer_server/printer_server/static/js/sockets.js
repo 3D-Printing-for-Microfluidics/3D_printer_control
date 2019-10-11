@@ -210,7 +210,7 @@ $(document).ready(function(){
     $(document).on("click", ".delete-job", function() {
         delete_job_id = $(this).attr("id").replace("delete-job", "");
         $("#print-alert-title").text("Delete Job");
-        $("#print-alert-body").text("Are you sure to delete this print job?");
+        $("#print-alert-body").text("Are you sure you want to delete this print job?");
     });
 
     socket.on("job deleted", function(message) {
