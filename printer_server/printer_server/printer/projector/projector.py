@@ -534,10 +534,10 @@ class Projector:
         print("exp time", exposure)
 
         if repeats == 0:    # if continuous display is desired
-            self.set_sequencer_lut_definition(33100, 0, 0, 7, 0, 0, 0)  # this provides the minimum blanking of 233 us of the full 33333 us cycle (at 30Hz on HDMI)
-            self.set_sequencer_lut_config(repeats=repeats)              # 0 means repeat forever
-            self.screenThread.screen.draw(image)                        # draw to virtual screen
-            self.start_sequencer()                                      # start the sequencer and don't stop it (will be stopped on program exit)
+            self.set_sequencer_lut_definition(exposure*1000, 0, 0, 7, 0, 0, 0)  # this provides the minimum blanking of 233 us of the full 33333 us cycle (at 30Hz on HDMI)
+            self.set_sequencer_lut_config(repeats=repeats)                      # 0 means repeat forever
+            self.screenThread.screen.draw(image)                                # draw to virtual screen
+            self.start_sequencer()                                              # start the sequencer and don't stop it (will be stopped on program exit)
         else:               # normal display is desired
             for t in self.split_exposure_time(exposure):
                 self.set_sequencer_lut_definition(exposure=t*1000)      # the TI board expects exposure in microseconds
