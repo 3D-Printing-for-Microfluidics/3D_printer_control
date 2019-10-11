@@ -17,16 +17,17 @@
 <!-- Calibration Motor Control -->
 <div class="container motor-controls">
     <div class="row top-buffer align-items-center">
-        <h3>Motor Controls</h3>
+        <h3>Focus Controls</h3>
     </div>
 
     <!-- Tip -->
+    <h4>Tip</h3>
     <div class="row align-items-center">
-        <div class="col-3 text-left">
-            <h4>Tip</h3>
+        <div class="col-2">
+            <h5 class="col text-right" id='tip-state'>0</h5>
         </div>
-        <div class="col-1">
-            <h5 class="col text-left" id='tip-state'>0</h5>
+        <div class="col-2 text-left">
+            <button type="button" class="btn btn-primary btn-block" id="tip-home-btn">Home</button>
         </div>
         <div class="col-8 text-right">
             <div class="btn-group" role="group" aria-label="Tip">
@@ -42,12 +43,13 @@
         </div>
     </div>
     <!-- Tilt -->
+    <h4>Tilt</h3>
     <div class="row align-items-center">
-        <div class="col-3 text-left">
-            <h4>Tilt</h3>
+        <div class="col-2">
+            <h5 class="col text-right" id='tilt-state'>0</h5>
         </div>
-        <div class="col-1">
-            <h5 class="col text-left" id='tilt-state'>0</h5>
+        <div class="col-2 text-left">
+            <button type="button" class="btn btn-primary btn-block" id="tilt-home-btn">Home</button>
         </div>
         <div class="col-8 text-right">
             <div class="btn-group" role="group" aria-label="Tilt">
@@ -63,12 +65,13 @@
         </div>
     </div>
     <!-- Distance -->
+    <h4>Distance</h3>
     <div class="row align-items-center">
-        <div class="col-3 text-left">
-            <h4>Distance</h3>
+        <div class="col-2">
+            <h5 class="col text-right" id='dist-state'>0</h5>
         </div>
-        <div class="col-1">
-            <h5 class="col text-left" id='dist-state'>0</h5>
+        <div class="col-2 text-left">
+            <button type="button" class="btn btn-primary btn-block" id="dist-home-btn">Home</button>
         </div>
         <div class="col-8 text-right">
             <div class="btn-group" role="group" aria-label="Distance">
@@ -88,17 +91,20 @@
 <!-- Galil Control -->
 <div class="container galil">
     <div class="row top-buffer align-items-center">
-        <h3>Galil Controller</h3>
+        <h3>Main Stage Control</h3>
     </div>
     <div class="row align-items-center">
-        <div class="col-6">
-            <h4>Move to</h4>
+        <div class="col-3">
+            <h4> </h4>
         </div>
         <div class="col-3">
-            <button type="button" class="btn btn-primary btn-block" id="galil-top-btn">Top</button>
+            <button type="button" class="btn btn-primary btn-block" id="galil-home-btn">Home</button>
         </div>
         <div class="col-3">
-            <button type="button" class="btn btn-primary btn-block" id="galil-bottom-btn">Bottom</button>
+            <button type="button" class="btn btn-primary btn-block" id="galil-top-btn">Go to Top</button>
+        </div>
+        <div class="col-3">
+            <button type="button" class="btn btn-primary btn-block" id="galil-bottom-btn">Go to Bottom</button>
         </div>
     </div>
 </div>

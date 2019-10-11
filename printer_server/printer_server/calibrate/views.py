@@ -30,19 +30,20 @@ def initialize():
 
 # Reset printer state, necessary if hardware has been powered down
 @socketio.on('reset_printer_state', namespace='/calibrate')
-# pylint: disable=unused-argument
 def resetPrinterState(message):
     printer3d.state = 'uninitialized'
 
 @socketio.on('galil_go_to_top', namespace='/calibrate')
-# pylint: disable=unused-argument
 def galil_go_to_top():
     calibrationThreads.goToZmax()
 
 @socketio.on('galil_go_to_bottom', namespace='/calibrate')
-# pylint: disable=unused-argument
 def galil_go_to_bottom():
     calibrationThreads.goToZmin()
+
+@socketio.on('galil_home', namespace='/calibrate')
+def home():
+    calibrationThreads.home()
 
 @socketio.on('calibration_motor', namespace='/calibrate')
 def calibrationMotorMove(message):
@@ -51,9 +52,20 @@ def calibrationMotorMove(message):
     calibrationThreads.calibrationMotorMove(axis, distance)
 
 @socketio.on('light_engine_stop', namespace='/calibrate')
-# pylint: disable=unused-argument
 def lightEngineStop():
     calibrationThreads.lightEngineStop()
+
+@socketio.on('home_tip_axis', namespace='/calibrate')
+def homeTipAxis():
+    calibrationThreads.homeTipAxis()
+
+@socketio.on('home_tilt_axis', namespace='/calibrate')
+def homeTiltAxis():
+    calibrationThreads.homeTiltAxis()
+
+@socketio.on('home_dist_axis', namespace='/calibrate')
+def homeDistanceAxis():
+    calibrationThreads.homeDistanceAxis()
 
 @socketio.on('light_engine_start', namespace='/calibrate')
 def lightEngineProject(message):

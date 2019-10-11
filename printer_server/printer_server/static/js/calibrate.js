@@ -146,6 +146,22 @@ $(document).ready(function(){
         socket.emit("galil_go_to_bottom");
     });
 
+    $("#galil-home-btn").click(function() {
+        socket.emit("galil_home");
+    });
+
+    // Home button click functions
+    $("#tip-home-btn").click(function() {
+        socket.emit("home_tip_axis");
+    });
+
+    $("#tilt-home-btn").click(function() {
+        socket.emit("home_tilt_axis");
+    });
+
+    $("#dist-home-btn").click(function() {
+        socket.emit("home_dist_axis");
+    });
 
     // Light engine control stop button click function
     $("#le-stop-btn").click(function() {

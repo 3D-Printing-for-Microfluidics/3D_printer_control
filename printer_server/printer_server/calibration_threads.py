@@ -83,7 +83,8 @@ class CalibrationThreads:
         self.printer3d = printer3d
         self.galil = printer3d.galil
         self.projector = printer3d.projector
-        # self.calibrationControl = calibrationControl
+        self.tiptilt = printer3d.tiptilt
+        self.kdc = printer3d.kdc
         self._thread = None
 
     @thread_decorator('galil_done', 'Galil go to Z max')
@@ -98,6 +99,13 @@ class CalibrationThreads:
         """goToZmin -- Move main z stage to min position (down)
         """
         self.galil.goToZmin()
+        print("sent galil done")
+
+    @thread_decorator('galil_done', 'Galil go to Z min')
+    def home(self):
+        """home -- Home main z stage
+        """
+        self.galil.home()
         print("sent galil done")
 
     @thread_decorator('calibration_motor_done', 'Calibration move done')
@@ -118,6 +126,24 @@ class CalibrationThreads:
         """
         self.projector.stop_sequencer()
         self.projector.screenThread.screen.clear()
+
+    @thread_decorator('home_tip_complete', 'Tip homed')
+    def homeTipAxis(self):
+        """homeTipAxis - Home the tip axis
+        """
+        self.tiptilt.home()
+
+    @thread_decorator('home_tilt_complete', 'Tilt homed')
+    def homeTiltAxis(self):
+        """homeTiltAxis - Home the tip axis
+        """
+        self.tiptilt.home()
+
+    @thread_decorator('home_dist_complete', 'Distance homed')
+    def homeDistanceAxis(self):
+        """homeDistanceAxis - Home the tip axis
+        """
+        self.kdc.home()
 
     @thread_decorator('light_engine_start_complete', 'Light engine started')
     def lightEngineProject(self, image, ledPower, repeat, exposure):

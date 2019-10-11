@@ -20,6 +20,9 @@ class TipTilt_dummy(serial.Serial):
     def connect(self):
         print(" tiptilt - connect()")
 
+    def home(self):
+        print(" tiptilt - home()")
+
     def move(self, axis, distance_um, speed=10):
         # """
         # Move the specified number of um at the specified speed (in mm/min)
