@@ -26,7 +26,7 @@ class Projector_dummy:
         print(" projector - connect()")
 
     def send(self, data):
-        print(" projector - send({})".format(data))
+        print(" projector - send({})".format(data.replace("\r\n", " ")))
 
     def load_defaults(self):
         return self.send("LOAD DEFAULTS")
