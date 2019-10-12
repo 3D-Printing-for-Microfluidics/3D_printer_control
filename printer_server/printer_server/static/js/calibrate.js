@@ -67,6 +67,7 @@ $(document).ready(function(){
     var LedPowerSliderElement = document.getElementById("led-power-slider");
     var LedPowerLabelElement  = document.getElementById("led-power-label");
     var exposureElement       = document.getElementById("exposure-txt");
+    var distanceElement       = document.getElementById("distance-txt");
     var filePickerElement     = document.getElementById("file-picker");
 
     // Set initial LED power slider label value
@@ -150,6 +151,9 @@ $(document).ready(function(){
         socket.emit("galil_home");
     });
 
+    // // Update Galil position on an interval
+    // setInterval(function, delay)
+
     // Home button click functions
     $("#tip-home-btn").click(function() {
         socket.emit("home_tip_axis");
@@ -180,6 +184,12 @@ $(document).ready(function(){
             exposureElement.classList.add("is-invalid")
             disable_project_start_stop_buttons();
         }
+    })
+
+    // Distance text input change function
+    $('#distance-txt').on('change', function() {
+        position = distanceElement.value;
+        socket.emit("distance_abs_move", {"position": position});
     })
 
     // Light engine control start button click function

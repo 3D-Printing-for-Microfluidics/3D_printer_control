@@ -75,6 +75,10 @@ def lightEngineProject(message):
         int(message["repeat"]),
         int(message["exposure"]))
 
+@socketio.on('distance_abs_move', namespace='/calibrate')
+def distanceAbsMove(message):
+    calibrationThreads.distanceAbsMove(float(message["position"]))
+
 @blueprint.route('handle-calibration-upload', methods=['POST'])
 def handleUpload():
     if 'file' in request.files:             # Check if the post request has the file part

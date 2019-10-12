@@ -119,6 +119,14 @@ class CalibrationThreads:
         else:
             self.printer3d.tiptilt.move(axis, um)
 
+    @thread_decorator('distance_abs_move_done', 'Distance absolute move done')
+    def distanceAbsMove(self, um):
+        """distanceAbsMove -- Move the distance to the specified position
+        """
+        self.printer3d.kdc.setAbsolute()
+        self.printer3d.kdc.move(um)
+        self.printer3d.kdc.setRelative()
+
 
     @thread_decorator('light_engine_stop_complete', 'Light engine stopped')
     def lightEngineStop(self):
