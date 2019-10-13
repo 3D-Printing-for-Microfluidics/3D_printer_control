@@ -282,7 +282,7 @@ class PrintingThreads:
 
         # Move build platform to the starting position
         if startingLayer == 1:
-            self.galil.goToFirstLayerHeight(1 + self.printSettings.layerThicknessMm(1))
+            self.galil.goToFirstLayerHeight(self.printSettings.layerThicknessMm(1))
         else:
             self.galil.resume(self.printSettings.layerThicknessMm(startingLayer))
 

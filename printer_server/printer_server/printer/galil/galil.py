@@ -39,6 +39,9 @@ class Galil():
 
         self.verbose = verbose
         self.address = address
+        self.bottom_position = 256000
+        self.top_position = -400000
+
 
         # default configuration parameters
         self.axes = ["A"]
@@ -58,25 +61,23 @@ class Galil():
         self.motorOn()
 
     def goToZmax(self):
-        top_position = -400000
-        self.absMove(speed=20, cnts=top_position)
-        self.waitForMotionComplete(top_position)
+        self.absMove(speed=20, cnts=self.top_position)
+        self.waitForMotionComplete(self.top_position)
         print("motion complete")
 
     def goToZmin(self):
-        bottom_position = 128000
         # self.absMove(speed=20, cnts=330981) # real zmin
-        self.absMove(speed=20, cnts=bottom_position)
-        self.waitForMotionComplete(bottom_position)
+        self.absMove(speed=20, cnts=self.bottom_position)
+        self.waitForMotionComplete(self.bottom_position)
         print("motion complete")
 
     def resume(self, layerThickness):
         # dummy for now, to satisfy old Solus method
         pass
 
-    # pylint: disable=unused-argument
-    def goToFirstLayerHeight(self, height):
-        self.absMove(speed=20, cnts=128000)
+    def goToFirstLayerHeight(self, layerThickness):
+        cnts = self.bottom_position - layerThickness
+        self.absMove(speed=20, cnts=cnts)
 
     def goToPlanarizationPullOff(self):
         pass
