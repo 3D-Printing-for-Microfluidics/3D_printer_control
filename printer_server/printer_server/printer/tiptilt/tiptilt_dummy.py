@@ -23,11 +23,11 @@ class TipTilt_dummy(serial.Serial):
     def home(self):
         print(" tiptilt - home()")
 
-    def move(self, axis, distance_um, speed=10):
+    def move(self, axis, distance_um, speed=10, relative=False):
         # """
         # Move the specified number of um at the specified speed (in mm/min)
         # """
-        print(" tiptilt - move({},{},{})".format(axis, distance_um, speed))
+        print(" tiptilt - move({},{},{},{})".format(axis, distance_um, speed, relative))
 
     def send(self, cmd):
         # send the command to grbl

@@ -42,12 +42,13 @@ class TipTilt(serial.Serial):
     def home(self):
         self.send("$H")
 
-    def move(self, axis, distance_um, speed=10):
+    def move(self, axis, distance_um, speed=10, relative=True):
         """
         Move the specified number of um at the specified speed (in mm/min)
         """
         distance_mm = distance_um / 1000                                            # convert um to mm
         axis = 'X' if axis == 'Tip' else 'Y'                                        # convert Tip/Tilt to X/Y
+        _ = self.send("G91") if relative else self.send("G90")                      # set absolute or relative mode
         return self.send('G1 {}{:.4f} F{:d}'.format(axis, distance_mm, abs(speed))) # send motion command
 
     def send(self, cmd):

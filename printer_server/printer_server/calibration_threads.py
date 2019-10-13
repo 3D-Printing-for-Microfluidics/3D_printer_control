@@ -127,6 +127,19 @@ class CalibrationThreads:
         self.printer3d.kdc.move(um)
         self.printer3d.kdc.setRelative()
 
+    @thread_decorator('tip_abs_move_done', 'Tip absolute move done')
+    def tipAbsMove(self, um):
+        """tipAbsMove -- Move the tip to the specified position
+        """
+        print(um)
+        self.printer3d.tiptilt.move("Tip", um, relative=False)
+
+    @thread_decorator('tilt_abs_move_done', 'Tilt absolute move done')
+    def tiltAbsMove(self, um):
+        """tiltAbsMove -- Move the tilt to the specified position
+        """
+        print(um)
+        self.printer3d.tiptilt.move("Tilt", um, relative=False)
 
     @thread_decorator('light_engine_stop_complete', 'Light engine stopped')
     def lightEngineStop(self):

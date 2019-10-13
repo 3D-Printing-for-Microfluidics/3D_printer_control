@@ -68,6 +68,8 @@ $(document).ready(function(){
     var LedPowerLabelElement  = document.getElementById("led-power-label");
     var exposureElement       = document.getElementById("exposure-txt");
     var distanceElement       = document.getElementById("distance-txt");
+    var tipElement            = document.getElementById("tip-txt");
+    var tiltElement           = document.getElementById("tilt-txt");
     var filePickerElement     = document.getElementById("file-picker");
 
     // Set initial LED power slider label value
@@ -137,7 +139,6 @@ $(document).ready(function(){
     // Galil control top button click function
     $("#galil-top-btn").click(function() {
         disable_galil_buttons();
-        console.log("emit galil_go_to_top")
         socket.emit("galil_go_to_top");
     });
 
@@ -190,6 +191,14 @@ $(document).ready(function(){
     $('#distance-txt').on('change', function() {
         position = distanceElement.value;
         socket.emit("distance_abs_move", {"position": position});
+    })
+    $('#tip-txt').on('change', function() {
+        position = tipElement.value;
+        socket.emit("tip_abs_move", {"position": position});
+    })
+    $('#tilt-txt').on('change', function() {
+        position = tiltElement.value;
+        socket.emit("tilt_abs_move", {"position": position});
     })
 
     // Light engine control start button click function
