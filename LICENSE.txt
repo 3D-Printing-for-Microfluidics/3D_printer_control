@@ -1,0 +1,7 @@
+License
+-------
+This source code is copyrighted and proprietary. Buyers of our 3D printers are
+entitled to use the source code for operating the 3D printer free of charge.
+Distribution of source code is not allowed.
+
+© Copyright 2019 Nordin Research Group - BYU
