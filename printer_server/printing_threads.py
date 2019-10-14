@@ -282,9 +282,9 @@ class PrintingThreads:
 
         # Move build platform to the starting position
         if startingLayer == 1:
-            self.galil.goToFirstLayerHeight(self.printSettings.layerThicknessMm(1))
+            self.galil.goToFirstLayerHeight(self.printSettings.getLayerThicknessMm(1))
         else:
-            self.galil.resume(self.printSettings.layerThicknessMm(startingLayer))
+            self.galil.resume(self.printSettings.getLayerThicknessMm(startingLayer))
 
         # Iterate from the startingLayer to the last
         totalLayerNum = self.printSettings.totalLayerNum
@@ -295,11 +295,11 @@ class PrintingThreads:
 
             # self.galil.encoder_print_file.write("Layer %d \r\n" %(i))
             if i != startingLayer:
-                self.galil.printCycle(self.printSettings.layerThicknessMm(i), self.printSettings.galilCommandChain(i))
+                self.galil.printCycle(self.printSettings.getLayerThicknessMm(i), self.printSettings.getCommandChain(i))
 
-            images = [os.path.join(self.jsonDir, im) for im in self.printSettings.images(i)]
+            images = [os.path.join(self.jsonDir, im) for im in self.printSettings.getImages(i)]
 
-            self.projector.projectMulti(images, self.printSettings.exposureTimeMs(i), self.printSettings.ledPowers(i))
+            self.projector.projectMulti(images, self.printSettings.getExposureTimeMs(i), self.printSettings.getLedPowers(i))
 
             socketio.emit('print progress',
                           {'percent': int(100*i/totalLayerNum),

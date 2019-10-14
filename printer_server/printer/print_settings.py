@@ -400,7 +400,7 @@ class PrintSettings:
                          # prevent this
             return self.__settings['Default settings'][paramName]
 
-    def layerThicknessMm(self, layerNum):
+    def getLayerThicknessMm(self, layerNum):
         """
         :param int layerNum: the index of a layer, starting with 1
         :returns: the layer thickness for the specified layer in
@@ -412,7 +412,7 @@ class PrintSettings:
             'Layer thickness (um)'
         ) * 1e-3
 
-    def galilCommandChain(self, layerNum):
+    def getCommandChain(self, layerNum):
         """
         :param int layerNum: the index of a layer, starting with 1
         :returns: a list of Galil commands
@@ -420,7 +420,7 @@ class PrintSettings:
         """
         return self.__getLayerParam(layerNum, 'Galil command chain')
 
-    def images(self, layerNum):
+    def getImages(self, layerNum):
         """
         :param int layerNum: the index of a layer, starting with 1
         :returns: a list of image names with the full directory
@@ -433,7 +433,7 @@ class PrintSettings:
             ) for im in self.__getLayerParam(layerNum, 'Images')
         ]
 
-    def exposureTimeMs(self, layerNum):
+    def getExposureTimeMs(self, layerNum):
         """
         :param int layerNum: the index of a layer, starting with 1
         :returns: a list of exposure time in milliseconds
@@ -444,7 +444,7 @@ class PrintSettings:
             temp = [temp] * len(self.__getLayerParam(layerNum, 'Images'))
         return temp
 
-    def ledPowers(self, layerNum):
+    def getLedPowers(self, layerNum):
         """
         :param int layerNum: the index of a layer, starting with 1
         :returns: a list of light engine power settings
