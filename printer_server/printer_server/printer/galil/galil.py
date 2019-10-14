@@ -76,7 +76,7 @@ class Galil():
         pass
 
     def goToFirstLayerHeight(self, layerThickness):
-        cnts = self.bottom_position - layerThickness
+        cnts = self.bottom_position - self.mmToCnts(layerThickness)
         self.absMove(speed=20, cnts=cnts)
 
     def goToPlanarizationPullOff(self):
