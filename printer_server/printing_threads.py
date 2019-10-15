@@ -156,14 +156,8 @@ class PrintingThreads:
         is flat on the teflon film. Then tighten the screws and
         bring the build platform to home position in Z.
         """
-        # self.galil.openEncoderFile('encoder_planarization_write_file.txt')
-        # self.galil.encoder.writeEncoder()
-        self.galil.goToZmax()
-        # print("Planarization Step 2")
+        # self.galil.goToZmax()
         # self.galil.goToPlanarizationPullOff()
-        # self.galil.closeEncoderFile()
-        # self.galil.send('G1 Z-5 F100')
-        # print("Planarization Step 2 Done")
 
     @multithreading('paused', 'Pause Printing')
     def pause(self):
