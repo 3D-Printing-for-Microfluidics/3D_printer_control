@@ -418,7 +418,7 @@ class PrintSettings:
         :returns: a list of Galil commands
         :rtype: list
         """
-        return self.__getLayerParam(layerNum, 'Galil command chain')
+        return self.__getLayerParam(layerNum, 'command chain')
 
     def getImages(self, layerNum):
         """
@@ -505,7 +505,7 @@ class PrintSettings:
         assert isinstance(self.__settings['Default settings']['Layer exposure time (ms)'], int)
         float(self.__settings['Default settings']['Layer thickness (um)'])
         assert isinstance(self.__settings['Default settings']['Number of duplications'], int)
-        self.checkGalilCommandChain(self.__settings['Default settings']['Galil command chain'])
+        self.checkGalilCommandChain(self.__settings['Default settings']['command chain'])
 
     def checkLayers(self, jsonDir, files):
         for layer in self.__settings['Layers']:
@@ -539,29 +539,29 @@ class PrintSettings:
                 pass
 
             try:
-                self.checkGalilCommandChain(layer['Galil command chain'])
+                self.checkGalilCommandChain(layer['command chain'])
             except KeyError:
                 pass
 
     def checkGalilCommandChain(self, commandChain):
-        # distanceBP = 0
+        distanceBP = 0
 
-        # for command in commandChain:
-        #     m1 = self.waitRegex.fullmatch(command)
-        #     m2 = self.moveRegex.fullmatch(command)
+        for command in commandChain:
+            m1 = self.waitRegex.fullmatch(command)
+            m2 = self.moveRegex.fullmatch(command)
 
-        #     if m1:
-        #         continue
-        #     elif m2:
-        #         if m2.group(2) == 'UP':
-        #             sign = -1
-        #         else:
-        #             sign = 1
-        #         if m2.group(1) == 'BP':
-        #             distanceBP += sign * float(m2.group(3))
-        #     else:
-        #         raise AssertionError
+            if m1:
+                continue
+            elif m2:
+                if m2.group(2) == 'UP':
+                    sign = -1
+                else:
+                    sign = 1
+                if m2.group(1) == 'BP':
+                    distanceBP += sign * float(m2.group(3))
+            else:
+                raise AssertionError
 
-        # if distanceBP != 0:
-        #     raise AssertionError
+        if distanceBP != 0:
+            raise AssertionError
         pass
