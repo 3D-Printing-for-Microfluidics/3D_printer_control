@@ -121,7 +121,13 @@ class PrintingThreads:
         self.printingPaused = threading.Event()
         self.pausedLayer = 1
         self._thread = None                         # will be initialized later on start
-        self.logs_path = Path.cwd().parent / 'logs'
+        self.logs_path = Path.cwd() / 'logs'
+        self.logs_path_directory_for_this_run = None   # initialized later
+
+    def calculateThickness(self, start, end):
+        """ Helper funtion to calculate the layer thickness in um
+        """
+        return self.galil.cntsToMm(abs(end - start)*1000)
 
     @multithreading('initialized', 'Initialize')
     def initialize(self):
@@ -266,17 +272,18 @@ class PrintingThreads:
         self.printingStopped.clear()
         self.printingPaused.clear()
 
-        # date_and_time = datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
-        # self.logs_path_directory_for_this_run = self.logs_path / date_and_time
-        # self.logs_path_directory_for_this_run.mkdir()
-        # encoder_print_file_name = self.logs_path_directory_for_this_run / 'encoder_print_file.txt'
+        # Create log
+        date_and_time = datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
+        self.logs_path_directory_for_this_run = self.logs_path / date_and_time
+        self.logs_path_directory_for_this_run.mkdir()
+        encoder_print_file_name = str(self.logs_path_directory_for_this_run / 'encoder_print_file.txt')
         # load_cell_file_name = self.logs_path_directory_for_this_run / 'load_cell_print_file.txt'
-        # self.galil.openEncoderFile(encoder_print_file_name)
-        # self.galil.openLoadCellFile(load_cell_file_name)
 
         # Move build platform to the starting position
         if startingLayer == 1:
-            self.galil.goToFirstLayerHeight(self.printSettings.getLayerThicknessMm(1))
+            start, end = self.galil.goToFirstLayerHeight(self.printSettings.getLayerThicknessMm(1))
+            with open(encoder_print_file_name, "a") as f:
+                f.write("Layer {}: start {}, end {}, thickness {}\n".format(startingLayer, start, end, self.calculateThickness(start, end)))
         else:
             self.galil.resume(self.printSettings.getLayerThicknessMm(startingLayer))
 
@@ -289,7 +296,9 @@ class PrintingThreads:
 
             # self.galil.encoder_print_file.write("Layer %d \r\n" %(i))
             if i != startingLayer:
-                self.galil.printCycle(self.printSettings.getLayerThicknessMm(i), self.printSettings.getCommandChain(i))
+                start, mid, end = self.galil.printCycle(self.printSettings.getLayerThicknessMm(i), self.printSettings.getCommandChain(i))
+                with open(encoder_print_file_name, "a") as f:
+                    f.write("Layer {}: start {}, mid {}, end {}, thickness {}\n".format(i, start, mid, end, self.calculateThickness(start, end)))
 
             images = [os.path.join(self.jsonDir, im) for im in self.printSettings.getImages(i)]
 

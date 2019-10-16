@@ -64,12 +64,14 @@ class Galil():
         self.absMove(speed=20, cnts=self.top_position)
         self.waitForMotionComplete(self.top_position)
         print("motion complete")
+        return self.getPosition()
 
     def goToZmin(self):
         # self.absMove(speed=20, cnts=330981) # real zmin
         self.absMove(speed=20, cnts=self.bottom_position)
         self.waitForMotionComplete(self.bottom_position)
         print("motion complete")
+        return self.getPosition()
 
     def resume(self, layerThickness):
         # dummy for now, to satisfy old Solus method
@@ -77,15 +79,22 @@ class Galil():
 
     def goToFirstLayerHeight(self, layerThickness):
         cnts = self.bottom_position - self.mmToCnts(layerThickness)
+        start_position = self.getPosition()
         self.absMove(speed=20, cnts=cnts)
+        end_position = self.getPosition()
+        return start_position, end_position
 
     def goToPlanarizationPullOff(self):
         pass
 
     # pylint: disable=unused-argument
     def printCycle(self, layerThicknessMm, commandChain):
+        start_position = self.getPosition()
         self.relMove(speed=25, mm=-1)
+        mid_position = self.getPosition()
         self.relMove(speed=25, mm=1-layerThicknessMm)
+        end_position = self.getPosition()
+        return start_position, mid_position, end_position
 
     def pause(self):
         pass
@@ -215,6 +224,7 @@ class Galil():
         self.setSpeed(old_speed)                                # restore previous speed
         if acceleration is not None:                            # if acceleration was altered
             self.setAcceleration(old_acceleration)              # change it back to the old value
+        return self.getPosition()
 
     # blocking call to move specified axis to absolute position at speed (in mm/sec)
     # pylint: disable=too-many-arguments
@@ -236,6 +246,7 @@ class Galil():
         self.setSpeed(old_speed)                                # restore previous speed
         if acceleration is not None:                            # if acceleration was altered
             self.setAcceleration(old_acceleration)              # change it back to the old value
+        return self.getPosition()
 
     # blocks execution until the encoder reading reaches the specified value. Also logs all position data
     def waitForMotionComplete(self, cnts, axis="A"):

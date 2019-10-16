@@ -64,6 +64,7 @@ class Galil_dummy():
 
     def goToFirstLayerHeight(self, height):
         print(" galil - goToFirstLayerHeight({})".format(height))
+        return 0, height
 
     def goToPlanarizationPullOff(self):
         print(" galil - goToPlanarizationPullOff()")
@@ -71,6 +72,7 @@ class Galil_dummy():
     # pylint: disable=unused-argument
     def printCycle(self, layerThicknessMm, commandChain):
         print(" galil - printCycle({}, {})".format(layerThicknessMm, commandChain))
+        return 0, layerThicknessMm+1000, layerThicknessMm
 
     def pause(self):
         print(" galil - pause()")
