@@ -281,9 +281,9 @@ class PrintingThreads:
 
         # Move build platform to the starting position
         if startingLayer == 1:
-            start, end = self.galil.goToFirstLayerHeight(self.printSettings.getLayerThicknessMm(1))
+            start, mid, end = self.galil.printCycle(self.printSettings.getLayerThicknessMm(1), self.printSettings.getCommandChain(1))
             with open(encoder_print_file_name, "a") as f:
-                f.write("Layer {}: start {}, end {}, thickness {}\n".format(startingLayer, start, end, self.calculateThickness(start, end)))
+                f.write("Layer {}: start {}, mid {}, end {}, thickness {}\n".format(1, start, mid, end, self.calculateThickness(start, end)))
         else:
             self.galil.resume(self.printSettings.getLayerThicknessMm(startingLayer))
 
