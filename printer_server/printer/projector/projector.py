@@ -369,6 +369,7 @@ class Projector:
 
         Return type +OK
         """
+        time.sleep(5)                               # must wait for at least 5 seconds to read or write operation mode
         return self.send("SET OPERATION MODE {}".format(mode))
 
     def get_dmd_operation_mode(self):
@@ -447,7 +448,6 @@ class Projector:
 
         Return type +OK
         """
-        time.sleep(5)                               # must wait for at least 5 seconds to read or write display mode
         # workaround for incorrect API - SET VIDEO SOURCE wasn't actually implemented
         # return self.send("SET INPUT SOURCE {}".format(source))
         if source == "DISPLAYPORT":
