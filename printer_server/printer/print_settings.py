@@ -495,8 +495,9 @@ class PrintSettings:
         except json.decoder.JSONDecodeError:
             shutil.rmtree(path)
             return False
-        # except:
-        #     return False
+        except:
+            print("other validation error")
+            return False
 
         return True
 
@@ -564,4 +565,3 @@ class PrintSettings:
 
         if distanceBP != 0:
             raise AssertionError
-        pass
