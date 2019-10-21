@@ -70,18 +70,18 @@ $(document).ready(function(){
 
     socket.on("planarizing", function(message) {
         $("#printer-state").text("Planarizing");
-        show_btn("#plana2-btn");
+        show_btn("#plana2-btn, #admin-btn");
     });
 
     socket.on("planarized", function(message) {
         $("#printer-state").text("Planarized");
-        show_btn("#plana1-btn, #shutdown-btn");
+        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
         $("#start-btn").removeClass("d-none").addClass("btn-secondary");
     });
 
     socket.on("printing", function(message) {
         $("#printer-state").text("Printing");
-        show_btn("#pause-btn, #stop-btn");
+        show_btn("#pause-btn, #stop-btn, #admin-btn");
         $("#print-progress-bar").css({"width": message.percent + "%"})
                                 .attr({"aria-valuenow": message.percent})
                                 .text(message.percent + "%");
@@ -98,7 +98,7 @@ $(document).ready(function(){
 
     socket.on("paused", function(message) {
         $("#printer-state").text("Paused");
-        show_btn("#resume-btn, #stop-btn");
+        show_btn("#resume-btn, #stop-btn, #admin-btn");
     });
 
     socket.on("stopped", function(message) {
