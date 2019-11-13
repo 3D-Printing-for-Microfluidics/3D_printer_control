@@ -46,7 +46,7 @@ class LoadCell(serial.Serial):
         x = 94500 - ((94500 - 280) / 255) * value               # ranges from 0:94500 - 255:280
         g = 1 + 49400 / x                                       # ranges from 0:1.5227513227513227 - 255:177.42857142857142
         print("gain set to {}", g)
-        return self.send('<g,{},{}>'.format(channel, value))
+        return self.send('<g,{},{}>'.format(channel, value)), g
 
     def set_filter_corner(self, value, channel=0):
         """
@@ -99,10 +99,32 @@ if __name__ == '__main__':
     l.set_filter_corner(200) # 1096 Hz
     # l.set_gain(120)          # gain = 1.98
     # l.set_gain(0)          # gain = 1
-    l.set_gain(0)          # gain = 1
 
-    while True:
-        try:
-            l.sample(num_samples=20, period_us=1000, channel=0)
-        except KeyboardInterrupt:
-            exit()
+    for gain in [0, 10, 50, 100, 150, 200, 250, 255]:
+        _, g = l.set_gain(gain)
+
+        # while True:
+        #     try:
+        result = l.sample(num_samples=100, period_us=1, channel=0)
+
+        import matplotlib.pyplot as plt
+
+        t = []
+        s = []
+
+        # parse sample response
+        result = [i.split(',') for i in result.splitlines()]
+        for i in result:
+            if len(i) == 3:
+                t.append(int(i[1])/1000)    # convert us to ms
+                s.append(int(i[2]))
+
+        plt.plot(t, s)
+        plt.xlabel('Time (ms)')
+        plt.ylabel('Counts')
+        plt.title('Gain = {:0.2f} ({} counts)'.format(g, gain))
+        plt.grid(True)
+        plt.savefig("gain_test_{}.png".format(gain))
+        plt.show()
+            # except KeyboardInterrupt:
+            #     exit()
