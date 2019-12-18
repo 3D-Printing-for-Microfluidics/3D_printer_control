@@ -122,7 +122,7 @@ class KDC101():
 	    # prints available devices
         x = serial.tools.list_ports.comports()
         for _, device in enumerate(x):
-            if "K-Cube" in device.product:
+            if "Thorlabs" in device.manufacturer:
                 return device.device
         return None                                # stage not found
 
@@ -145,13 +145,13 @@ class KDC101():
 
 if __name__ == "__main__":
     kc = KDC101()
-    kc.initialize()
-    # kc.getCurrentPos()
-    kc.home()
+    # kc.initialize()
+    # # kc.getCurrentPos()
+    # kc.home()
 
-    for _ in range(2):
-        print(kc.getCurrentPos())
-        kc.move(1000)
-        print(kc.getCurrentPos())
-        kc.move(-1000)
-        print(kc.getCurrentPos())
+    # for _ in range(2):
+    #     print(kc.getCurrentPos())
+    #     kc.move(1000)
+    #     print(kc.getCurrentPos())
+    #     kc.move(-1000)
+    #     print(kc.getCurrentPos())
