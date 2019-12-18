@@ -3,6 +3,7 @@
 import time
 import json
 import atexit
+import statistics
 
 # remove bad chars from file name
 def cleanFileName(name):
@@ -39,21 +40,21 @@ class Galil():
 
         self.verbose = verbose
         self.address = address
-        self.bottom_position = 256000
-        self.top_position = -400000
-
+        self.bottom_position = 3794745
+        self.top_position = 0
+        self.error_window = 3
 
         # default configuration parameters
         self.axes = ["A"]
         self.travel = {"A":100}     # max travel in mm
-        self.ctspmm = {"A":8000}    # counts/mm for each axis
+        self.ctspmm = {"A":51200}   # counts/mm for each axis
         self.data = {}              # for saving calibration data
         self.move_num = 0           # also for saving calibration data
 
         # connection parameters
         self.connected = False
         self.homed = False
-        self.controller_name = "DMC31010"   # controller to search for
+        self.controller_name = "DMC4040"    # controller to search for
         self.g = gclib.py()                 # make an instance of the gclib python class
         atexit.register(self.disconnect)    # register disconnect to always run at interpreter end
 
@@ -200,9 +201,10 @@ class Galil():
         self.relMove(speed=20, mm=-self.travel["A"])            # move up until the limit switch is triggered
         self.g.GMotionComplete(a)                               # block until motion planning is complete
         self.motorOn()                                          # turn motor back on (limit switch was tripped, which turns it off)
-        self.send("HM")                                         # send home command
-        self.send("BGA")                                        # start homing
-        self.waitForMotionComplete(0)                           # block until motion is complete (encoder is set to 0 at end of homing)
+        self.send("DP 0")                                       # define this as the 0 point
+        # self.send("HM")                                         # send home command
+        # self.send("BGA")                                        # start homing
+        # self.waitForMotionComplete(0)                           # block until motion is complete (encoder is set to 0 at end of homing)
         self.homed = True                                       # update class homed status
 
     # blocking call to relative move an axis the specified distance at speed (in mm/sec)
@@ -248,30 +250,34 @@ class Galil():
             self.setAcceleration(old_acceleration)              # change it back to the old value
         return self.getPosition()
 
+
     # blocks execution until the encoder reading reaches the specified value. Also logs all position data
     def waitForMotionComplete(self, cnts, axis="A"):
+        # helper function to average noisy encoder values
+        def average_position(num_samples=10, sleep=0.001):
+            positions = []
+            for _ in range(num_samples):
+                time.sleep(sleep)                                   # wait 1 ms
+                positions.append(self.getPosition())
+            return statistics.mean(positions)
+
         start_time = time.time()
         last_position = self.getPosition()                      # save the last position
         self.data[self.move_num] = []
         self.data[self.move_num].append({'time' : time.time(), 'position' : last_position})
         counter = 0
-        time_count = 0
-        while counter <= 10:                                    # only proceed when 10 good consecutive counts have been read
-            time.sleep(0.001)                                   # wait 1 ms
-            last_position = self.getPosition()                  # read position again
-            if any(self.checkLimits()):                         # finish early if a limit is tripped
-                print("Limit switch triggered")                 # notify user of limit
-                self.g.GMotionComplete(axis)                    # wait for controller planning to finish
-                return
-            self.data[self.move_num].append({'time' : time.time(), 'position' : last_position})
-            if int(cnts - 1) <= last_position <= int(cnts + 1):
-                counter += 1
-            else:
-                counter = 0
-            time_count += 1
-            if time_count >= 5000:                              # timeout for collecting data, motor won't reach position
-                exit("Z motor didn't reach position. Got to {} but needed {}".format(last_position, cnts))
+        self.g.GMotionComplete(axis)
+
+        curr_avg = None
+        last_avg = average_position()
+        while counter <= 10000:     # max timeout of 10 seconds
+            curr_avg = average_position()
+            # print(counter, curr_avg)
+            if abs(curr_avg - last_avg) < self.error_window:
                 break
+            last_avg = curr_avg
+            counter += 1
+        self.data[self.move_num].append({'time' : time.time(), 'position' : curr_avg})
         self.data[self.move_num].append({'duration' : time.time()-start_time})
         self.move_num = self.move_num + 1
 
@@ -365,10 +371,17 @@ class Galil():
 if __name__ == '__main__':
     g = Galil(verbose=False)
     g.connect()
-    g.interactiveMode()
+    # g.interactiveMode()
 
     # g.motorOn()
-    # g.home()
+    g.home()
+
+    g.relMove(speed=10, mm=10)
+    for _ in range(5):
+        g.relMove(speed=10, mm=50)
+        g.relMove(speed=10, mm=-50)
+
+    g.relMove(speed=10, mm=50)
     # for _ in range(5):
     #     g.relMove(speed=10, mm=10)
     #     g.relMove(speed=10, mm=-10)
