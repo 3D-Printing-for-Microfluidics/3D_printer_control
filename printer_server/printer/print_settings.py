@@ -23,7 +23,7 @@ all the entries are necessary. ::
         "Layer exposure time (ms)": 400,
         "Layer thickness (um)": 10,
         "Number of duplications": 1,
-        "Galil command chain": [
+        "Command chain": [
           "WAIT 0.1",
           "UP 1 SPEED 300 ACC 50",
           "WAIT 1.5",
@@ -56,7 +56,7 @@ all the entries are necessary. ::
     #. Number of duplications - If a number of consective layers
        share the same images and parameters, we can set
        ``Number of duplications`` to reduce json file footprint.
-    #. Galil command chain - command chain
+    #. Galil command chain - Command chain
        to tell Galil controller how to move BP.
        (Details: :ref:`galil_command_chain`)
 
@@ -157,7 +157,7 @@ in any way. Example ::
         "Layer exposure time (ms)": 400,
         "Layer thickness (um)": 10,
         "Number of duplications": 1,
-        "Galil command chain": [
+        "Command chain": [
           "WAIT 0.1",
           "UP 1 SPEED 20 ACC 25",
           "WAIT 1.5",
@@ -255,14 +255,14 @@ in any way. Example ::
           "Images": [
             "0005.png"
           ],
-          "Galil command chain": [
+          "Command chain": [
             "WAIT 0.1",
             "UP 3 SPEED 300",
             "WAIT 1.5",
             "DOWN 3 SPEED 400",
             "WAIT 1.5"
           ],
-          "Comment": "The layer has its own command chain to
+          "Comment": "The layer has its own Command chain to
                       control the Galil controller."
         },
         {
@@ -416,7 +416,7 @@ class PrintSettings:
         :returns: a list of Galil commands
         :rtype: list
         """
-        return self.__getLayerParam(layerNum, 'command chain')
+        return self.__getLayerParam(layerNum, 'Command chain')
 
     def getImages(self, layerNum):
         """
@@ -504,7 +504,7 @@ class PrintSettings:
         assert isinstance(self.__settings['Default settings']['Layer exposure time (ms)'], int)
         float(self.__settings['Default settings']['Layer thickness (um)'])
         assert isinstance(self.__settings['Default settings']['Number of duplications'], int)
-        self.checkGalilCommandChain(self.__settings['Default settings']['command chain'])
+        self.checkGalilCommandChain(self.__settings['Default settings']['Command chain'])
 
     def checkLayers(self, jsonDir, files):
         for layer in self.__settings['Layers']:
@@ -538,7 +538,7 @@ class PrintSettings:
                 pass
 
             try:
-                self.checkGalilCommandChain(layer['command chain'])
+                self.checkGalilCommandChain(layer['Command chain'])
             except KeyError:
                 pass
 
