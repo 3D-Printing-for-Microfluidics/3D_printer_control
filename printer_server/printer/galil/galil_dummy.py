@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Galil control module."""
+import re
 import time
 import json
 import atexit
@@ -31,6 +32,11 @@ def parseResponseString(string, axis="A"):
     return int(value)
 
 class Galil_dummy():
+
+    # regular expressions for parsing command chains
+    waitRegex = re.compile(r'WAIT (-?\d+(\.\d+)?)')
+    moveRegex = re.compile(r'^(UP|DOWN) (-?\d+(\.\d+)?) SPEED (-?\d+(\.\d+)?) ACC (-?\d+(\.\d+)?)')
+
     def __init__(self, address=None, verbose=False):
         print(" galil - __init({}, {})__".format(address, verbose))
         self.verbose = verbose
@@ -69,10 +75,39 @@ class Galil_dummy():
     def goToPlanarizationPullOff(self):
         print(" galil - goToPlanarizationPullOff()")
 
-    # pylint: disable=unused-argument
     def printCycle(self, layerThicknessMm, commandChain):
         print(" galil - printCycle({}, {})".format(layerThicknessMm, commandChain))
-        return 0, layerThicknessMm+1000, layerThicknessMm
+
+        # keep track of which command is the last down command
+        lastDownCommand = 0
+        for i, command in enumerate(commandChain):
+            m2 = self.moveRegex.fullmatch(command)
+            if m2 and m2.group(1) == 'DOWN':
+                lastDownCommand = i
+
+        for i, c in enumerate(commandChain):
+            print(i, c)
+
+        print("last down is", lastDownCommand)
+
+        # parse the commands and move accordingly
+        for i, command in enumerate(commandChain):
+            m1 = self.waitRegex.fullmatch(command)
+            m2 = self.moveRegex.fullmatch(command)
+
+            if m1:                                              # is a wait command
+                wait_seconds = float(m1.group(2))
+                time.sleep(wait_seconds)
+            elif m2:                                            # is a move command
+                direction = m2.group(1)
+                distance = float(m2.group(2))
+                speed = float(m2.group(4))
+                acceleration = float(m2.group(6))
+                distance *= -1 if direction == 'UP' else 1      # calculate the sign using direction, up is negative
+                if i == lastDownCommand:                        # take off the layer thickness if this is the last layer
+                    distance -= layerThicknessMm
+                self.relMove(speed=speed, mm=distance, acceleration=acceleration)
+        return 0, 1
 
     def pause(self):
         print(" galil - pause()")

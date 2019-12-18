@@ -25,10 +25,10 @@ all the entries are necessary. ::
         "Number of duplications": 1,
         "Galil command chain": [
           "WAIT 0.1",
-          "BP UP 1 SPEED 300",
+          "UP 1 SPEED 300 ACC 50",
           "WAIT 1.5",
-          "BP UP 2 SPEED 400",
-          "BP DOWN 3 SPEED 400",
+          "UP 2 SPEED 400 ACC 50",
+          "DOWN 3 SPEED 400 ACC 50",
           "WAIT 1.5"
         ]
       },
@@ -85,11 +85,11 @@ chaining a list of commands.
 
 * Build Platform (BP)
 
-    * Move build platform up 1 mm at 300 mm/min
-        * ``BP UP 1 SPEED 300``
+    * Move build platform up 1 mm at 25 mm/sec
+        * ``UP 1 SPEED 20``
 
-    * Move build platform down 1.5 mm at 400 mm/min
-        * ``BP DOWN 1.5 SPEED 400``
+    * Move build platform down 1.5 mm at 25 mm/sec
+        * ``DOWN 1.5 SPEED 25``
 
 **Rules**
 
@@ -98,25 +98,23 @@ still some rules.
 
 * ``BP`` rules
 
-    #. Speed must be positive integer.
-    #. Max speed: 800 mm/min
-    #. The total distance of ``BP UP`` should be the same as
-       ``BP DOWN``.
-    #. The build platform absolute position should always be
-       between layer position and 90 mm.
+    #. Speed must be positive integer, units are mm/sec.
+    #. Acceleration must be positive integer, units are mm/sec^2.
+    #. The total distance of ``UP`` should be the same as
+       ``DOWN``.
 
 .. Note::
-    Because ``BP UP`` distance is equal to ``BP DOWN`` distance,
+    Because ``UP`` distance is equal to ``DOWN`` distance,
     there is not a new layer of resin between the printed part
-    and the teflon film. But it is taken care of by
-    Galil.printCycle method, where it automatically reduce the
-    last ``BP DOWN`` distance by the layer thickness.
+    and the build surface. This is taken care of in the
+    Galil.printCycle method, which automatically reduces the
+    last ``DOWN`` distance by the layer thickness.
 
 
 JSON with extra information and customized layer settings
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Besides basic information, we can add detailed description under
+Besides basic information, we can add a detailed description under
 other entries. This extra information does not affect the print
 in any way. Example ::
 
@@ -161,10 +159,10 @@ in any way. Example ::
         "Number of duplications": 1,
         "Galil command chain": [
           "WAIT 0.1",
-          "BP UP 1 SPEED 300",
+          "UP 1 SPEED 20 ACC 25",
           "WAIT 1.5",
-          "BP UP 2 SPEED 400",
-          "BP DOWN 3 SPEED 400",
+          "UP 2 SPEED 20 ACC 25",
+          "DOWN 3 SPEED 20 ACC 25",
           "WAIT 1.5"
         ]
       },
@@ -259,9 +257,9 @@ in any way. Example ::
           ],
           "Galil command chain": [
             "WAIT 0.1",
-            "BP UP 3 SPEED 300",
+            "UP 3 SPEED 300",
             "WAIT 1.5",
-            "BP DOWN 3 SPEED 400",
+            "DOWN 3 SPEED 400",
             "WAIT 1.5"
           ],
           "Comment": "The layer has its own command chain to
@@ -342,7 +340,7 @@ class PrintSettings:
     """
 
     waitRegex = re.compile(r'WAIT (-?\d+(\.\d+)?)')
-    moveRegex = re.compile(r'^(BP) (UP|DOWN) (-?\d+(\.\d+)?) SPEED (\d+)')
+    moveRegex = re.compile(r'^(UP|DOWN) (-?\d+(\.\d+)?) SPEED (-?\d+(\.\d+)?) ACC (-?\d+(\.\d+)?)')
 
     def __init__(self, settings):
         self.__settings = settings
@@ -545,23 +543,26 @@ class PrintSettings:
                 pass
 
     def checkGalilCommandChain(self, commandChain):
-        distanceBP = 0
+        totalDistance = 0
 
         for command in commandChain:
             m1 = self.waitRegex.fullmatch(command)
             m2 = self.moveRegex.fullmatch(command)
 
-            if m1:
+            if m1:                                              # is a wait command
+                # wait_seconds = m1.group(2)
                 continue
-            elif m2:
-                if m2.group(2) == 'UP':
-                    sign = -1
-                else:
-                    sign = 1
-                if m2.group(1) == 'BP':
-                    distanceBP += sign * float(m2.group(3))
-            else:
+            elif m2:                                            # is a move command
+                direction = m2.group(1)
+                distance = m2.group(2)
+                # speed = m2.group(4)
+                # acceleration = m2.group(6)
+                sign = 1 if direction == 'UP' else -1           # convert direction to a sign
+                totalDistance += sign * float(distance)         # sum all movements
+            else:                                               # if command didn't match either regex
+                print("Bad command, must be UP, DOWN, or WAIT")
                 raise AssertionError
 
-        if distanceBP != 0:
+        if totalDistance != 0:                                  # if the total distance on this layer isn't 0
+            print("Upward and downward movements don't add to 0")
             raise AssertionError

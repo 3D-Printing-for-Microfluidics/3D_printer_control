@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Galil control module."""
+import re
 import time
 import json
 import atexit
@@ -32,6 +33,11 @@ def parseResponseString(string, axis="A"):
     return int(value)
 
 class Galil():
+
+    # regular expressions for parsing command chains
+    waitRegex = re.compile(r'WAIT (-?\d+(\.\d+)?)')
+    moveRegex = re.compile(r'^(UP|DOWN) (-?\d+(\.\d+)?) SPEED (-?\d+(\.\d+)?) ACC (-?\d+(\.\d+)?)')
+
     def __init__(self, address=None, verbose=False):
 
         # import here so test system doesn't have to install gclib
@@ -88,14 +94,36 @@ class Galil():
     def goToPlanarizationPullOff(self):
         pass
 
-    # pylint: disable=unused-argument
     def printCycle(self, layerThicknessMm, commandChain):
         start_position = self.getPosition()
-        self.relMove(speed=25, mm=-1)
-        mid_position = self.getPosition()
-        self.relMove(speed=25, mm=1-layerThicknessMm)
+
+        # keep track of which command is the last down command
+        lastDownCommand = 0
+        for i, command in enumerate(commandChain):
+            m2 = self.moveRegex.fullmatch(command)
+            if m2 and m2.group(1) == 'DOWN':
+                lastDownCommand = i
+
+        # parse the commands and move accordingly
+        for i, command in enumerate(commandChain):
+            m1 = self.waitRegex.fullmatch(command)
+            m2 = self.moveRegex.fullmatch(command)
+
+            if m1:                                              # is a wait command
+                wait_seconds = float(m1.group(2))
+                time.sleep(wait_seconds)
+            elif m2:                                            # is a move command
+                direction = m2.group(1)
+                distance = float(m2.group(2))
+                speed = float(m2.group(4))
+                acceleration = float(m2.group(6))
+                distance *= -1 if direction == 'UP' else 1      # calculate the sign using direction, up is negative
+                if i == lastDownCommand:                        # take off the layer thickness if this is the last downward move
+                    distance -= layerThicknessMm
+                self.relMove(speed=speed, mm=distance, acceleration=acceleration)
         end_position = self.getPosition()
-        return start_position, mid_position, end_position
+
+        return start_position, end_position
 
     def pause(self):
         pass
@@ -193,7 +221,7 @@ class Galil():
     # set the speed for the specified axis (mm/sec)
     def setSpeed(self, speed, axis="A"):
         a = convertAxis(axis)                                   # check that the axis is valid
-        self.send("SP{}={}".format(a, speed*self.ctspmm[a]))    # set speed
+        self.send("SP{}={}".format(a, speed*self.ctspmm[a]))    # set speed in mm/sec
 
     # run the Galil homing routine
     def home(self, axis="A"):
