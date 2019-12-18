@@ -42,7 +42,7 @@ class TipTilt(serial.Serial):
     def home(self):
         self.send("$H")
 
-    def move(self, axis, distance_um, speed=10, relative=True):
+    def move(self, axis, distance_um, speed=100, relative=True):
         """
         Move the specified number of um at the specified speed (in mm/min)
         """
