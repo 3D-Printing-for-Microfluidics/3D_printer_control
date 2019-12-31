@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """Hardware module. It integrates the hardware modules into a Printer3D."""
-from printer_server.printer.galil import Galil, Galil_dummy
-from printer_server.printer.projector import Projector, Projector_dummy
-from printer_server.printer.kdc101 import KDC101, KDC101_dummy
-from printer_server.printer.tiptilt import TipTilt, TipTilt_dummy
-from printer_server.printer.print_settings import PrintSettings
+from printer_server.hardware_drivers.galil import Galil, Galil_dummy
+from printer_server.hardware_drivers.projector import Projector, Projector_dummy
+from printer_server.hardware_drivers.kdc101 import KDC101, KDC101_dummy
+from printer_server.hardware_drivers.tiptilt import TipTilt, TipTilt_dummy
+from printer_server.hardware_drivers.print_settings import PrintSettings
 
 projectorResolution = (2560, 1600)
 

@@ -11,7 +11,7 @@ import time
 import atexit
 import logging
 import pigpio
-from screen import ScreenThread
+from .screen import ScreenThread
 
 # helper function for converting error codes to human readable format
 def convert_error_code(code):
