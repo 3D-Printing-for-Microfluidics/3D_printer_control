@@ -46,8 +46,6 @@ class Screen:
         # create a canvas image, offset (0, 0),
         # anchor point NW (northwest), upper left corner
         self.canvasImage = self.canvas.create_image(0, 0, anchor=tkinter.NW)
-
-        # placeholder for handle that is declared later
         self.tkImage = None
 
     def draw(self, fn):
@@ -94,19 +92,22 @@ class ScreenThread(threading.Thread):
         super().__init__()
         self.resolution = resolution
         self.fullscreen = fullscreen
-        self.screen = None  # placeholder for handle that is declared later
+        self.screen = None
+        self.running = True
 
     def run(self):
-        """Create a Tk window and run it.Instead of the normal
+        """Create a Tk window and run it. Instead of the normal
         ``root.mainloop`` in tkinter, a custom while-loop is
         implemented such that it can be stopped easily and
         arbitrary operation can be added, such as guaranteeing
         the tk window is on top.
         """
         self.screen = Screen(self.resolution, self.fullscreen)
-        self.screen.root.mainloop()
+        while self.running:
+            self.screen.root.update()
+            self.screen.root.update_idletasks()
+        self.screen.root.quit()
 
     def stop(self):
         """Stop the thread"""
-        self.screen.root.quit()
-        self.join()
+        self.running = False
