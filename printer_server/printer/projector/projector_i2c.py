@@ -486,7 +486,6 @@ class Projector:
         time.sleep(self.I2C_IO_DELAY)
 
     def readLedParam(self, register):
-        # TODO: check read result format
         register = int(register).to_bytes(4, byteorder='big')
         self.pi.i2c_write_device(self.led, register)
         time.sleep(self.I2C_IO_DELAY)
@@ -516,34 +515,33 @@ class Projector:
 
     def setLedTempLimit(self, limit):
         # self.ledTempLimit = int(limit)
-        self.writeLedParam(LED_LED_TEMP_LIMIT_REGISTER, self.ledTempLimit*10)
+        self.writeLedParam(LED_LED_TEMP_LIMIT_REGISTER, int(limit))
 
     def getLedTempLimit(self):
         self.log(logging.INFO, self.readLedParam(LED_LED_TEMP_LIMIT_REGISTER))
 
     def setBoardTempLimit(self, limit):
-        self.boardTempLimit = int(limit)
-        self.writeLedParam(LED_BOARD_TEMP_LIMIT_REGISTER, self.boardTempLimit)
+        # self.boardTempLimit = int(limit)
+        self.writeLedParam(LED_BOARD_TEMP_LIMIT_REGISTER, int(limit))
 
     def setOcpLimit(self, limit):
-        self.ocpLimit = round(limit/OCP_AMP_PER_UNIT_HW_VER1)
-        self.writeLedParam(LED_OCPVALUE_REGISTER, self.ocpLimit)
+        # self.ocpLimit = round(limit/OCP_AMP_PER_UNIT_HW_VER1)
+        self.writeLedParam(LED_OCPVALUE_REGISTER, round(limit/OCP_AMP_PER_UNIT_HW_VER1))
 
     def getBoardTemp(self):
-        self.boardTemp = self.readLedParam(LED_BOARDTEMP_REGISTER) / 256
-        self.log(logging.INFO, "Board temperature: {:.1f}".format(self.boardTemp))
+        boardTemp = self.readLedParam(LED_BOARDTEMP_REGISTER) / 256
+        self.log(logging.INFO, "Board temperature: {:.1f}".format(boardTemp))
         # self.log(("Board temperature: {:.1f}".format(self.boardTemp))
 
     def getLedTemp(self):
-        self.ledTemp = self.readLedParam(LED_LEDTEMP_REGISTER) / 10
-        self.log(logging.INFO, "LED temperature: {:.1f}".format(self.ledTemp))
-        # self.log(("LED temperature: {:.1f}".format(self.ledTemp))
+        ledTemp = self.readLedParam(LED_LEDTEMP_REGISTER) / 10
+        self.log(logging.INFO, "LED temperature: {:.1f}".format(ledTemp))
 
     # # Sticky bits: (4):OCP (3): Door_open (2): Fan stopped (1): Board_overtemp, (0): LED_overtemp
     # these don't appear to be correct
     def getStickyBits(self):
-        self.stickybits = self.readLedParam(LED_STICKYBITS_REGISTER)
-        self.log(logging.INFO, "Sticky bits: {0:b}".format(self.stickybits))
+        stickybits = self.readLedParam(LED_STICKYBITS_REGISTER)
+        self.log(logging.INFO, "Sticky bits: {0:b}".format(stickybits))
 
     ###################################
     # Higher level functions
