@@ -39,7 +39,7 @@ class Galil():
 
         self.verbose = verbose
         self.address = address
-        self.bottom_position = 256000
+        self.bottom_position = 267840
         self.top_position = -400000
 
 
