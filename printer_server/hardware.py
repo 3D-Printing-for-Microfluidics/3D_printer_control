@@ -20,7 +20,7 @@ class Printer3D:
             self.tiptilt = TipTilt_dummy(verbose=True)
         else:
             self.state = 'uninitialized'
-            self.galil = Galil()
+            self.galil = Galil(verbose=True)
             self.projector = Projector(projectorResolution)
             self.kdc = KDC101()
             self.tiptilt = TipTilt(verbose=True)

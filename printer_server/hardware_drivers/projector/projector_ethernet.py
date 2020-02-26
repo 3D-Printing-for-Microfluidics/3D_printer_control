@@ -87,6 +87,7 @@ class Projector:
         try:
             self.socket.connect((self.host, self.port))
         except OSError:
+            print("Light engine not found. It it plugged in and powered on?")
             exit("Light engine not found. It it plugged in and powered on?")
 
         # start screen thread
