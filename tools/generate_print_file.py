@@ -56,7 +56,7 @@ all the entries are necessary. ::
        share the same images and parameters, we can set
        ``Number of duplications`` to reduce json file footprint.
     #. Galil command chain - Command chain
-       to tell Galil controller how to move BP.
+       to tell Galil controller how to move the build platform.
        (Details: :ref:`galil_command_chain`)
 
 #. Layers - a list of layer settings. Each item in the list
@@ -82,10 +82,10 @@ chaining a list of commands.
     * Wait 1.5 seconds
         * ``WAIT 1.5``
 
-* Build Platform (BP)
+* Build Platform
 
     * Move build platform up 1 mm at 25 mm/sec
-        * ``UP 1 SPEED 20``
+        * ``UP 1 SPEED 25``
 
     * Move build platform down 1.5 mm at 25 mm/sec
         * ``DOWN 1.5 SPEED 25``
@@ -95,7 +95,7 @@ chaining a list of commands.
 We can almost chain commands however we want to, but there are
 still some rules.
 
-* ``BP`` rules
+* Build platform rules
 
     #. Speed must be positive integer, units are mm/sec.
     #. Acceleration must be positive integer, units are mm/sec^2.
@@ -324,6 +324,7 @@ import os
 import sys
 import json
 import argparse
+import PySimpleGUI as sg
 from zipfile import ZipFile
 from datetime import datetime
 from PIL import Image
@@ -334,7 +335,123 @@ output_filename = '{}.zip'.format(datetime.now().strftime('print_%Y-%m-%d_%H-%M-
 normal_layer_um = 10               # Normal layer thickness
 normal_exp_time_ms = 600            # Normal layer exposure time
 normal_le_power = 100               # Normal light engine power
-slices_folder = "slices"            # The folder the slices are located in
+path_to_slices = 'slices'
+
+def validate_slice(imageFile):
+    try:
+        print("Processing", imageFile)                              # Print an indicator processing is progressing
+        with Image.open(imageFile) as pilImage:                     # Open file as PIL object
+            # pilImage = pilImage.convert('L')                        # Convert to 8 bit grayscale
+            # pilImage.format = "PNG"                                 # Set format as PNG
+            if pilImage.format == "PNG" and pilImage.mode == "L":   # Check format and mode
+                return True                                         # Image is good
+    except (OSError, FileNotFoundError):                            # File has big issues
+        return False
+    return False                                                    # Image is bad
+
+def create_file(normal_exp_time_ms, normal_layer_um, output_filename, path_to_slices, progress=None):
+
+    slices_folder = None
+    slices_parent_folder = None
+
+    # Locate and test all relevant folders
+    try:
+        slices_folder = os.path.normpath(path_to_slices)
+        slices = os.listdir(slices_folder)
+        slices_parent_folder = os.path.dirname(path_to_slices)
+        path_to_output_file = os.path.join(slices_parent_folder, output_filename)
+    except (OSError, FileNotFoundError):
+        error_msg = "Error: Folder '" + slices_folder + "' does not exist\n"
+        error_msg += "Try '" + sys.argv[0] + " --help' for help."
+        sys.exit(error_msg)
+
+    # Other default values that aren't updatable via cmd line
+    normal_command_chain = [                    # Standard command chain
+        "WAIT 0.1",
+        "UP 1 SPEED 25 ACC 50",
+        "DOWN 1 SPEED 20 ACC 50"
+    ]
+    bi_exp_ms = [20000, 10000, 5000, 1000, 500] # Burn in exposure times
+    data = {                                    # Default fields
+        "Design": {
+            "Purpose": "",
+            "Description": "",
+            "Resin": "",
+            "3D printer": "",
+            "Design file": "",
+            "STL file": "",
+            "Slicer": "",
+            "Date": ""
+        },
+        "Header": {
+            "Comment": "",
+            "Schema version": "0.1",
+            "Image directory": "slices"
+        },
+        "Default settings": {
+            "Comment": "Settings used for each layer, if not overridden by layer specific settings.",
+            "Light engine power setting": normal_le_power,
+            "Layer exposure time (ms)": normal_exp_time_ms,
+            "Layer thickness (um)": normal_layer_um,
+            "Number of duplications": 1,
+            "Command chain": normal_command_chain
+        },
+        "Layers": []   # a list of dictionaries that represent each layer
+    }
+
+    # Start archive generation
+    try:
+        # Open a zip archive to write to
+        with ZipFile(path_to_output_file, 'x') as myzip:
+
+            # Get total number of slices and update progress bar accordingly
+            total_num_slices = len(slices)
+            progress.UpdateBar(0, total_num_slices)
+
+            # Iterate over the slices
+            for i, curr_slice in enumerate(slices):
+                path_to_slice = os.path.join(slices_folder, curr_slice)
+
+                # Check to see if each slice is good
+                if not validate_slice(path_to_slice):
+                    error_msg = "Error: Bad slice provided: " + curr_slice + "\n"
+                    error_msg += "All images must be 8-bit grayscale PNG format"
+                    sys.exit(error_msg)
+
+                # Add the image file to print data for this layer
+                this_layer = {"Images": [curr_slice]}
+
+                # Add the image to the print zip archive
+                myzip.write(path_to_slice, arcname=os.path.join('slices', curr_slice))
+
+                # If this is a burn in layer and the normal exposure is lower than
+                # the burn in exposure, use the burn in exposure
+                if i < len(bi_exp_ms) and bi_exp_ms[i] > normal_exp_time_ms:
+                    this_layer["Layer exposure time (ms)"] = [bi_exp_ms[i]]
+
+                # Add the full dictionary for this layer to the full print data
+                data["Layers"].append(this_layer)
+
+                # Update progress bar if applicable
+                progress.UpdateBar(i)
+
+            # Write print settings file
+            print_settings_filename = 'print_settings.json'
+            with open(print_settings_filename, 'w', newline='\r\n') as fileOut:
+                json.dump(data, fileOut, indent=2)
+
+            # Add to zip archive
+            myzip.write(print_settings_filename)
+
+            # Remove temp file from system
+            os.remove(print_settings_filename)
+
+    except FileExistsError:
+        error_msg = "Error: The file '" + path_to_output_file
+        error_msg += "' already exists. Delete it or use a different name."
+        sys.exit(error_msg)
+
+    return path_to_output_file
 
 # Add argument parser and options
 parser = argparse.ArgumentParser(add_help=False)
@@ -348,8 +465,11 @@ parser.add_argument("-z", dest='layer_thickness', type=int, help=help_msg)
 help_msg = "Set layer exposure time (ms). Defaults to " + str(normal_exp_time_ms) + "."
 parser.add_argument("-e", dest='normal_exp_time', type=int, help=help_msg)
 
-help_msg = "Set path to the folder containing the slices. Defaults to '" + slices_folder + "'."
-parser.add_argument("-s", dest='slices_folder', help=help_msg)
+help_msg = "Set path to the folder containing the slices. Defaults to " + path_to_slices + "."
+parser.add_argument("-s", dest='path_to_slices', help=help_msg)
+
+help_msg = "Run without a GUI interface"
+parser.add_argument("-no_gui", action='store_true')
 
 parser.add_argument("-h", "--help", help="Show this help message and exit.", action='help')
 
@@ -359,102 +479,33 @@ args = parser.parse_args()
 if args.output_filename: output_filename = args.output_filename
 if args.layer_thickness: normal_layer_um = args.layer_thickness
 if args.normal_exp_time: normal_exp_time_ms = args.normal_exp_time
-if args.slices_folder: slices_folder = args.slices_folder
+if args.path_to_slices: path_to_slices = args.path_to_slices
+if args.no_gui: create_file(normal_exp_time_ms, normal_layer_um, output_filename, path_to_slices)
 
-# Other default values that aren't updatable via cmd line
-normal_command_chain = [                    # Standard command chain
-    "UP 1 SPEED 25 ACC 350",
-    "BP DOWN 1 SPEED 25 ACC 350",
-    "WAIT 0.5"
-]
-bi_exp_ms = [20000, 10000, 5000, 1000, 500] # Burn in exposure times
-data = {                                    # Default fields
-    "Design": {
-        "Purpose": "",
-        "Description": "",
-        "Resin": "",
-        "3D printer": "",
-        "Design file": "",
-        "STL file": "",
-        "Slicer": "",
-        "Date": ""
-    },
-    "Header": {
-        "Comment": "",
-        "Schema version": "0.1",
-        "Image directory": slices_folder
-    },
-    "Default settings": {
-        "Comment": "Settings used for each layer, if not overridden by layer specific settings.",
-        "Light engine power setting": normal_le_power,
-        "Layer exposure time (ms)": normal_exp_time_ms,
-        "Layer thickness (um)": normal_layer_um,
-        "Number of duplications": 1,
-        "Command chain": normal_command_chain
-    },
-    "Layers": []   # a list of dictionaries that represent each layer
-}
+# set up frontend GUI
 
-def validate_slice(imageFile):
-    try:
-        with Image.open(imageFile) as pilImage:                     # Open file as PIL object
-            if pilImage.format == "PNG" and pilImage.mode == "L":   # Check format and mode
-                return True                                         # Image is good
-    except (OSError, FileNotFoundError):                            # File has big issues
-        pass
-    return False                                                    # Image is bad
+sg.theme('Light Blue 2')
+layout = [[sg.Text('Slices Folder', size=(16, 1)), sg.InputText('slices'), sg.FolderBrowse()],
+          [sg.Text('Exposure Time (ms)', size=(16, 1)), sg.InputText(default_text=300)],
+          [sg.Text('Layer Thickness (um)', size=(16, 1)), sg.InputText(default_text=10)],
+          [sg.Text('Output Filename', size=(16, 1)), sg.InputText(default_text=output_filename)],
+          [sg.Text('Progress', size=(16, 1)), sg.ProgressBar(1, orientation='h', size=(29, 20), key='progress')],
+          [sg.Submit(), sg.Cancel()]]
+window = sg.Window('Create 3D Print File', layout)
+progress_bar = window.FindElement('progress')
+event, values = window.read()
+if event == 'Cancel' or event is None:
+    exit()
 
-try:
-    # Open a zip archive to write to
-    with ZipFile(output_filename, 'x') as myzip:
+# cast values appropriately
+output_filename = values[3]
+normal_layer_um = int(values[2])
+normal_exp_time_ms = int(values[1])
+path_to_slices = os.path.normpath(values[0])
 
-        # Get the directory this script is executing from
-        this_directory = os.path.dirname(os.path.realpath(sys.argv[0]))
+# create the print file and then exit
+path_to_output_file = create_file(normal_exp_time_ms, normal_layer_um, output_filename, path_to_slices, progress_bar)
 
-        # Try opening the slices folder and generating a list of images
-        try:
-            slices = os.listdir(slices_folder)
-        except (OSError, FileNotFoundError):
-            error_msg = "Error: Folder '" + slices_folder + "' does not exist\n"
-            error_msg += "Try '" + sys.argv[0] + " --help' for help."
-            sys.exit(error_msg)
+sg.popup('Print file saved to', path_to_output_file)
 
-        # Iterate over the slices
-        for i, curr_slice in enumerate(slices):
-            path_to_slice = os.path.join(this_directory, slices_folder, curr_slice)
-
-            # Check to see if each slice is good
-            if not validate_slice(path_to_slice):
-                error_msg = "Error: Bad slice provided: " + curr_slice + "\n"
-                error_msg += "All images must be 8-bit grayscale PNG format"
-                sys.exit(error_msg)
-
-            # Add the image file to print data for this layer
-            this_layer = {"Images": [curr_slice]}
-
-            # Add the image to the print zip archive
-            myzip.write(os.path.join(slices_folder, curr_slice))
-
-            # If this is a burn in layer and the normal exposure is lower than
-            # the burn in exposure, use the burn in exposure
-            if i < len(bi_exp_ms) and bi_exp_ms[i] > normal_exp_time_ms:
-                this_layer["Layer exposure time (ms)"] = [bi_exp_ms[i]]
-
-            # Add the full dictionary for this layer to the full print data
-            data["Layers"].append(this_layer)
-
-        # Write print settings file
-        print_settings_filename = 'print_settings.json'
-        with open(print_settings_filename, 'w', newline='\r\n') as fileOut:
-            json.dump(data, fileOut, indent=2)
-
-        # Add to zip archive
-        myzip.write(print_settings_filename)
-
-        # Remove temp file from system
-        os.remove(print_settings_filename)
-
-except FileExistsError:
-    error_msg = "Error: The file '" + output_filename
-    error_msg += "' already exists. Delete it or use a different name."
-    sys.exit(error_msg)
+window.close()
