@@ -4,6 +4,8 @@ import re
 import time
 import json
 import atexit
+from pathlib import Path
+from datetime import datetime
 
 # remove bad chars from file name
 def cleanFileName(name):
@@ -62,6 +64,9 @@ class Galil():
         self.controller_name = "DMC31010"   # controller to search for
         self.g = gclib.py()                 # make an instance of the gclib python class
         atexit.register(self.disconnect)    # register disconnect to always run at interpreter end
+
+        # a log with all IO sent to the controller
+        self.log = Path.cwd() / 'logs'      # a log to track all communications for debugging, gets created on connect
 
     def initialize(self):
         self.motorOn()
@@ -140,6 +145,12 @@ class Galil():
                 self.g.GOpen("{} --direct".format(self.address))
                 if self.verbose: print("GInfo returned:", self.g.GInfo())
                 self.connected = True
+
+                # Create log
+                date_and_time = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
+                self.log = str(self.log / 'galil_controller_command_dump_{}.txt'.format(date_and_time))
+
+                # all done, return control
                 return
         exit("{} not found.".format(self.controller_name))
 
@@ -154,35 +165,38 @@ class Galil():
         return counts / self.ctspmm[axis]
 
    # send a command to the controller, interpret errors if any are thrown
-    def send(self, command, log=True):
-        if self.verbose and log:
-            print("Sent : '{}'".format(command))                # print send command if in verbose mode
-        try:
-            response = self.g.GCommand(command)                 # send the command and save the response
-            response = ''.join(response)                        # join the returned char array into a string
-            if self.verbose and log and response != '':
-                print("Reply: '{}'".format(response))           # print the response if in verbose mode
-            return response                                     # return the response
-        except self.gclib_error as error:                       # if there is an error
-            error_code = self.g.GCommand("TC 1")                # get the human readable error code
-            if error_code not in ('', "0"):
-                error = error_code
-            print("Error: Last command '{}' returned error '{}'".format(command, error))
-            return error
+    def send(self, command, notify=True):
+        with open(self.log, "a") as f:
+            if self.verbose and notify:
+                print("Sent : '{}'".format(command))                    # print send command if in verbose mode
+                f.write("Sent : '{}'\n".format(command))            # record sent command in log file
+            try:
+                response = self.g.GCommand(command)                 # send the command and save the response
+                response = ''.join(response)                        # join the returned char array into a string
+                if self.verbose and notify and response != '':
+                    f.write("Reply: '{}'\n".format(response))           # record reply in log file
+                    print("Reply: '{}'".format(response))           # print the response if in verbose mode
+                return response                                     # return the response
+            except self.gclib_error as error:                       # if there is an error
+                error_code = self.g.GCommand("TC 1")                # get the human readable error code
+                if error_code not in ('', "0"):
+                    error = error_code
+                print("Error: Last command '{}' returned error '{}'".format(command, error))
+                return error
 
     # check both limit switches, return a tuple with their trip values
     def checkLimits(self, axis="A"):
         a = convertAxis(axis)
-        lf = self.send("MG _LF{}".format(a), log=False)
-        lr = self.send("MG _LR{}".format(a), log=False)
+        lf = self.send("MG _LF{}".format(a), notify=False)
+        lr = self.send("MG _LR{}".format(a), notify=False)
         return bool(lf == "0.0000"), bool(lr == "0.0000")
 
     # read the current position of the specified encoder
-    def getPosition(self, axis="A", log=True):
+    def getPosition(self, axis="A", notify=True):
         if axis is None:                                        # if no axis is specified
-            return self.send("TP", log=log)                     # read all axes
+            return self.send("TP", notify=notify)               # read all axes
         axis = convertAxis(axis)                                # check that the axis is valid
-        pos = self.send("TP{}".format(axis), log=log)           # get the encoder reading
+        pos = self.send("TP{}".format(axis), notify=notify)     # get the encoder reading
         return int(pos)
 
     # turn on the specified axis
@@ -198,7 +212,7 @@ class Galil():
     # get the acceleration for the specified axis (mm/sec^2)
     def getAcceleration(self, axis="A"):
         a = convertAxis(axis)                                   # check that the axis is valid
-        response = self.send("AC ?", log=False)                 # query the acceleration for all axes
+        response = self.send("AC ?", notify=False)              # query the acceleration for all axes
         acc = parseResponseString(response, a)                  # pull out the acceleration value for the axis we care about
         return int(acc)/self.ctspmm[a]                          # convert acceleration from cnts/sec^2 to mm/sec^2
 
@@ -211,7 +225,7 @@ class Galil():
     # get the speed for the specified axis (mm/sec)
     def getSpeed(self, axis="A"):
         a = convertAxis(axis)                                   # check that the axis is valid
-        response = self.send("SP ?", log=False)                 # query the speed for all axes
+        response = self.send("SP ?", notify=False)              # query the speed for all axes
         speed = parseResponseString(response, a)                # pull out the speed value for the axis we care about
         return int(speed)/self.ctspmm[a]                        # convert speed from cnts/sec to mm/sec
 
@@ -283,17 +297,17 @@ class Galil():
             self.setAcceleration(old_acceleration)              # change it back to the old value
         return self.getPosition()
 
-    # blocks execution until the encoder reading reaches the specified value. Also logs all position data
+    # blocks execution until the encoder reading reaches the specified value. Also notifys all position data
     def waitForMotionComplete(self, cnts, axis="A"):
         start_time = time.time()
-        last_position = self.getPosition(log=False)             # save the last position
+        last_position = self.getPosition(notify=False)             # save the last position
         self.data[self.move_num] = []
         self.data[self.move_num].append({'time' : time.time(), 'position' : last_position})
         counter = 0
         time_count = 0
         while counter <= 10:                                    # only proceed when 10 good consecutive counts have been read
             time.sleep(0.001)                                   # wait 1 ms
-            last_position = self.getPosition(log=False)         # read position again
+            last_position = self.getPosition(notify=False)      # read position again
             if any(self.checkLimits()):                         # finish early if a limit is tripped
                 print("Limit switch triggered")                 # notify user of limit
                 self.g.GMotionComplete(axis)                    # wait for controller planning to finish
@@ -304,9 +318,11 @@ class Galil():
             else:
                 counter = 0
             time_count += 1
-            if time_count >= 5000:                              # timeout for collecting data, motor won't reach position
-                print("Z motor didn't reach position. Got to {} but needed {}".format(last_position, cnts))
-                exit("Z motor didn't reach position. Got to {} but needed {}".format(last_position, cnts))
+            if time_count >= 1000:                              # timeout for collecting data, motor won't reach position
+                print("Warning - Z motor didn't reach position. Got to {} but needed {}".format(last_position, cnts))
+                with open(self.log, "a") as f:
+                    f.write("Warning - possible position error got to {} needed {}".format(last_position, cnts))  # record sent command in log file
+                # exit("Z motor didn't reach position. Got to {} but needed {}".format(last_position, cnts))
                 break
         self.data[self.move_num].append({'time' : time.time(), 'position' : last_position})
         self.data[self.move_num].append({'duration' : time.time()-start_time})
