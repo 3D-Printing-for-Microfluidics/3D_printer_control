@@ -7,6 +7,9 @@ Projector
 import time
 import atexit
 import socket
+from pathlib import Path
+from datetime import datetime
+
 from .screen import ScreenThread
 
 # pylint:disable=too-many-public-methods
@@ -72,23 +75,30 @@ class Projector:
         # setup TCP connection
         self.host = "192.168.0.10"
         self.port = 5000
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket = None                              # start as None so we can tell if a connection has been attempted
+        self.tcp_log = Path.cwd() / 'logs'              # a log to track all TCP communications for debugging, gets created on connect
 
         # setup screen thread
         self.screenThread = ScreenThread(self.resolution, self.fullscreen)
 
         # register exit handlers
-        atexit.register(self.socket.close)              # close the TCP conenction on exit
+        atexit.register(self.disconnect)                # close the TCP conenction on exit
         atexit.register(self.stop_sequencer)            # make sure DMD is stopped on exit
         atexit.register(self.screenThread.stop)         # stop screen thread on exit
 
     def connect(self):
+        print("Connecting to light engine...")
         # start TCP connection
         try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((self.host, self.port))
         except OSError:
             print("Light engine not found. It it plugged in and powered on?")
             exit("Light engine not found. It it plugged in and powered on?")
+
+        # Create log
+        date_and_time = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
+        self.tcp_log = str(self.tcp_log / 'light_engine_TCP_dump_{}.txt'.format(date_and_time))
 
         # start screen thread
         self.screenThread.start()
@@ -98,6 +108,9 @@ class Projector:
         self.set_led_driver_regulation_mode("LIGHT")
         self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
 
+    def disconnect(self):
+        if self.socket is not None:
+            self.socket.close()
 
     def send(self, data):
         """
@@ -107,13 +120,21 @@ class Projector:
         will remain in the output if present.
 
         """
-        data += "\r\n\r\n"
-        self.socket.sendall(data.encode())
-        reply = self.socket.recv(1024)
-        # print('Sent', repr(data))
-        # print('Reply', repr(reply.decode()))
-        print('Sent', str(data).replace("\r\n", " "))
-        print('Reply', str(reply.decode()).replace("\r\n", " "))
+        reply = None
+        with open(self.tcp_log, "a") as f:
+            data += "\r\n\r\n"
+            data = data.encode()
+            f.write("Sent : {}\n".format(data))
+
+            # transmit data and read response
+            self.socket.sendall(data)
+            reply = self.socket.recv(1024)
+            f.write("Reply: {}\n".format(reply))
+            reply = str(reply.decode())
+            # print('Sent', repr(data))
+            # print('Reply', repr(reply.decode()))
+            print('Sent :', str(data).replace("\r\n", " "))
+            print('Reply:', reply.replace("\r\n", " "))
         return reply
 
     def load_defaults(self):
