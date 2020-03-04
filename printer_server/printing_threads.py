@@ -136,11 +136,11 @@ class PrintingThreads:
         """
         self.tiptilt.connect()
         self.kdc.initialize()
-        self.projector.connect()
         self.galil.connect()
         self.galil.motorOn()
         self.galil.home()
         self.galil.goToZmax()
+        self.projector.connect()
 
         # self.galil.openEncoderFile('encoder_initialization_write_file.txt')
         # self.galil.closeEncoderFile()
