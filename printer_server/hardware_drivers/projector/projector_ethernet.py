@@ -86,13 +86,23 @@ class Projector:
         atexit.register(self.stop_sequencer)            # make sure DMD is stopped on exit
         atexit.register(self.screenThread.stop)         # stop screen thread on exit
 
-    def connect(self):
-        print("Connecting to light engine...")
+    def connect(self, attempts=10, timeout=1):
+        print("Connecting to light engine, this may take up to 1 minute...")
+
         # start TCP connection
-        try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.connect((self.host, self.port))
-        except OSError:
+        i = 0
+        connected = False
+        while i < attempts:         # try up to attempts number of times to create a connection
+            i += 1
+            try:                    # attempt a new connection
+                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.socket.connect((self.host, self.port))
+                connected = True
+            except OSError as e:
+                print("{}. Retrying in {} second(s)".format(e, timeout))
+                self.socket = None  # get rid of handle to bad socket
+                time.sleep(timeout) # wait to try again
+        if not connected:           # connection failed every time, notify user
             print("Light engine not found. It it plugged in and powered on?")
             exit("Light engine not found. It it plugged in and powered on?")
 
@@ -343,7 +353,9 @@ class Projector:
 
         Return type +OK
         """
-        return self.send("SET SEQ OFF")
+        # since this always gets run on exit, check to make sure a connection was made
+        if self.socket is not None:
+            return self.send("SET SEQ OFF")
 
     def pause_sequencer(self):
         """
