@@ -3,10 +3,18 @@ import atexit
 from struct import pack, unpack
 import serial
 import serial.tools.list_ports
-from apscheduler.schedulers.background import BackgroundScheduler
+
+# helper function to find handle to K-Cube
+def find_device():
+    x = serial.tools.list_ports.comports()
+    for device in x:
+        if "K-Cube" in device.description:
+            print("Found {}".format(device))
+            return device.device
+    return None                                # stage not found
 
 class KDC101():
-    #Port Settings
+    # Port Settings
     baud_rate = 115200
     data_bits = 8
     stop_bits = 1
@@ -21,15 +29,16 @@ class KDC101():
 
     def __init__(self, defaultPos=0):
         #Controller's Port and Channel
-        self.USB_Device = self.getUSBDevice()
+        self.port = find_device()
+        if self.port is None:
+            raise ValueError('Thor Labs stage not found')
         self.defaultPos = defaultPos
-        self.KDC101 = serial.Serial(port=self.USB_Device,
+        self.KDC101 = serial.Serial(port=self.port,
                                     baudrate=self.baud_rate,
                                     bytesize=self.data_bits,
                                     parity=self.Parity,
                                     stopbits=self.stop_bits,
                                     timeout=0.1)
-        self.scheduler = BackgroundScheduler()
         self.serverAliveJob = None
         atexit.register(self.KDC101.close)
         atexit.register(self.enableStage, enable=False)
@@ -99,11 +108,6 @@ class KDC101():
         self.getHardwareInfo()
         self.enableStage(enable=True)
 
-        # set up the heartbeat messgaes
-        self.serverAliveJob = self.scheduler.add_job(self.sendServerAlive, 'interval', seconds=.9)
-        self.scheduler.start()
-        atexit.register(self.scheduler.shutdown, wait=False)
-
     def sendServerAlive(self):
         self.KDC101.write(pack('<HBBBB', 0x0492, 0x00, 0x00, self.destination, self.source))
 
@@ -117,14 +121,6 @@ class KDC101():
         state = 0x01 if enable else 0x02
         self.KDC101.write(pack('<HBBBB', 0x0210, self.Channel, state, self.destination, self.source))
         time.sleep(0.1)
-
-    def getUSBDevice(self):
-	    # prints available devices
-        x = serial.tools.list_ports.comports()
-        for _, device in enumerate(x):
-            if "Thorlabs" in device.manufacturer:
-                return device.device
-        return None                                # stage not found
 
     def flushUSB(self):
         self.KDC101.flushInput()
@@ -145,13 +141,12 @@ class KDC101():
 
 if __name__ == "__main__":
     kc = KDC101()
-    # kc.initialize()
-    # # kc.getCurrentPos()
-    # kc.home()
+    kc.getCurrentPos()
+    kc.home()
 
-    # for _ in range(2):
-    #     print(kc.getCurrentPos())
-    #     kc.move(1000)
-    #     print(kc.getCurrentPos())
-    #     kc.move(-1000)
-    #     print(kc.getCurrentPos())
+    for _ in range(2):
+        print(kc.getCurrentPos())
+        kc.move(1000)
+        print(kc.getCurrentPos())
+        kc.move(-1000)
+        print(kc.getCurrentPos())
