@@ -7,10 +7,9 @@ from PIL import Image
 from flask import Blueprint, request, render_template
 # from datetime import datetime
 
-from printer_server.settings import CalibrationConfig
-from printer_server.hardware import printer3d
-from printer_server.threads import calibrationThreads
 from printer_server.extensions import socketio
+from printer_server.settings import CalibrationConfig
+from printer_server.threads import manualControls
 
 # Create bluprint
 blueprint = Blueprint('calibrate', __name__, url_prefix='/', static_folder='../static')
@@ -23,69 +22,41 @@ imagePath = os.path.join(CalibrationConfig.UPLOAD_FOLDER, 'calibration_images', 
 def index():
     return render_template('calibrate.html')
 
-# If hardware isn't initialized, initialize it
-@socketio.on('initialize', namespace='/calibrate')
-def initialize():
-    socketio.emit('initialized', namespace='/calibrate', broadcast=True)
-
-# Reset printer state, necessary if hardware has been powered down
-@socketio.on('reset_printer_state', namespace='/calibrate')
-def resetPrinterState(message):
-    printer3d.state = 'uninitialized'
-
 @socketio.on('galil_go_to_top', namespace='/calibrate')
 def galil_go_to_top():
-    calibrationThreads.goToZmax()
+    manualControls.goToZmax()
 
 @socketio.on('galil_go_to_bottom', namespace='/calibrate')
 def galil_go_to_bottom():
-    calibrationThreads.goToZmin()
+    manualControls.goToZmin()
 
 @socketio.on('galil_home', namespace='/calibrate')
 def home():
-    calibrationThreads.home()
+    manualControls.home()
 
-@socketio.on('calibration_motor', namespace='/calibrate')
-def calibrationMotorMove(message):
+@socketio.on('calibration_motor_move', namespace='/calibrate')
+def moveCalibrationMotor(message):
     axis = message["axis"]
-    distance = int(message["steps"])
-    calibrationThreads.calibrationMotorMove(axis, distance)
+    distance = float(message["microns"])
+    mode = message["mode"]
+    manualControls.moveCalibrationMotor(axis, distance, mode)
+
+@socketio.on('calibration_motor_home', namespace='/calibrate')
+def homeCalibrationMotor(message):
+    axis = message["axis"]
+    manualControls.homeCalibrationMotor(axis)
 
 @socketio.on('light_engine_stop', namespace='/calibrate')
 def lightEngineStop():
-    calibrationThreads.lightEngineStop()
-
-@socketio.on('home_tip_axis', namespace='/calibrate')
-def homeTipAxis():
-    calibrationThreads.homeTipAxis()
-
-@socketio.on('home_tilt_axis', namespace='/calibrate')
-def homeTiltAxis():
-    calibrationThreads.homeTiltAxis()
-
-@socketio.on('home_dist_axis', namespace='/calibrate')
-def homeDistanceAxis():
-    calibrationThreads.homeDistanceAxis()
+    manualControls.lightEngineStop()
 
 @socketio.on('light_engine_start', namespace='/calibrate')
 def lightEngineProject(message):
-    calibrationThreads.lightEngineProject(
+    manualControls.lightEngineProject(
         imagePath,
         int(message["ledPower"]),
         int(message["repeat"]),
         int(message["exposure"]))
-
-@socketio.on('distance_abs_move', namespace='/calibrate')
-def distanceAbsMove(message):
-    calibrationThreads.distanceAbsMove(float(message["position"]))
-
-@socketio.on('tip_abs_move', namespace='/calibrate')
-def tipAbsMove(message):
-    calibrationThreads.tipAbsMove(float(message["position"]))
-
-@socketio.on('tilt_abs_move', namespace='/calibrate')
-def tiltAbsMove(message):
-    calibrationThreads.tiltAbsMove(float(message["position"]))
 
 @blueprint.route('handle-calibration-upload', methods=['POST'])
 def handleUpload():

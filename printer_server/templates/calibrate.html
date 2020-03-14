@@ -1,7 +1,7 @@
 
 {% extends "base.html" %}
 
-{% block title %}3D Printer Calibration{% endblock %}
+{% block title %}3D Printer Manual Controls{% endblock %}
 
 {% block printer3d_state %}
 <h2>Calibration Controls</h2>
@@ -21,103 +21,103 @@
     </div>
 
     <!-- Tip -->
-    <div class="container">
+    <div class="container" aria-label="Tip">
         <div class="row align-items-center">
             <div class="col-4">
-                <h4>Tip</h3>
+                <h4 id="tip-label">Tip</h3>
             </div>
             <div class="col-2">
-                <h5 class="col text-right" id='tip-state'>0</h5>
+                <h5 class="col text-right" id='tip-state'>?</h5>
             </div>
             <div class="col-6">
-                <input class="form-control" type="text" id="tip-txt" placeholder="Position (um)">
+                <input class="form-control mtr-cntrl-txt" type="text" id="tip-txt" placeholder="Position (um)">
             </div>
         </div>
-    </div>
-    <div class="row align-items-center">
-        <div class="col-2">
-        </div>
-        <div class="col-2 text-left">
-            <button type="button" class="btn btn-primary btn-block" id="tip-home-btn">Home</button>
-        </div>
-        <div class="col-8 text-right">
-            <div class="btn-group" role="group" aria-label="Tip">
-                <button type="button" class="btn btn-primary mtr-cntrl-btn" >-1000</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-100</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-10</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-1</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">1</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">10</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">100</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">1000</button>
+        <div class="row align-items-center">
+            <div class="col-2">
+            </div>
+            <div class="col-2 text-left">
+                <button type="button" class="btn btn-primary btn-block home-btn" id="tip-home-btn">Home</button>
+            </div>
+            <div class="col-8 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn" >-1000</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">1000</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Tilt -->
-    <div class="container">
-            <div class="row align-items-center">
-                <div class="col-4">
-                    <h4>Tilt</h3>
-                </div>
-                <div class="col-2">
-                    <h5 class="col text-right" id='tilt-state'>0</h5>
-                </div>
-                <div class="col-6">
-                    <input class="form-control" type="text" id="tilt-txt" placeholder="Position (um)">
-                </div>
+    <div class="container" aria-label="Tilt">
+        <div class="row align-items-center">
+            <div class="col-4">
+                <h4>Tilt</h3>
+            </div>
+            <div class="col-2">
+                <h5 class="col text-right" id='tilt-state'>?</h5>
+            </div>
+            <div class="col-6">
+                <input class="form-control mtr-cntrl-txt" type="text" id="tilt-txt" placeholder="Position (um)">
             </div>
         </div>
-    <div class="row align-items-center">
-        <div class="col-2">
-        </div>
-        <div class="col-2 text-left">
-            <button type="button" class="btn btn-primary btn-block" id="tilt-home-btn">Home</button>
-        </div>
-        <div class="col-8 text-right">
-            <div class="btn-group" role="group" aria-label="Tilt">
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-1000</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-100</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-10</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-1</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">1</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">10</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">100</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">1000</button>
+        <div class="row align-items-center">
+            <div class="col-2">
+            </div>
+            <div class="col-2 text-left">
+                <button type="button" class="btn btn-primary btn-block home-btn" id="tilt-home-btn">Home</button>
+            </div>
+            <div class="col-8 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-1000</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">1000</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Distance -->
-    <div class="container">
+    <div class="container" aria-label="Distance">
         <div class="row align-items-center">
             <div class="col-4">
                 <h4>Distance</h3>
             </div>
             <div class="col-2">
-                <h5 class="col text-right" id='dist-state'>0</h5>
+                <h5 class="col text-right" id='dist-state'>?</h5>
             </div>
             <div class="col-6">
-                <input class="form-control" type="text" id="distance-txt" placeholder="Position (um)">
+                <input class="form-control mtr-cntrl-txt" type="text" id="distance-txt" placeholder="Position (um)">
             </div>
         </div>
-    </div>
-    <div class="row align-items-center">
-        <div class="col-2 text-left">
-        </div>
-        <div class="col-2 text-left">
-            <button type="button" class="btn btn-primary btn-block" id="dist-home-btn">Home</button>
-        </div>
-        <div class="col-8 text-right">
-            <div class="btn-group" role="group" aria-label="Distance">
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-1000</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-100</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-10</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">-1</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">1</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">10</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">100</button>
-                <button type="button" class="btn btn-primary mtr-cntrl-btn">1000</button>
+        <div class="row align-items-center">
+            <div class="col-2 text-left">
+            </div>
+            <div class="col-2 text-left">
+                <button type="button" class="btn btn-primary btn-block home-btn" id="dist-home-btn">Home</button>
+            </div>
+            <div class="col-8 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-1000</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">1000</button>
+                </div>
             </div>
         </div>
     </div>

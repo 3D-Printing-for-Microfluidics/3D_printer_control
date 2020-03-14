@@ -7,7 +7,7 @@ var enable_all_buttons = function(){
 }
 
 var disable_calibration_motor_buttons = function(){
-    // $('.motor-controls button').prop('disabled', true);
+    $('.motor-controls button').prop('disabled', true);
 }
 
 var enable_calibration_motor_buttons = function(){
@@ -56,12 +56,35 @@ var disable_project_start_stop_buttons = function(){
     // $('#le-stop-btn').prop('disabled', true);
 }
 
+var update_tip_position = function(message) {
+    if(!$.isEmptyObject(message)) {
+        document.getElementById('tip-state').innerHTML = message.tip;
+    }
+}
+
+var update_tilt_position = function(message) {
+    if(!$.isEmptyObject(message)) {
+        document.getElementById('tilt-state').innerHTML = message.tilt;
+    }
+}
+
+var update_dist_position = function(message) {
+    if(!$.isEmptyObject(message)) {
+        document.getElementById('dist-state').innerHTML = message.distance;
+    }
+}
+
+// helper function to update positions on all calibration axes
+var update_positions = function(message) {
+    update_tip_position(message);
+    update_tilt_position(message);
+    update_dist_position(message);
+}
+
 $(document).ready(function(){
 
     // Set up socket, disable all controls, and send message to initialize hardware
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/calibrate");
-    disable_all_buttons();
-    socket.emit("initialize");
 
     // Handles to user inputs
     var LedPowerSliderElement = document.getElementById("led-power-slider");
@@ -80,14 +103,9 @@ $(document).ready(function(){
         LedPowerLabelElement.innerHTML = this.value;
     }
 
-    // Once hardware is initialized, enable controls
-    socket.on("initialized", function(){
-        enable_all_buttons();
-        disable_upload_buttons();
-    });
-
-    // Enable calibration motor buttons when current motion is complete
-    socket.on("calibration_motor_done", function() {
+    // Enable calibration motor buttons and update position labels when current motion is complete
+    socket.on("calibration_motor_move_complete", function(message) {
+        update_positions(message);
         enable_calibration_motor_buttons();
     });
 
@@ -152,22 +170,6 @@ $(document).ready(function(){
         socket.emit("galil_home");
     });
 
-    // // Update Galil position on an interval
-    // setInterval(function, delay)
-
-    // Home button click functions
-    $("#tip-home-btn").click(function() {
-        socket.emit("home_tip_axis");
-    });
-
-    $("#tilt-home-btn").click(function() {
-        socket.emit("home_tilt_axis");
-    });
-
-    $("#dist-home-btn").click(function() {
-        socket.emit("home_dist_axis");
-    });
-
     // Light engine control stop button click function
     $("#le-stop-btn").click(function() {
         socket.emit("light_engine_stop");
@@ -187,20 +189,6 @@ $(document).ready(function(){
         }
     })
 
-    // Distance text input change function
-    $('#distance-txt').on('change', function() {
-        position = distanceElement.value;
-        socket.emit("distance_abs_move", {"position": position});
-    })
-    $('#tip-txt').on('change', function() {
-        position = tipElement.value;
-        socket.emit("tip_abs_move", {"position": position});
-    })
-    $('#tilt-txt').on('change', function() {
-        position = tiltElement.value;
-        socket.emit("tilt_abs_move", {"position": position});
-    })
-
     // Light engine control start button click function
     $("#le-start-btn").click(function() {
         var repeatCheckboxElement = document.getElementById("repeat-chkbx");
@@ -210,28 +198,41 @@ $(document).ready(function(){
         socket.emit("light_engine_start", {"repeat": repeat, "exposure": exposure, "ledPower": ledPower});
     });
 
-    // Handles to auto-updating position labels
-    var tipLabelElement  = document.getElementById("tip-state");
-    var tiltLabelElement = document.getElementById("tilt-state");
-    var distLabelElement = document.getElementById("dist-state");
-
-    // Calibration motor control button click function
-    $(".mtr-cntrl-btn").click(function() {
-        // Parse button content
-        var steps = $(this).text();
-        var axis = $(this).parent().attr('aria-label')
-        if (axis == "Tip") {
-            tipLabelElement.innerHTML  = Number(tipLabelElement.innerHTML)  + Number(steps);
-        } else if (axis == "Tilt") {
-            tiltLabelElement.innerHTML = Number(tiltLabelElement.innerHTML) + Number(steps);
-        } else if (axis == "Distance") {
-            distLabelElement.innerHTML = Number(distLabelElement.innerHTML) + Number(steps);
-        }
+    // Calibration motor buttons for homing
+    $(".home-btn").click(function() {
         // Disable calibration motor buttons
         disable_calibration_motor_buttons();
+        // Parse button content and construct message
+        var axis = $(this).closest(".container").attr('aria-label');
+        var message = {"axis": axis};
         // Emit control message with parsed values
-        socket.emit("calibration_motor", {"axis": axis, "steps": steps});
+        socket.emit("calibration_motor_home", message);
     });
+
+    // Calibration motor text inputs for absolute positioning
+    $(".mtr-cntrl-txt").on('change', function() {
+        // Disable calibration motor buttons
+        disable_calibration_motor_buttons();
+        // Parse button content and construct message
+        var microns = $(this).val();
+        var axis = $(this).closest(".container").attr('aria-label');
+        var message = {"axis": axis, "microns": microns, "mode": "absolute"};
+        // Emit control message with parsed values
+        socket.emit("calibration_motor_move", message);
+    });
+
+    // Calibration motor buttons for relative positioning
+    $(".mtr-cntrl-btn").click(function() {
+        // Disable calibration motor buttons
+        disable_calibration_motor_buttons();
+        // Parse button content and construct message
+        var microns = $(this).text();
+        var axis = $(this).closest(".container").attr('aria-label');
+        var message = {"axis": axis, "microns": microns, "mode": "relative"};
+        // Emit control message with parsed values
+        socket.emit("calibration_motor_move", message);
+    });
+
 });
 
 function uploadFile(image) {
