@@ -53,7 +53,8 @@ class TipTilt(serial.Serial):
         self.write(bytes(cmd + '\r', encoding='ascii')) # write to serial tx buffer
         response, error = self.receive(cmd)
         print(response)
-        return response, error
+        if error: print("There was an error!")
+        return response
 
     def receive(self, cmd):
         buffer = b''    # buffer for incoming serial communication
@@ -69,7 +70,7 @@ class TipTilt(serial.Serial):
             if "Error" in message: error = True                                 # indicate error state
             if "Done" in message:
                 message = message.replace(" Done", "")                          # strip out done message
-                if "G"  in cmd: message = re.findall(self.r, message)[0]        # parse out values for getter commands
+                if "G"  in cmd: message = float(re.findall(self.r, message)[0]) # parse out values for getter commands
                 return message, error
 
     ## wrappers for commands from Teensyduino ##
@@ -120,7 +121,7 @@ class TipTilt(serial.Serial):
 
     # returns "Done" or "Error"
     def move_absolute(self, axis, distance_um):
-        return self.send("MR{} {}".format(get_axis_index(axis), distance_um))
+        return self.send("MA{} {}".format(get_axis_index(axis), distance_um))
 
     # wrapper to plug into existing calibration threads interface
     def move(self, axis, distance_um, relative=True):
@@ -137,15 +138,5 @@ if __name__ == '__main__':
     t = TipTilt()
     t.connect()
     # t.home()
-    t.get_position("Tip")
-    t.move_relative("Tip", 1)
-    t.get_position("Tip")
-
-    t.get_position("Tilt")
-    t.move_relative("Tilt", 1)
-    t.get_position("Tilt")
-
-    t.set_speed("Tip", 1000)
-    t.get_speed("Tip")
-    t.set_speed("Tip", 2000)
-    t.get_speed("Tip")
+    print(t.get_position("Tip"))
+    print(t.get_position("Tilt"))
