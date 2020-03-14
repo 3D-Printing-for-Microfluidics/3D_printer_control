@@ -39,7 +39,8 @@ class KDC101():
                                     parity=self.Parity,
                                     stopbits=self.stop_bits,
                                     timeout=0.1)
-        self.serverAliveJob = None
+        self.getHardwareInfo()
+        self.enableStage(enable=True)
         atexit.register(self.KDC101.close)
         atexit.register(self.enableStage, enable=False)
 
@@ -57,11 +58,19 @@ class KDC101():
         print('Stage Homed')
         self.flushUSB()
 
-    def move(self, pos, microns=True):
+    def move(self, pos, microns=True, relative=True):
+
+        # update positioning mode
+        if relative:
+            self.setRelative()
+        else:
+            self.setAbsolute()
+
         if microns:
             position = pos * 1e-3 # translate into um
         else:
             position = pos
+
         if self.relativeMode:
             # Move to absolute position in mm; MGMSG_MOT_MOVE_ABSOLUTE (long version)
             # currPos = self.getCurrentPos()
@@ -133,20 +142,33 @@ class KDC101():
         #Read back position returns by the cube; Rx message MGMSG_MOT_GET_POSCOUNTER
         _, _, position_dUnits = unpack('<6sHI', self.KDC101.read(12)) # first two returns are header and chan_dent
         getpos = position_dUnits/float(self.Device_Unit_SF)
+
+        if int(getpos) == 33400:
+            return 'undef'
+
         if int(getpos) == 125203:
             getpos = 0.0
-        elif int(getpos) == 33400:
-            getpos = 'undef'
+
+        getpos = round(getpos*1000, 1)  # convert to microns and round to 1 decimal place
         return getpos
 
 if __name__ == "__main__":
     kc = KDC101()
-    kc.getCurrentPos()
+    print(kc.getCurrentPos())
+    print(kc.getCurrentPos())
+    print(kc.getCurrentPos())
     kc.home()
 
     for _ in range(2):
         print(kc.getCurrentPos())
+        print(kc.getCurrentPos())
+        print(kc.getCurrentPos())
         kc.move(1000)
         print(kc.getCurrentPos())
-        kc.move(-1000)
         print(kc.getCurrentPos())
+        print(kc.getCurrentPos())
+        kc.move(-1000)
+
+    print(kc.getCurrentPos())
+    print(kc.getCurrentPos())
+    print(kc.getCurrentPos())
