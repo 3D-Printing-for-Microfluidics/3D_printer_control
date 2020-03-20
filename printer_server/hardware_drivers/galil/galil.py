@@ -47,7 +47,7 @@ class Galil():
 
         self.verbose = verbose
         self.address = address
-        self.bottom_position = 267840
+        self.bottom_position = 368000
         self.top_position = -400000
         self.error_window = 1
 
@@ -375,34 +375,34 @@ class Galil():
 if __name__ == '__main__':
     g = Galil(verbose=False)
     g.connect()
-    # g.interactiveMode()
+    g.interactiveMode()
     # g.home()
-    error_array = []
-    g.motorOn()
-    print(g.getPosition())
-    g.send("DP 0")
-    print(g.getPosition())
-    prev = 0
-    for layer in range(100):
+    # error_array = []
+    # g.motorOn()
+    # print(g.getPosition())
+    # g.send("DP 0")
+    # print(g.getPosition())
+    # prev = 0
+    # for layer in range(100):
 
-        target = -layer*80
-        thickness = 80
+    #     target = -layer*80
+    #     thickness = 80
 
-        dist = -1
-        start = g.getPosition()
-        g.relMove(speed=25, mm=dist)
-        end = g.getPosition()
+    #     dist = -1
+    #     start = g.getPosition()
+    #     g.relMove(speed=25, mm=dist)
+    #     end = g.getPosition()
 
-        dist = 0.99
-        middle = g.getPosition()
-        g.relMove(speed=25, mm=dist)
-        end = g.getPosition()
+    #     dist = 0.99
+    #     middle = g.getPosition()
+    #     g.relMove(speed=25, mm=dist)
+    #     end = g.getPosition()
 
-        error = thickness + end - prev
-        actual_thickness = end - prev
+    #     error = thickness + end - prev
+    #     actual_thickness = end - prev
 
-        print("start", start, "middle", middle, "end", end, "thickness", actual_thickness, "error", error)
-        prev = end
-        error_array.append(error)
+    #     print("start", start, "middle", middle, "end", end, "thickness", actual_thickness, "error", error)
+    #     prev = end
+    #     error_array.append(error)
 
-    print("accumulated error", sum(error_array))
+    # print("accumulated error", sum(error_array))
