@@ -39,7 +39,8 @@ def moveCalibrationMotor(message):
     axis = message["axis"]
     distance = float(message["microns"])
     mode = message["mode"]
-    manualControls.moveCalibrationMotor(axis, distance, mode)
+    fast = message["fast"]
+    manualControls.moveCalibrationMotor(axis, distance, mode, fast)
 
 @socketio.on('calibration_motor_home', namespace='/calibrate')
 def homeCalibrationMotor(message):

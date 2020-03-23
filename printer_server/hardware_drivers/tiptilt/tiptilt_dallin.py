@@ -116,7 +116,9 @@ class TipTilt(serial.Serial):
         return self.send("SV{} {}".format(get_axis_index(axis), acceleration))
 
     # returns "Done" or "Error"
-    def move_relative(self, axis, distance_um):
+    def move_relative(self, axis, distance_um, fast=False):
+        if fast:  # coarse mode uses less precise positioning for quicker moves
+            return self.send("MC{} {}".format(get_axis_index(axis), distance_um))
         return self.send("MR{} {}".format(get_axis_index(axis), distance_um))
 
     # returns "Done" or "Error"
@@ -124,12 +126,12 @@ class TipTilt(serial.Serial):
         return self.send("MA{} {}".format(get_axis_index(axis), distance_um))
 
     # wrapper to plug into existing calibration threads interface
-    def move(self, axis, distance_um, relative=True):
+    def move(self, axis, distance_um, relative=True, fast=False):
         """
         Move the specified number of um at the specified speed (in mm/min)
         """
         if relative:
-            self.move_relative(axis, distance_um)
+            self.move_relative(axis, distance_um, fast)
         else:
             self.move_absolute(axis, distance_um)
 

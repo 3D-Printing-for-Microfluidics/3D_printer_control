@@ -216,7 +216,7 @@ $(document).ready(function(){
         // Parse button content and construct message
         var microns = $(this).val();
         var axis = $(this).closest(".container").attr('aria-label');
-        var message = {"axis": axis, "microns": microns, "mode": "absolute"};
+        var message = {"axis": axis, "microns": microns, "mode": "absolute", "fast": false};
         // Emit control message with parsed values
         socket.emit("calibration_motor_move", message);
     });
@@ -228,7 +228,9 @@ $(document).ready(function(){
         // Parse button content and construct message
         var microns = $(this).text();
         var axis = $(this).closest(".container").attr('aria-label');
-        var message = {"axis": axis, "microns": microns, "mode": "relative"};
+        var fast = document.getElementById("quick_move").checked;
+        console.log(fast)
+        var message = {"axis": axis, "microns": microns, "mode": "relative", "fast": fast};
         // Emit control message with parsed values
         socket.emit("calibration_motor_move", message);
     });

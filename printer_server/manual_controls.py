@@ -48,12 +48,12 @@ class ManualControls:
             self.printer3d.tiptilt.home()
         self.calibrationMotionComplete()
 
-    def moveCalibrationMotor(self, axis, um, mode):
+    def moveCalibrationMotor(self, axis, um, mode, fast):
         mode = mode != "absolute" # convert mode to True/False, absolute is true, all else is false
         if axis == "Distance":
             self.printer3d.kdc.move(um, relative=mode)
         else:
-            self.printer3d.tiptilt.move(axis, um, relative=mode)
+            self.printer3d.tiptilt.move(axis, um, relative=mode, fast=fast)
         self.calibrationMotionComplete()
 
     def lightEngineStop(self):
