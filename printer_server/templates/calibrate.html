@@ -1,0 +1,219 @@
+
+{% extends"base.html" %}
+
+{% block title %}3D Printer Manual Controls{% endblock %}
+
+{% block printer3d_state %}
+<h2>Manual Controls</h2>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link href="{{ url_for('static', filename='css/calibrate.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block page_content %}
+
+<!-- Calibration Motor Control -->
+<div class="container motor-controls">
+    <div class="row top-buffer">
+        <h3>Focus Controls</h3>
+    </div>
+
+    <div class="container" aria-label="Tip">
+        <div class="row">
+            <div class="col-2">
+            </div>
+            <div class="col-10">
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-primary btn-fixed-width shadow-none active"><input type="radio" checked>Precise</label>
+                    <label class="btn btn-primary btn-fixed-width shadow-none"><input type="radio" id="quick_move">Fast</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tip -->
+    <div class="container" aria-label="Tip">
+        <div class="row">
+            <div class="col-4">
+                <h4 >Tip</h4>
+            </div>
+            <div class="col-2">
+                <h5 class="col text-right" id='tip-state'>?</h5>
+            </div>
+            <div class="col-6">
+                <input class="form-control mtr-cntrl-txt" type="text" id="tip-txt" placeholder="Position (um)">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-2">
+            </div>
+            <div class="col-2 text-left">
+                <button type="button" class="btn btn-primary btn-block home-btn" id="tip-home-btn">Home</button>
+            </div>
+            <div class="col-8 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn" >-1000</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">1000</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Tilt -->
+    <div class="container" aria-label="Tilt">
+        <div class="row">
+            <div class="col-4">
+                <h4>Tilt</h4>
+            </div>
+            <div class="col-2">
+                <h5 class="col text-right" id='tilt-state'>?</h5>
+            </div>
+            <div class="col-6">
+                <input class="form-control mtr-cntrl-txt" type="text" id="tilt-txt" placeholder="Position (um)">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-2">
+            </div>
+            <div class="col-2 text-left">
+                <button type="button" class="btn btn-primary btn-block home-btn" id="tilt-home-btn">Home</button>
+            </div>
+            <div class="col-8 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-1000</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">1000</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distance -->
+    <div class="container" aria-label="Distance">
+        <div class="row">
+            <div class="col-4">
+                <h4>Distance</h4>
+            </div>
+            <div class="col-2">
+                <h5 class="col text-right" id='dist-state'>?</h5>
+            </div>
+            <div class="col-6">
+                <input class="form-control mtr-cntrl-txt" type="text" id="distance-txt" placeholder="Position (um)">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-2 text-left">
+            </div>
+            <div class="col-2 text-left">
+                <button type="button" class="btn btn-primary btn-block home-btn" id="dist-home-btn">Home</button>
+            </div>
+            <div class="col-8 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-1000</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">1000</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Galil Control -->
+<div class="container galil">
+    <div class="row top-buffer">
+        <h3>Main Stage Control</h3>
+    </div>
+    <div class="row">
+        <div class="col-3">
+            <h5 class="col text-right" id='galil-position'>?</h5>
+        </div>
+        <div class="col-3">
+            <button type="button" class="btn btn-primary btn-block" id="galil-home-btn">Home</button>
+        </div>
+        <div class="col-3">
+            <button type="button" class="btn btn-primary btn-block" id="galil-top-btn">Go to Top</button>
+        </div>
+        <div class="col-3">
+            <button type="button" class="btn btn-primary btn-block" id="galil-bottom-btn">Go to Bottom</button>
+        </div>
+    </div>
+</div>
+
+<!-- Light Engine Control -->
+<div class="container top-buffer light-engine">
+    <div class="row">
+        <h3>Light Engine</h3>
+    </div>
+
+    <!-- Upload Image -->
+    <div class="row">
+        <h4 class="col-4 text-left">Image</h4>
+        <form class="col-5">
+            <input type="file" class="form-control-file" name="file" accept=".png" id="file-picker">
+            <div class="invalid-feedback">
+                Please provide an 8-bit grayscale PNG file.
+            </div>
+        </form>
+        <div class="col-3">
+            <button type="button" class="btn btn-primary btn-block" id="upload-btn">Upload</button>
+        </div>
+    </div>
+
+    <!-- LED Power -->
+    <div class="row">
+        <h4 class="col-3 text-left">LED Power</h4>
+        <h5 class="col-1 text-left" id="led-power-label"></h5>
+        <div class="slidecontainer col-8"><input type="range" min="1" max="200" value="100" class="slider" id="led-power-slider"></div>
+    </div>
+
+    <!-- Repeat and Exposure Time -->
+    <div class="row">
+        <h4 class="col-4 text-left">Exposure</h4>
+        <div class="col-2 form-group text-center">
+            <input class="form-check-input" type="checkbox" value="" id="repeat-chkbx">
+            <label class="form-check-label" for="repeat-chkbx">Repeat</label>
+        </div>
+        <div class="col-6 form-group">
+            <input class="form-control" type="text" id="exposure-txt" placeholder="Exposure Time (ms)">
+            <div class="invalid-feedback">
+                Please provide an integer greater than zero.
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Stop -->
+    <div class="row">
+        <h4 class="col-6">Project</h4>
+        <div class="col-3"><button type="button" class="btn btn-primary btn-block" id="le-start-btn">Start</button></div>
+        <div class="col-3"><button type="button" class="btn btn-primary btn-block" id="le-stop-btn">Stop</button></div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+<script src="{{ url_for('static', filename='js/ajax-socket.io-2.1.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/calibrate.js') }}"></script>
+{% endblock %}
