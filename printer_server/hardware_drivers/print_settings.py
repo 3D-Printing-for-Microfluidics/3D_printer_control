@@ -545,20 +545,24 @@ class PrintSettings:
     def checkGalilCommandChain(self, commandChain):
         totalDistance = 0
 
-        for command in commandChain:
-            m1 = self.waitRegex.fullmatch(command)
+        for i, command in enumerate(commandChain):
             m2 = self.moveRegex.fullmatch(command)
 
+        # parse the commands and move accordingly
+        for i, command in enumerate(commandChain):
+            m1 = self.waitRegex.fullmatch(command)
+            m2 = self.moveRegex.fullmatch(command)
             if m1:                                              # is a wait command
-                # wait_seconds = m1.group(2)
-                continue
+                wait_seconds = float(m1.group(1))
+                print("Wait for", wait_seconds)
             elif m2:                                            # is a move command
                 direction = m2.group(1)
-                distance = m2.group(2)
-                # speed = m2.group(4)
-                # acceleration = m2.group(6)
-                sign = 1 if direction == 'UP' else -1           # convert direction to a sign
-                totalDistance += sign * float(distance)         # sum all movements
+                distance = float(m2.group(2))
+                speed = float(m2.group(4))
+                acceleration = float(m2.group(6))
+                distance *= -1 if direction == 'UP' else 1      # calculate the sign using direction, up is negative
+                totalDistance += distance
+                print("Move {} mm at {} mm/sec {} mm/sec^2".format(distance, speed, acceleration))
             else:                                               # if command didn't match either regex
                 print("Bad command, must be UP, DOWN, or WAIT")
                 raise AssertionError

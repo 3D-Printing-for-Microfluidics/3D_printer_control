@@ -110,7 +110,7 @@ class Galil():
             m1 = self.waitRegex.fullmatch(command)
             m2 = self.moveRegex.fullmatch(command)
             if m1:                                              # is a wait command
-                wait_seconds = float(m1.group(2))
+                wait_seconds = float(m1.group(1))
                 time.sleep(wait_seconds)
             elif m2:                                            # is a move command
                 direction = m2.group(1)
