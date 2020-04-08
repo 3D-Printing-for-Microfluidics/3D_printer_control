@@ -1,17 +1,17 @@
 
 
-# Purpose - 9/2/19 - GN
+# Purpose - 4/08/2020
 
-This repository's `master` branch contains the code being actively used by the Raspberry Pi 3 B+ (RPi) on the HR3 3D printer. Going forward, the code in this branch should always be the active code being used on the RPi. Therefore all development focused on modifying and improving the actively used HR3 (and, soon, HR3.1) RPi code must be done on this branch.
+This repository's `master` branch contains the code being actively used by the Raspberry Pi 3 B+ (RPi) on the HR3.3 3D printer.
 
-**The `HR3P2` branch has the current software in development for the new HR3.2 printer.** 
+A summary of the active branches is listed below:  
 
-
-# To do
-
-- Change load cell Teensy and python code so that data errors are handled without generating malformed csv files
-- Fix format of file with encoder data that is recorded for each print run
-- Change motor control on front end so that arbitrary positions can be entered rather than only being able to jog to a position in at minimum 10 &mu;m increments
+  * `HR2` - software in use on the HR2 3D printer
+  * `EMBL_stable` - software in use on the EMBL 3D printer
+  * `EMBL` - buggy software intended for the EMBL 3D printer, but abandoned
+  * `HR3v2` - software in use on the HR3.2 3D printer
+  * `HR3v3` - software in use for the HR3.3 3D printer. This branch will stay up to date with `master` until `master` diverges for a newer printer
+  * `gen1-1` - software used on the now defunct gen1-1 (now named HR1.1) 3D printer  
 
 
 # Running the dummy server
@@ -19,7 +19,6 @@ This repository's `master` branch contains the code being actively used by the R
 ## Setup 
 
 To run the dummy server to develop on, do the following: 
-  * Navigate to the printer_server directory (3D_printer_control/printer_server)
   * Check which version of pip you are using with `pip --version`. If it is not the python 3.5 version, then try `pip3 --version`. If you have to use `pip3` to get the correct version, use `pip3` instead of `pip` below. 
   * The server must be run in a python virtual environment. Install the virtual environment with `pip install virtualenv` or `pip3` if applicable. 
   * Create the virtual environment with `python -m virtualenv env`. This will create a virtual environment called `env` that will be ignored by git
