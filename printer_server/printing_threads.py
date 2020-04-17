@@ -273,7 +273,7 @@ class PrintingThreads:
         self.printingPaused.clear()
 
         # Create log
-        date_and_time = datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
+        date_and_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         self.logs_path_directory_for_this_run = self.logs_path / date_and_time
         self.logs_path_directory_for_this_run.mkdir()
         encoder_print_file_name = str(self.logs_path_directory_for_this_run / 'encoder_print_file.txt')
@@ -281,9 +281,9 @@ class PrintingThreads:
 
         # Move build platform to the starting position
         if startingLayer == 1:
-            start, end = self.galil.printCycle(self.printSettings.getLayerThicknessMm(1), self.printSettings.getCommandChain(1))
+            start, end, start_time, end_time = self.galil.printCycle(self.printSettings.getLayerThicknessMm(1), self.printSettings.getCommandChain(1))
             with open(encoder_print_file_name, "a") as f:
-                f.write("Layer {}: start {}, end {}, thickness {}\n".format(1, start, end, self.calculateThickness(start, end)))
+                f.write("Layer {}: start {}, end {}, thickness {}, time {}, duration {}\n".format(1, start, end, self.calculateThickness(start, end), datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), end_time-start_time))
         else:
             self.galil.resume(self.printSettings.getLayerThicknessMm(startingLayer))
 
@@ -296,9 +296,9 @@ class PrintingThreads:
 
             # self.galil.encoder_print_file.write("Layer %d \r\n" %(i))
             if i != startingLayer:
-                start, end = self.galil.printCycle(self.printSettings.getLayerThicknessMm(i), self.printSettings.getCommandChain(i))
+                start, end, start_time, end_time = self.galil.printCycle(self.printSettings.getLayerThicknessMm(i), self.printSettings.getCommandChain(i))
                 with open(encoder_print_file_name, "a") as f:
-                    f.write("Layer {}: start {}, end {}, thickness {}\n".format(i, start, end, self.calculateThickness(start, end)))
+                    f.write("Layer {}: start {}, end {}, thickness {}, time {}, duration {}\n".format(i, start, end, self.calculateThickness(start, end), datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), end_time-start_time))
 
             images = [os.path.join(self.jsonDir, im) for im in self.printSettings.getImages(i)]
 

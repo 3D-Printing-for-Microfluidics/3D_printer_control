@@ -96,6 +96,7 @@ class Galil():
         pass
 
     def printCycle(self, layerThicknessMm, commandChain):
+        start_time = datetime.now()
         start_position = self.getPosition()
 
         # keep track of which command is the last down command
@@ -124,7 +125,8 @@ class Galil():
 
         # report starting and ending positions
         end_position = self.getPosition()
-        return start_position, end_position
+        end_time = datetime.now()
+        return start_position, end_position, start_time, end_time
 
     def pause(self):
         pass
