@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from pathlib import Path
+from datetime import datetime
 from printer_server.extensions import socketio
 from printer_server.hardware import printer3d
 
@@ -14,6 +16,11 @@ class ManualControls:
         self.tiptilt = printer3d.tiptilt
         self.kdc = printer3d.kdc
         self._thread = None
+        self.position_log_file = str(Path.cwd() / 'logs' / 'calibration_position_log.txt')
+
+    def write_to_position_log(self, message):
+        with open(self.position_log_file, "a") as f:
+            f.write("{} {}\n".format(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), message))
 
     def goToZmax(self):
         """goToZmax -- Move main Z stage to max position (up)
@@ -39,6 +46,7 @@ class ManualControls:
             "tilt": self.printer3d.tiptilt.get_position("Tilt"),
             "distance": self.printer3d.kdc.getCurrentPos()
         }
+        self.write_to_position_log(message)
         socketio.emit('calibration_motor_move_complete', message, namespace='/calibrate', broadcast=True)
 
     def homeCalibrationMotor(self, axis):
