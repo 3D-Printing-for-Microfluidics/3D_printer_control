@@ -180,8 +180,11 @@ class Projector:
 
     # tries i2c writing to the DMD multiple times
     def write_with_retry(self, reg, val, retry=3):
+        self.log(logging.DEBUG, "Writing {} to DMD register {}".format(reg, val))
         if self.dmd is None:
-            sys.exit("Can't write to dmd, no handle has been created!")
+            msg = "Can't write to DMD, no handle has been created!"
+            self.log(logging.CRITICAL, msg)
+            sys.exit(msg)
         success = False
         caught_exception = None
         for _ in range(retry):
@@ -189,16 +192,20 @@ class Projector:
                 self.pi.i2c_write_byte_data(self.dmd, reg, int(val))
                 success = True
                 break
-            except pigpio.error as caught_exception:
-                self.log(logging.ERROR, "I2C write error in projector! If this doesn't persist, don't worry about it")
+            except pigpio.error as e:
+                caught_exception = e
                 time.sleep(1)                   # wait 1 second to retry
         if not success:
+            self.log(logging.ERROR, "I2C write error in projector! {} sequential writes failed".format(retry))
             raise caught_exception
 
     # tries i2c reading from the DMD multiple times
     def read_with_retry(self, reg, retry=3):
+        self.log(logging.DEBUG, "Reading DMD register {}".format(reg))
         if self.dmd is None:
-            sys.exit("Can't write to dmd, no handle has been created!")
+            msg = "Can't read from DMD, no handle has been created!"
+            self.log(logging.CRITICAL, msg)
+            sys.exit(msg)
         success = False
         caught_exception = None
         for _ in range(retry):
@@ -208,9 +215,9 @@ class Projector:
                 return result
             except pigpio.error as e:
                 caught_exception = e
-                self.log(logging.ERROR, "I2C read error in projector! If this doesn't persist, don't worry about it")
                 time.sleep(1)                   # wait 1 second to retry
         if not success:
+            self.log(logging.ERROR, "I2C read error in projector! {} sequential reads failed".format(retry))
             raise caught_exception
 
     # start the i2c connection to the projector and setup the virtual screen
@@ -222,12 +229,12 @@ class Projector:
         self.read_all_status()
         self.stop_sequencer()                                   # stop the dmd sequencer
         self.read_all_status()
-        self.set_pixel_mode(0)                                  # set the default pixel mode
+        self.set_pixel_mode("Single")                           # set the default pixel mode
         self.read_all_status()
-        self.set_video_source(0)                                # set video source to HDMI
+        self.set_video_source("HDMI")                           # set video source to HDMI
         self.read_all_status()
         time.sleep(5)                                           # must wait for at least 5 seconds to read or write display mode
-        self.set_dmd_operation_mode(2)                          # set to video pattern mode
+        self.set_dmd_operation_mode("Video pattern mode")       # set to video pattern mode
         self.read_all_status()
         self.initialize_led_driver()
         # self.ledTempLimit = int(DEF_LED_TEMP_LIMIT/10)
@@ -274,48 +281,53 @@ class Projector:
 
     # read all status registers
     def read_all_status(self):
+        self.log(logging.INFO, " Visitech status:")
         time.sleep(self.I2C_IO_DELAY)
-        self.log(logging.INFO, "System status:   {}".format(self.readSystemStatus()))
+        self.log(logging.INFO, "  System status:   {}".format(self.readSystemStatus()))
         time.sleep(self.I2C_IO_DELAY)
-        self.log(logging.INFO, "Hardware status: {}".format(self.readHardwareStatus()))
+        self.log(logging.INFO, "  Hardware status: {}".format(self.readHardwareStatus()))
         time.sleep(self.I2C_IO_DELAY)
-        self.log(logging.INFO, "Main status:     {}".format(self.readMainStatus()))
+        self.log(logging.INFO, "  Main status:     {}".format(self.readMainStatus()))
         time.sleep(self.I2C_IO_DELAY)
-        self.log(logging.INFO, "Error code:      {}".format(self.readErrorCode()))
+        self.log(logging.INFO, "  Error code:      {}".format(self.readErrorCode()))
         time.sleep(self.I2C_IO_DELAY)
 
     def log(self, lvl, msg):
         try:
             self.logger.log(lvl, msg)
         except AttributeError:
-            print(msg)
+            if lvl > logging.DEBUG:     # only print messages higher than DEBUG
+                print(msg)
 
     def start_sequencer(self):
+        self.log(logging.INFO, "Start sequencer")
         self.write_with_retry(TI_REG_W_SEQUENCE, TI_SEQUENCE_ON)
         time.sleep(self.I2C_IO_DELAY)
 
     def stop_sequencer(self):
+        self.log(logging.INFO, "Stop sequencer")
         self.write_with_retry(TI_REG_W_SEQUENCE, TI_SEQUENCE_OFF)
         time.sleep(self.I2C_IO_DELAY)
 
     def pause_sequencer(self):
+        self.log(logging.INFO, "Pause sequencer")
         self.write_with_retry(TI_REG_W_SEQUENCE, TI_SEQUENCE_PAUSE)
         time.sleep(self.I2C_IO_DELAY)
 
     def set_dmd_operation_mode(self, mode):
-        '''Set display mode. See 2.4.1 "Display Mode Selection" in DLPC900 Programmers Guide
-
-        :param int mode: 0 = Video mode
-                         1 = Pre-stored pattern mode (Images from flash)
-                         2 = Video pattern mode
-                         3 = Pattern On-The-Fly mode (Images loaded through USB/I2C)
-        '''
-        patternModes = [TI_DISPLAY_MODE_NORMAL,
-                        TI_DISPLAY_MODE_PRE_STORED,
-                        TI_DISPLAY_MODE_VIDEO_PATTERN,
-                        TI_DISPLAY_MODE_ON_THE_FLY]
-        self.write_with_retry(TI_REG_W_DISPLAY_MODE, patternModes[mode])
-        time.sleep(self.I2C_IO_DELAY)
+        # Set display mode. See 2.4.1 "Display Mode Selection" in DLPC900 Programmers Guide
+        pattern_modes = {
+            "Video mode"              : TI_DISPLAY_MODE_NORMAL,
+            "Pre-stored pattern mode" : TI_DISPLAY_MODE_PRE_STORED,     # images from flash
+            "Video pattern mode"      : TI_DISPLAY_MODE_VIDEO_PATTERN,
+            "Pattern On-The-Fly mode" : TI_DISPLAY_MODE_ON_THE_FLY      # images loaded through USB/I2C
+        }
+        self.log(logging.INFO, "Set DMD operation mode to: {}".format(mode))
+        if mode in pattern_modes.keys():
+            self.write_with_retry(TI_REG_W_DISPLAY_MODE, pattern_modes[mode])
+            time.sleep(self.I2C_IO_DELAY)
+        else:
+            self.log(logging.ERROR, "Bad video mode supplied: {}".format(mode))
 
     def set_video_source(self, source):
         # See 2.3.4.3 "IT6535 Power Mode" in DLPC900 Programmers Guide
@@ -324,17 +336,16 @@ class Projector:
         # data and sync outputs. This command is ignored if the IT6535 is not present or has been disabled in the
         # App Defaults Settings found in the DLP LightCrafter 6500 & 9000 GUI Firmware tab.
 
-        """Set video source.
-        The light engine has a HDMI and a DisplayPort connection.
-        They support different frame rates, HDMI 30Hz and DisplayPort 60Hz.
-
-        :param int input: either 0 or 1.
-                          0 - HDMI
-                          1 - DisplayPort
-        """
-        inputSources = [TI_IT6536_HDMI, TI_IT6536_DISPLAYPORT]
-        self.write_with_retry(TI_REG_W_IT6535, inputSources[source])
-        time.sleep(self.I2C_IO_DELAY)
+        video_sources = {
+            "HDMI"        : TI_IT6536_HDMI,         # up to 30 Hz
+            "DisplayPort" : TI_IT6536_DISPLAYPORT,  # up to 60 Hz
+        }
+        self.log(logging.INFO, "Set video source to: {}".format(source))
+        if source in video_sources.keys():
+            self.write_with_retry(TI_REG_W_IT6535, video_sources[source])
+            time.sleep(self.I2C_IO_DELAY)
+        else:
+            self.log(logging.ERROR, "Bad video source supplied: {}".format(source))
 
     def set_pixel_mode(self, mode):
         #########################################################
@@ -362,14 +373,20 @@ class Projector:
         #        0 = P1 VSync and P1 HSync
         #        1 = P2 VSync and P2 HSync
 
-        '''0: single; 1: dual.'''
-
-        pixelModes = [0x0, 0x2]
-        self.write_with_retry(TI_REG_W_PIXEL_MODE, pixelModes[mode])
-        time.sleep(self.I2C_IO_DELAY)
+        pixel_modes = {
+            "Single" : 0x0,
+            "Dual"   : 0x2
+        }
+        self.log(logging.INFO, "Set pixel mode to: {}".format(mode))
+        if mode in pixel_modes.keys():
+            self.write_with_retry(TI_REG_W_PIXEL_MODE, pixel_modes[mode])
+            time.sleep(self.I2C_IO_DELAY)
+        else:
+            self.log(logging.ERROR, "Bad pixel mode supplied: {}".format(mode))
 
     def setInternalImage(self, imageNum):
         '''imageNum range: 0 - 10'''
+        self.log(logging.INFO, "Set internal image to number {}".format(imageNum))
         self.write_with_retry(TI_REG_W_DISPLAY_MODE, TI_DISPLAY_MODE_PRE_STORED)
         time.sleep(self.I2C_IO_DELAY)
         self.write_with_retry(TI_REG_W_TEST_PATTERN, imageNum)
@@ -385,6 +402,7 @@ class Projector:
         # any pattern LUT definition data. If the Pattern Display Data Input Source is set to streaming, the
         # image indexes do not need to be set. Regardless of the input source, the pattern definition must be set.
 
+        self.log(logging.INFO, "Set sequencer LUT definition {} {} {} {} {} {} {}".format(exposure, darktime, clear, bitdepth, wait_for_trigger, pattern_index, bit_index))
         buf = list(range(12)) # an array of bytes to be sent to form this internal LUT entry in the DLPC900
 
         # pattern index (valid range 0 - 511)
@@ -457,8 +475,6 @@ class Projector:
         # The Pattern Display LUT Configuration command controls the execution of patterns stored in the lookup
         # table (LUT). Before executing this command, stop the current pattern sequence.
 
-        self.stop_sequencer() # current pattern must be stopped before writing config
-
         # format the config command
         #   5 bytes total
         #   bytes 1:0
@@ -470,9 +486,14 @@ class Projector:
         #   bytes 5:2 - Number of times to repeat the pattern sequence
         #               0 = repeat forever
 
+        self.log(logging.INFO, "Set sequencer LUT config to: {} sequences, {} repeats".format(num_sequences, repeats))
+
+        self.stop_sequencer() # current pattern must be stopped before writing config
+
         numPatternsByte = int(num_sequences).to_bytes(2, byteorder='little')
         repeats = int(repeats).to_bytes(4, byteorder='little')
         addr = TI_REG_W_PATTERN_DISPLAY_LUT_CONFIG.to_bytes(1, byteorder='little')
+
         self.pi.i2c_write_device(self.dmd, addr + numPatternsByte + repeats)
         time.sleep(self.I2C_IO_DELAY)
 
@@ -505,8 +526,9 @@ class Projector:
 
     def set_led_amplitude(self, val):
         '''range: 0 - 1000'''
+        self.log(logging.INFO, "Set LED amplitude to: {}".format(val))
         if val > 1000 or val < 0:
-            self.log(logging.ERROR, "LED amplitude out of range")
+            self.log(logging.ERROR, "LED amplitude {} out of range")
             val = 100
         self.writeLedParam(LED_AMPLITUDE_REGISTER, val)
         self.writeLedParam(LED_SV_UPDATE_REGISTER, 1)
