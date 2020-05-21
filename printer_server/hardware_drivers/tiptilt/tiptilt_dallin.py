@@ -24,7 +24,7 @@ def get_axis_index(axis):
 
 class TipTilt(serial.Serial):
 
-    def __init__(self, hwid='16c0:0483', verbose=True):
+    def __init__(self, hwid='PID=16C0:0483 SER=5800580', verbose=True):
         super().__init__(baudrate=115200, timeout=None)
 
         # self.ser = serial.Serial(baudrate=115200, timeout=None)
