@@ -58,4 +58,3 @@ WebOb==1.8.1
 WebTest==2.0.29
 Werkzeug==0.14.1
 WTForms==2.1
-zeroconf=0.26.1
