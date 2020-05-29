@@ -2,7 +2,6 @@
 """
 Light engine I2C module for Raspberry Pi
 ========================================
-
 Here, we take advantage of the existing I2C bus on
 Raspberry Pi, and uses it to control light engine directly.
 """
@@ -10,8 +9,8 @@ import sys
 import time
 import atexit
 import logging
-from smbus2 import SMBus
 import pigpio
+from smbus2 import SMBus
 from .screen import ScreenThread
 
 # helper function for converting error codes to human readable format
@@ -149,7 +148,6 @@ ERROR_SEQUENCE_NUM_ARGS = 1000
 
 class Projector:
     """This class is built on the ``pigpio`` library.
-
     :param pi: a ``pigpio.pi`` object. If not specified when
                creating :py:class:`LightEngineI2C` object, the
                :py:meth:`init_pi` must be called before any
@@ -164,9 +162,13 @@ class Projector:
     I2C_IO_DELAY = 0.01   # Delay after every I2C command, 10ms
 
     def __init__(self, resolution, fullscreen=True):
-        self.bus = SMBus(1)
-        self.dmd = None                 # default to no DMD handle
-        self.led = None                 # default to no LED handle
+        self.bus_num = 1
+        self.bus = SMBus(self.bus_num)
+        self.pi = pigpio.pi()
+        self.led = None
+        self.dmd = None
+        self.dmd_addr = TI_I2C_RADDR>>1
+        self.led_addr = LED_I2C_WADDR>>1
         self.resolution = resolution
         self.fullscreen = fullscreen
         self.max_exp_time = 10000       # max single projection time in ms
@@ -180,7 +182,7 @@ class Projector:
 
     # tries i2c writing to the DMD multiple times
     def write_with_retry(self, reg, val, retry=3):
-        self.log(logging.DEBUG, "Writing {} to DMD register {}".format(reg, val))
+        self.log(logging.DEBUG, "Writing {} to DMD register {}".format(val, reg))
         if self.dmd is None:
             msg = "Can't write to DMD, no handle has been created!"
             self.log(logging.CRITICAL, msg)
@@ -189,10 +191,13 @@ class Projector:
         caught_exception = None
         for _ in range(retry):
             try:
-                self.bus.write_byte_data(self.dmd, reg, int(val))
+                print('DMD write byte reg:{:#02x} val:{:#02x}'.format(reg, int(val)))
+                # self.pi.i2c_write_byte_data(self.dmd, reg, int(val))
+                self.bus.write_byte_data(self.dmd_addr, reg, int(val))
                 success = True
                 break
             except Exception as e:
+                print(e)
                 caught_exception = e
                 time.sleep(1)                   # wait 1 second to retry
         if not success:
@@ -210,10 +215,16 @@ class Projector:
         caught_exception = None
         for _ in range(retry):
             try:
-                result = self.bus.read_byte_data(self.dmd, int(reg))
+                print('DMD read byte reg:{:#02x}'.format(int(reg)))
+                old_result = self.pi.i2c_read_byte_data(self.dmd, int(reg))
+                result = self.bus.read_byte_data(self.dmd_addr, int(reg))
+                if old_result != result:
+                    print("DMD READ MISMATCH !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                    print('  old, new {}:{}, {}:{}'.format(type(old_result), old_result, type(result), result))
                 success = True
                 return result
             except Exception as e:
+                print(e)
                 caught_exception = e
                 time.sleep(1)                   # wait 1 second to retry
         if not success:
@@ -223,8 +234,9 @@ class Projector:
     # start the i2c connection to the projector and setup the virtual screen
     def connect(self):
         self.screenThread.start()                               # start screen thread
-        self.dmd = TI_I2C_RADDR>>1
-        self.led = LED_I2C_WADDR>>1
+        self.dmd = self.pi.i2c_open(self.bus_num, self.dmd_addr)  # connect to dmd via i2c
+        time.sleep(self.I2C_IO_DELAY)
+        self.led = self.pi.i2c_open(self.bus_num, self.led_addr) # connect to LED driver via i2c
         self.read_all_status()
         self.stop_sequencer()                                   # stop the dmd sequencer
         self.read_all_status()
@@ -246,8 +258,10 @@ class Projector:
         self.screenThread.stop()         # stop screen thread on exit
         if self.dmd is not None:
             self.stop_sequencer()        # make sure DMD is stopped on exit
+            self.pi.i2c_close(self.dmd)
             self.dmd = None
         if self.led is not None:
+            self.pi.i2c_close(self.led)
             self.led = None
 
     # Provides status information on the sequencer, digital micromirror device
@@ -280,11 +294,11 @@ class Projector:
     def read_all_status(self):
         self.log(logging.INFO, " Visitech status:")
         time.sleep(self.I2C_IO_DELAY)
-        self.log(logging.INFO, "  System status:   {}".format(self.readSystemStatus()))
+        self.log(logging.INFO, "  System status:   {:#08b}".format(self.readSystemStatus()))
         time.sleep(self.I2C_IO_DELAY)
-        self.log(logging.INFO, "  Hardware status: {}".format(self.readHardwareStatus()))
+        self.log(logging.INFO, "  Hardware status: {:#08b}".format(self.readHardwareStatus()))
         time.sleep(self.I2C_IO_DELAY)
-        self.log(logging.INFO, "  Main status:     {}".format(self.readMainStatus()))
+        self.log(logging.INFO, "  Main status:     {:#08b}".format(self.readMainStatus()))
         time.sleep(self.I2C_IO_DELAY)
         self.log(logging.INFO, "  Error code:      {}".format(self.readErrorCode()))
         time.sleep(self.I2C_IO_DELAY)
@@ -293,7 +307,7 @@ class Projector:
         try:
             self.logger.log(lvl, msg)
         except AttributeError:
-            if lvl > logging.DEBUG:     # only print messages higher than DEBUG
+            if lvl > 0:     # only print messages higher than DEBUG
                 print(msg)
 
     def start_sequencer(self):
@@ -461,8 +475,14 @@ class Projector:
         buf[11] = int((bit_index & 0x1f) << 3)      # byte 11
 
         # send LUT to DLPC900
-        # self.pi.i2c_write_device(self.dmd, [TI_REG_W_PATTERN_DISPLAY_LUT] + buf)
-        self.bus.write_block_data(self.dmd, 0, bytearray([TI_REG_W_PATTERN_DISPLAY_LUT] + buf))
+        data = [TI_REG_W_PATTERN_DISPLAY_LUT] + buf
+        # data = [TI_REG_W_PATTERN_DISPLAY_LUT] + buf
+        print('DMD write device val:{}'.format(data))
+        print(bytearray(data))
+        print('DMD write device val:{}'.format(buf))
+        print(bytearray(buf))
+        # self.pi.i2c_write_device(self.dmd, data)
+        self.bus.write_i2c_block_data(self.dmd_addr, TI_REG_W_PATTERN_DISPLAY_LUT, bytearray(buf))
         time.sleep(0.01)
 
     def set_sequencer_lut_config(self, num_sequences=1, repeats=1):
@@ -492,8 +512,11 @@ class Projector:
         repeats = int(repeats).to_bytes(4, byteorder='little')
         addr = TI_REG_W_PATTERN_DISPLAY_LUT_CONFIG.to_bytes(1, byteorder='little')
 
-        # self.pi.i2c_write_device(self.dmd, addr + numPatternsByte + repeats)
-        self.bus.write_block_data(self.dmd, 0, bytearray(addr + numPatternsByte + repeats))
+        # data = addr + numPatternsByte + repeats
+        data = numPatternsByte + repeats
+        print('DMD write device val:{}'.format(data))
+        # self.pi.i2c_write_device(self.dmd, data)
+        self.bus.write_i2c_block_data(self.dmd_addr, TI_REG_W_PATTERN_DISPLAY_LUT_CONFIG, bytearray(data))
         time.sleep(self.I2C_IO_DELAY)
 
     ###################################
@@ -502,17 +525,28 @@ class Projector:
     def writeLedParam(self, register, param):
         register = int(register).to_bytes(2, byteorder='big')
         param = int(param).to_bytes(4, byteorder='big')
-        # self.pi.i2c_write_device(self.led, register+param)
-        self.bus.write_block_data(self.led, 0, bytearray(register+param))
+        data = register + param
+        print('LED write device val:{}'.format(data))
+        # self.pi.i2c_write_device(self.led, data)
+        self.bus.write_i2c_block_data(self.led_addr, register, bytearray(param))
         time.sleep(self.I2C_IO_DELAY)
 
     def readLedParam(self, register):
         register = int(register).to_bytes(4, byteorder='big')
-        # self.pi.i2c_write_device(self.led, register)
-        self.bus.write_block_data(self.led, 0, bytearray(register))
+        # print('LED write device val:{}'.format(register))
+        self.pi.i2c_write_device(self.led, register)
+        # self.bus.write_block_data(self.led_addr, 0, bytearray(register))
         time.sleep(self.I2C_IO_DELAY)
-        # _, data = self.pi.i2c_read_device(self.led, 4) # handle, num bytes to read
-        _, data = self.bus.read_block_data(self.led, 0, 4)
+        print('LED read device 4 bytes')
+        _, old_data = self.pi.i2c_read_device(self.led, 4)
+        data = self.bus.read_i2c_block_data(self.led_addr, register, 4)
+
+        if data != old_data:
+            print("LED READ MISMATCH !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            print('  old, new {}:{}, {}:{}'.format(type(old_data), old_data, type(data), data))
+
+        # self.bus.read_block_data(self.led_addr, 0, ))
+        # data = self.bus.read_i2c_block_data(self.led_addr, register, 4)
         time.sleep(self.I2C_IO_DELAY)
         # data is a `bytearray` object
         return int.from_bytes(data, byteorder='big')
@@ -616,7 +650,6 @@ class Projector:
     def projectMulti(self, images, exposureTimes, ledPowers):
         """Project multiple images with its own expoure time and
         and LED power setting.
-
         :param list images: a list of image filenames
         :param list exposureTimes: a list of exposure times (ms)
         :param list ledPowers: a list of led power settings
