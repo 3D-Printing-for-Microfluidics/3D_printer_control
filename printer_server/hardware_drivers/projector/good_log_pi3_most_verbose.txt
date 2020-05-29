@@ -1,0 +1,555 @@
+ galil - __init(None, False)__
+ kdc101 - __init(0)__
+ tiptilt - __init__(1A86:7523,True)
+ * Serving Flask app "printer_server" (lazy loading)
+ * Environment: prod
+ * Debug mode: off
+ tiptilt - connect()
+ kdc101 - initialize()
+ galil - connect()
+ galil - motorOn(A)
+ galil - home(A)
+ galil - goToZmax()
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b1010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Set pixel mode to: Single
+Writing 0 to DMD register 131
+DMD write byte reg:0x83 val:0x0
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b011001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Set video source to: HDMI
+Writing 1 to DMD register 140
+DMD write byte reg:0x8c val:0x1
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Set DMD operation mode to: Video pattern mode
+Writing 2 to DMD register 233
+DMD write byte reg:0xe9 val:0x2
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+LED write device val:b'\x00x\x00\x00\x00\x01'
+LED write device val:b'\x00$\x00\x00\x00d'
+LED write device val:b'\x00(\x00\x00\x00\x19'
+LED write device val:b'\x00\x80\x00\x00\x01\x90'
+LED write device val:b'\x03x\x00\x00\x00F'
+LED write device val:b'\x00L\x00\x00\x00f'
+LED write device val:b'\x00T\x00\x00\x01\x13'
+Set LED amplitude to: 100
+LED write device val:b'\x00\x14\x00\x00\x00d'
+LED write device val:b'\x00\x10\x00\x00\x00\x01'
+LED write device val:b'\x00\x10\x00\x00\x00\x00'
+ galil - goToZmin()
+ galil - printCycle(0.01, ['WAIT 0.1', 'UP 1 SPEED 25 ACC 50', 'DOWN 1 SPEED 20 ACC 50'])
+0 WAIT 0.1
+1 UP 1 SPEED 25 ACC 50
+2 DOWN 1 SPEED 20 ACC 50
+last down is 2
+ galil - relMove(25.0, -1.0, None, 50.0, A)
+ galil - relMove(20.0, 0.99, None, 50.0, A)
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 20000 ms at power 100
+Set LED amplitude to: 100
+LED write device val:b'\x00\x14\x00\x00\x00d'
+LED write device val:b'\x00\x10\x00\x00\x00\x01'
+LED write device val:b'\x00\x10\x00\x00\x00\x00'
+Set sequencer LUT definition 10000000 0 1 7 1 0 0
+DMD write device val:[248, 0, 0, 128, 150, 152, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+DMD write device val:b'\xf5\x01\x00\x01\x00\x00\x00'
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Start sequencer
+Writing 2 to DMD register 229
+DMD write byte reg:0xe5 val:0x2
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011010
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b1010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Set sequencer LUT definition 10000000 0 1 7 1 0 0
+DMD write device val:[248, 0, 0, 128, 150, 152, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+DMD write device val:b'\xf5\x01\x00\x01\x00\x00\x00'
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Start sequencer
+Writing 2 to DMD register 229
+DMD write byte reg:0xe5 val:0x2
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011010
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b1010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+ galil - printCycle(0.01, ['WAIT 0.1', 'UP 1 SPEED 25 ACC 50', 'DOWN 1 SPEED 20 ACC 50'])
+0 WAIT 0.1
+1 UP 1 SPEED 25 ACC 50
+2 DOWN 1 SPEED 20 ACC 50
+last down is 2
+ galil - relMove(25.0, -1.0, None, 50.0, A)
+ galil - relMove(20.0, 0.99, None, 50.0, A)
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 10000 ms at power 100
+Set LED amplitude to: 100
+LED write device val:b'\x00\x14\x00\x00\x00d'
+LED write device val:b'\x00\x10\x00\x00\x00\x01'
+LED write device val:b'\x00\x10\x00\x00\x00\x00'
+Set sequencer LUT definition 10000000 0 1 7 1 0 0
+DMD write device val:[248, 0, 0, 128, 150, 152, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+DMD write device val:b'\xf5\x01\x00\x01\x00\x00\x00'
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Start sequencer
+Writing 2 to DMD register 229
+DMD write byte reg:0xe5 val:0x2
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011010
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b1010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+ galil - printCycle(0.01, ['WAIT 0.1', 'UP 1 SPEED 25 ACC 50', 'DOWN 1 SPEED 20 ACC 50'])
+0 WAIT 0.1
+1 UP 1 SPEED 25 ACC 50
+2 DOWN 1 SPEED 20 ACC 50
+last down is 2
+ galil - relMove(25.0, -1.0, None, 50.0, A)
+ galil - relMove(20.0, 0.99, None, 50.0, A)
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 5000 ms at power 100
+Set LED amplitude to: 100
+LED write device val:b'\x00\x14\x00\x00\x00d'
+LED write device val:b'\x00\x10\x00\x00\x00\x01'
+LED write device val:b'\x00\x10\x00\x00\x00\x00'
+Set sequencer LUT definition 5000000 0 1 7 1 0 0
+DMD write device val:[248, 0, 0, 64, 75, 76, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+DMD write device val:b'\xf5\x01\x00\x01\x00\x00\x00'
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Start sequencer
+Writing 2 to DMD register 229
+DMD write byte reg:0xe5 val:0x2
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011010
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b1010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+ galil - printCycle(0.01, ['WAIT 0.1', 'UP 1 SPEED 25 ACC 50', 'DOWN 1 SPEED 20 ACC 50'])
+0 WAIT 0.1
+1 UP 1 SPEED 25 ACC 50
+2 DOWN 1 SPEED 20 ACC 50
+last down is 2
+ galil - relMove(25.0, -1.0, None, 50.0, A)
+ galil - relMove(20.0, 0.99, None, 50.0, A)
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 1000 ms at power 100
+Set LED amplitude to: 100
+LED write device val:b'\x00\x14\x00\x00\x00d'
+LED write device val:b'\x00\x10\x00\x00\x00\x01'
+LED write device val:b'\x00\x10\x00\x00\x00\x00'
+Set sequencer LUT definition 1000000 0 1 7 1 0 0
+DMD write device val:[248, 0, 0, 64, 66, 15, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+DMD write device val:b'\xf5\x01\x00\x01\x00\x00\x00'
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Start sequencer
+Writing 2 to DMD register 229
+DMD write byte reg:0xe5 val:0x2
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011010
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b1010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+ galil - printCycle(0.01, ['WAIT 0.1', 'UP 1 SPEED 25 ACC 50', 'DOWN 1 SPEED 20 ACC 50'])
+0 WAIT 0.1
+1 UP 1 SPEED 25 ACC 50
+2 DOWN 1 SPEED 20 ACC 50
+last down is 2
+ galil - relMove(25.0, -1.0, None, 50.0, A)
+ galil - relMove(20.0, 0.99, None, 50.0, A)
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 600 ms at power 100
+Set LED amplitude to: 100
+LED write device val:b'\x00\x14\x00\x00\x00d'
+LED write device val:b'\x00\x10\x00\x00\x00\x01'
+LED write device val:b'\x00\x10\x00\x00\x00\x00'
+Set sequencer LUT definition 600000 0 1 7 1 0 0
+DMD write device val:[248, 0, 0, 192, 39, 9, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+DMD write device val:b'\xf5\x01\x00\x01\x00\x00\x00'
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Start sequencer
+Writing 2 to DMD register 229
+DMD write byte reg:0xe5 val:0x2
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011010
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b1010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+ galil - printCycle(0.01, ['WAIT 0.1', 'UP 1 SPEED 25 ACC 50', 'DOWN 1 SPEED 20 ACC 50'])
+0 WAIT 0.1
+1 UP 1 SPEED 25 ACC 50
+2 DOWN 1 SPEED 20 ACC 50
+last down is 2
+ galil - relMove(25.0, -1.0, None, 50.0, A)
+ galil - relMove(20.0, 0.99, None, 50.0, A)
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 600 ms at power 100
+Set LED amplitude to: 100
+LED write device val:b'\x00\x14\x00\x00\x00d'
+LED write device val:b'\x00\x10\x00\x00\x00\x01'
+LED write device val:b'\x00\x10\x00\x00\x00\x00'
+Set sequencer LUT definition 600000 0 1 7 1 0 0
+DMD write device val:[248, 0, 0, 192, 39, 9, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+DMD write device val:b'\xf5\x01\x00\x01\x00\x00\x00'
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+Start sequencer
+Writing 2 to DMD register 229
+DMD write byte reg:0xe5 val:0x2
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011010
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+^CStop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+ Visitech status:
+Reading DMD register 33
+DMD read byte reg:0x21
+  System status:   0b000001
+Reading DMD register 32
+DMD read byte reg:0x20
+  Hardware status: 0b1010001
+Reading DMD register 34
+DMD read byte reg:0x22
+  Main status:     0b011000
+Reading DMD register 50
+DMD read byte reg:0x32
+  Error code:      No error
+ galil - printCycle(0.01, ['WAIT 0.1', 'UP 1 SPEED 25 ACC 50', 'DOWN 1 SPEED 20 ACC 50'])
+0 WAIT 0.1
+1 UP 1 SPEED 25 ACC 50
+2 DOWN 1 SPEED 20 ACC 50
+last down is 2
+^CException ignored in: <module 'threading' from '/usr/lib/python3.5/threading.py'>
+Traceback (most recent call last):
+  File "/usr/lib/python3.5/threading.py", line 1288, in _shutdown
+    t.join()
+  File "/usr/lib/python3.5/threading.py", line 1054, in join
+    self._wait_for_tstate_lock()
+  File "/usr/lib/python3.5/threading.py", line 1070, in _wait_for_tstate_lock
+    elif lock.acquire(block, timeout):
+KeyboardInterrupt
+Stop sequencer
+Writing 0 to DMD register 229
+DMD write byte reg:0xe5 val:0x0
+ galil - disconnect()

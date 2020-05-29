@@ -1,0 +1,650 @@
+ galil - __init(None, False)__
+ kdc101 - __init(0)__
+ tiptilt - __init__(1A86:7523,True)
+ * Serving Flask app "printer_server" (lazy loading)
+ * Environment: prod
+ * Debug mode: off
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Set pixel mode to: Single
+Writing 10000011 to DMD register 0x83
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 25
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Set video source to: HDMI
+Writing 10001100 to DMD register 0x8c
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Set DMD operation mode to: Video pattern mode
+Writing 11101001 to DMD register 0xe9
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+write LED device 0x007800000001
+write LED device 0x002400000064
+write LED device 0x002800000019
+write LED device 0x008000000190
+write LED device 0x037800000046
+write LED device 0x004c00000066
+write LED device 0x005400000113
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+Wait for 0.1
+Move -1.0 mm at 25.0 mm/sec 50.0 mm/sec^2
+Move 1.0 mm at 20.0 mm/sec 50.0 mm/sec^2
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 20000 ms at power 100
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+Set sequencer LUT definition 10000000 0 1 7 1 0 0
+write device [248, 0, 0, 128, 150, 152, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 81
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Set sequencer LUT definition 10000000 0 1 7 1 0 0
+write device [248, 0, 0, 128, 150, 152, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 81
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 10000 ms at power 100
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+Set sequencer LUT definition 10000000 0 1 7 1 0 0
+write device [248, 0, 0, 128, 150, 152, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 81
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 5000 ms at power 100
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+Set sequencer LUT definition 5000000 0 1 7 1 0 0
+write device [248, 0, 0, 64, 75, 76, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 81
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 1000 ms at power 100
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+Set sequencer LUT definition 1000000 0 1 7 1 0 0
+write device [248, 0, 0, 64, 66, 15, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 81
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 600 ms at power 100
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+Set sequencer LUT definition 600000 0 1 7 1 0 0
+write device [248, 0, 0, 192, 39, 9, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 81
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 600 ms at power 100
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+Set sequencer LUT definition 600000 0 1 7 1 0 0
+write device [248, 0, 0, 192, 39, 9, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 81
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 600 ms at power 100
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+Set sequencer LUT definition 600000 0 1 7 1 0 0
+write device [248, 0, 0, 192, 39, 9, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 81
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 600 ms at power 100
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+Set sequencer LUT definition 600000 0 1 7 1 0 0
+write device [248, 0, 0, 192, 39, 9, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 81
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 600 ms at power 100
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+Set sequencer LUT definition 600000 0 1 7 1 0 0
+write device [248, 0, 0, 192, 39, 9, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 81
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 600 ms at power 100
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+Set sequencer LUT definition 600000 0 1 7 1 0 0
+write device [248, 0, 0, 192, 39, 9, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 81
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 600 ms at power 100
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+Set sequencer LUT definition 600000 0 1 7 1 0 0
+write device [248, 0, 0, 192, 39, 9, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 81
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 600 ms at power 100
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+Set sequencer LUT definition 600000 0 1 7 1 0 0
+write device [248, 0, 0, 192, 39, 9, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 81
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 600 ms at power 100
+Set LED amplitude to: 100
+write LED device 0x001400000064
+write LED device 0x001000000001
+write LED device 0x001000000000
+^CSet sequencer LUT definition 600000 0 1 7 1 0 0
+write device [248, 0, 0, 192, 39, 9, 159, 0, 0, 0, 0, 0, 0]
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+Writing 11100101 to DMD register 0xe5
+write device 0xf5010001000000
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     24
+Reading DMD register 0x32
+  Error code:      No error
+Start sequencer
+Writing 11100101 to DMD register 0xe5
+ Visitech status:
+Reading DMD register 0x21
+  System status:   1
+Reading DMD register 0x20
+  Hardware status: 17
+Reading DMD register 0x22
+  Main status:     26
+Reading DMD register 0x32
+  Error code:      No error
+^CException ignored in: <module 'threading' from '/usr/lib/python3.5/threading.py'>
+Traceback (most recent call last):
+  File "/usr/lib/python3.5/threading.py", line 1288, in _shutdown
+    t.join()
+  File "/usr/lib/python3.5/threading.py", li

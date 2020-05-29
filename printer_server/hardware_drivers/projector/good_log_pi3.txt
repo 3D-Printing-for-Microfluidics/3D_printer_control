@@ -1,0 +1,131 @@
+ galil - __init(None, False)__
+ kdc101 - __init(0)__
+ tiptilt - __init__(1A86:7523,True)
+ * Serving Flask app "printer_server" (lazy loading)
+ * Environment: prod
+ * Debug mode: off
+ Visitech status:
+  System status:   1
+  Hardware status: 25
+  Main status:     26
+  Error code:      Invalid command number
+Stop sequencer
+ Visitech status:
+  System status:   1
+  Hardware status: 17
+  Main status:     26
+  Error code:      Command not allowed in current mode
+Set pixel mode to: Single
+ Visitech status:
+  System status:   1
+  Hardware status: 25
+  Main status:     26
+  Error code:      No error
+Set video source to: HDMI
+ Visitech status:
+  System status:   1
+  Hardware status: 25
+  Main status:     26
+  Error code:      No error
+Set DMD operation mode to: Video pattern mode
+ Visitech status:
+  System status:   11
+  Hardware status: 89
+  Main status:     24
+  Error code:      No error
+Set LED amplitude to: 100
+Wait for 0.1
+Move -1.0 mm at 25.0 mm/sec 50.0 mm/sec^2
+Move 1.0 mm at 20.0 mm/sec 50.0 mm/sec^2
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 20000 ms at power 100
+Set LED amplitude to: 100
+Set sequencer LUT definition 10000000 0 1 7 1 0 0
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+ Visitech status:
+  System status:   1
+  Hardware status: 25
+  Main status:     24
+  Error code:      No error
+Start sequencer
+ Visitech status:
+  System status:   1
+  Hardware status: 25
+  Main status:     26
+  Error code:      No error
+Stop sequencer
+ Visitech status:
+  System status:   1
+  Hardware status: 89
+  Main status:     24
+  Error code:      No error
+Set sequencer LUT definition 10000000 0 1 7 1 0 0
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+ Visitech status:
+  System status:   1
+  Hardware status: 25
+  Main status:     24
+  Error code:      No error
+Start sequencer
+ Visitech status:
+  System status:   1
+  Hardware status: 25
+  Main status:     26
+  Error code:      No error
+Stop sequencer
+ Visitech status:
+  System status:   1
+  Hardware status: 89
+  Main status:     24
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 10000 ms at power 100
+Set LED amplitude to: 100
+Set sequencer LUT definition 10000000 0 1 7 1 0 0
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+ Visitech status:
+  System status:   1
+  Hardware status: 25
+  Main status:     24
+  Error code:      No error
+Start sequencer
+ Visitech status:
+  System status:   1
+  Hardware status: 25
+  Main status:     26
+  Error code:      No error
+Stop sequencer
+ Visitech status:
+  System status:   1
+  Hardware status: 89
+  Main status:     24
+  Error code:      No error
+Exposing /home/pi/3D_printer_control/upload/current_job/slices/out0000.png for 5000 ms at power 100
+Set LED amplitude to: 100
+Set sequencer LUT definition 5000000 0 1 7 1 0 0
+Set sequencer LUT config to: 1 sequences, 1 repeats
+Stop sequencer
+ Visitech status:
+  System status:   1
+  Hardware status: 25
+  Main status:     24
+  Error code:      No error
+Start sequencer
+ Visitech status:
+  System status:   1
+  Hardware status: 25
+  Main status:     26
+  Error code:      No error
+^C^CException ignored in: <module 'threading' from '/usr/lib/python3.5/threading.py'>
+Traceback (most recent call last):
+  File "/usr/lib/python3.5/threading.py", line 1288, in _shutdown
+    t.join()
+  File "/usr/lib/python3.5/threading.py", line 1054, in join
+    self._wait_for_tstate_lock()
+  File "/usr/lib/python3.5/threading.py", line 1070, in _wait_for_tstate_lock
+    elif lock.acquire(block, timeout):
+KeyboardInterrupt
+Stop sequencer
+ galil - disconnect()
+^C
