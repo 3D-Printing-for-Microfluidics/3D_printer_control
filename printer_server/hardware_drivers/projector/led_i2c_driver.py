@@ -47,14 +47,13 @@ REGULATION_MODES = {
 }
 
 
-class LED_Driver_Exception(Exception):
+class LED_Exception(Exception):
     def __init__(self, arg):
         self.arg = arg
         super().__init__(arg)
 
 
-class Visitech_LED_I2C_Driver():
-
+class Visitech_LED_I2C():
     def __init__(self, verbosity=logging.DEBUG):
         """Initialize the i2c bus and set defaults."""
         self.i2c_bus_num = 1
@@ -64,14 +63,14 @@ class Visitech_LED_I2C_Driver():
         self.verbosity = verbosity
         self.logger = None
 
-    def read_led_driver_register(self, register):
+    def read_register(self, register):
         """Read 4 bytes from the specified register over i2c."""
         a = struct.pack('>H', self.address)
         r = struct.pack('>H', register)
         self.log(logging.DEBUG, 'i2c read addr:{} reg:{}'.format(hexlify(a), hexlify(r)))
         return self.i2c_bus.read_i2c_block_data(a, r, 4)
 
-    def write_led_driver_register(self, register, data):
+    def write_register(self, register, data):
         """Write data to the specified register over i2c."""
         a = struct.pack('>H', self.address)
         r = struct.pack('>H', register)
@@ -82,13 +81,13 @@ class Visitech_LED_I2C_Driver():
 
     def load_defaults(self):
         """Set all default values on LED driver board."""
-        self.write_led_driver_register(LED_PWM_KEEP_OFF_REGISTER, DEF_PWM_KEEP_OFF)
-        self.write_led_driver_register(LED_PFACTOR_REGISER, DEF_PFACTOR)
-        self.write_led_driver_register(LED_IFACTOR_REGISTER, DEF_IFACTOR)
+        self.write_register(LED_PWM_KEEP_OFF_REGISTER, DEF_PWM_KEEP_OFF)
+        self.write_register(LED_PFACTOR_REGISER, DEF_PFACTOR)
+        self.write_register(LED_IFACTOR_REGISTER, DEF_IFACTOR)
         self.set_led_temp_limit(DEF_LED_TEMP_LIMIT)
         self.set_board_temp_limit(DEF_BOARD_TEMP_LIMIT)
         self.set_ocp_limit(DEF_OCP_AMP)
-        self.write_led_driver_register(LED_OPPVALUE_REGISTER, DEF_OPP_HW_VER_1)
+        self.write_register(LED_OPPVALUE_REGISTER, DEF_OPP_HW_VER_1)
 
     def enable(self):
         """Enable light output.
@@ -97,7 +96,7 @@ class Visitech_LED_I2C_Driver():
         current to the LED when a trigger pulse is received from the
         TI sequencer.
         """
-        self.write_led_driver_register(C_REG_TOP_ON_OFF_A, 1)
+        self.write_register(C_REG_TOP_ON_OFF_A, 1)
 
     def disable(self):
         """Disable light output.
@@ -106,11 +105,11 @@ class Visitech_LED_I2C_Driver():
         output current to the LED, even when a trigger pulse is
         received.
         """
-        self.write_led_driver_register(C_REG_TOP_ON_OFF_A, 0)
+        self.write_register(C_REG_TOP_ON_OFF_A, 0)
 
     def get_amplitude(self):
         """Get the current set amplitude value for the LED."""
-        return self.read_led_driver_register(LED_AMPLITUDE_REGISTER)
+        return self.read_register(LED_AMPLITUDE_REGISTER)
 
     def set_amplitude(self, amplitude):
         """Set the amplitude value for the LED.
@@ -120,13 +119,13 @@ class Visitech_LED_I2C_Driver():
         if 0 > amplitude > 2000:
             msg = 'Provided LED amplitude of {} is out of range' .format(amplitude)
             self.log(logging.CRITICAL, msg)
-            raise LED_Driver_Exception(msg)
+            raise LED_Exception(msg)
         if amplitude > 100:
             msg = 'LED amplitude of {} is higher than recommended maximum of 100'
             self.log(logging.WARN, msg)
-        self.write_led_driver_register(LED_AMPLITUDE_REGISTER, amplitude)
-        self.write_led_driver_register(LED_SV_UPDATE_REGISTER, 1)
-        self.write_led_driver_register(LED_SV_UPDATE_REGISTER, 0)
+        self.write_register(LED_AMPLITUDE_REGISTER, amplitude)
+        self.write_register(LED_SV_UPDATE_REGISTER, 1)
+        self.write_register(LED_SV_UPDATE_REGISTER, 0)
 
     def get_sticky_errors(self):
         """Return the current error status as a list.
@@ -150,7 +149,7 @@ class Visitech_LED_I2C_Driver():
                 protection has been triggered. Raise OCP value or lower
                 the LED amplitude
         """
-        sticky_bits = self.read_led_driver_register(LED_STICKYBITS_REGISTER)
+        sticky_bits = self.read_register(LED_STICKYBITS_REGISTER)
         error_list = []
         if sticky_bits & (1 << STICKY_BIT_BOARD_TEMP):
             error_list.append('BOARD TEMPERATURE LIMIT EXCEEDED')
@@ -165,31 +164,31 @@ class Visitech_LED_I2C_Driver():
 
     def clear_sticky_errors(self):
         """Clear the current sticky errors by resetting the register."""
-        self.write_led_driver_register(LED_STICKYBITS_REGISTER, 0xff)
+        self.write_register(LED_STICKYBITS_REGISTER, 0xff)
 
     def get_led_temp(self):
         """Return the temperature of the LED in Celsius as a float."""
-        temp = self.read_led_driver_register(LED_LEDTEMP_REGISTER)
+        temp = self.read_register(LED_LEDTEMP_REGISTER)
         return float(temp) / 10
 
     def get_board_temp(self):
         """Return the temperature of the LED driver board in Celsius as
         a float.
         """
-        temp = self.read_led_driver_register(LED_BOARDTEMP_REGISTER)
+        temp = self.read_register(LED_BOARDTEMP_REGISTER)
         return float(temp) / 256
 
     def get_led_temp_limit(self):
         """Return the temperature limit for the LED in Celsius as a
         float.
         """
-        return float(self.read_led_driver_register(LED_LED_TEMP_LIMIT_REGISTER)) / 10
+        return float(self.read_register(LED_LED_TEMP_LIMIT_REGISTER)) / 10
 
     def get_board_temp_limit(self):
         """Return the temperature limit for the LED driver board in
         Celsius as a float.
         """
-        return float(self.read_led_driver_register(LED_BOARD_TEMP_LIMIT_REGISTER))
+        return float(self.read_register(LED_BOARD_TEMP_LIMIT_REGISTER))
 
     def set_led_temp_limit(self, limit):
         """Set the temperature limit (int) for the LED in Celsius.
@@ -199,7 +198,7 @@ class Visitech_LED_I2C_Driver():
         the temperature limit, the LED is turned off and an error is set
         in the sticky errors.
         """
-        self.write_led_driver_register(LED_LED_TEMP_LIMIT_REGISTER, limit * 10)
+        self.write_register(LED_LED_TEMP_LIMIT_REGISTER, limit * 10)
 
     def set_board_temp_limit(self, limit):
         """Set the temperature limit for the LED driver board (int) in
@@ -210,10 +209,10 @@ class Visitech_LED_I2C_Driver():
         the temperature limit, the LED is turned off and an error is set
         in the sticky errors.
         """
-        self.write_led_driver_register(LED_BOARD_TEMP_LIMIT_REGISTER, limit)
+        self.write_register(LED_BOARD_TEMP_LIMIT_REGISTER, limit)
 
     def get_ocp_limit(self):
-        limit = self.read_led_driver_register(LED_OCPVALUE_REGISTER)
+        limit = self.read_register(LED_OCPVALUE_REGISTER)
         return float(limit) * OCP_AMP_PER_UNIT_HW_VER1
 
     def set_ocp_limit(self, limit):
@@ -223,7 +222,7 @@ class Visitech_LED_I2C_Driver():
         It is not recommended to exceed the default value as this will
         shorten the lifetime of the LED.
         """
-        self.write_led_driver_register(LED_OCPVALUE_REGISTER, limit / OCP_AMP_PER_UNIT_HW_VER1)
+        self.write_register(LED_OCPVALUE_REGISTER, limit / OCP_AMP_PER_UNIT_HW_VER1)
 
     def get_regulation_mode(self):
         """Return the regulation mode in use for controlling light the
@@ -231,13 +230,13 @@ class Visitech_LED_I2C_Driver():
 
         Can be 'light', 'current', 'combined' or 'default'.
         """
-        mode = self.read_led_driver_register(LED_TOP_SVMODE_A)
+        mode = self.read_register(LED_TOP_SVMODE_A)
         try:
             mode = next(k for k, v in REGULATION_MODES.items() if v == mode)
         except StopIteration:
             msg = 'Bad mode "{}" read from LED driver'.format(mode)
             self.log(logging.CRITICAL, msg)
-            raise LED_Driver_Exception(msg)
+            raise LED_Exception(msg)
         return mode
 
     def set_regulation_mode(self, mode):
@@ -254,8 +253,8 @@ class Visitech_LED_I2C_Driver():
         if mode not in REGULATION_MODES:
             msg = 'Bad mode "{}" supplied to LED driver'.format(mode)
             self.log(logging.CRITICAL, msg)
-            raise LED_Driver_Exception(msg)
-        return self.write_led_driver_register(LED_TOP_SVMODE_A, mode)
+            raise LED_Exception(msg)
+        return self.write_register(LED_TOP_SVMODE_A, mode)
 
     def get_current_feedback(self):
         """Return the current passing through the LED driver on the last
@@ -263,7 +262,7 @@ class Visitech_LED_I2C_Driver():
         """
         if not self.get_running_status():
             return 0
-        current = self.read_led_driver_register(C_REG_TOP_ADC_CH0_A)
+        current = self.read_register(C_REG_TOP_ADC_CH0_A)
         return float(current) / 77.81
 
     def get_light_feedback(self):
@@ -275,7 +274,7 @@ class Visitech_LED_I2C_Driver():
         """
         if not self.get_running_status():
             return 0
-        return self.read_led_driver_register(C_REG_TOP_ADC_CH1_A)
+        return self.read_register(C_REG_TOP_ADC_CH1_A)
 
     def get_running_status(self):
         """Return the status of the LED driver as a boolean.
@@ -289,7 +288,7 @@ class Visitech_LED_I2C_Driver():
 
         """
         # if led is not on, it is not running
-        if not self.read_led_driver_register(C_REG_TOP_ON_OFF_A):
+        if not self.read_register(C_REG_TOP_ON_OFF_A):
             return False
         # if LED amplitude is set to 0, it is not running
         if not self.get_amplitude():
@@ -298,14 +297,14 @@ class Visitech_LED_I2C_Driver():
         mode = self.get_regulation_mode()
         curr, prev = None, None
         if mode in (REGULATION_MODES['light'], REGULATION_MODES['combined']):
-            prev = self.read_led_driver_register(C_REG_TOP_ADC_CH1_A)
+            prev = self.read_register(C_REG_TOP_ADC_CH1_A)
         elif mode in (REGULATION_MODES['current'], REGULATION_MODES['default']):
-            prev = self.read_led_driver_register(C_REG_TOP_ADC_CH0_A)
+            prev = self.read_register(C_REG_TOP_ADC_CH0_A)
         for _ in range(8):
             if mode in (REGULATION_MODES['light'], REGULATION_MODES['combined']):
-                curr = self.read_led_driver_register(C_REG_TOP_ADC_CH1_A)
+                curr = self.read_register(C_REG_TOP_ADC_CH1_A)
             elif mode in (REGULATION_MODES['current'], REGULATION_MODES['default']):
-                curr = self.read_led_driver_register(C_REG_TOP_ADC_CH0_A)
+                curr = self.read_register(C_REG_TOP_ADC_CH0_A)
             if curr != prev:
                 return True
         # if nothing changed in 8 reads, it is not running
@@ -320,7 +319,7 @@ class Visitech_LED_I2C_Driver():
                 self.set_amplitude(i)
                 amplitude = self.get_amplitude()
                 if amplitude != i:
-                    raise LED_Driver_Exception('I2C stress test failed')
+                    raise LED_Exception('I2C stress test failed')
 
     def log(self, lvl, msg):
         """Log message.
@@ -335,7 +334,7 @@ class Visitech_LED_I2C_Driver():
 
 
 if __name__ == '__main__':
-    led = Visitech_LED_I2C_Driver()
+    led = Visitech_LED_I2C()
     led.load_defaults()
     led.set_amplitude(100)
     # print(led.get_amplitude())
