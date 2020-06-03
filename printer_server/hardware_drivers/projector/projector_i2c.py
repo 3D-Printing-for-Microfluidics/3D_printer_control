@@ -11,6 +11,7 @@ import atexit
 import logging
 import pigpio
 from smbus2 import SMBus
+from visitech_led_i2c import Visitech_LED_I2C
 from .screen import ScreenThread
 
 # helper function for converting error codes to human readable format
@@ -66,8 +67,7 @@ TI_REG_W_INVERT_DATA = 0xF4
 TI_REG_R_PATTERN_DISPLAY_LUT_CONFIG = 0x75
 TI_REG_W_PATTERN_DISPLAY_LUT_CONFIG = 0xF5 # Bit 0-10 = Numer of LUT entries, 15:11 reserved, 16:47 Number of times to repeat pattern sequence  0=forever
 TI_REG_W_PATTERN_DISPLAY_LUT = 0xF8
-TI_I2C_WADDR = 0x34
-TI_I2C_RADDR = 0x35
+TI_I2C_ADDR = 0x1A
 TI_SEQUENCE_ON = 0x2
 TI_SEQUENCE_OFF = 0x0
 TI_SEQUENCE_PAUSE = 0x1
@@ -81,8 +81,7 @@ TI_DISPLAY_MODE_ON_THE_FLY = 0x3
 
 # ================ Visitech Constants ================
 
-LED_I2C_WADDR = 0x44
-LED_I2C_RADDR = 0x45
+LED_I2C_ADDR = 0x22
 LED_SV_UPDATE_REGISTER = 0x10
 LED_AMPLITUDE_REGISTER = 0x14
 LED_PFACTOR_REGISER = 0x24
@@ -147,18 +146,6 @@ ERROR_SEQUENCE_NUM_ARGS = 1000
 # TI_SEQUENCE_RETURN_BASE = 5000
 
 class Projector:
-    """This class is built on the ``pigpio`` library.
-    :param pi: a ``pigpio.pi`` object. If not specified when
-               creating :py:class:`LightEngineI2C` object, the
-               :py:meth:`init_pi` must be called before any
-               further usage of I2C related
-               operation.
-    :param bus: physical I2C bus on Raspberry Pi.
-                The Raspberry Pi has 2 physical I2C
-                buses, 0 and 1. Here we use 1 by default.
-    :param logger: a ``logging.logger`` object. If not specified,
-                   the ``print`` function will be used.
-    """
     I2C_IO_DELAY = 0.01   # Delay after every I2C command, 10ms
 
     def __init__(self, resolution, fullscreen=True):
@@ -167,12 +154,14 @@ class Projector:
         self.pi = pigpio.pi()
         self.led = None
         self.dmd = None
-        self.dmd_addr = TI_I2C_RADDR>>1
-        self.led_addr = LED_I2C_WADDR>>1
+        self.dmd_addr = TI_I2C_ADDR
+        self.led_addr = LED_I2C_ADDR
         self.resolution = resolution
         self.fullscreen = fullscreen
         self.max_exp_time = 10000       # max single projection time in ms
         self.ledPower = None
+        self.led_driver = Visitech_LED_I2C()
+        # self.dmd_driver = TI_DLPC900_I2C()
 
         # setup screen thread
         self.screenThread = ScreenThread(self.resolution, self.fullscreen)
@@ -528,25 +517,25 @@ class Projector:
         data = register + param
         print('LED write device val:{}'.format(data))
         # self.pi.i2c_write_device(self.led, data)
-        self.bus.write_i2c_block_data(self.led_addr, register, bytearray(param))
+        self.led_driver.write_register(register, param)
+        # self.bus.write_i2c_block_data(self.led_addr, register, bytearray(param))
         time.sleep(self.I2C_IO_DELAY)
 
     def readLedParam(self, register):
         register = int(register).to_bytes(4, byteorder='big')
         # print('LED write device val:{}'.format(register))
-        self.pi.i2c_write_device(self.led, register)
         # self.bus.write_block_data(self.led_addr, 0, bytearray(register))
-        time.sleep(self.I2C_IO_DELAY)
-        print('LED read device 4 bytes')
+        # time.sleep(self.I2C_IO_DELAY)
+        # print('LED read device 4 bytes')
+        self.pi.i2c_write_device(self.led, register)
         _, old_data = self.pi.i2c_read_device(self.led, 4)
-        data = self.bus.read_i2c_block_data(self.led_addr, register, 4)
+        # data = self.bus.read_i2c_block_data(self.led_addr, register, 4)
+        data = self.led_driver.read_register(register)
 
         if data != old_data:
             print("LED READ MISMATCH !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             print('  old, new {}:{}, {}:{}'.format(type(old_data), old_data, type(data), data))
 
-        # self.bus.read_block_data(self.led_addr, 0, ))
-        # data = self.bus.read_i2c_block_data(self.led_addr, register, 4)
         time.sleep(self.I2C_IO_DELAY)
         # data is a `bytearray` object
         return int.from_bytes(data, byteorder='big')
