@@ -2,6 +2,8 @@ import struct
 import logging
 from binascii import hexlify
 from smbus2 import SMBus
+import pigpio
+import time
 
 # defaults
 LED_I2C_ADDR = 0x22
@@ -62,22 +64,41 @@ class Visitech_LED_I2C():
         self.power = None
         self.verbosity = verbosity
         self.logger = None
+        self.pi = pigpio.pi()
+        self.old = self.pi.i2c_open(self.i2c_bus_num, LED_I2C_ADDR)
 
     def read_register(self, register):
         """Read 4 bytes from the specified register over i2c."""
-        a = struct.pack('>H', self.address)
-        r = struct.pack('>H', register)
-        self.log(logging.DEBUG, 'i2c read addr:{} reg:{}'.format(hexlify(a), hexlify(r)))
-        return self.i2c_bus.read_i2c_block_data(a, r, 4)
+            # # print('reading')
+            # a = self.address
+            # # a = struct.pack('>H', int(self.address))
+            # # r = struct.pack('>H', int(register))
+            # r = int.from_bytes(register.to_bytes(2, byteorder='big'), 'little')
+            # # self.log(logging.DEBUG, 'i2c read addr:{} reg:{}'.format(hexlify(a), hexlify(r)))
+            # print('reading {}:{}'.format(hex(register), hex(r)))
+            # return self.i2c_bus.read_i2c_block_data(a, r, 4)
+        register = int(register).to_bytes(2, byteorder='big')
+        self.pi.i2c_write_device(self.old, register)
+        time.sleep(1)
+        _, data = self.pi.i2c_read_device(self.old, 4)
+        return int.from_bytes(data, byteorder='big')
 
     def write_register(self, register, data):
         """Write data to the specified register over i2c."""
-        a = struct.pack('>H', self.address)
-        r = struct.pack('>H', register)
-        d = struct.pack('>I', int(data))
-        self.log(logging.DEBUG,
-                 'i2c write addr:{} reg:{} val:{}'.format(hexlify(a), hexlify(r), hexlify(d)))
-        self.i2c_bus.write_i2c_block_data(a, r, d)
+            # print('writing')
+            # # a = struct.pack('>H', int(self.address))
+            # a = self.address
+            # # r = struct.pack('>H', int(register))
+            # r = int.from_bytes(register.to_bytes(2, byteorder='big'), 'little')
+            # # d = struct.pack('>I', int(data))
+            # d = data.to_bytes(4, byteorder='big')
+            # print('writing {}:{} {}:{}'.format(hex(register), hex(r), hex(data), hexlify(d)))
+            # # self.log(logging.DEBUG,
+            # #          'i2c write addr:{} reg:{} val:{}'.format(hex(a), hex(r), hexlify(d)))
+            # self.i2c_bus.write_i2c_block_data(a, r, d)
+        register = int(register).to_bytes(2, byteorder='big')
+        data = int(data).to_bytes(4, byteorder='big')
+        self.pi.i2c_write_device(self.old, register + data)
 
     def load_defaults(self):
         """Set all default values on LED driver board."""
@@ -154,7 +175,7 @@ class Visitech_LED_I2C():
         if sticky_bits & (1 << STICKY_BIT_BOARD_TEMP):
             error_list.append('BOARD TEMPERATURE LIMIT EXCEEDED')
         if sticky_bits & (1 << STICKY_BIT_LED_TEMP):
-            error_list.append('LED  TEMPERATURE LIMIT EXCEEDED')
+            error_list.append('LED TEMPERATURE LIMIT EXCEEDED')
         if sticky_bits & (1 << STICKY_BIT_DOOR_SWITCH_OPEN):
             error_list.append('LED SAFETY SWITCH OPEN')
         if sticky_bits & (1 << STICKY_BIT_OCP):
@@ -222,7 +243,7 @@ class Visitech_LED_I2C():
         It is not recommended to exceed the default value as this will
         shorten the lifetime of the LED.
         """
-        self.write_register(LED_OCPVALUE_REGISTER, limit / OCP_AMP_PER_UNIT_HW_VER1)
+        self.write_register(LED_OCPVALUE_REGISTER, int(limit / OCP_AMP_PER_UNIT_HW_VER1))
 
     def get_regulation_mode(self):
         """Return the regulation mode in use for controlling light the
@@ -321,6 +342,18 @@ class Visitech_LED_I2C():
                 if amplitude != i:
                     raise LED_Exception('I2C stress test failed')
 
+    def read_scan(self):
+        good = []
+        for i in range(2**16):
+            try:
+                print('try', hex(i))
+                # data = self.i2c_bus.read_byte_data(self.address, i)
+                data = self.i2c_bus.read_byte_data(self.address, i)
+                good.append([i, data])
+            except OSError:
+                pass
+        print(good)
+
     def log(self, lvl, msg):
         """Log message.
 
@@ -337,5 +370,20 @@ if __name__ == '__main__':
     led = Visitech_LED_I2C()
     led.load_defaults()
     led.set_amplitude(100)
-    # print(led.get_amplitude())
+    print('amplitude', led.get_amplitude())
+    led.set_amplitude(50)
+    print('amplitude', led.get_amplitude())
+    led.set_amplitude(77)
+    print('amplitude', led.get_amplitude())
+    print('board temp', led.get_board_temp())
+    print('board temp limit', led.get_board_temp_limit())
+    print('led temp', led.get_led_temp())
+    print('led temp limit', led.get_led_temp_limit())
+    print('current feedback', led.get_current_feedback())
+    print('light feedback', led.get_light_feedback())
+    print('ocp limit', led.get_ocp_limit())
+    print('regulation mode', led.get_regulation_mode())
+    print('running status', led.get_running_status())
+    print('errors', led.get_sticky_errors())
+    # led.read_scan()
     # led.stress_test_i2c(1)
