@@ -1,8 +1,37 @@
 import time
 import json
 import logging
-from binascii import hexlify
 from smbus2 import SMBus
+
+
+TI_I2C_ADDR = 0x1A
+TI_REG_R_PIXEL_MODE = 0X03
+TI_REG_W_PIXEL_MODE = 0X83
+TI_REG_R_TEST_PATTERN = 0x0A
+TI_REG_W_TEST_PATTERN = 0x8A
+TI_REG_R_IT6535 = 0x0C
+TI_REG_W_IT6535 = 0x8C
+TI_REG_R_HW_STATUS = 0x20
+TI_REG_R_SYS_STATUS = 0x21
+TI_REG_R_MAIN_STATUS = 0x22
+TI_REG_R_ERROR_CODE = 0x32
+TI_REG_R_SEQUENCE = 0x65
+TI_REG_W_SEQUENCE = 0xE5
+TI_REG_R_DISPLAY_MODE = 0x69
+TI_REG_W_DISPLAY_MODE = 0xE9
+TI_REG_R_PATTERN_DISPLAY_LUT_CONFIG = 0x75
+TI_REG_W_PATTERN_DISPLAY_LUT_CONFIG = 0xF5 # Bit 0-10 = Numer of LUT entries, 15:11 reserved, 16:47 Number of times to repeat pattern sequence  0=forever
+TI_REG_W_PATTERN_DISPLAY_LUT = 0xF8
+TI_SEQUENCE_ON = 0x2
+TI_SEQUENCE_OFF = 0x0
+TI_SEQUENCE_PAUSE = 0x1
+TI_IT6536_OFF = 0x0
+TI_IT6536_HDMI = 0x1
+TI_IT6536_DISPLAYPORT = 0x2
+TI_DISPLAY_MODE_NORMAL = 0x0
+TI_DISPLAY_MODE_PRE_STORED = 0x1
+TI_DISPLAY_MODE_VIDEO_PATTERN = 0x2
+TI_DISPLAY_MODE_ON_THE_FLY = 0x3
 
 # helper function for converting error codes to human readable format
 def convert_error_code(code):
@@ -28,52 +57,12 @@ def convert_error_code(code):
         255: 'Internal Error'
     }.get(code, "Not defined")    # "Not defined" is default if code is not found
 
-# ================ TI Constants ================
-
-TI_I2C_ADDR = 0x1A
-TI_REG_R_TESTIMAGE = 0x00
-TI_REG_W_TESTIMAGE = 0x80
-TI_REG_R_PIXEL_MODE = 0X03
-TI_REG_W_PIXEL_MODE = 0X83
-TI_REG_R_FLIP_LONG = 0x08
-TI_REG_W_FLIP_LONG = 0x88
-TI_REG_R_FLIP_SHORT = 0x09
-TI_REG_W_FLIP_SHORT = 0x89
-TI_REG_R_TEST_PATTERN = 0x0A
-TI_REG_W_TEST_PATTERN = 0x8A
-TI_REG_R_IT6535 = 0x0C
-TI_REG_W_IT6535 = 0x8C
-TI_REG_R_HW_STATUS = 0x20
-TI_REG_R_SYS_STATUS = 0x21
-TI_REG_R_MAIN_STATUS = 0x22
-TI_REG_R_ERROR_CODE = 0x32
-TI_REG_R_SEQUENCE = 0x65
-TI_REG_W_SEQUENCE = 0xE5
-TI_REG_R_DISPLAY_MODE = 0x69
-TI_REG_W_DISPLAY_MODE = 0xE9
-TI_REG_R_TRIGGER_OUT1 = 0x6A
-TI_REG_W_TRIGGER_OUT1 = 0xEA
-TI_REG_R_INVERT_DATA = 0x74
-TI_REG_W_INVERT_DATA = 0xF4
-TI_REG_R_PATTERN_DISPLAY_LUT_CONFIG = 0x75
-TI_REG_W_PATTERN_DISPLAY_LUT_CONFIG = 0xF5 # Bit 0-10 = Numer of LUT entries, 15:11 reserved, 16:47 Number of times to repeat pattern sequence  0=forever
-TI_REG_W_PATTERN_DISPLAY_LUT = 0xF8
-TI_SEQUENCE_ON = 0x2
-TI_SEQUENCE_OFF = 0x0
-TI_SEQUENCE_PAUSE = 0x1
-TI_IT6536_OFF = 0x0
-TI_IT6536_HDMI = 0x1
-TI_IT6536_DISPLAYPORT = 0x2
-TI_DISPLAY_MODE_NORMAL = 0x0
-TI_DISPLAY_MODE_PRE_STORED = 0x1
-TI_DISPLAY_MODE_VIDEO_PATTERN = 0x2
-TI_DISPLAY_MODE_ON_THE_FLY = 0x3
-
 
 class DLPC900_Exception(Exception):
     def __init__(self, arg):
         self.arg = arg
         super().__init__(arg)
+
 
 class TI_DLPC900_I2C:
     I2C_IO_DELAY = 0.01   # Delay after every I2C command, 10ms
