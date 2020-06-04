@@ -107,7 +107,7 @@ class Galil_dummy():
                 if i == lastDownCommand:                        # take off the layer thickness if this is the last layer
                     distance -= layerThicknessMm
                 self.relMove(speed=speed, mm=distance, acceleration=acceleration)
-        return 0, 1
+        return 0, 0, 0, 0
 
     def pause(self):
         print(" galil - pause()")

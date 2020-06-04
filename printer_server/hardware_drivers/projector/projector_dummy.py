@@ -154,8 +154,8 @@ class Projector_dummy:
     def project(self, image, exposure, power, repeats=1):
         print(" projector - project({},{},{},{})".format(image, exposure, power, repeats))
         if repeats == 0:    # if continuous display is desired
-            self.set_sequencer_lut_definition(33100, 0, 0, 7, 0, 0, 0)  # this provides the minimum blanking of 233 us of the full 33333 us cycle (at 30Hz on HDMI)
-            self.set_sequencer_lut_config(repeats=repeats)              # 0 means repeat forever
+            self.set_sequencer_lut_definition(33100)                    # this provides the minimum blanking of 233 us of the full 33333 us cycle (at 30Hz on HDMI)
+            self.set_sequencer_lut_config(repeats=0)                    # 0 means repeat forever
             self.screenThread.screen.draw(image)                        # draw to virtual screen
             self.start_sequencer()                                      # start the sequencer and don't stop it (will be stopped on program exit)
         else:               # normal display is desired
