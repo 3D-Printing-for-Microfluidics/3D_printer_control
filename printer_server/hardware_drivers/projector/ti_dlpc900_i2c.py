@@ -1,4 +1,5 @@
 import time
+import json
 import logging
 from binascii import hexlify
 from smbus2 import SMBus
@@ -96,7 +97,7 @@ class TI_DLPC900_I2C:
                 time.sleep(self.I2C_IO_DELAY)
                 return result
             except Exception as e:
-                print(e)
+                self.log(logging.INFO, "I2C read error {}".format(e))
                 caught_exception = e
                 time.sleep(1)                   # wait 1 second to retry
         self.log(logging.ERROR, "I2C read error in projector! {} sequential reads failed".format(retry))
@@ -113,7 +114,7 @@ class TI_DLPC900_I2C:
                 success = True
                 return
             except Exception as e:
-                print(e)
+                self.log(logging.INFO, "I2C write error {}".format(e))
                 caught_exception = e
                 time.sleep(1)                   # wait 1 second to retry
         self.log(logging.ERROR, "I2C write error in projector! {} sequential writes failed".format(retry))
@@ -127,20 +128,20 @@ class TI_DLPC900_I2C:
         try:
             self.logger.log(lvl, msg)
         except AttributeError:
-            if lvl > self.verbosity:
+            if lvl >= self.verbosity:
                 print(msg)
 
     def load_default_configuration(self):
         """Load the default hardware configuration."""
-        self.read_all_status()
+        self.get_all_status()
         self.stop_sequencer()
-        self.read_all_status()
+        self.get_all_status()
         self.set_pixel_mode("Single")
-        self.read_all_status()
+        self.get_all_status()
         self.set_video_source("HDMI")
-        self.read_all_status()
+        self.get_all_status()
         self.set_dmd_operation_mode("Video pattern mode")
-        self.read_all_status()
+        self.get_all_status()
 
     def get_hardware_status(self):
         """Read the DMD Hardware Status register.
@@ -178,13 +179,14 @@ class TI_DLPC900_I2C:
         error = self.read_register(TI_REG_R_ERROR_CODE)
         return convert_error_code(error)
 
-    def read_all_status(self, lvl=logging.INFO):
-        """Read and log the output of all status registers."""
-        self.log(lvl, "\tVisitech status:")
-        self.log(lvl, "\t\tSystem status:   {:#010b}".format(self.get_system_status()))
-        self.log(lvl, "\t\tHardware status: {:#010b}".format(self.get_hardware_status()))
-        self.log(lvl, "\t\tMain status:     {:#010b}".format(self.get_main_status()))
-        self.log(lvl, "\t\tError code:      {}".format(self.get_error_code()))
+    def get_all_status(self):
+        """Return all status register output as a string"""
+        return json.dumps({
+            'hardware status': self.get_hardware_status(),
+            'system status': self.get_system_status(),
+            'main status': self.get_main_status(),
+            'error status': self.get_error_code()
+        }, indent=2, sort_keys=True)
 
     def start_sequencer(self):
         """Start the DMD sequencer."""
@@ -355,7 +357,6 @@ class TI_DLPC900_I2C:
         buffer[10] = 0
         buffer[11] = (bit_index & 0x1f) << 3
 
-        print(hexlify(buffer))
         self.i2c_bus.write_i2c_block_data(self.address, TI_REG_W_PATTERN_DISPLAY_LUT, buffer)
         time.sleep(self.I2C_IO_DELAY)
 
@@ -383,3 +384,7 @@ class TI_DLPC900_I2C:
         lut_config = bytearray(num_sequences + repeats)
         self.i2c_bus.write_i2c_block_data(self.address, TI_REG_W_PATTERN_DISPLAY_LUT_CONFIG, lut_config)
         time.sleep(self.I2C_IO_DELAY)
+
+if __name__ == '__main__':
+    dmd = TI_DLPC900_I2C(verbosity=logging.DEBUG)
+    print(dmd.get_all_status())

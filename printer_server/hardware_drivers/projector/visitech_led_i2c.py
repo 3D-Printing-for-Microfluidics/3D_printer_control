@@ -4,6 +4,7 @@ from binascii import hexlify
 from smbus2 import SMBus
 import pigpio
 import time
+import json
 
 # defaults
 LED_I2C_ADDR = 0x22
@@ -79,7 +80,6 @@ class Visitech_LED_I2C():
             # return self.i2c_bus.read_i2c_block_data(a, r, 4)
         register = int(register).to_bytes(2, byteorder='big')
         self.pi.i2c_write_device(self.old, register)
-        time.sleep(1)
         _, data = self.pi.i2c_read_device(self.old, 4)
         return int.from_bytes(data, byteorder='big')
 
@@ -331,11 +331,28 @@ class Visitech_LED_I2C():
         # if nothing changed in 8 reads, it is not running
         return False
 
+    def get_all_status(self):
+        """Return a string representing the current status"""
+        return json.dumps({
+            'running status': self.get_running_status(),
+            'amplitude': self.get_amplitude(),
+            'light feedback': self.get_light_feedback(),
+            'current feedback': self.get_current_feedback(),
+            'regulation mode': self.get_regulation_mode(),
+            'board temperature': self.get_board_temp(),
+            'led temperature': self.get_led_temp(),
+            'ocp limit': self.get_ocp_limit(),
+            'board temperature limit': self.get_board_temp_limit(),
+            'led temperature limit': self.get_led_temp_limit(),
+            'sticky errors': self.get_sticky_errors()
+        }, indent=2, sort_keys=True)
+
     def stress_test_i2c(self, iterations):
         """Repeatedly write and read from the LED aplitude register for
         iterations number of times.
         """
-        for _ in range(iterations):
+        for j in range(iterations):
+            self.log(logging.DEBUG, 'i2c stress test iteration {}'.format(j))
             for i in range(100):
                 self.set_amplitude(i)
                 amplitude = self.get_amplitude()
@@ -346,13 +363,13 @@ class Visitech_LED_I2C():
         good = []
         for i in range(2**16):
             try:
-                print('try', hex(i))
+                self.log(logging.DEBUG, 'try {}'.format(hex(i)))
                 # data = self.i2c_bus.read_byte_data(self.address, i)
                 data = self.i2c_bus.read_byte_data(self.address, i)
                 good.append([i, data])
             except OSError:
                 pass
-        print(good)
+        self.log(logging.DEBUG, good)
 
     def log(self, lvl, msg):
         """Log message.
@@ -362,28 +379,21 @@ class Visitech_LED_I2C():
         try:
             self.logger.log(lvl, msg)
         except AttributeError:
-            if lvl > self.verbosity:
+            if lvl >= self.verbosity:
                 print(msg)
 
 
 if __name__ == '__main__':
-    led = Visitech_LED_I2C()
+    led = Visitech_LED_I2C(verbosity=logging.DEBUG)
+    print(led.get_all_status())
     led.load_defaults()
     led.set_amplitude(100)
-    print('amplitude', led.get_amplitude())
+    print(led.get_amplitude())
     led.set_amplitude(50)
-    print('amplitude', led.get_amplitude())
+    print(led.get_amplitude())
     led.set_amplitude(77)
-    print('amplitude', led.get_amplitude())
-    print('board temp', led.get_board_temp())
-    print('board temp limit', led.get_board_temp_limit())
-    print('led temp', led.get_led_temp())
-    print('led temp limit', led.get_led_temp_limit())
-    print('current feedback', led.get_current_feedback())
-    print('light feedback', led.get_light_feedback())
-    print('ocp limit', led.get_ocp_limit())
-    print('regulation mode', led.get_regulation_mode())
-    print('running status', led.get_running_status())
-    print('errors', led.get_sticky_errors())
-    # led.read_scan()
-    # led.stress_test_i2c(1)
+    print(led.get_amplitude())
+
+    print(led.get_all_status())
+
+    # led.stress_test_i2c(10)

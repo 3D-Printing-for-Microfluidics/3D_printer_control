@@ -8,13 +8,13 @@ from .visitech_led_i2c import Visitech_LED_I2C
 
 
 class Projector:
-    def __init__(self, resolution, fullscreen=True, verbosity=logging.DEBUG):
+    def __init__(self, resolution, fullscreen=True, verbosity=logging.INFO):
         self.resolution = resolution
         self.fullscreen = fullscreen
         self.max_exp_time = 10000       # max single projection time in ms
         self.verbosity = verbosity
-        self.led_driver = Visitech_LED_I2C()
-        self.dmd_driver = TI_DLPC900_I2C()
+        self.led_driver = Visitech_LED_I2C(verbosity=verbosity)
+        self.dmd_driver = TI_DLPC900_I2C(verbosity=verbosity)
         self.screenThread = ScreenThread(self.resolution, self.fullscreen)
         atexit.register(self.disconnect)    # register exit handler
 
@@ -26,8 +26,12 @@ class Projector:
         try:
             self.logger.log(lvl, msg)
         except AttributeError:
-            if lvl > self.verbosity:
+            if lvl >= self.verbosity:
                 print(msg)
+
+    def get_status(self, lvl=logging.INFO):
+        self.log(lvl, self.dmd_driver.get_all_status())
+        self.log(lvl, self.led_driver.get_all_status())
 
     def connect(self):
         """Connect to hardware, load default settings and initialize virtual screen."""
@@ -39,6 +43,12 @@ class Projector:
         """Stop the virtual screen"""
         self.screenThread.stop()         # stop screen thread on exit
 
+    def clear_image(self):
+        """Blank the virtual screen that provides the image to the projector.
+        Sets full image to black.
+        """
+        self.screenThread.screen.clear()
+
     def split_exposure_time(self, exposure):
         """Split a long exposure time into an array of smaller exposure times.
         """
@@ -48,12 +58,6 @@ class Projector:
         else:
             exposure = [self.max_exp_time] * n
         return exposure
-
-    def clear_image(self):
-        """Blank the virtual screen that provides the image to the projector.
-        Sets full image to black.
-        """
-        self.screenThread.screen.clear()
 
     def project(self, image, exposure, power, repeats=1):
         """Call all of the necessary methods to project an image, and block until projection
@@ -74,13 +78,13 @@ class Projector:
             for t in self.split_exposure_time(exposure):
                 self.dmd_driver.set_sequencer_lut_definition(exposure=t*1000)
                 self.dmd_driver.set_sequencer_lut_config(repeats=repeats)
-                self.dmd_driver.read_all_status()
+                self.dmd_driver.get_all_status()
                 self.dmd_driver.start_sequencer()
-                self.dmd_driver.read_all_status()
+                self.dmd_driver.get_all_status()
                 # wait until the exposure is complete, plus a little wiggle room
                 time.sleep(0.1 + t * 1e-3)
                 self.dmd_driver.stop_sequencer()
-                self.dmd_driver.read_all_status()
+                self.dmd_driver.get_all_status()
 
     def projectMulti(self, images, exposureTimes, ledPowers):
         """Project multiple images, each with its own expoure time and
