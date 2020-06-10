@@ -270,7 +270,7 @@ class Galil():
                 counter = 0
             time_count += 1
             if time_count >= 5000:                              # timeout for collecting data, motor won't reach position
-                exit("Z motor didn't reach position. Got to {} but needed {}".format(last_position, cnts))
+                print("Z motor didn't reach position. Got to {} but needed {}".format(last_position, cnts))
                 break
         self.data[self.move_num].append({'duration' : time.time()-start_time})
         self.move_num = self.move_num + 1
