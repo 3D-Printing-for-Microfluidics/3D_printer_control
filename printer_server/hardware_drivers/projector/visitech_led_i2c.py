@@ -1,10 +1,8 @@
-import struct
+import json
 import logging
 from binascii import hexlify
-from smbus2 import SMBus
-import pigpio
-import time
-import json
+
+from .i2c import I2C
 
 # defaults
 LED_I2C_ADDR = 0x22
@@ -60,45 +58,42 @@ class Visitech_LED_I2C():
     def __init__(self, verbosity=logging.DEBUG):
         """Initialize the i2c bus and set defaults."""
         self.i2c_bus_num = 1
-        self.i2c_bus = SMBus(self.i2c_bus_num)
         self.address = LED_I2C_ADDR
+        self.i2c_bus = I2C.I2C(self.address, self.i2c_bus_num)
         self.power = None
         self.verbosity = verbosity
         self.logger = None
-        self.pi = pigpio.pi()
-        self.old = self.pi.i2c_open(self.i2c_bus_num, LED_I2C_ADDR)
 
     def read_register(self, register):
-        """Read 4 bytes from the specified register over i2c."""
-            # # print('reading')
-            # a = self.address
-            # # a = struct.pack('>H', int(self.address))
-            # # r = struct.pack('>H', int(register))
-            # r = int.from_bytes(register.to_bytes(2, byteorder='big'), 'little')
-            # # self.log(logging.DEBUG, 'i2c read addr:{} reg:{}'.format(hexlify(a), hexlify(r)))
-            # print('reading {}:{}'.format(hex(register), hex(r)))
-            # return self.i2c_bus.read_i2c_block_data(a, r, 4)
+        """Read 4 bytes from the specified register over i2c.
+
+        register (bytes): two byte address of source register
+        """
+
+        self.log(logging.DEBUG,
+                 'i2c read - reg:{}'.format(hex(register)))
         register = int(register).to_bytes(2, byteorder='big')
-        self.pi.i2c_write_device(self.old, register)
-        _, data = self.pi.i2c_read_device(self.old, 4)
-        return int.from_bytes(data, byteorder='big')
+        self.i2c_bus.write(register)
+        ret = self.i2c_bus.read(4)
+        print('read  register {}={} ({})'.format(hexlify(register),
+                                                 hexlify(ret),
+                                                 int.from_bytes(ret, byteorder='big')))
+        return ret
 
     def write_register(self, register, data):
-        """Write data to the specified register over i2c."""
-            # print('writing')
-            # # a = struct.pack('>H', int(self.address))
-            # a = self.address
-            # # r = struct.pack('>H', int(register))
-            # r = int.from_bytes(register.to_bytes(2, byteorder='big'), 'little')
-            # # d = struct.pack('>I', int(data))
-            # d = data.to_bytes(4, byteorder='big')
-            # print('writing {}:{} {}:{}'.format(hex(register), hex(r), hex(data), hexlify(d)))
-            # # self.log(logging.DEBUG,
-            # #          'i2c write addr:{} reg:{} val:{}'.format(hex(a), hex(r), hexlify(d)))
-            # self.i2c_bus.write_i2c_block_data(a, r, d)
+        """Write data to the specified register over i2c.
+
+        register (bytes): two byte address of destination register
+        data (bytes): four bytes to write to register
+        """
+        self.log(logging.DEBUG,
+                 'i2c write - reg:{} val:{}'.format(hex(register), hexlify(data)))
         register = int(register).to_bytes(2, byteorder='big')
         data = int(data).to_bytes(4, byteorder='big')
-        self.pi.i2c_write_device(self.old, register + data)
+        print('write register {}={} ({})'.format(hexlify(register),
+                                                 hexlify(data),
+                                                 int.from_bytes(data, byteorder='big')))
+        self.i2c_bus.write(register + data)
 
     def load_defaults(self):
         """Set all default values on LED driver board."""
@@ -359,18 +354,6 @@ class Visitech_LED_I2C():
                 if amplitude != i:
                     raise LED_Exception('I2C stress test failed')
 
-    def read_scan(self):
-        good = []
-        for i in range(2**16):
-            try:
-                self.log(logging.DEBUG, 'try {}'.format(hex(i)))
-                # data = self.i2c_bus.read_byte_data(self.address, i)
-                data = self.i2c_bus.read_byte_data(self.address, i)
-                good.append([i, data])
-            except OSError:
-                pass
-        self.log(logging.DEBUG, good)
-
     def log(self, lvl, msg):
         """Log message.
 
@@ -393,7 +376,5 @@ if __name__ == '__main__':
     print(led.get_amplitude())
     led.set_amplitude(77)
     print(led.get_amplitude())
-
     print(led.get_all_status())
-
-    # led.stress_test_i2c(10)
+    led.stress_test_i2c(10)
