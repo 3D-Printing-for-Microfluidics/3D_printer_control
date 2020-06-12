@@ -34,6 +34,19 @@ def galil_go_to_bottom():
 def home():
     manualControls.home()
 
+@socketio.on("galil_move", namespace="/calibrate")
+def galil_move(message):
+    manualControls.home()
+    mode = message["mode"]
+    speed = float(message["speed"])
+    distance = float(message["distance"])
+    acceleration = float(message["acceleration"])
+    manualControls.moveGalil(mode, distance, speed, acceleration)
+
+@socketio.on("galil_get_position", namespace="/calibrate")
+def galil_get_position():
+    manualControls.getPositionGalil()
+
 @socketio.on('calibration_motor_move', namespace='/calibrate')
 def moveCalibrationMotor(message):
     axis = message["axis"]

@@ -23,22 +23,34 @@ class ManualControls:
             f.write("{} {}\n".format(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), message))
 
     def goToZmax(self):
-        """goToZmax -- Move main Z stage to max position (up)
-        """
+        """goToZmax -- Move main Z stage to max position (up)"""
         self.galil.goToZmax()
         socketio.emit('galil_done', namespace='/calibrate', broadcast=True)
 
     def goToZmin(self):
-        """goToZmin -- Move main z stage to min position (down)
-        """
+        """goToZmin -- Move main z stage to min position (down)"""
         self.galil.goToZmin()
         socketio.emit('galil_done', namespace='/calibrate', broadcast=True)
 
     def home(self):
-        """home -- Home main z stage
-        """
+        """home -- Home main z stage"""
         self.galil.home()
         socketio.emit('galil_done', namespace='/calibrate', broadcast=True)
+
+    def moveGalil(self, mode, distance, speed, acceleration):
+        """Move the main Z stage. All units in mm"""
+        if mode == "absolute":
+            self.galil.absMove(mm=distance, speed=speed, acceleration=acceleration)
+        elif mode == "relative":
+            self.galil.relMove(mm=distance, speed=speed, acceleration=acceleration)
+        socketio.emit('galil_done', namespace='/calibrate', broadcast=True)
+
+    def getPositionGalil(self):
+        """Move the main Z stage. All units in mm"""
+        message = {
+            "position": self.galil.cntsToMm(self.galil.get_position("Tip"))
+        }
+        socketio.emit('galil_position', message, namespace='/calibrate', broadcast=True)
 
     def calibrationMotionComplete(self):
         message = {
@@ -65,15 +77,13 @@ class ManualControls:
         self.calibrationMotionComplete()
 
     def lightEngineStop(self):
-        """lightEngineStop -- Turn off the LED in the light engine
-        """
+        """lightEngineStop -- Turn off the LED in the light engine"""
         self.projector.stop_sequencer()
         self.projector.screenThread.screen.clear()
         socketio.emit('light_engine_stop_complete', namespace='/calibrate', broadcast=True)
 
     def lightEngineProject(self, image, ledPower, repeat, exposure):
-        """lightEngineProject -- Project the image with the given settings
-        """
+        """lightEngineProject -- Project the image with the given settings"""
         self.projector.project(image, exposure, ledPower, repeat)
         if repeat:      # repeat == 1 means show once, == 0 means repeat forever
             self.projector.screenThread.screen.clear()
