@@ -44,6 +44,16 @@ class ManualControls:
         elif mode == "relative":
             self.galil.relMove(mm=distance, speed=speed, acceleration=acceleration)
         socketio.emit('galil_done', namespace='/calibrate', broadcast=True)
+        
+    def startJogGalil(self, speed):
+        """Start """
+        self.galil.startJog(speed=speed)
+        #socketio.emit('galil_done', namespace='/calibrate', broadcast=True)
+    
+    def stopJogGalil(self):
+        """Stop jogging the main Z stage"""
+        self.galil.stopJog()
+        socketio.emit('galil_done', namespace='/calibrate', broadcast=True)
 
     def getPositionGalil(self):
         """Move the main Z stage. All units in mm"""
