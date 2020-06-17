@@ -50,6 +50,8 @@ class Galil():
         self.bottom_position = 368000
         self.top_position = -400000
         self.error_window = 1
+        self.jogging = False
+        self.pre_jog_speed = 0
 
         # default configuration parameters
         self.axes = ["A"]
@@ -240,8 +242,9 @@ class Galil():
     def home(self, axis="A"):
         a = convertAxis(axis)                                   # check that the axis is valid
         self.motorOn()                                          # turn motor on
-        self.relMove(speed=25, mm=-self.travel["A"])            # move up until the limit switch is triggered
+        self.startJog(speed=-25)                                # move up until the limit switch is triggered
         self.g.GMotionComplete(a)                               # block until motion planning is complete
+        self.stopJog()                                          # restores pre-jog speed
         self.motorOn()                                          # turn motor back on (limit switch was tripped, which turns it off)
         self.send("HM")                                         # send home command
         self.send("BGA")                                        # start homing
@@ -298,6 +301,22 @@ class Galil():
         if acceleration is not None:                            # if acceleration was altered
             self.setAcceleration(old_acceleration)              # change it back to the old value
         return self.getPosition()
+        
+    # nonbocking call that start the axis moving at a specified speed.
+    def startJog(self, speed=None, axis = "A"):
+        if not self.jogging:                                    # only save the speed if we are not already jogging
+            self.pre_jog_speed = self.getSpeed()                # save the speed before jogging begins
+        self.jogging = True                                     # set flag indicating jogging motion
+        a = convertAxis(axis)                                   # check that the axis is valid
+        self.send("JG{}={}".format(a, speed*self.ctspmm[a]))    # set jogging speed
+        self.send("BG{}".format(a))                             # begin motion
+        
+    # nonbocking call that stops the motion of the stage.
+    def stopJog(self, axis = "A"):
+        a = convertAxis(axis)                                   # check that the axis is valid
+        self.send("ST{}".format(a))                             # stops motion
+        self.jogging = False                                    # clear flag indicating jogging motion
+        self.setSpeed(self.pre_jog_speed)                       # restore jogging speed
 
     # blocks execution until the encoder reading reaches the specified value. Also notifys all position data
     def waitForMotionComplete(self, cnts, axis="A"):
