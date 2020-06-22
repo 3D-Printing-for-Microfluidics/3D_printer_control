@@ -48,7 +48,7 @@ class ManualControls:
     def getPositionGalil(self):
         """Move the main Z stage. All units in mm"""
         message = {
-            "position": self.galil.cntsToMm(self.galil.get_position("Tip"))
+            "position": self.galil.cntsToMm(self.galil.getPosition())
         }
         socketio.emit('galil_position', message, namespace='/calibrate', broadcast=True)
 
