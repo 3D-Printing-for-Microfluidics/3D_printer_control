@@ -36,12 +36,21 @@ def home():
 
 @socketio.on("galil_move", namespace="/calibrate")
 def galil_move(message):
-    manualControls.home()
+    #manualControls.home()
     mode = message["mode"]
     speed = float(message["speed"])
     distance = float(message["distance"])
     acceleration = float(message["acceleration"])
     manualControls.moveGalil(mode, distance, speed, acceleration)
+    
+@socketio.on("galil_startJog", namespace="/calibrate")
+def galil_startJog(message):
+    speed = float(message["speed"])
+    manualControls.startJogGalil(speed)
+    
+@socketio.on("galil_stopJog", namespace="/calibrate")
+def galil_stopJog():
+    manualControls.stopJogGalil()
 
 @socketio.on("galil_get_position", namespace="/calibrate")
 def galil_get_position():
