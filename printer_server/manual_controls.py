@@ -16,11 +16,23 @@ class ManualControls:
         self.tiptilt = printer3d.tiptilt
         self.kdc = printer3d.kdc
         self._thread = None
+        self.external_control_enable = False
         self.position_log_file = str(Path.cwd() / 'logs' / 'calibration_position_log.txt')
 
     def write_to_position_log(self, message):
         with open(self.position_log_file, "a") as f:
             f.write("{} {}\n".format(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), message))
+
+    def set_external_control(self, mode):
+        """set_external_control -- Sets the variable determining if printer can be auto-calibrated"""
+        self.external_control_enable = mode
+
+    def get_external_control(self):
+        """get_external_control -- Returns the variable determining if printer can be auto-calibrated"""
+        message = {
+            "mode": self.external_control_enable
+        }
+        socketio.emit('external_control_enable', message, namespace='/calibrate', broadcast=True)
 
     def goToZmax(self):
         """goToZmax -- Move main Z stage to max position (up)"""
@@ -44,12 +56,12 @@ class ManualControls:
         elif mode == "relative":
             self.galil.relMove(mm=distance, speed=speed, acceleration=acceleration)
         socketio.emit('galil_done', namespace='/calibrate', broadcast=True)
-        
+
     def startJogGalil(self, speed):
         """Start """
         self.galil.startJog(speed=speed)
         #socketio.emit('galil_done', namespace='/calibrate', broadcast=True)
-    
+
     def stopJogGalil(self):
         """Stop jogging the main Z stage"""
         self.galil.stopJog()

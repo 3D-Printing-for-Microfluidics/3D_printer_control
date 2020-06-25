@@ -22,6 +22,15 @@ imagePath = os.path.join(CalibrationConfig.UPLOAD_FOLDER, 'calibration_images', 
 def index():
     return render_template('calibrate.html')
 
+@socketio.on('set_external_control_enable', namespace='/calibrate')
+def set_external_control_enable(message):
+    mode = message["mode"]
+    manualControls.set_external_control(mode)
+
+@socketio.on('get_external_control_enable', namespace='/calibrate')
+def get_external_control_enable():
+    manualControls.get_external_control()
+
 @socketio.on('galil_go_to_top', namespace='/calibrate')
 def galil_go_to_top():
     manualControls.goToZmax()
@@ -42,13 +51,13 @@ def galil_move(message):
     distance = float(message["distance"])
     acceleration = float(message["acceleration"])
     manualControls.moveGalil(mode, distance, speed, acceleration)
-    
-@socketio.on("galil_startJog", namespace="/calibrate")
+
+@socketio.on("galil_start_jog", namespace="/calibrate")
 def galil_startJog(message):
     speed = float(message["speed"])
     manualControls.startJogGalil(speed)
-    
-@socketio.on("galil_stopJog", namespace="/calibrate")
+
+@socketio.on("galil_stop_jog", namespace="/calibrate")
 def galil_stopJog():
     manualControls.stopJogGalil()
 
