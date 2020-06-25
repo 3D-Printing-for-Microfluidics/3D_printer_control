@@ -16,11 +16,23 @@ class ManualControls:
         self.tiptilt = printer3d.tiptilt
         self.kdc = printer3d.kdc
         self._thread = None
+        self.calibration_mode = False
         self.position_log_file = str(Path.cwd() / 'logs' / 'calibration_position_log.txt')
 
     def write_to_position_log(self, message):
         with open(self.position_log_file, "a") as f:
             f.write("{} {}\n".format(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), message))
+            
+    def setCalibrationMode(self, mode):
+        """setCalibrationMode -- Sets the variable determining if printer can be auto-calibrated"""
+        self.calibration_mode = mode
+    
+    def getCalibrationMode(self):
+        """getCalibrationMode -- Returns the variable determining if printer can be auto-calibrated"""
+        message = {
+            "mode": self.calibration_mode
+        }
+        socketio.emit('calibration_mode', message, namespace='/calibrate', broadcast=True)
 
     def goToZmax(self):
         """goToZmax -- Move main Z stage to max position (up)"""

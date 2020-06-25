@@ -21,6 +21,15 @@ imagePath = os.path.join(CalibrationConfig.UPLOAD_FOLDER, 'calibration_images', 
 @blueprint.route('/calibrate')
 def index():
     return render_template('calibrate.html')
+    
+@socketio.on('set_calibration_mode', namespace='/calibrate')
+def set_calibration_mode(message):
+    mode = message["mode"]
+    manualControls.getCalibrationMode(mode)
+    
+@socketio.on('get_calibration_mode', namespace='/calibrate')
+def get_calibration_mode():
+    manualControls.getCalibrationMode()
 
 @socketio.on('galil_go_to_top', namespace='/calibrate')
 def galil_go_to_top():
@@ -43,12 +52,12 @@ def galil_move(message):
     acceleration = float(message["acceleration"])
     manualControls.moveGalil(mode, distance, speed, acceleration)
     
-@socketio.on("galil_startJog", namespace="/calibrate")
+@socketio.on("galil_start_jog", namespace="/calibrate")
 def galil_startJog(message):
     speed = float(message["speed"])
     manualControls.startJogGalil(speed)
     
-@socketio.on("galil_stopJog", namespace="/calibrate")
+@socketio.on("galil_stop_jog", namespace="/calibrate")
 def galil_stopJog():
     manualControls.stopJogGalil()
 
