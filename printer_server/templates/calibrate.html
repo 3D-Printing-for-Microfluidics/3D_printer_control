@@ -1,4 +1,3 @@
-
 {% extends"base.html" %}
 
 {% block title %}3D Printer Manual Controls{% endblock %}
@@ -14,18 +13,32 @@
 
 {% block page_content %}
 
+<!-- External Control -->
+<div class="container">
+    <div class="container">
+        <div class="row top-buffer">
+            <div class="col-6">
+                <h3>External Control</h3>
+            </div>
+            <div class="col-6">
+                <div  id="external_enable" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                    <label class="btn btn-primary btn-fixed-width shadow-none">Enabled<input type="radio"></label>
+                    <label class="btn btn-primary btn-fixed-width shadow-none active">Disabled<input type="radio"></label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Calibration Motor Control -->
 <div class="container motor-controls">
-    <div class="row top-buffer">
-        <h3>Focus Controls</h3>
-    </div>
-
-    <div class="container" aria-label="Tip">
+    <div class="container">
         <div class="row">
-            <div class="col-2">
+            <div class="col-9">
+                <h3>Focus Controls</h3>
             </div>
-            <div class="col-10">
-                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+            <div class="col-3">
+                <div class="btn-group btn-group-toggle float-right" data-toggle="buttons">
                     <label class="btn btn-primary btn-fixed-width shadow-none active"><input type="radio" checked>Precise</label>
                     <label class="btn btn-primary btn-fixed-width shadow-none"><input type="radio" id="quick_move">Fast</label>
                 </div>
@@ -37,7 +50,7 @@
     <div class="container" aria-label="Tip">
         <div class="row">
             <div class="col-4">
-                <h4 >Tip</h4>
+                <h5 >Tip</h5>
             </div>
             <div class="col-2">
                 <h5 class="col text-right" id='tip-state'>?</h5>
@@ -73,7 +86,7 @@
     <div class="container" aria-label="Tilt">
         <div class="row">
             <div class="col-4">
-                <h4>Tilt</h4>
+                <h5>Tilt</h5>
             </div>
             <div class="col-2">
                 <h5 class="col text-right" id='tilt-state'>?</h5>
@@ -107,7 +120,7 @@
     <div class="container" aria-label="Distance">
         <div class="row">
             <div class="col-4">
-                <h4>Distance</h4>
+                <h5>Distance</h5>
             </div>
             <div class="col-2">
                 <h5 class="col text-right" id='dist-state'>?</h5>
@@ -141,7 +154,9 @@
 <!-- Galil Control -->
 <div class="container galil">
     <div class="row top-buffer">
-        <h3>Main Stage Control</h3>
+        <div class="col-12">
+            <h3>Main Stage Control</h3>
+        </div>
     </div>
     <div class="row">
         <div class="col-3">
@@ -162,12 +177,14 @@
 <!-- Light Engine Control -->
 <div class="container top-buffer light-engine">
     <div class="row">
-        <h3>Light Engine</h3>
+        <div class="col-12">
+            <h3>Light Engine</h3>
+        </div>
     </div>
 
     <!-- Upload Image -->
     <div class="row">
-        <h4 class="col-4 text-left">Image</h4>
+        <h5 class="col-4 text-left">Image</h5>
         <form class="col-5">
             <input type="file" class="form-control-file" name="file" accept=".png" id="file-picker">
             <div class="invalid-feedback">
@@ -181,14 +198,14 @@
 
     <!-- LED Power -->
     <div class="row">
-        <h4 class="col-3 text-left">LED Power</h4>
+        <h5 class="col-3 text-left">LED Power</h5>
         <h5 class="col-1 text-left" id="led-power-label"></h5>
         <div class="slidecontainer col-8"><input type="range" min="1" max="200" value="100" class="slider" id="led-power-slider"></div>
     </div>
 
     <!-- Repeat and Exposure Time -->
     <div class="row">
-        <h4 class="col-4 text-left">Exposure</h4>
+        <h5 class="col-4 text-left">Exposure</h5>
         <div class="col-2 form-group text-center">
             <input class="form-check-input" type="checkbox" value="" id="repeat-chkbx">
             <label class="form-check-label" for="repeat-chkbx">Repeat</label>
@@ -203,7 +220,7 @@
 
     <!-- Start Stop -->
     <div class="row">
-        <h4 class="col-6">Project</h4>
+        <h5 class="col-6">Project</h5>
         <div class="col-3"><button type="button" class="btn btn-primary btn-block" id="le-start-btn">Start</button></div>
         <div class="col-3"><button type="button" class="btn btn-primary btn-block" id="le-stop-btn">Stop</button></div>
     </div>

@@ -24,8 +24,7 @@ def index():
 
 @socketio.on('set_external_control_enable', namespace='/calibrate')
 def set_external_control_enable(message):
-    mode = message["mode"]
-    manualControls.set_external_control(mode)
+    manualControls.set_external_control(message == 'Enabled')
 
 @socketio.on('get_external_control_enable', namespace='/calibrate')
 def get_external_control_enable():
