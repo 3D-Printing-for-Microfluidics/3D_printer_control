@@ -237,9 +237,7 @@ $(document).ready(function(){
 
     // Read value of external control select button
     $("#external_enable :input").change(function() {
-        var test = $(this).parent().text();
-        console.log(test);
-        socket.emit("set_external_control_enable", test)
+        socket.emit("set_external_control_enable", $(this).parent().text());
     });
 
 });
