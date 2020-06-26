@@ -26,6 +26,7 @@ class ManualControls:
     def set_external_control(self, enable):
         """set_external_control -- Sets the variable determining if printer can be auto-calibrated"""
         self.external_control_enable = enable
+        socketio.emit('external_control_enable', self.external_control_enable, namespace='/calibrate', broadcast=True)
 
     def get_external_control(self):
         """get_external_control -- Returns the variable determining if printer can be auto-calibrated"""
