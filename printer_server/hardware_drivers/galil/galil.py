@@ -242,7 +242,7 @@ class Galil():
     def home(self, axis="A"):
         a = convertAxis(axis)                                   # check that the axis is valid
         self.motorOn()                                          # turn motor on
-        self.startJog(speed=-25)                                # move up until the limit switch is triggered
+        self.startJog(speed=-15)                                # move up until the limit switch is triggered
         self.g.GMotionComplete(a)                               # block until motion planning is complete
         self.stopJog()                                          # restores pre-jog speed
         self.motorOn()                                          # turn motor back on (limit switch was tripped, which turns it off)
