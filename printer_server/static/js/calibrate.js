@@ -235,6 +235,11 @@ $(document).ready(function(){
         socket.emit("calibration_motor_move", message);
     });
 
+    // Read value of external control select button
+    $("#external_enable :input").change(function() {
+        socket.emit("set_external_control_enable", $(this).parent().text());
+    });
+
 });
 
 function uploadFile(image) {

@@ -23,16 +23,13 @@ class ManualControls:
         with open(self.position_log_file, "a") as f:
             f.write("{} {}\n".format(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), message))
 
-    def set_external_control(self, mode):
+    def set_external_control(self, enable):
         """set_external_control -- Sets the variable determining if printer can be auto-calibrated"""
-        self.external_control_enable = mode
+        self.external_control_enable = enable
 
     def get_external_control(self):
         """get_external_control -- Returns the variable determining if printer can be auto-calibrated"""
-        message = {
-            "mode": self.external_control_enable
-        }
-        socketio.emit('external_control_enable', message, namespace='/calibrate', broadcast=True)
+        socketio.emit('external_control_enable', self.external_control_enable, namespace='/calibrate', broadcast=True)
 
     def goToZmax(self):
         """goToZmax -- Move main Z stage to max position (up)"""
