@@ -3,7 +3,6 @@ import atexit
 from struct import pack, unpack
 import serial
 import serial.tools.list_ports
-from apscheduler.schedulers.background import BackgroundScheduler
 
 class KDC101_dummy():
     #Port Settings
@@ -25,7 +24,7 @@ class KDC101_dummy():
     def home(self):
         print(" kdc101 - home()")
 
-    def move(self, pos, microns=True):
+    def move(self, pos, microns=True, fast=False, relative=True):
         print(" kdc101 - move({},{})".format(pos, microns))
 
     def setRelative(self):

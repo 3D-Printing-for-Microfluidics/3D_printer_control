@@ -23,7 +23,7 @@ class TipTilt_dummy(serial.Serial):
     def home(self):
         print(" tiptilt - home()")
 
-    def move(self, axis, distance_um, speed=10, relative=False):
+    def move(self, axis, distance_um, speed=10, relative=False, fast=False):
         # """
         # Move the specified number of um at the specified speed (in mm/min)
         # """
