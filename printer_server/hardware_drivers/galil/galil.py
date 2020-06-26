@@ -339,7 +339,7 @@ class Galil():
             else:
                 counter = 0
             time_count += 1
-            if time_count >= 1000:                              # timeout for collecting data, motor won't reach position
+            if time_count >= 10000:                              # timeout for collecting data, motor won't reach position
                 print("Warning - Z motor didn't reach position. Got to {} but needed {}".format(last_position, cnts))
                 with open(self.log, "a") as f:
                     f.write("Warning - possible position error got to {} needed {}".format(last_position, cnts))  # record sent command in log file
