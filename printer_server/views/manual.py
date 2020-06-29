@@ -12,7 +12,7 @@ from printer_server.settings import CalibrationConfig
 from printer_server.threads import manualControls
 
 # Create bluprint
-blueprint = Blueprint('calibrate', __name__, url_prefix='/', static_folder='../static')
+blueprint = Blueprint('manual_controls', __name__, url_prefix='/', static_folder='../static')
 
 # Specify location of uploaded image and give default name
 imagePath = os.path.join(CalibrationConfig.UPLOAD_FOLDER, 'calibration_images', 'temp.png')
@@ -20,7 +20,7 @@ imagePath = os.path.join(CalibrationConfig.UPLOAD_FOLDER, 'calibration_images', 
 # Decorator to handle navigation to calibration page
 @blueprint.route('/calibrate')
 def index():
-    return render_template('calibrate.html')
+    return render_template('manual_controls.html')
 
 @socketio.on('set_external_control_enable', namespace='/calibrate')
 def set_external_control_enable(message):

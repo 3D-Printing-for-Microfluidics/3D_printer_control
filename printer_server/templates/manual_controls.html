@@ -1,4 +1,4 @@
-{% extends"base.html" %}
+{% extends "base.html" %}
 
 {% block title %}3D Printer Manual Controls{% endblock %}
 
@@ -8,7 +8,7 @@
 
 {% block styles %}
 {{ super() }}
-<link href="{{ url_for('static', filename='css/calibrate.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/manual_controls.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block page_content %}
@@ -21,9 +21,10 @@
                 <h3>External Control</h3>
             </div>
             <div class="col-6">
-                <div  id="external_enable" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                <div id="external_enable" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
                     <label class="btn btn-primary btn-fixed-width shadow-none">Enabled<input type="radio"></label>
-                    <label class="btn btn-primary btn-fixed-width shadow-none active">Disabled<input type="radio"></label>
+                    <label class="btn btn-primary btn-fixed-width shadow-none active">Disabled<input
+                            type="radio"></label>
                 </div>
             </div>
         </div>
@@ -39,8 +40,10 @@
             </div>
             <div class="col-3">
                 <div class="btn-group btn-group-toggle float-right" data-toggle="buttons">
-                    <label class="btn btn-primary btn-fixed-width shadow-none active"><input type="radio" checked>Precise</label>
-                    <label class="btn btn-primary btn-fixed-width shadow-none"><input type="radio" id="quick_move">Fast</label>
+                    <label class="btn btn-primary btn-fixed-width shadow-none active"><input type="radio"
+                            checked>Precise</label>
+                    <label class="btn btn-primary btn-fixed-width shadow-none"><input type="radio"
+                            id="quick_move">Fast</label>
                 </div>
             </div>
         </div>
@@ -50,7 +53,7 @@
     <div class="container" aria-label="Tip">
         <div class="row">
             <div class="col-4">
-                <h5 >Tip</h5>
+                <h5>Tip</h5>
             </div>
             <div class="col-2">
                 <h5 class="col text-right" id='tip-state'>?</h5>
@@ -68,7 +71,7 @@
             </div>
             <div class="col-8 text-right">
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-primary mtr-cntrl-btn" >-1000</button>
+                    <button type="button" class="btn btn-primary mtr-cntrl-btn">-1000</button>
                     <button type="button" class="btn btn-primary mtr-cntrl-btn">-100</button>
                     <button type="button" class="btn btn-primary mtr-cntrl-btn">-10</button>
                     <button type="button" class="btn btn-primary mtr-cntrl-btn">-1</button>
@@ -200,7 +203,8 @@
     <div class="row">
         <h5 class="col-3 text-left">LED Power</h5>
         <h5 class="col-1 text-left" id="led-power-label"></h5>
-        <div class="slidecontainer col-8"><input type="range" min="1" max="200" value="100" class="slider" id="led-power-slider"></div>
+        <div class="slidecontainer col-8"><input type="range" min="1" max="200" value="100" class="slider"
+                id="led-power-slider"></div>
     </div>
 
     <!-- Repeat and Exposure Time -->
@@ -221,7 +225,8 @@
     <!-- Start Stop -->
     <div class="row">
         <h5 class="col-6">Project</h5>
-        <div class="col-3"><button type="button" class="btn btn-primary btn-block" id="le-start-btn">Start</button></div>
+        <div class="col-3"><button type="button" class="btn btn-primary btn-block" id="le-start-btn">Start</button>
+        </div>
         <div class="col-3"><button type="button" class="btn btn-primary btn-block" id="le-stop-btn">Stop</button></div>
     </div>
 
@@ -232,5 +237,5 @@
 {% block scripts %}
 {{super()}}
 <script src="{{ url_for('static', filename='js/ajax-socket.io-2.1.0.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/calibrate.js') }}"></script>
+<script src="{{ url_for('static', filename='js/manual_controls.js') }}"></script>
 {% endblock %}

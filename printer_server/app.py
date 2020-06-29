@@ -5,7 +5,8 @@ from werkzeug.contrib.fixers import ProxyFix
 from flask import Flask, render_template
 from flask.logging import default_handler
 from printer_server.extensions import db, migrate, socketio
-from printer_server import commands, models, main, digital, calibrate
+from printer_server import commands, models
+from printer_server.views import home, digital, manual
 from printer_server.settings import ProdConfig
 from printer_server.hardware import printer3d
 from printer_server.logging_handler import SQLAlchemyHandler
@@ -35,9 +36,9 @@ def register_extensions(app):
 
 def register_blueprints(app):
     """Register Flask blueprints."""
-    app.register_blueprint(main.views.blueprint)
-    app.register_blueprint(digital.views.blueprint)
-    app.register_blueprint(calibrate.views.blueprint)
+    app.register_blueprint(home.blueprint)
+    app.register_blueprint(digital.blueprint)
+    app.register_blueprint(manual.blueprint)
 
 def register_errorhandlers(app):
     """Register error handlers."""
@@ -45,7 +46,7 @@ def register_errorhandlers(app):
         """Render error template."""
         # If a HTTPException, pull the `code` attribute; default to 500
         error_code = getattr(error, 'code', 500)
-        return render_template('{0}.html'.format(error_code)), error_code
+        return render_template('{}.html'.format(error_code), msg=error), error_code
     for errcode in [404, 500]:
         app.errorhandler(errcode)(render_error)
 

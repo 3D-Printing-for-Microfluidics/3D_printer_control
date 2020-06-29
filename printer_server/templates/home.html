@@ -9,7 +9,7 @@
 
 {% block styles %}
 {{ super() }}
-<link href="{{ url_for('static', filename='css/index.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/home.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block page_content %}
@@ -134,7 +134,7 @@
   <div class="col-auto mr-auto">
     <button type="button" class="printer-btn btn btn-sm btn-outline-danger d-none" data-toggle="modal" data-target="#confirmModal" id="shutdown-btn">Shutdown</button>
     <a href="#" class="btn btn-sm btn-outline-info" role="button" aria-pressed="true">Print history</a>
-    <a href="{{ url_for('calibrate.index') }}" class="printer-btn btn btn-sm btn-outline-dark d-none" role="button" aria-pressed="true" id="admin-btn">Manual Controls</a>
+    <a href="{{ url_for('manual_controls.index') }}" class="printer-btn btn btn-sm btn-outline-dark d-none" role="button" aria-pressed="true" id="admin-btn">Manual Controls</a>
   </div>
 </div>
 

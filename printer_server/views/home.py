@@ -22,7 +22,7 @@ blueprint = Blueprint('main', __name__, url_prefix='/', static_folder='../static
 @blueprint.route('/')
 def index():
     allJobs = PrintJob.query.all()
-    return render_template('index.html', allJobs=allJobs)
+    return render_template('home.html', allJobs=allJobs)
 
 
 @socketio.on('connect', namespace='/printing')
