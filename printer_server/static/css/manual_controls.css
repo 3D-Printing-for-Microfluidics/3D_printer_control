@@ -18,6 +18,11 @@
     padding: 5px;
 }
 
+.btn-fixed-width:not(:disabled):not(.disabled).active {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
 /* extra margin for rows with large headings */
 .top-buffer {
      margin-top:20px;
