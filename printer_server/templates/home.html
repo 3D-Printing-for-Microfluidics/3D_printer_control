@@ -25,7 +25,7 @@
     <button type="button" class="printer-btn btn btn-lg btn-primary d-none" data-toggle="modal" data-target="#confirmModal" id="stop-btn">Stop</button>
   </div>
   <div class="col-auto">
-    <button class="btn btn-lg btn-info" type="button" data-toggle="collapse" data-target="#collapseUpload" aria-expanded="false" aria-controls="collapseUpload" id="create-job">Create a job</button>
+    <button class="btn btn-lg btn-primary" type="button" data-toggle="collapse" data-target="#collapseUpload" aria-expanded="false" aria-controls="collapseUpload" id="create-job">Create a job</button>
   </div>
 </div>
 
@@ -62,7 +62,7 @@
           <button type="button" class="btn btn-sm btn-primary" onClick="document.getElementById('file-picker').click();" id="choose-file">Choose</button>&nbsp;
           <input id="file-picker" multiple="" name="file" style="display:none" type="file">
           <span id="file-number">0 file selected</span>
-          <button type="button" class="ml-auto btn btn-sm btn-info" id="upload-btn">Upload</button>
+          <button type="button" class="ml-auto btn btn-sm btn-primary" id="upload-btn">Upload</button>
         </div>
 
         <!-- Drop Zone -->
@@ -133,8 +133,7 @@
 <div class="row mb-5">
   <div class="col-auto mr-auto">
     <button type="button" class="printer-btn btn btn-sm btn-outline-danger d-none" data-toggle="modal" data-target="#confirmModal" id="shutdown-btn">Shutdown</button>
-    <a href="#" class="btn btn-sm btn-outline-info" role="button" aria-pressed="true">Print history</a>
-    <a href="{{ url_for('manual_controls.index') }}" class="printer-btn btn btn-sm btn-outline-dark d-none" role="button" aria-pressed="true" id="admin-btn">Manual Controls</a>
+    <a href="{{ url_for('manual_controls.index') }}" class="printer-btn btn btn-sm btn-outline-info" role="button"aria-pressed="true" id="admin-btn">Manual Controls</a>
   </div>
 </div>
 
