@@ -11,12 +11,13 @@ from printer_server.settings import ProdConfig
 from printer_server.hardware import printer3d
 from printer_server.logging_handler import SQLAlchemyHandler
 
+
 def create_app(config_object=ProdConfig):
     """An application factory, as explained here: http://flask.pocoo.org/docs/patterns/appfactories/.
 
     :param config_object: The configuration object to use.
     """
-    app = Flask(__name__.split('.')[0])
+    app = Flask(__name__.split(".")[0])
     app.config.from_object(config_object)
     app.wsgi_app = ProxyFix(app.wsgi_app)
     register_extensions(app)
@@ -28,11 +29,13 @@ def create_app(config_object=ProdConfig):
     register_logger(app)
     return app
 
+
 def register_extensions(app):
     """Register Flask extensions."""
     db.init_app(app)
     migrate.init_app(app, db)
     socketio.init_app(app)
+
 
 def register_blueprints(app):
     """Register Flask blueprints."""
@@ -40,25 +43,29 @@ def register_blueprints(app):
     app.register_blueprint(digital.blueprint)
     app.register_blueprint(manual.blueprint)
 
+
 def register_errorhandlers(app):
     """Register error handlers."""
+
     def render_error(error):
         """Render error template."""
         # If a HTTPException, pull the `code` attribute; default to 500
-        error_code = getattr(error, 'code', 500)
-        return render_template('{}.html'.format(error_code), msg=error), error_code
+        error_code = getattr(error, "code", 500)
+        return render_template("{}.html".format(error_code), msg=error), error_code
+
     for errcode in [404, 500]:
         app.errorhandler(errcode)(render_error)
 
+
 def register_shellcontext(app):
     """Register shell context objects."""
+
     def shell_context():
         """Shell context objects."""
-        return {
-            'db': db,
-            'User': models.User}
+        return {"db": db, "User": models.User}
 
     app.shell_context_processor(shell_context)
+
 
 def register_commands(app):
     """Register Click commands."""
@@ -67,8 +74,10 @@ def register_commands(app):
     app.cli.add_command(commands.clean)
     app.cli.add_command(commands.urls)
 
+
 def register_hardware(app):
     app.printer3d = printer3d
+
 
 def register_logger(app):
     if not app.debug:

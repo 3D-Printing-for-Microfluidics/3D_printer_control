@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 """
 Projector
@@ -15,10 +14,10 @@ class Projector_dummy:
         print(" projector - __init({},{})__".format(resolution, fullscreen))
         self.resolution = resolution
         self.fullscreen = fullscreen
-        self.max_exp_time = 10000                   # max single projection time in ms
+        self.max_exp_time = 10000  # max single projection time in ms
         # setup screen thread
         self.screenThread = ScreenThread(self.resolution, self.fullscreen)
-        atexit.register(self.screenThread.stop)         # stop screen thread on exit
+        atexit.register(self.screenThread.stop)  # stop screen thread on exit
 
     def connect(self):
         # start screen thread
@@ -110,14 +109,37 @@ class Projector_dummy:
         return self.send("GET OPERATION MODE")
 
     # pylint: disable=too-many-arguments
-    def set_sequencer_lut_definition(self, exposure, darktime=0, clear=1, bitdepth=7, wait_for_trigger=1, pattern_index=0, bit_index=0):
-        return self.send("SET LUT DEFINITION\r\n{},{},{},{},{},{},{}".format(exposure, darktime, clear, bitdepth, wait_for_trigger, pattern_index, bit_index))
+    def set_sequencer_lut_definition(
+        self,
+        exposure,
+        darktime=0,
+        clear=1,
+        bitdepth=7,
+        wait_for_trigger=1,
+        pattern_index=0,
+        bit_index=0,
+    ):
+        return self.send(
+            "SET LUT DEFINITION\r\n{},{},{},{},{},{},{}".format(
+                exposure,
+                darktime,
+                clear,
+                bitdepth,
+                wait_for_trigger,
+                pattern_index,
+                bit_index,
+            )
+        )
 
     def set_sequencer_lut_config(self, num_sequences=1, repeats=1):
         return self.send("SET LUT CONFIG {} {}".format(num_sequences, repeats))
 
     def upload_image(self, pattern_index, bitmap_size, bitmap_data):
-        return self.send("UPLOAD IMAGE PATTERN\r\n{}\r\n{}\r\n{}".format(pattern_index, bitmap_size, bitmap_data))
+        return self.send(
+            "UPLOAD IMAGE PATTERN\r\n{}\r\n{}\r\n{}".format(
+                pattern_index, bitmap_size, bitmap_data
+            )
+        )
 
     def set_video_source(self, source="HDMI"):
         if source == "DISPLAYPORT":
@@ -152,23 +174,35 @@ class Projector_dummy:
         self.screenThread.screen.clear()
 
     def project(self, image, exposure, power, repeats=1):
-        print(" projector - project({},{},{},{})".format(image, exposure, power, repeats))
-        if repeats == 0:    # if continuous display is desired
-            self.set_sequencer_lut_definition(33100)                    # this provides the minimum blanking of 233 us of the full 33333 us cycle (at 30Hz on HDMI)
-            self.set_sequencer_lut_config(repeats=0)                    # 0 means repeat forever
-            self.screenThread.screen.draw(image)                        # draw to virtual screen
-            self.start_sequencer()                                      # start the sequencer and don't stop it (will be stopped on program exit)
-        else:               # normal display is desired
+        print(
+            " projector - project({},{},{},{})".format(image, exposure, power, repeats)
+        )
+        if repeats == 0:  # if continuous display is desired
+            self.set_sequencer_lut_definition(
+                33100
+            )  # this provides the minimum blanking of 233 us of the full 33333 us cycle (at 30Hz on HDMI)
+            self.set_sequencer_lut_config(repeats=0)  # 0 means repeat forever
+            self.screenThread.screen.draw(image)  # draw to virtual screen
+            self.start_sequencer()  # start the sequencer and don't stop it (will be stopped on program exit)
+        else:  # normal display is desired
             for t in self.split_exposure_time(exposure):
-                self.set_sequencer_lut_definition(exposure=t*1000)      # the TI board expects exposure in microseconds
-                self.set_sequencer_lut_config(repeats=repeats)          # set the number of repetitions
-                self.screenThread.screen.draw(image)                    # draw to the virtual screen
+                self.set_sequencer_lut_definition(
+                    exposure=t * 1000
+                )  # the TI board expects exposure in microseconds
+                self.set_sequencer_lut_config(
+                    repeats=repeats
+                )  # set the number of repetitions
+                self.screenThread.screen.draw(image)  # draw to the virtual screen
                 time.sleep(0.1)
-                self.start_sequencer()                                  # start the sequencer
+                self.start_sequencer()  # start the sequencer
                 time.sleep(0.1 + t * 1e-3)
-                self.stop_sequencer()                                   # stop the sequencer
+                self.stop_sequencer()  # stop the sequencer
 
     def projectMulti(self, images, exposureTimes, ledPowers):
-        print(" projector - projectMulti({},{},{})".format(images, exposureTimes, ledPowers))
+        print(
+            " projector - projectMulti({},{},{})".format(
+                images, exposureTimes, ledPowers
+            )
+        )
         for image, expTime, power in zip(images, exposureTimes, ledPowers):
             self.project(image, expTime, power)

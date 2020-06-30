@@ -8,34 +8,39 @@ import atexit
 # remove bad chars from file name
 def cleanFileName(name):
     for c in '\\/:*?"<>| ':
-        name = name.replace(c, '')
+        name = name.replace(c, "")
     return name
+
 
 # maps X,Y,Z to A,B,C
 def convertAxis(axis):
     axis = axis.upper()
-    if axis in ('X', 'A'):
-        return 'A'
-    if axis in ('B', 'Y'):
-        return 'B'
-    if axis in ('C', 'Z'):
-        return 'C'
-    raise ValueError('Invalid axis supplied')
+    if axis in ("X", "A"):
+        return "A"
+    if axis in ("B", "Y"):
+        return "B"
+    if axis in ("C", "Z"):
+        return "C"
+    raise ValueError("Invalid axis supplied")
+
 
 # return the value for the specified axis
 def parseResponseString(string, axis="A"):
-    string = string.replace(',', '')                # get rid of commas in response
-    array = string.split()                          # split axes into an array
-    axis = convertAxis(axis)                        # sterilize axis input
-    axis_index = ord(axis.lower()) - 97             # converts A B C to 0 1 2
-    value = array[axis_index]                       # index into the axis we want
+    string = string.replace(",", "")  # get rid of commas in response
+    array = string.split()  # split axes into an array
+    axis = convertAxis(axis)  # sterilize axis input
+    axis_index = ord(axis.lower()) - 97  # converts A B C to 0 1 2
+    value = array[axis_index]  # index into the axis we want
     return int(value)
 
-class Galil_dummy():
+
+class Galil_dummy:
 
     # regular expressions for parsing command chains
-    waitRegex = re.compile(r'WAIT (-?\d+(\.\d+)?)')
-    moveRegex = re.compile(r'^(UP|DOWN) (-?\d+(\.\d+)?) SPEED (-?\d+(\.\d+)?) ACC (-?\d+(\.\d+)?)')
+    waitRegex = re.compile(r"WAIT (-?\d+(\.\d+)?)")
+    moveRegex = re.compile(
+        r"^(UP|DOWN) (-?\d+(\.\d+)?) SPEED (-?\d+(\.\d+)?) ACC (-?\d+(\.\d+)?)"
+    )
 
     def __init__(self, address=None, verbose=False):
         print(" galil - __init({}, {})__".format(address, verbose))
@@ -44,16 +49,18 @@ class Galil_dummy():
 
         # default configuration parameters
         self.axes = ["A"]
-        self.travel = {"A":100}     # max travel in mm
-        self.ctspmm = {"A":8000}    # counts/mm for each axis
-        self.data = {}              # for saving calibration data
-        self.move_num = 0           # also for saving calibration data
+        self.travel = {"A": 100}  # max travel in mm
+        self.ctspmm = {"A": 8000}  # counts/mm for each axis
+        self.data = {}  # for saving calibration data
+        self.move_num = 0  # also for saving calibration data
 
         # connection parameters
         self.connected = False
         self.homed = False
-        self.controller_name = "DMC31010"   # controller to search for
-        atexit.register(self.disconnect)    # register disconnect to always run at interpreter end
+        self.controller_name = "DMC31010"  # controller to search for
+        atexit.register(
+            self.disconnect
+        )  # register disconnect to always run at interpreter end
 
     def initialize(self):
         print(" galil - initialize()")
@@ -82,7 +89,7 @@ class Galil_dummy():
         lastDownCommand = 0
         for i, command in enumerate(commandChain):
             m2 = self.moveRegex.fullmatch(command)
-            if m2 and m2.group(1) == 'DOWN':
+            if m2 and m2.group(1) == "DOWN":
                 lastDownCommand = i
 
         for i, c in enumerate(commandChain):
@@ -95,16 +102,20 @@ class Galil_dummy():
             m1 = self.waitRegex.fullmatch(command)
             m2 = self.moveRegex.fullmatch(command)
 
-            if m1:                                              # is a wait command
+            if m1:  # is a wait command
                 wait_seconds = float(m1.group(1))
                 time.sleep(wait_seconds)
-            elif m2:                                            # is a move command
+            elif m2:  # is a move command
                 direction = m2.group(1)
                 distance = float(m2.group(2))
                 speed = float(m2.group(4))
                 acceleration = float(m2.group(6))
-                distance *= -1 if direction == 'UP' else 1      # calculate the sign using direction, up is negative
-                if i == lastDownCommand:                        # take off the layer thickness if this is the last layer
+                distance *= (
+                    -1 if direction == "UP" else 1
+                )  # calculate the sign using direction, up is negative
+                if (
+                    i == lastDownCommand
+                ):  # take off the layer thickness if this is the last layer
                     distance -= layerThicknessMm
                 self.relMove(speed=speed, mm=distance, acceleration=acceleration)
         return 0, 0, 0, 0
@@ -126,7 +137,7 @@ class Galil_dummy():
         axis = convertAxis(axis)
         return counts / self.ctspmm[axis]
 
-   # send a command to the controller, interpret errors if any are thrown
+    # send a command to the controller, interpret errors if any are thrown
     def send(self, command):
         print(" galil - send({})".format(command))
 
@@ -169,12 +180,20 @@ class Galil_dummy():
     # blocking call to relative move an axis the specified distance at speed (in mm/sec)
     # pylint: disable=too-many-arguments
     def relMove(self, speed, mm=None, cnts=None, acceleration=None, axis="A"):
-        print(" galil - relMove({}, {}, {}, {}, {})".format(speed, mm, cnts, acceleration, axis))
+        print(
+            " galil - relMove({}, {}, {}, {}, {})".format(
+                speed, mm, cnts, acceleration, axis
+            )
+        )
 
     # blocking call to move specified axis to absolute position at speed (in mm/sec)
     # pylint: disable=too-many-arguments
     def absMove(self, speed, mm=None, cnts=None, acceleration=None, axis="A"):
-        print(" galil - absMove({}, {}, {}, {}, {})".format(speed, mm, cnts, acceleration, axis))
+        print(
+            " galil - absMove({}, {}, {}, {}, {})".format(
+                speed, mm, cnts, acceleration, axis
+            )
+        )
 
     # blocks execution until the encoder reading reaches the specified value. Also logs all position data
     def waitForMotionComplete(self, cnts, axis="A"):

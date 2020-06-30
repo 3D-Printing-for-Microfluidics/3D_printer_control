@@ -4,16 +4,17 @@ from struct import pack, unpack
 import serial
 import serial.tools.list_ports
 
-class KDC101_dummy():
-    #Port Settings
+
+class KDC101_dummy:
+    # Port Settings
     baud_rate = 115200
     data_bits = 8
     stop_bits = 1
     Parity = serial.PARITY_NONE
-    Channel = 1                     # channel is always 1 for a K Cube/T Cube
-    Device_Unit_SF = 34304.         # pg 34 of protocol PDF (as of Issue 23)
-    destination = 0x50              # destination byte; 0x50 for T Cube/K Cube, USB controllers
-    source = 0x01                   # source Byte
+    Channel = 1  # channel is always 1 for a K Cube/T Cube
+    Device_Unit_SF = 34304.0  # pg 34 of protocol PDF (as of Issue 23)
+    destination = 0x50  # destination byte; 0x50 for T Cube/K Cube, USB controllers
+    source = 0x01  # source Byte
     maxPos = 25.0
     minPos = 0.0
     relativeMode = True

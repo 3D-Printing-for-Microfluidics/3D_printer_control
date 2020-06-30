@@ -6,10 +6,12 @@ import os
 class Config(object):
     """Base configuration."""
 
-    SECRET_KEY = os.environ.get('PRINTER_SERVER_SECRET', 'secret-key')  # TODO: Change me
+    SECRET_KEY = os.environ.get(
+        "PRINTER_SERVER_SECRET", "secret-key"
+    )  # TODO: Change me
     APP_DIR = os.path.abspath(os.path.dirname(__file__))  # This directory
     PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
-    UPLOAD_FOLDER = os.path.abspath(os.path.join(PROJECT_ROOT, 'upload'))
+    UPLOAD_FOLDER = os.path.abspath(os.path.join(PROJECT_ROOT, "upload"))
     DEBUG_TB_ENABLED = False  # Disable Debug toolbar
     DEBUG_TB_INTERCEPT_REDIRECTS = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -20,30 +22,30 @@ class CalibrationConfig(object):
 
     APP_DIR = os.path.abspath(os.path.dirname(__file__))  # This directory
     PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
-    UPLOAD_FOLDER = os.path.abspath(os.path.join(PROJECT_ROOT, 'upload'))
+    UPLOAD_FOLDER = os.path.abspath(os.path.join(PROJECT_ROOT, "upload"))
 
 
 class ProdConfig(Config):
     """Production configuration."""
 
-    ENV = 'prod'
+    ENV = "prod"
     DEBUG = False
-    DB_NAME = 'dev.db' # TODO: change me
+    DB_NAME = "dev.db"  # TODO: change me
     DB_PATH = os.path.join(Config.PROJECT_ROOT, DB_NAME)
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///{0}'.format(DB_PATH)
+    SQLALCHEMY_DATABASE_URI = "sqlite:///{0}".format(DB_PATH)
     DEBUG_TB_ENABLED = False  # Disable Debug toolbar
 
 
 class DevConfig(Config):
     """Development configuration."""
 
-    ENV = 'dev'
+    ENV = "dev"
     DEBUG = True
-    DB_NAME = 'dev.db'
+    DB_NAME = "dev.db"
     DB_PATH = os.path.join(Config.PROJECT_ROOT, DB_NAME)
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///{0}'.format(DB_PATH)
+    SQLALCHEMY_DATABASE_URI = "sqlite:///{0}".format(DB_PATH)
     DEBUG_TB_ENABLED = True
-    CACHE_TYPE = 'simple'  # Can be "memcached", "redis", etc.
+    CACHE_TYPE = "simple"  # Can be "memcached", "redis", etc.
 
 
 class TestConfig(Config):
@@ -51,8 +53,9 @@ class TestConfig(Config):
 
     TESTING = True
     DEBUG = True
-    DB_PATH = os.path.join(Config.PROJECT_ROOT, 'test.db')
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///{0}'.format(DB_PATH)
-    BCRYPT_LOG_ROUNDS = 4  # For faster tests; needs at least 4 to avoid "ValueError: Invalid rounds"
+    DB_PATH = os.path.join(Config.PROJECT_ROOT, "test.db")
+    SQLALCHEMY_DATABASE_URI = "sqlite:///{0}".format(DB_PATH)
+    BCRYPT_LOG_ROUNDS = (
+        4  # For faster tests; needs at least 4 to avoid "ValueError: Invalid rounds"
+    )
     WTF_CSRF_ENABLED = False  # Allows form testing
-

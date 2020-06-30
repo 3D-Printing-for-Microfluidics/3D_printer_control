@@ -339,8 +339,10 @@ class PrintSettings:
     :param dict settings: a dictionary of print settings.
     """
 
-    waitRegex = re.compile(r'WAIT (-?\d+(\.\d+)?)')
-    moveRegex = re.compile(r'^(UP|DOWN) (-?\d+(\.\d+)?) SPEED (-?\d+(\.\d+)?) ACC (-?\d+(\.\d+)?)')
+    waitRegex = re.compile(r"WAIT (-?\d+(\.\d+)?)")
+    moveRegex = re.compile(
+        r"^(UP|DOWN) (-?\d+(\.\d+)?) SPEED (-?\d+(\.\d+)?) ACC (-?\d+(\.\d+)?)"
+    )
 
     def __init__(self, settings):
         self.__settings = settings
@@ -348,12 +350,11 @@ class PrintSettings:
         # Puts the number of duplications for each image into a
         # list
         self.__listOfDuplication = list()
-        for layer in self.__settings['Layers']:
+        for layer in self.__settings["Layers"]:
             try:
-                numOfDup = layer['Number of duplications']
+                numOfDup = layer["Number of duplications"]
             except KeyError:
-                numOfDup = self.__settings['Default settings']\
-                                         ['Number of duplications']
+                numOfDup = self.__settings["Default settings"]["Number of duplications"]
             self.__listOfDuplication.append(numOfDup)
 
         # Creates another list where each value is corresponding
@@ -369,7 +370,7 @@ class PrintSettings:
 
         :param str filename: JSON file that has the print settings
         """
-        with open(filename, 'r') as f:
+        with open(filename, "r") as f:
             settings = json.load(f)
         return cls(settings)
 
@@ -390,13 +391,13 @@ class PrintSettings:
         :returns: a layer parameter value
         """
         try:
-            i = self.__mapOfLayers[layerNum-1]
-            return self.__settings['Layers'][i][paramName]
-        except KeyError: # TODO: This key error gets caught when key doesn't exist OR when it is wrong. That means it
-                         # is possible for a user to think they are putting in good information but the software will
-                         # ignore it and keep running without notification. Validation should be more robust to
-                         # prevent this
-            return self.__settings['Default settings'][paramName]
+            i = self.__mapOfLayers[layerNum - 1]
+            return self.__settings["Layers"][i][paramName]
+        except KeyError:  # TODO: This key error gets caught when key doesn't exist OR when it is wrong. That means it
+            # is possible for a user to think they are putting in good information but the software will
+            # ignore it and keep running without notification. Validation should be more robust to
+            # prevent this
+            return self.__settings["Default settings"][paramName]
 
     def getLayerThicknessMm(self, layerNum):
         """
@@ -405,10 +406,7 @@ class PrintSettings:
                   millimeters
         :rtype: float
         """
-        return self.__getLayerParam(
-            layerNum,
-            'Layer thickness (um)'
-        ) * 1e-3
+        return self.__getLayerParam(layerNum, "Layer thickness (um)") * 1e-3
 
     def getCommandChain(self, layerNum):
         """
@@ -416,7 +414,7 @@ class PrintSettings:
         :returns: a list of Galil commands
         :rtype: list
         """
-        return self.__getLayerParam(layerNum, 'Command chain')
+        return self.__getLayerParam(layerNum, "Command chain")
 
     def getImages(self, layerNum):
         """
@@ -425,10 +423,8 @@ class PrintSettings:
         :rtype: list
         """
         return [
-            os.path.join(
-                self.__settings['Header']['Image directory'],
-                im
-            ) for im in self.__getLayerParam(layerNum, 'Images')
+            os.path.join(self.__settings["Header"]["Image directory"], im)
+            for im in self.__getLayerParam(layerNum, "Images")
         ]
 
     def getExposureTimeMs(self, layerNum):
@@ -437,9 +433,9 @@ class PrintSettings:
         :returns: a list of exposure time in milliseconds
         :rtype: list
         """
-        temp = self.__getLayerParam(layerNum, 'Layer exposure time (ms)')
+        temp = self.__getLayerParam(layerNum, "Layer exposure time (ms)")
         if not isinstance(temp, list):
-            temp = [temp] * len(self.__getLayerParam(layerNum, 'Images'))
+            temp = [temp] * len(self.__getLayerParam(layerNum, "Images"))
         return temp
 
     def getLedPowers(self, layerNum):
@@ -448,9 +444,9 @@ class PrintSettings:
         :returns: a list of light engine power settings
         :rtype: list
         """
-        temp = self.__getLayerParam(layerNum, 'Light engine power setting')
+        temp = self.__getLayerParam(layerNum, "Light engine power setting")
         if not isinstance(temp, list):
-            temp = [temp] * len(self.__getLayerParam(layerNum, 'Images'))
+            temp = [temp] * len(self.__getLayerParam(layerNum, "Images"))
         return temp
 
     @classmethod
@@ -477,9 +473,9 @@ class PrintSettings:
         :rtype: boolean
         """
         try:
-            with zipfile.ZipFile(filename, 'r') as zf:
-                files = [f for f in zf.namelist() if not f.startswith('__MACOSX')]
-                jsonFiles = [f for f in files if f.endswith('print_settings.json')]
+            with zipfile.ZipFile(filename, "r") as zf:
+                files = [f for f in zf.namelist() if not f.startswith("__MACOSX")]
+                jsonFiles = [f for f in files if f.endswith("print_settings.json")]
                 assert len(jsonFiles) == 1
                 jsonFile = jsonFiles[0]
                 zf.extract(jsonFile, path=path)
@@ -500,45 +496,58 @@ class PrintSettings:
         return True
 
     def checkDefault(self):
-        assert isinstance(self.__settings['Default settings']['Light engine power setting'], int)
-        assert isinstance(self.__settings['Default settings']['Layer exposure time (ms)'], int)
-        float(self.__settings['Default settings']['Layer thickness (um)'])
-        assert isinstance(self.__settings['Default settings']['Number of duplications'], int)
-        self.checkGalilCommandChain(self.__settings['Default settings']['Command chain'])
+        assert isinstance(
+            self.__settings["Default settings"]["Light engine power setting"], int
+        )
+        assert isinstance(
+            self.__settings["Default settings"]["Layer exposure time (ms)"], int
+        )
+        float(self.__settings["Default settings"]["Layer thickness (um)"])
+        assert isinstance(
+            self.__settings["Default settings"]["Number of duplications"], int
+        )
+        self.checkGalilCommandChain(
+            self.__settings["Default settings"]["Command chain"]
+        )
 
     def checkLayers(self, jsonDir, files):
-        for layer in self.__settings['Layers']:
-            for image in layer['Images']:
-                assert os.path.join(jsonDir, self.__settings['Header']['Image directory'], image) in files
+        for layer in self.__settings["Layers"]:
+            for image in layer["Images"]:
+                assert (
+                    os.path.join(
+                        jsonDir, self.__settings["Header"]["Image directory"], image
+                    )
+                    in files
+                )
 
             try:
                 # Check to make sure there is the same number of images and LED powers
-                assert len(layer['Light engine power setting']) == len(layer['Images'])
-                for i in layer['Light engine power setting']:
+                assert len(layer["Light engine power setting"]) == len(layer["Images"])
+                for i in layer["Light engine power setting"]:
                     assert isinstance(i, int)
             except KeyError:
                 pass
 
             try:
                 # Check to make sure there is the same number of images and exposure times
-                assert len(layer['Layer exposure time (ms)']) == len(layer['Images'])
-                for i in layer['Layer exposure time (ms)']:
+                assert len(layer["Layer exposure time (ms)"]) == len(layer["Images"])
+                for i in layer["Layer exposure time (ms)"]:
                     assert isinstance(i, int)
             except KeyError:
                 pass
 
             try:
-                float(layer['Layer thickness (um)'])
+                float(layer["Layer thickness (um)"])
             except KeyError:
                 pass
 
             try:
-                assert isinstance(layer['Number of duplications'], int)
+                assert isinstance(layer["Number of duplications"], int)
             except KeyError:
                 pass
 
             try:
-                self.checkGalilCommandChain(layer['Command chain'])
+                self.checkGalilCommandChain(layer["Command chain"])
             except KeyError:
                 pass
 
@@ -552,21 +561,27 @@ class PrintSettings:
         for i, command in enumerate(commandChain):
             m1 = self.waitRegex.fullmatch(command)
             m2 = self.moveRegex.fullmatch(command)
-            if m1:                                              # is a wait command
+            if m1:  # is a wait command
                 wait_seconds = float(m1.group(1))
                 print("Wait for", wait_seconds)
-            elif m2:                                            # is a move command
+            elif m2:  # is a move command
                 direction = m2.group(1)
                 distance = float(m2.group(2))
                 speed = float(m2.group(4))
                 acceleration = float(m2.group(6))
-                distance *= -1 if direction == 'UP' else 1      # calculate the sign using direction, up is negative
+                distance *= (
+                    -1 if direction == "UP" else 1
+                )  # calculate the sign using direction, up is negative
                 totalDistance += distance
-                print("Move {} mm at {} mm/sec {} mm/sec^2".format(distance, speed, acceleration))
-            else:                                               # if command didn't match either regex
+                print(
+                    "Move {} mm at {} mm/sec {} mm/sec^2".format(
+                        distance, speed, acceleration
+                    )
+                )
+            else:  # if command didn't match either regex
                 print("Bad command, must be UP, DOWN, or WAIT")
                 raise AssertionError
 
-        if totalDistance != 0:                                  # if the total distance on this layer isn't 0
+        if totalDistance != 0:  # if the total distance on this layer isn't 0
             print("Upward and downward movements don't add to 0")
             raise AssertionError

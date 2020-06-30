@@ -11,12 +11,12 @@ class Projector:
     def __init__(self, resolution, fullscreen=True, verbosity=logging.INFO):
         self.resolution = resolution
         self.fullscreen = fullscreen
-        self.max_exp_time = 10000       # max single projection time in ms
+        self.max_exp_time = 10000  # max single projection time in ms
         self.verbosity = verbosity
         self.led_driver = Visitech_LED_I2C(verbosity=verbosity)
         self.dmd_driver = TI_DLPC900_I2C(verbosity=verbosity)
         self.screenThread = ScreenThread(self.resolution, self.fullscreen)
-        atexit.register(self.disconnect)    # register exit handler
+        atexit.register(self.disconnect)  # register exit handler
 
     def log(self, lvl, msg):
         """Log message.
@@ -41,7 +41,7 @@ class Projector:
 
     def disconnect(self):
         """Stop the virtual screen"""
-        self.screenThread.stop()         # stop screen thread on exit
+        self.screenThread.stop()  # stop screen thread on exit
 
     def clear_image(self):
         """Blank the virtual screen that provides the image to the projector.
@@ -67,16 +67,19 @@ class Projector:
         in this case, providing the minimum blanking of 233 us of the full 33333 us cycle (at 30Hz on HDMI).
 
         """
-        self.log(logging.INFO, "Exposing {} for {} ms at power {}".format(image, exposure, power))
+        self.log(
+            logging.INFO,
+            "Exposing {} for {} ms at power {}".format(image, exposure, power),
+        )
         self.led_driver.set_amplitude(power)
         self.screenThread.screen.draw(image)
         if repeats == 0:
             self.dmd_driver.set_sequencer_lut_definition(33100)
             self.dmd_driver.set_sequencer_lut_config(repeats=0)
             self.dmd_driver.start_sequencer()
-        else:               # normal display is desired
+        else:  # normal display is desired
             for t in self.split_exposure_time(exposure):
-                self.dmd_driver.set_sequencer_lut_definition(exposure=t*1000)
+                self.dmd_driver.set_sequencer_lut_definition(exposure=t * 1000)
                 self.dmd_driver.set_sequencer_lut_config(repeats=repeats)
                 self.dmd_driver.get_all_status()
                 self.dmd_driver.start_sequencer()

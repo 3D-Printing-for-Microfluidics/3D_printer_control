@@ -330,26 +330,34 @@ from datetime import datetime
 from PIL import Image
 
 # Default output filename includes the date and time of creation
-output_filename = '{}.zip'.format(datetime.now().strftime('print_%Y-%m-%d_%H-%M-%S.%f')[:-4])
+output_filename = "{}.zip".format(
+    datetime.now().strftime("print_%Y-%m-%d_%H-%M-%S.%f")[:-4]
+)
 
-normal_layer_um = 10               # Normal layer thickness
-normal_exp_time_ms = 600            # Normal layer exposure time
-normal_le_power = 100               # Normal light engine power
-path_to_slices = 'slices'
+normal_layer_um = 10  # Normal layer thickness
+normal_exp_time_ms = 600  # Normal layer exposure time
+normal_le_power = 100  # Normal light engine power
+path_to_slices = "slices"
+
 
 def validate_slice(imageFile):
     try:
-        print("Processing", imageFile)                              # Print an indicator processing is progressing
-        with Image.open(imageFile) as pilImage:                     # Open file as PIL object
+        print("Processing", imageFile)  # Print an indicator processing is progressing
+        with Image.open(imageFile) as pilImage:  # Open file as PIL object
             # pilImage = pilImage.convert('L')                        # Convert to 8 bit grayscale
             # pilImage.format = "PNG"                                 # Set format as PNG
-            if pilImage.format == "PNG" and pilImage.mode == "L":   # Check format and mode
-                return True                                         # Image is good
-    except (OSError, FileNotFoundError):                            # File has big issues
+            if (
+                pilImage.format == "PNG" and pilImage.mode == "L"
+            ):  # Check format and mode
+                return True  # Image is good
+    except (OSError, FileNotFoundError):  # File has big issues
         return False
-    return False                                                    # Image is bad
+    return False  # Image is bad
 
-def create_file(normal_exp_time_ms, normal_layer_um, output_filename, path_to_slices, progress=None):
+
+def create_file(
+    normal_exp_time_ms, normal_layer_um, output_filename, path_to_slices, progress=None
+):
 
     slices_folder = None
     slices_parent_folder = None
@@ -366,13 +374,13 @@ def create_file(normal_exp_time_ms, normal_layer_um, output_filename, path_to_sl
         sys.exit(error_msg)
 
     # Other default values that aren't updatable via cmd line
-    normal_command_chain = [                    # Standard command chain
+    normal_command_chain = [  # Standard command chain
         "WAIT 0.1",
         "UP 1 SPEED 25 ACC 50",
-        "DOWN 1 SPEED 20 ACC 50"
+        "DOWN 1 SPEED 20 ACC 50",
     ]
-    bi_exp_ms = [20000, 10000, 5000, 1000, 500] # Burn in exposure times
-    data = {                                    # Default fields
+    bi_exp_ms = [20000, 10000, 5000, 1000, 500]  # Burn in exposure times
+    data = {  # Default fields
         "Design": {
             "Purpose": "",
             "Description": "",
@@ -381,28 +389,24 @@ def create_file(normal_exp_time_ms, normal_layer_um, output_filename, path_to_sl
             "Design file": "",
             "STL file": "",
             "Slicer": "",
-            "Date": ""
+            "Date": "",
         },
-        "Header": {
-            "Comment": "",
-            "Schema version": "0.1",
-            "Image directory": "slices"
-        },
+        "Header": {"Comment": "", "Schema version": "0.1", "Image directory": "slices"},
         "Default settings": {
             "Comment": "Settings used for each layer, if not overridden by layer specific settings.",
             "Light engine power setting": normal_le_power,
             "Layer exposure time (ms)": normal_exp_time_ms,
             "Layer thickness (um)": normal_layer_um,
             "Number of duplications": 1,
-            "Command chain": normal_command_chain
+            "Command chain": normal_command_chain,
         },
-        "Layers": []   # a list of dictionaries that represent each layer
+        "Layers": [],  # a list of dictionaries that represent each layer
     }
 
     # Start archive generation
     try:
         # Open a zip archive to write to
-        with ZipFile(path_to_output_file, 'x') as myzip:
+        with ZipFile(path_to_output_file, "x") as myzip:
 
             # Get total number of slices and update progress bar accordingly
             total_num_slices = len(slices)
@@ -422,7 +426,7 @@ def create_file(normal_exp_time_ms, normal_layer_um, output_filename, path_to_sl
                 this_layer = {"Images": [curr_slice]}
 
                 # Add the image to the print zip archive
-                myzip.write(path_to_slice, arcname=os.path.join('slices', curr_slice))
+                myzip.write(path_to_slice, arcname=os.path.join("slices", curr_slice))
 
                 # If this is a burn in layer and the normal exposure is lower than
                 # the burn in exposure, use the burn in exposure
@@ -436,8 +440,8 @@ def create_file(normal_exp_time_ms, normal_layer_um, output_filename, path_to_sl
                 progress.UpdateBar(i)
 
             # Write print settings file
-            print_settings_filename = 'print_settings.json'
-            with open(print_settings_filename, 'w', newline='\r\n') as fileOut:
+            print_settings_filename = "print_settings.json"
+            with open(print_settings_filename, "w", newline="\r\n") as fileOut:
                 json.dump(data, fileOut, indent=2)
 
             # Add to zip archive
@@ -453,48 +457,66 @@ def create_file(normal_exp_time_ms, normal_layer_um, output_filename, path_to_sl
 
     return path_to_output_file
 
+
 # Add argument parser and options
 parser = argparse.ArgumentParser(add_help=False)
 
 help_msg = "Set output filename. Defaults to time of creation."
-parser.add_argument("-o", dest='output_filename', help=help_msg)
+parser.add_argument("-o", dest="output_filename", help=help_msg)
 
 help_msg = "Set layer thickness (um). Defaults to " + str(normal_layer_um) + "."
-parser.add_argument("-z", dest='layer_thickness', type=int, help=help_msg)
+parser.add_argument("-z", dest="layer_thickness", type=int, help=help_msg)
 
 help_msg = "Set layer exposure time (ms). Defaults to " + str(normal_exp_time_ms) + "."
-parser.add_argument("-e", dest='normal_exp_time', type=int, help=help_msg)
+parser.add_argument("-e", dest="normal_exp_time", type=int, help=help_msg)
 
-help_msg = "Set path to the folder containing the slices. Defaults to " + path_to_slices + "."
-parser.add_argument("-s", dest='path_to_slices', help=help_msg)
+help_msg = (
+    "Set path to the folder containing the slices. Defaults to " + path_to_slices + "."
+)
+parser.add_argument("-s", dest="path_to_slices", help=help_msg)
 
 help_msg = "Run without a GUI interface"
-parser.add_argument("-no_gui", action='store_true')
+parser.add_argument("-no_gui", action="store_true")
 
-parser.add_argument("-h", "--help", help="Show this help message and exit.", action='help')
+parser.add_argument(
+    "-h", "--help", help="Show this help message and exit.", action="help"
+)
 
 args = parser.parse_args()
 
 # If an option is selected, update it's value
-if args.output_filename: output_filename = args.output_filename
-if args.layer_thickness: normal_layer_um = args.layer_thickness
-if args.normal_exp_time: normal_exp_time_ms = args.normal_exp_time
-if args.path_to_slices: path_to_slices = args.path_to_slices
-if args.no_gui: create_file(normal_exp_time_ms, normal_layer_um, output_filename, path_to_slices)
+if args.output_filename:
+    output_filename = args.output_filename
+if args.layer_thickness:
+    normal_layer_um = args.layer_thickness
+if args.normal_exp_time:
+    normal_exp_time_ms = args.normal_exp_time
+if args.path_to_slices:
+    path_to_slices = args.path_to_slices
+if args.no_gui:
+    create_file(normal_exp_time_ms, normal_layer_um, output_filename, path_to_slices)
 
 # set up frontend GUI
 
-sg.theme('Light Blue 2')
-layout = [[sg.Text('Slices Folder', size=(16, 1)), sg.InputText('slices'), sg.FolderBrowse()],
-          [sg.Text('Exposure Time (ms)', size=(16, 1)), sg.InputText(default_text=300)],
-          [sg.Text('Layer Thickness (um)', size=(16, 1)), sg.InputText(default_text=10)],
-          [sg.Text('Output Filename', size=(16, 1)), sg.InputText(default_text=output_filename)],
-          [sg.Text('Progress', size=(16, 1)), sg.ProgressBar(1, orientation='h', size=(29, 20), key='progress')],
-          [sg.Submit(), sg.Cancel()]]
-window = sg.Window('Create 3D Print File', layout)
-progress_bar = window.FindElement('progress')
+sg.theme("Light Blue 2")
+layout = [
+    [sg.Text("Slices Folder", size=(16, 1)), sg.InputText("slices"), sg.FolderBrowse()],
+    [sg.Text("Exposure Time (ms)", size=(16, 1)), sg.InputText(default_text=300)],
+    [sg.Text("Layer Thickness (um)", size=(16, 1)), sg.InputText(default_text=10)],
+    [
+        sg.Text("Output Filename", size=(16, 1)),
+        sg.InputText(default_text=output_filename),
+    ],
+    [
+        sg.Text("Progress", size=(16, 1)),
+        sg.ProgressBar(1, orientation="h", size=(29, 20), key="progress"),
+    ],
+    [sg.Submit(), sg.Cancel()],
+]
+window = sg.Window("Create 3D Print File", layout)
+progress_bar = window.FindElement("progress")
 event, values = window.read()
-if event == 'Cancel' or event is None:
+if event == "Cancel" or event is None:
     exit()
 
 # cast values appropriately
@@ -504,8 +526,10 @@ normal_exp_time_ms = int(values[1])
 path_to_slices = os.path.normpath(values[0])
 
 # create the print file and then exit
-path_to_output_file = create_file(normal_exp_time_ms, normal_layer_um, output_filename, path_to_slices, progress_bar)
+path_to_output_file = create_file(
+    normal_exp_time_ms, normal_layer_um, output_filename, path_to_slices, progress_bar
+)
 
-sg.popup('Print file saved to', path_to_output_file)
+sg.popup("Print file saved to", path_to_output_file)
 
 window.close()

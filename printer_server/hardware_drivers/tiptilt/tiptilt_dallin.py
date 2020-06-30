@@ -4,6 +4,7 @@ import serial
 import serial.tools.list_ports
 import serial.serialutil
 
+
 def findUsbPort(hwid):
     ports = list(serial.tools.list_ports.comports())
     for p in ports:
@@ -11,20 +12,17 @@ def findUsbPort(hwid):
         if hwid.upper() in p.hwid:
             print("Found '{}' at '{}'".format(p.hwid, p.device))
             return p.device
-    return None             # not found
+    return None  # not found
+
 
 # helper function for converting axis name into index
 def get_axis_index(axis):
     axis = axis.lower()
-    return {
-        "tip" : 1,
-        "tilt": 2,
-    }.get(axis, 0)    # 0 is default if axis is invalid
+    return {"tip": 1, "tilt": 2,}.get(axis, 0)  # 0 is default if axis is invalid
 
 
 class TipTilt(serial.Serial):
-
-    def __init__(self, hwid='PID=16C0:0483 SER=5800580', verbose=True):
+    def __init__(self, hwid="PID=16C0:0483 SER=5800580", verbose=True):
         super().__init__(baudrate=115200, timeout=None)
 
         # self.ser = serial.Serial(baudrate=115200, timeout=None)
@@ -32,14 +30,14 @@ class TipTilt(serial.Serial):
 
         self.verbose = verbose
         self.hwid = hwid
-        self.port = None                    # start with no port
+        self.port = None  # start with no port
         self.r = re.compile(r"\d*\.?\d*$")  # regex for getter functions
         atexit.register(self.close)
 
     def connect(self):
         self.port = findUsbPort(self.hwid)
         if self.port is None:
-            raise ValueError('Tip/Tilt not found')
+            raise ValueError("Tip/Tilt not found")
         if self.is_open:
             self.close()
         self.open()
@@ -49,28 +47,37 @@ class TipTilt(serial.Serial):
         self.initialize()
 
     def send(self, cmd):
-        if self.verbose: print("Sent: '{}'".format(cmd))
-        self.write(bytes(cmd + '\r', encoding='ascii')) # write to serial tx buffer
+        if self.verbose:
+            print("Sent: '{}'".format(cmd))
+        self.write(bytes(cmd + "\r", encoding="ascii"))  # write to serial tx buffer
         response, error = self.receive(cmd)
         print(response)
-        if error: print("There was an error!")
+        if error:
+            print("There was an error!")
         return response
 
     def receive(self, cmd):
-        buffer = b''    # buffer for incoming serial communication
-        message = ""    # response to be returned
-        error = False   # indicates an error from the
+        buffer = b""  # buffer for incoming serial communication
+        message = ""  # response to be returned
+        error = False  # indicates an error from the
         while True:
-            buffer = self.readline()                                            # wait for the first line to fill in the rx buffer
-            while self.in_waiting:                                              # while there is more data in the rx buffer
-                buffer += self.readline()                                       # read next line from rx buffer
-            decoded_buffer = buffer.decode().rstrip().replace('\r\n', ' ')      # decode the byte response (as string) without newlines
-            if self.verbose: print("Response: '{}'".format(decoded_buffer))
-            message += decoded_buffer                                           # build response
-            if "Error" in message: error = True                                 # indicate error state
+            buffer = self.readline()  # wait for the first line to fill in the rx buffer
+            while self.in_waiting:  # while there is more data in the rx buffer
+                buffer += self.readline()  # read next line from rx buffer
+            decoded_buffer = (
+                buffer.decode().rstrip().replace("\r\n", " ")
+            )  # decode the byte response (as string) without newlines
+            if self.verbose:
+                print("Response: '{}'".format(decoded_buffer))
+            message += decoded_buffer  # build response
+            if "Error" in message:
+                error = True  # indicate error state
             if "Done" in message:
-                message = message.replace(" Done", "")                          # strip out done message
-                if "G"  in cmd: message = float(re.findall(self.r, message)[0]) # parse out values for getter commands
+                message = message.replace(" Done", "")  # strip out done message
+                if "G" in cmd:
+                    message = float(
+                        re.findall(self.r, message)[0]
+                    )  # parse out values for getter commands
                 return message, error
 
     ## wrappers for commands from Teensyduino ##
@@ -136,7 +143,7 @@ class TipTilt(serial.Serial):
             self.move_absolute(axis, distance_um)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     t = TipTilt()
     t.connect()
     # t.home()

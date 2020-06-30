@@ -16,6 +16,7 @@ from pathlib import Path
 from printer_server.extensions import db, socketio
 from printer_server.hardware import printer3d
 from printer_server.models import PrintRecord
+
 # from printer_server.hardware import calibrationControl
 
 
@@ -54,25 +55,26 @@ def multithreading(state, text):
     :param str state: 3D printer state (Details: :ref:`3d_printer_state_machine`)
     :param str text: printer message for the message box in webpage
     """
+
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             def func(*args, **kwargs):
                 f(*args, **kwargs)
                 printer3d.state = state
-                socketio.emit(printer3d.state, dict(),
-                              namespace='/printing', broadcast=True)
+                socketio.emit(
+                    printer3d.state, dict(), namespace="/printing", broadcast=True
+                )
 
-            printer3d.state = 'busy'
+            printer3d.state = "busy"
             message = {
-                'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'text': text
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "text": text,
             }
-            socketio.emit(printer3d.state, message,
-                          namespace='/printing', broadcast=True)
-            _thread = threading.Thread(target=func,
-                                       args=(*args, ),
-                                       kwargs={**kwargs, })
+            socketio.emit(
+                printer3d.state, message, namespace="/printing", broadcast=True
+            )
+            _thread = threading.Thread(target=func, args=(*args,), kwargs={**kwargs,})
             _thread.start()
 
         return decorated_function
@@ -109,6 +111,7 @@ class PrintingThreads:
         is ``i``, it will start printing layer ``i`` after resume.
 
     """
+
     def __init__(self):
         self.printer3d = printer3d
         self.galil = printer3d.galil
@@ -120,16 +123,16 @@ class PrintingThreads:
         self.printingStopped = threading.Event()
         self.printingPaused = threading.Event()
         self.pausedLayer = 1
-        self._thread = None                         # will be initialized later on start
-        self.logs_path = Path.cwd() / 'logs'
-        self.logs_path_directory_for_this_run = None   # initialized later
+        self._thread = None  # will be initialized later on start
+        self.logs_path = Path.cwd() / "logs"
+        self.logs_path_directory_for_this_run = None  # initialized later
 
     def calculateThickness(self, start, end):
         """ Helper funtion to calculate the layer thickness in um
         """
-        return self.galil.cntsToMm(abs(end - start)*1000)
+        return self.galil.cntsToMm(abs(end - start) * 1000)
 
-    @multithreading('initialized', 'Initialize')
+    @multithreading("initialized", "Initialize")
     def initialize(self):
         """Establish Ethernet connection with Galil controler,
         and find zero in Z axis for build platform.
@@ -145,8 +148,7 @@ class PrintingThreads:
         # self.galil.openEncoderFile('encoder_initialization_write_file.txt')
         # self.galil.closeEncoderFile()
 
-
-    @multithreading('planarizing', 'Planarization Step 1')
+    @multithreading("planarizing", "Planarization Step 1")
     def planarizationStep1(self):
         """Planarization Step 1 -- Lower the build platform to
         zero in Z for planarization.
@@ -156,7 +158,7 @@ class PrintingThreads:
         self.galil.goToZmin()
         # self.galil.closeEncoderFile()
 
-    @multithreading('planarized', 'Planarization Step 2')
+    @multithreading("planarized", "Planarization Step 2")
     def planarizationStep2(self):
         """Planarization Step 2 -- Make sure the build platform
         is flat on the teflon film. Then tighten the screws and
@@ -165,7 +167,7 @@ class PrintingThreads:
         # self.galil.goToZmax()
         # self.galil.goToPlanarizationPullOff()
 
-    @multithreading('paused', 'Pause Printing')
+    @multithreading("paused", "Pause Printing")
     def pause(self):
         """Pause the printing process. It is implemented with a
         ``threading.Event`` object, :py:attr:`printingPaused`.
@@ -179,7 +181,7 @@ class PrintingThreads:
         self.printingPaused.set()
         self._thread.join()
 
-    @multithreading('stopped', 'Stop Printing')
+    @multithreading("stopped", "Stop Printing")
     def stop(self):
         """Stop the printing process. It works basically the same
         as :py:meth:`puase`, except the 3D printer can not resume
@@ -197,13 +199,15 @@ class PrintingThreads:
         layer 1 in a new thread. When printing is completed, paused,
         or stopped, the thread ends gracefully.
         """
-        self.printer3d.state = 'printing'
+        self.printer3d.state = "printing"
         message = {
-            'percent': 0,
-            'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'text': 'Start Printing'
+            "percent": 0,
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "text": "Start Printing",
         }
-        socketio.emit(self.printer3d.state, message, namespace='/printing', broadcast=True)
+        socketio.emit(
+            self.printer3d.state, message, namespace="/printing", broadcast=True
+        )
 
         app = db.get_app()
         self._thread = threading.Thread(target=self.startPrinting, args=(1, app))
@@ -216,16 +220,22 @@ class PrintingThreads:
         :py:attr:`pausedLayer` in a new thread. When printing is
         completed, paused, or stopped, the thread ends gracefully.
         """
-        self.printer3d.state = 'printing'
+        self.printer3d.state = "printing"
         message = {
-            'percent': int(100*(self.pausedLayer-1)/self.printSettings.totalLayerNum),
-            'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'text': 'Resume Printing'
+            "percent": int(
+                100 * (self.pausedLayer - 1) / self.printSettings.totalLayerNum
+            ),
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "text": "Resume Printing",
         }
-        socketio.emit(self.printer3d.state, message, namespace='/printing', broadcast=True)
+        socketio.emit(
+            self.printer3d.state, message, namespace="/printing", broadcast=True
+        )
 
         app = db.get_app()
-        self._thread = threading.Thread(target=self.startPrinting, args=(self.pausedLayer, app))
+        self._thread = threading.Thread(
+            target=self.startPrinting, args=(self.pausedLayer, app)
+        )
         self._thread.start()
 
     def startPrinting(self, startingLayer, app):
@@ -273,42 +283,79 @@ class PrintingThreads:
         self.printingPaused.clear()
 
         # Create log
-        date_and_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        date_and_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.logs_path_directory_for_this_run = self.logs_path / date_and_time
         self.logs_path_directory_for_this_run.mkdir()
-        encoder_print_file_name = str(self.logs_path_directory_for_this_run / 'encoder_print_file.txt')
+        encoder_print_file_name = str(
+            self.logs_path_directory_for_this_run / "encoder_print_file.txt"
+        )
         # load_cell_file_name = self.logs_path_directory_for_this_run / 'load_cell_print_file.txt'
 
         # Move build platform to the starting position
         if startingLayer == 1:
-            start, end, start_time, end_time = self.galil.printCycle(self.printSettings.getLayerThicknessMm(1), self.printSettings.getCommandChain(1))
+            start, end, start_time, end_time = self.galil.printCycle(
+                self.printSettings.getLayerThicknessMm(1),
+                self.printSettings.getCommandChain(1),
+            )
             with open(encoder_print_file_name, "a") as f:
-                f.write("Layer {}: start {}, end {}, thickness {}, time {}, duration {}\n".format(1, start, end, self.calculateThickness(start, end), datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), end_time-start_time))
+                f.write(
+                    "Layer {}: start {}, end {}, thickness {}, time {}, duration {}\n".format(
+                        1,
+                        start,
+                        end,
+                        self.calculateThickness(start, end),
+                        datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
+                        end_time - start_time,
+                    )
+                )
         else:
             self.galil.resume(self.printSettings.getLayerThicknessMm(startingLayer))
 
         # Iterate from the startingLayer to the last
         totalLayerNum = self.printSettings.totalLayerNum
-        for i in range(startingLayer, totalLayerNum+1):
+        for i in range(startingLayer, totalLayerNum + 1):
             if self.printingStopped.is_set() or self.printingPaused.is_set():
-                self.pausedLayer = i # layer i has not been exposed
+                self.pausedLayer = i  # layer i has not been exposed
                 break
 
             # self.galil.encoder_print_file.write("Layer %d \r\n" %(i))
             if i != startingLayer:
-                start, end, start_time, end_time = self.galil.printCycle(self.printSettings.getLayerThicknessMm(i), self.printSettings.getCommandChain(i))
+                start, end, start_time, end_time = self.galil.printCycle(
+                    self.printSettings.getLayerThicknessMm(i),
+                    self.printSettings.getCommandChain(i),
+                )
                 with open(encoder_print_file_name, "a") as f:
-                    f.write("Layer {}: start {}, end {}, thickness {}, time {}, duration {}\n".format(i, start, end, self.calculateThickness(start, end), datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), end_time-start_time))
+                    f.write(
+                        "Layer {}: start {}, end {}, thickness {}, time {}, duration {}\n".format(
+                            i,
+                            start,
+                            end,
+                            self.calculateThickness(start, end),
+                            datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
+                            end_time - start_time,
+                        )
+                    )
 
-            images = [os.path.join(self.jsonDir, im) for im in self.printSettings.getImages(i)]
+            images = [
+                os.path.join(self.jsonDir, im) for im in self.printSettings.getImages(i)
+            ]
 
-            self.projector.projectMulti(images, self.printSettings.getExposureTimeMs(i), self.printSettings.getLedPowers(i))
+            self.projector.projectMulti(
+                images,
+                self.printSettings.getExposureTimeMs(i),
+                self.printSettings.getLedPowers(i),
+            )
 
-            socketio.emit('print progress',
-                          {'percent': int(100*i/totalLayerNum),
-                           'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                           'text': 'Layer {}'.format(i)},
-                          namespace='/printing', broadcase=True)
+            socketio.emit(
+                "print progress",
+                {
+                    "percent": int(100 * i / totalLayerNum),
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "text": "Layer {}".format(i),
+                },
+                namespace="/printing",
+                broadcase=True,
+            )
 
         # Clean up
         # self.galil.stopLoadCell()
@@ -321,21 +368,23 @@ class PrintingThreads:
 
             # save the end time to database
             with app.app_context():
-                latestPrintRecord = PrintRecord.query.\
-                    order_by(PrintRecord.id.desc()).first()
+                latestPrintRecord = PrintRecord.query.order_by(
+                    PrintRecord.id.desc()
+                ).first()
                 latestPrintRecord.end_time = datetime.now()
                 if self.printingStopped.is_set():
                     latestPrintRecord.completed = False
                 latestPrintRecord.save()
 
             if not self.printingStopped.is_set() and not self.printingPaused.is_set():
-                self.printer3d.state = 'completed'
+                self.printer3d.state = "completed"
                 message = {
-                    'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    'text': 'Printing Compeleted'
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "text": "Printing Compeleted",
                 }
-                socketio.emit(self.printer3d.state, message,
-                              namespace='/printing', broadcast=True)
+                socketio.emit(
+                    self.printer3d.state, message, namespace="/printing", broadcast=True
+                )
         # self.galil.closeEncoderFile()
         # self.galil.closeLoadCellFile()
 
