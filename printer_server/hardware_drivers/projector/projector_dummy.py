@@ -1,17 +1,25 @@
-# -*- coding: utf-8 -*-
-"""
-Projector
-=========
-"""
 import time
 import atexit
-import socket
+from functools import wraps
+
 from .screen import ScreenThread
+
+
+def dummy_log(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        print(f.__qualname__, {**dict(zip(f.__code__.co_varnames, args)), **kwargs})
+        result = f(*args, **kwargs)
+        print(f.__qualname__, "return:", result)
+        return result
+
+    return wrapper
+
 
 # pylint:disable=too-many-public-methods
 class Projector_dummy:
+    @dummy_log
     def __init__(self, resolution, fullscreen=True):
-        print(" projector - __init({},{})__".format(resolution, fullscreen))
         self.resolution = resolution
         self.fullscreen = fullscreen
         self.max_exp_time = 10000  # max single projection time in ms
@@ -19,13 +27,13 @@ class Projector_dummy:
         self.screenThread = ScreenThread(self.resolution, self.fullscreen)
         atexit.register(self.screenThread.stop)  # stop screen thread on exit
 
+    @dummy_log
     def connect(self):
-        # start screen thread
         self.screenThread.start()
-        print(" projector - connect()")
 
+    @dummy_log
     def send(self, data):
-        print(" projector - send({})".format(data.replace("\r\n", " ")))
+        pass
 
     def load_defaults(self):
         return self.send("LOAD DEFAULTS")
@@ -162,6 +170,7 @@ class Projector_dummy:
         """
         Split a long exposure time into an array of smaller exposure times.
         """
+        print(exposure)
         n = int(exposure // self.max_exp_time)
         if exposure % self.max_exp_time != 0:
             exposure = [self.max_exp_time] * n + [exposure % self.max_exp_time]
@@ -169,14 +178,12 @@ class Projector_dummy:
             exposure = [self.max_exp_time] * n
         return exposure
 
+    @dummy_log
     def clear_image(self):
-        print(" projector - clear_image()")
         self.screenThread.screen.clear()
 
+    @dummy_log
     def project(self, image, exposure, power, repeats=1):
-        print(
-            " projector - project({},{},{},{})".format(image, exposure, power, repeats)
-        )
         if repeats == 0:  # if continuous display is desired
             self.set_sequencer_lut_definition(
                 33100
@@ -197,12 +204,9 @@ class Projector_dummy:
                 self.start_sequencer()  # start the sequencer
                 time.sleep(0.1 + t * 1e-3)
                 self.stop_sequencer()  # stop the sequencer
+                self.clear_image()
 
+    @dummy_log
     def projectMulti(self, images, exposureTimes, ledPowers):
-        print(
-            " projector - projectMulti({},{},{})".format(
-                images, exposureTimes, ledPowers
-            )
-        )
         for image, expTime, power in zip(images, exposureTimes, ledPowers):
             self.project(image, expTime, power)

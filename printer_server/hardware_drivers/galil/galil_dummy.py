@@ -4,15 +4,26 @@ import re
 import time
 import json
 import atexit
+from functools import wraps
 
-# remove bad chars from file name
+
+def dummy_log(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        print(f.__qualname__, {**dict(zip(f.__code__.co_varnames, args)), **kwargs})
+        result = f(*args, **kwargs)
+        print(f.__qualname__, "return:", result)
+        return result
+
+    return wrapper
+
+
 def cleanFileName(name):
     for c in '\\/:*?"<>| ':
         name = name.replace(c, "")
     return name
 
 
-# maps X,Y,Z to A,B,C
 def convertAxis(axis):
     axis = axis.upper()
     if axis in ("X", "A"):
@@ -42,49 +53,38 @@ class Galil_dummy:
         r"^(UP|DOWN) (-?\d+(\.\d+)?) SPEED (-?\d+(\.\d+)?) ACC (-?\d+(\.\d+)?)"
     )
 
+    @dummy_log
     def __init__(self, address=None, verbose=False):
-        print(" galil - __init({}, {})__".format(address, verbose))
-        self.verbose = verbose
-        self.address = address
-
-        # default configuration parameters
         self.axes = ["A"]
         self.travel = {"A": 100}  # max travel in mm
         self.ctspmm = {"A": 8000}  # counts/mm for each axis
-        self.data = {}  # for saving calibration data
-        self.move_num = 0  # also for saving calibration data
 
-        # connection parameters
-        self.connected = False
-        self.homed = False
-        self.controller_name = "DMC31010"  # controller to search for
-        atexit.register(
-            self.disconnect
-        )  # register disconnect to always run at interpreter end
-
+    @dummy_log
     def initialize(self):
-        print(" galil - initialize()")
         self.motorOn()
 
+    @dummy_log
     def goToZmax(self):
-        print(" galil - goToZmax()")
+        pass
 
+    @dummy_log
     def goToZmin(self):
-        print(" galil - goToZmin()")
+        pass
 
+    @dummy_log
     def resume(self, layerThickness):
-        print(" galil - resume({})".format(layerThickness))
+        pass
 
+    @dummy_log
     def goToFirstLayerHeight(self, height):
-        print(" galil - goToFirstLayerHeight({})".format(height))
         return 0, height
 
+    @dummy_log
     def goToPlanarizationPullOff(self):
-        print(" galil - goToPlanarizationPullOff()")
+        pass
 
+    @dummy_log
     def printCycle(self, layerThicknessMm, commandChain):
-        print(" galil - printCycle({}, {})".format(layerThicknessMm, commandChain))
-
         # keep track of which command is the last down command
         lastDownCommand = 0
         for i, command in enumerate(commandChain):
@@ -120,97 +120,87 @@ class Galil_dummy:
                 self.relMove(speed=speed, mm=distance, acceleration=acceleration)
         return 0, 0, 0, 0
 
+    @dummy_log
     def pause(self):
-        print(" galil - pause()")
+        pass
 
-    # find and connect to the Galil controller
+    @dummy_log
     def connect(self):
-        print(" galil - connect()")
+        pass
 
-    # convert mm to counts for the specified axis
     def mmToCnts(self, mm, axis="A"):
         axis = convertAxis(axis)
         return int(mm * self.ctspmm[axis])
 
-    # convert counts to mm for the specified axis
     def cntsToMm(self, counts, axis="A"):
         axis = convertAxis(axis)
         return counts / self.ctspmm[axis]
 
-    # send a command to the controller, interpret errors if any are thrown
+    @dummy_log
     def send(self, command):
-        print(" galil - send({})".format(command))
+        pass
 
-    # check both limit switches, return a tuple with their trip values
+    @dummy_log
     def checkLimits(self, axis="A"):
-        print(" galil - checkLimits({})".format(axis))
+        pass
 
-    # read the current position of the specified encoder
+    @dummy_log
     def getPosition(self, axis="A"):
-        print(" galil - getPosition({})".format(axis))
+        pass
 
-    # turn on the specified axis
+    @dummy_log
     def motorOn(self, axis="A"):
-        print(" galil - motorOn({})".format(axis))
+        pass
 
-    # turn off the specified axis
+    @dummy_log
     def motorOff(self, axis="A"):
-        print(" galil - motorOff({})".format(axis))
+        pass
 
-    # get the acceleration for the specified axis (mm/sec^2)
+    @dummy_log
     def getAcceleration(self, axis="A"):
-        print(" galil - getAcceleration({})".format(axis))
+        pass
 
-    # set the acceleration for the specified axis (mm/sec^2)
+    @dummy_log
     def setAcceleration(self, acceleration, axis="A"):
-        print(" galil - setAcceleration({}, {})".format(acceleration, axis))
+        pass
 
-    # get the speed for the specified axis (mm/sec)
+    @dummy_log
     def getSpeed(self, axis="A"):
-        print(" galil - getSpeed({})".format(axis))
+        pass
 
-    # set the speed for the specified axis (mm/sec)
+    @dummy_log
     def setSpeed(self, speed, axis="A"):
-        print(" galil - setSpeed({}, {})".format(speed, axis))
+        pass
 
-    # run the Galil homing routine
+    @dummy_log
     def home(self, axis="A"):
-        print(" galil - home({})".format(axis))
+        pass
 
-    # blocking call to relative move an axis the specified distance at speed (in mm/sec)
-    # pylint: disable=too-many-arguments
+    @dummy_log
     def relMove(self, speed, mm=None, cnts=None, acceleration=None, axis="A"):
-        print(
-            " galil - relMove({}, {}, {}, {}, {})".format(
-                speed, mm, cnts, acceleration, axis
-            )
-        )
+        pass
 
-    # blocking call to move specified axis to absolute position at speed (in mm/sec)
     # pylint: disable=too-many-arguments
+    @dummy_log
     def absMove(self, speed, mm=None, cnts=None, acceleration=None, axis="A"):
-        print(
-            " galil - absMove({}, {}, {}, {}, {})".format(
-                speed, mm, cnts, acceleration, axis
-            )
-        )
+        pass
 
-    # blocks execution until the encoder reading reaches the specified value. Also logs all position data
+    @dummy_log
     def waitForMotionComplete(self, cnts, axis="A"):
-        print(" galil - waitForMotionComplete({}, {})".format(cnts, axis))
+        pass
 
-    # end connection
+    @dummy_log
     def disconnect(self):
-        print(" galil - disconnect()")
+        pass
 
-    # this only needs to be run once on power up. It will turn off motors which may cause movement, BE CAREFUL
+    @dummy_log
     def configure(self):
-        print(" galil - configure()")
+        pass
 
-    # downlaod a DMC file to the controller
+    @dummy_log
     def downloadProgram(self, filename):
-        print(" galil - downloadProgram({})".format(filename))
+        pass
 
-    # interactive mode - will return a prompt you can issue Galil commands to. Exits with KeyboardInterrupt
+    @dummy_log
     def interactiveMode(self):
-        print(" galil - interactiveMode()")
+        pass
