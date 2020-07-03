@@ -408,9 +408,7 @@ class Projector:
 
         Return type +OK
         """
-        time.sleep(
-            5
-        )  # must wait for at least 5 seconds to read or write operation mode
+        time.sleep(5)  # must wait for at least 5 seconds to read or write operation mode
         return self.send("SET OPERATION MODE {}".format(mode))
 
     def get_dmd_operation_mode(self):
@@ -617,6 +615,7 @@ class Projector:
                 self.start_sequencer()  # start the sequencer
                 time.sleep(0.1 + t * 1e-3)
                 self.stop_sequencer()  # stop the sequencer
+                self.clear_image()
 
     def projectMulti(self, images, exposureTimes, ledPowers):
         """Project multiple images with its own expoure time and
