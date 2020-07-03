@@ -409,7 +409,7 @@ printingThreads = PrintingThreads()
 @blueprint.route("/")
 def index():
     allJobs = PrintJob.query.all()
-    return render_template("home.html", allJobs=allJobs)
+    return render_template("printing.html", allJobs=allJobs)
 
 
 @socketio.on("connect", namespace="/printing")
