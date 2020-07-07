@@ -8,7 +8,7 @@ from PIL import Image
 from flask import Blueprint, request, render_template
 
 from printer_server.extensions import socketio
-from printer_server.settings import CalibrationConfig
+from printer_server.settings import Config
 from printer_server.hardware import printer3d
 
 
@@ -57,9 +57,7 @@ blueprint = Blueprint(
 )
 
 # Specify location of uploaded image and give default name
-imagePath = os.path.join(
-    CalibrationConfig.UPLOAD_FOLDER, "calibration_images", "temp.png"
-)
+imagePath = os.path.join(Config.UPLOAD_FOLDER, "calibration_images", "temp.png")
 
 # Decorator to handle navigation to calibration page
 @blueprint.route("/calibrate")

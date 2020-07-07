@@ -15,14 +15,6 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
-class CalibrationConfig(object):
-    """Calibration configuration."""
-
-    APP_DIR = os.path.abspath(os.path.dirname(__file__))  # This directory
-    PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
-    UPLOAD_FOLDER = os.path.abspath(os.path.join(PROJECT_ROOT, "upload"))
-
-
 class ProdConfig(Config):
     """Production configuration."""
 
