@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
-  <head>
+
+<head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -15,24 +16,25 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/darkly-bootstrap-4.1.1.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     {% endblock %}
-  </head>
-  <body>
+</head>
+
+<body>
     {% block content %}
 
     <div class="jumbotron jumbotron-fluid text-center">
-      {% block printer3d_state %}{% endblock %}
+        {% block printer3d_state %}{% endblock %}
     </div>
 
     <div class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">
-                  <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
-                 {{message}}
-                </div><!-- end .alert -->
-                {% endfor %}
-            {% endif %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
+            {{message}}
+        </div><!-- end .alert -->
+        {% endfor %}
+        {% endif %}
         {% endwith %}
 
         {% block page_content %}{% endblock %}
@@ -47,5 +49,6 @@
     <script src="{{ url_for('static', filename='js/ajax-popper-1.14.3.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/bootstrap-4.1.1.min.js') }}"></script>
     {% endblock %}
-  </body>
+</body>
+
 </html>
