@@ -39,7 +39,7 @@ class DevConfig(Config):
 
     ENV = "dev"
     DEBUG = True
-    DB_NAME = "dev.db"
+    DB_NAME = "3d_printer_database.db"
     DB_PATH = os.path.join(Config.PROJECT_ROOT, DB_NAME)
     SQLALCHEMY_DATABASE_URI = "sqlite:///{0}".format(DB_PATH)
     DEBUG_TB_ENABLED = True
