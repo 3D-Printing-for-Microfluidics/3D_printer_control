@@ -44,10 +44,7 @@ def emit_calibration_positions():
     }
     write_to_position_log(message)
     socketio.emit(
-        "calibration_motor_move_complete",
-        message,
-        namespace="/calibrate",
-        broadcast=True,
+        "calibration_motor_move_complete", message, namespace="/manual", broadcast=True,
     )
 
 
@@ -60,50 +57,50 @@ blueprint = Blueprint(
 imagePath = os.path.join(Config.UPLOAD_FOLDER, "calibration_images", "temp.png")
 
 # Decorator to handle navigation to calibration page
-@blueprint.route("/calibrate")
+@blueprint.route("/manual")
 def index():
     return render_template("manual_controls.html")
 
 
-@socketio.on("set_external_control_enable", namespace="/calibrate")
+@socketio.on("set_external_control_enable", namespace="/manual")
 def set_external_control_enable(message):
     """set_external_control -- Sets the variable determining if printer can be auto-calibrated"""
     external_control_enable.set_enable(message == "Enabled")
 
 
-@socketio.on("get_external_control_enable", namespace="/calibrate")
+@socketio.on("get_external_control_enable", namespace="/manual")
 def get_external_control_enable():
     """Return the external control enable flag."""
     socketio.emit(
         "external_control_enable",
         external_control_enable.get_enable(),
-        namespace="/calibrate",
+        namespace="/manual",
         broadcast=True,
     )
 
 
-@socketio.on("galil_go_to_top", namespace="/calibrate")
+@socketio.on("galil_go_to_top", namespace="/manual")
 def galil_go_to_top():
     """Move main Z stage to max position (up)."""
     galil.goToZmax()
-    socketio.emit("galil_done", namespace="/calibrate", broadcast=True)
+    socketio.emit("galil_done", namespace="/manual", broadcast=True)
 
 
-@socketio.on("galil_go_to_bottom", namespace="/calibrate")
+@socketio.on("galil_go_to_bottom", namespace="/manual")
 def galil_go_to_bottom():
     """ Move main z stage to min position (down)."""
     galil.goToZmin()
-    socketio.emit("galil_done", namespace="/calibrate", broadcast=True)
+    socketio.emit("galil_done", namespace="/manual", broadcast=True)
 
 
-@socketio.on("galil_home", namespace="/calibrate")
+@socketio.on("galil_home", namespace="/manual")
 def home():
     """ Home main z stage."""
     galil.home()
-    socketio.emit("galil_done", namespace="/calibrate", broadcast=True)
+    socketio.emit("galil_done", namespace="/manual", broadcast=True)
 
 
-@socketio.on("galil_move", namespace="/calibrate")
+@socketio.on("galil_move", namespace="/manual")
 def galil_move(message):
     """Move the main Z stage. All units in mm."""
     mode = message["mode"]
@@ -114,32 +111,32 @@ def galil_move(message):
         galil.absMove(mm=distance, speed=speed, acceleration=acceleration)
     elif mode == "relative":
         galil.relMove(mm=distance, speed=speed, acceleration=acceleration)
-    socketio.emit("galil_done", namespace="/calibrate", broadcast=True)
+    socketio.emit("galil_done", namespace="/manual", broadcast=True)
 
 
-@socketio.on("galil_start_jog", namespace="/calibrate")
+@socketio.on("galil_start_jog", namespace="/manual")
 def galil_startJog(message):
     """Start jogging the main Z stage."""
     speed = float(message["speed"])
     galil.startJog(speed=speed)
-    # socketio.emit('galil_done', namespace='/calibrate', broadcast=True)
+    # socketio.emit('galil_done', namespace='/manual', broadcast=True)
 
 
-@socketio.on("galil_stop_jog", namespace="/calibrate")
+@socketio.on("galil_stop_jog", namespace="/manual")
 def galil_stopJog():
     """Stop jogging the main Z stage"""
     galil.stopJog()
-    socketio.emit("galil_done", namespace="/calibrate", broadcast=True)
+    socketio.emit("galil_done", namespace="/manual", broadcast=True)
 
 
-@socketio.on("galil_get_position", namespace="/calibrate")
+@socketio.on("galil_get_position", namespace="/manual")
 def galil_get_position():
     """Get the position the main Z stage."""
     message = {"position": galil.cntsToMm(galil.getPosition())}
-    socketio.emit("galil_position", message, namespace="/calibrate", broadcast=True)
+    socketio.emit("galil_position", message, namespace="/manual", broadcast=True)
 
 
-@socketio.on("calibration_motor_move", namespace="/calibrate")
+@socketio.on("calibration_motor_move", namespace="/manual")
 def moveCalibrationMotor(message):
     axis = message["axis"]
     distance_um = float(message["microns"])
@@ -155,7 +152,7 @@ def moveCalibrationMotor(message):
     emit_calibration_positions()
 
 
-@socketio.on("calibration_motor_home", namespace="/calibrate")
+@socketio.on("calibration_motor_home", namespace="/manual")
 def homeCalibrationMotor(message):
     axis = message["axis"]
     if axis == "Distance":
@@ -165,21 +162,21 @@ def homeCalibrationMotor(message):
     emit_calibration_positions()
 
 
-@socketio.on("light_engine_stop", namespace="/calibrate")
+@socketio.on("light_engine_stop", namespace="/manual")
 def lightEngineStop():
     """Turn off the LED in the light engin."""
     projector.stop_sequencer()
-    socketio.emit("light_engine_stop_complete", namespace="/calibrate", broadcast=True)
+    socketio.emit("light_engine_stop_complete", namespace="/manual", broadcast=True)
 
 
-@socketio.on("light_engine_start", namespace="/calibrate")
+@socketio.on("light_engine_start", namespace="/manual")
 def lightEngineProject(message):
     """Project the image with the given settings."""
     ledPower = int(message["ledPower"])
     repeat = int(message["repeat"])
     exposure = int(message["exposure"])
     projector.project(imagePath, exposure, ledPower, repeat)
-    socketio.emit("light_engine_start_complete", namespace="/calibrate", broadcast=True)
+    socketio.emit("light_engine_start_complete", namespace="/manual", broadcast=True)
 
 
 @blueprint.route("handle-calibration-upload", methods=["POST"])
@@ -196,11 +193,11 @@ def handleUpload():
                         file.save(imagePath)  # save it to the server
                         socketio.emit(
                             "calibration_image_uploaded",
-                            namespace="/calibrate",
+                            namespace="/manual",
                             broadcast=True,
                         )
                         return ""
             except (OSError, FileNotFoundError):  # File has big issues
                 pass
-    socketio.emit("calibration_image_bad", namespace="/calibrate", broadcast=True)
+    socketio.emit("calibration_image_bad", namespace="/manual", broadcast=True)
     return ""

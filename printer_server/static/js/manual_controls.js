@@ -82,7 +82,7 @@ var update_positions = function (message) {
 }
 
 $(document).ready(function () {
-    var socket = io.connect("http://" + document.domain + ":" + location.port + "/calibrate");
+    var socket = io.connect("http://" + document.domain + ":" + location.port + "/manual");
 
     // Handles to user inputs
     var LedPowerSliderElement = document.getElementById("led-power-slider");
