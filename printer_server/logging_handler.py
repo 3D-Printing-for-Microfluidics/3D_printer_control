@@ -10,7 +10,7 @@ class SQLAlchemyHandler(logging.Handler):
         super().__init__()
         self.app = app
 
-    # A very basic logger that commits a LogRecord to the SQL Db
+    # A very basic logger that commits a log to the SQL Db
     def emit(self, record):
         trace = None
         exc = record.__dict__["exc_info"]

@@ -80,9 +80,13 @@ def register_hardware(app):
 
 def register_logger(app):
     if not app.debug:
-        sh = SQLAlchemyHandler(app)
-        sh.setLevel(logging.WARNING)
-        root_logger = logging.getLogger()
-        root_logger.addHandler(sh)
         app.logger.removeHandler(default_handler)
+        root_logger = logging.getLogger()
+        sh = SQLAlchemyHandler(app)  # logger that puts records in database
+        sh.setLevel(logging.WARNING)
+        root_logger.addHandler(sh)
         app.logger.addHandler(sh)
+        ch = logging.StreamHandler()  # logger to put same info to console
+        ch.setLevel(logging.WARNING)
+        root_logger.addHandler(ch)
+        app.logger.addHandler(ch)
