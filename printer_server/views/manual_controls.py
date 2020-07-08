@@ -38,9 +38,9 @@ def write_to_position_log(message):
 
 def emit_calibration_positions():
     message = {
-        "tip": printer3d.tiptilt.get_position("Tip"),
-        "tilt": printer3d.tiptilt.get_position("Tilt"),
-        "distance": printer3d.kdc.getCurrentPos(),
+        "tip": tiptilt.get_position("Tip"),
+        "tilt": tiptilt.get_position("Tilt"),
+        "distance": kdc.getCurrentPos(),
     }
     write_to_position_log(message)
     socketio.emit(
@@ -146,9 +146,9 @@ def moveCalibrationMotor(message):
         mode != "absolute"
     )  # convert mode to True/False, absolute is true, all else is false
     if axis == "Distance":
-        printer3d.kdc.move(distance_um, relative=mode)
+        kdc.move(distance_um, relative=mode)
     else:
-        printer3d.tiptilt.move(axis, distance_um, relative=mode, fast=fast)
+        tiptilt.move(axis, distance_um, relative=mode, fast=fast)
     emit_calibration_positions()
 
 
@@ -156,9 +156,9 @@ def moveCalibrationMotor(message):
 def homeCalibrationMotor(message):
     axis = message["axis"]
     if axis == "Distance":
-        printer3d.kdc.home()
+        kdc.home()
     else:
-        printer3d.tiptilt.home()
+        tiptilt.home()
     emit_calibration_positions()
 
 
