@@ -1,15 +1,4 @@
-from functools import wraps
-
-
-def dummy_log(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        print(f.__qualname__, {**dict(zip(f.__code__.co_varnames, args)), **kwargs})
-        result = f(*args, **kwargs)
-        print(f.__qualname__, "return:", result)
-        return result
-
-    return wrapper
+from printer_server.logging_handler import dummy_log
 
 
 class TipTilt_dummy:

@@ -1,19 +1,9 @@
 import time
 import atexit
-from functools import wraps
+
+from printer_server.logging_handler import dummy_log
 
 from .screen import ScreenThread
-
-
-def dummy_log(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        print(f.__qualname__, {**dict(zip(f.__code__.co_varnames, args)), **kwargs})
-        result = f(*args, **kwargs)
-        print(f.__qualname__, "return:", result)
-        return result
-
-    return wrapper
 
 
 # pylint:disable=too-many-public-methods
