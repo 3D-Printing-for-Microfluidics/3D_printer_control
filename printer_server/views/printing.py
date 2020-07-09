@@ -14,70 +14,40 @@ from flask import Blueprint, request, render_template
 
 from printer_server.settings import Config
 from printer_server.hardware import printer3d, PrintSettings
+
 from printer_server.models import PrintJob, PrintRecord
 from printer_server.extensions import db, socketio
 
-blueprint = Blueprint("main", __name__, url_prefix="/", static_folder="../static")
-
-# -*- coding: utf-8 -*-
+blueprint = Blueprint("printing", __name__, url_prefix="/", static_folder="../static")
 
 
-# from printer_server.hardware import calibrationControl
+def run_in_thread(state, text):
+    """Wrap the printer operation methods. The wrapped methods will push
+    the 3D printer state changes to clients and finish their operations
+    in another thread.
 
-
-def multithreading(state, text):
-    """Make decorators for the printer operation methods.
-    The wrapped methods will push the 3D printer state changes
-    to clients, and finish the operations in another thread.
-
-    Before::
-
-        def operation(self):
-            # code for operation #
-
-    After::
-
-        def operation(self):
-
-            def func(*args, **kwargs):
-                # code for operation #
-                printer3d.state = 'initialized'
-                socketio.emit(printer3d.state, {},
-                    namespace='/printing', broadcast=True)
-
-            printer3d.state = 'busy'
-            message = {
-                'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'text': text
-            }
-            socketio.emit(printer3d.state, message,
-                namespace='/printing', broadcast=True)
-            _thread = threading.Thread(target=func,
-                                       args=(*args, ),
-                                       kwargs={**kwargs, })
-            _thread.start()
-
-    :param str state: 3D printer state (Details: :ref:`3d_printer_state_machine`)
+    :param str state: 3D printer state
     :param str text: printer message for the message box in webpage
     """
 
     def decorator(f):
         @wraps(f)
-        def decorated_function(*args, **kwargs):
-            def func(*args, **kwargs):
-                f(*args, **kwargs)
-                printer3d.state = state
-                socketio.emit(
-                    printer3d.state, dict(), namespace="/printing", broadcast=True
-                )
+        def decorated_function(self, *args, **kwargs):
+            def func(self, *args, **kwargs):
+                print("got into thread", self.state)
+                f(self, *args, **kwargs)
+                self.state = state
+                socketio.emit(self.state, dict(), namespace="/printing", broadcast=True)
 
-            printer3d.state = "busy"
+            # self.state = "busy"
             message = {
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "text": text,
             }
-            socketio.emit(printer3d.state, message, namespace="/printing", broadcast=True)
-            _thread = threading.Thread(target=func, args=(*args,), kwargs={**kwargs,})
+            socketio.emit("busy", message, namespace="/printing", broadcast=True)
+            _thread = threading.Thread(
+                target=func, args=(self, *args,), kwargs={**kwargs,}
+            )
             _thread.start()
 
         return decorated_function
@@ -85,22 +55,17 @@ def multithreading(state, text):
     return decorator
 
 
-class PrintingThreads:
+class PrintControl:
     """
-    All the printer operations involve physical movement of certain
-    parts in the 3D printer. Therefore, it makes sense to throw them
-    into another thread such that the server stays responsive. This
-    is achieved by using :py:class:`PrintingThreads`.
-
-    The PrintingThreads class contains all the 3D printer
+    The PrintControl class contains all the 3D printer
     operations. It wraps the ``threading.Thread`` object such that
     a new thread is instantiated every time the 3D printer starts
-    an operation. This is because the native Python ``threading.Thread``
-    object can only be started once. With a wrapper class, we can
-    retain all the useful information under the same namespace.
-    This not only allows us to operate the 3D printer with a simple
-    method call but also enables us to implement resuming printing
-    very easily.
+    a long operation. This is because the native Python
+    ``threading.Thread`` object can only be started once. With a wrapper
+    class, we can retain all the useful information under the same
+    namespace. This not only allows us to operate the 3D printer with a
+    simple method call but also enables us to implement resuming
+    printing very easily.
 
     .. py:attribute:: jsonDir
 
@@ -122,7 +87,7 @@ class PrintingThreads:
     """
 
     def __init__(self):
-        self.printer3d = printer3d
+        self._state = "uninitialized"
         self.galil = printer3d.galil
         self.projector = printer3d.projector
         self.kdc = printer3d.kdc
@@ -132,51 +97,75 @@ class PrintingThreads:
         self.printingStopped = threading.Event()
         self.printingPaused = threading.Event()
         self.pausedLayer = 1
-        self._thread = None  # will be initialized later on start
+        self.print_thread = None  # will be initialized later on start
         self.logs_path = Path.cwd() / "logs"
         self.logs_path_directory_for_this_run = None  # initialized later
+
+    @property
+    def state(self):
+        """Return the current state."""
+        return self._state
+
+    @state.setter
+    def state(self, state):
+        """Set the current state."""
+        if state in [
+            "uninitialized",
+            "initialized",
+            "planarizing",
+            "planarized",
+            "printing",
+            "paused",
+            "stopped",
+            "completed",
+        ]:
+            self._state = state
+        else:
+            raise ValueError("Invalid state: {}".format(state))
 
     def calculateThickness(self, start, end):
         """ Helper funtion to calculate the layer thickness in um
         """
         return self.galil.cntsToMm(abs(end - start) * 1000)
 
-    @multithreading("initialized", "Initialize")
+    def connect(self):
+        socketio.emit(self.state, dict(), namespace="/printing")
+
+    @run_in_thread("initialized", "Initialize")
     def initialize(self):
-        """Establish Ethernet connection with Galil controler,
-        and find zero in Z axis for build platform.
-        """
-        self.tiptilt.connect()
-        self.kdc.initialize()
-        self.galil.connect()
-        self.galil.motorOn()
-        self.galil.home()
-        self.galil.goToZmax()
-        self.projector.connect()
+        """Put all hardware into starting configuration."""
+        print("TEST doing the init ", self.state)
+        if self.state == "uninitialized":
+            print("TEST really doing the init ")
+            self.tiptilt.connect()
+            self.kdc.initialize()
+            self.galil.connect()
+            self.galil.motorOn()
+            self.galil.home()
+            self.galil.goToZmax()
+            self.projector.connect()
 
-        # self.galil.openEncoderFile('encoder_initialization_write_file.txt')
-        # self.galil.closeEncoderFile()
+            # self.galil.openEncoderFile('encoder_initialization_write_file.txt')
+            # self.galil.closeEncoderFile()
 
-    @multithreading("planarizing", "Planarization Step 1")
+    @run_in_thread("planarizing", "Planarization Step 1")
     def planarizationStep1(self):
-        """Planarization Step 1 -- Lower the build platform to
-        zero in Z for planarization.
-        """
-        # print("Planarization Step 1")
-        # self.galil.openEncoderFile('encoder_planarization_write_file.txt')
-        self.galil.goToZmin()
-        # self.galil.closeEncoderFile()
+        """Lower build platform to lower position for planarization."""
+        if self.state in ["initialized", "planarized", "completed", "stopped"]:
+            # print("Planarization Step 1")
+            # self.galil.openEncoderFile('encoder_planarization_write_file.txt')
+            self.galil.goToZmin()
+            # self.galil.closeEncoderFile()
 
-    @multithreading("planarized", "Planarization Step 2")
+    @run_in_thread("planarized", "Planarization Step 2")
     def planarizationStep2(self):
-        """Planarization Step 2 -- Make sure the build platform
-        is flat on the teflon film. Then tighten the screws and
-        bring the build platform to home position in Z.
-        """
-        # self.galil.goToZmax()
-        # self.galil.goToPlanarizationPullOff()
+        """Raise the build platform to begin printing."""
+        if self.state is "planarizing":
+            # self.galil.goToZmax()
+            # self.galil.goToPlanarizationPullOff()
+            pass
 
-    @multithreading("paused", "Pause Printing")
+    @run_in_thread("paused", "Pause Printing")
     def pause(self):
         """Pause the printing process. It is implemented with a
         ``threading.Event`` object, :py:attr:`printingPaused`.
@@ -187,40 +176,101 @@ class PrintingThreads:
         paused, the 3D printer can resume and continue finishing
         the print job.
         """
-        self.printingPaused.set()
-        self._thread.join()
+        if self.state == "printing":
+            self.printingPaused.set()
+            self.print_thread.join()
 
-    @multithreading("stopped", "Stop Printing")
+    @run_in_thread("stopped", "Stop Printing")
     def stop(self):
         """Stop the printing process. It works basically the same
-        as :py:meth:`puase`, except the 3D printer can not resume
+        as :py:meth:`pause`, except the 3D printer can not resume
         and finish the previous print job.
         """
-        self.printingStopped.set()
-        self._thread.join()
-        # self.galil.closeEncoderFile()
-        # self.galil.closeLoadCellFile()
+        if self.state in ["printing", "paused"]:
+            self.printingStopped.set()
+            self.print_thread.join()
+            # self.galil.closeEncoderFile()
+            # self.galil.closeLoadCellFile()
 
-    def start(self):
+    def start(self, job_id):
         """This method starts a new print.
 
         If printer is planarized, this method starts printing from
         layer 1 in a new thread. When printing is completed, paused,
         or stopped, the thread ends gracefully.
         """
-        self.printer3d.state = "printing"
+        if self.state != "planarized" or not job_id:
+            return
+
+        # Prepares and archive all the files and information needed for the print job
+        job = PrintJob.query.get(job_id)
+        if not job:
+            return
+
+        # Removes the `current_job` folder to get a fresh start
+        try:
+            shutil.rmtree(os.path.join(Config.UPLOAD_FOLDER, "current_job"))
+        except FileNotFoundError:
+            pass
+        # except:
+        #     pass
+
+        _zipFile = os.path.join(Config.UPLOAD_FOLDER, "queue", job.zip_filename)
+        with ZipFile(_zipFile, "r") as f:
+            f.extractall(path=os.path.join(Config.UPLOAD_FOLDER, "current_job"))
+            # Removes hidden files from Mac
+            try:
+                shutil.rmtree(
+                    os.path.join(Config.UPLOAD_FOLDER, "current_job", "__MACOSX")
+                )
+            except FileNotFoundError:
+                pass
+
+        # Moves the zip file in `queue` folder to `print_history` folder
+        os.rename(
+            _zipFile,
+            os.path.join(Config.UPLOAD_FOLDER, "print_history", job.zip_filename),
+        )
+
+        # Saves a print record in the database
+        printRecord = PrintRecord(
+            original_filename=job.original_filename,
+            upload_time=job.upload_time,
+            upload_ip=job.upload_ip,
+            start_ip=request.remote_addr,
+        )
+        printRecord.save(commit=False)
+
+        # Sends a `job selected` message to clients via sockets
+        message = {
+            "job": job_id,
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "text": "Print Job ({}) selected".format(job.original_filename),
+        }
+        # Once the job is selected and started, it will be deleted for queue.
+        # Therefore, we can use the `job deleted` event here, but with a
+        # different message.
+        socketio.emit("job deleted", message, namespace="/printing", broadcast=True)
+        job.delete()
+
+        printSettingsFile = glob.glob(
+            os.path.join(Config.UPLOAD_FOLDER, "current_job", "**/print_settings.json"),
+            recursive=True,
+        )[0]
+        self.printSettings = PrintSettings.fromFile(printSettingsFile)
+        self.jsonDir = os.path.dirname(printSettingsFile)
+
+        self.state = "printing"
         message = {
             "percent": 0,
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "text": "Start Printing",
         }
-        socketio.emit(
-            self.printer3d.state, message, namespace="/printing", broadcast=True
-        )
+        socketio.emit(self.state, message, namespace="/printing", broadcast=True)
 
         app = db.get_app()
-        self._thread = threading.Thread(target=self.startPrinting, args=(1, app))
-        self._thread.start()
+        self.print_thread = threading.Thread(target=self.print_worker, args=(1, app))
+        self.print_thread.start()
 
     def resume(self):
         """This method resumes a paused print.
@@ -229,7 +279,9 @@ class PrintingThreads:
         :py:attr:`pausedLayer` in a new thread. When printing is
         completed, paused, or stopped, the thread ends gracefully.
         """
-        self.printer3d.state = "printing"
+        if self.state != "paused":
+            return
+        self.state = "printing"
         message = {
             "percent": int(
                 100 * (self.pausedLayer - 1) / self.printSettings.totalLayerNum
@@ -237,18 +289,16 @@ class PrintingThreads:
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "text": "Resume Printing",
         }
-        socketio.emit(
-            self.printer3d.state, message, namespace="/printing", broadcast=True
-        )
+        socketio.emit(self.state, message, namespace="/printing", broadcast=True)
 
         app = db.get_app()
-        self._thread = threading.Thread(
-            target=self.startPrinting, args=(self.pausedLayer, app)
+        self.print_thread = threading.Thread(
+            target=self.print_worker, args=(self.pausedLayer, app)
         )
-        self._thread.start()
+        self.print_thread.start()
 
-    def startPrinting(self, startingLayer, app):
-        """The ``startPrinting`` method implements the printing
+    def print_worker(self, startingLayer, app):
+        """The ``print_worker`` method implements the printing
         process.
 
         .. note::
@@ -386,13 +436,13 @@ class PrintingThreads:
                 latestPrintRecord.save()
 
             if not self.printingStopped.is_set() and not self.printingPaused.is_set():
-                self.printer3d.state = "completed"
+                self.state = "completed"
                 message = {
                     "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "text": "Printing Compeleted",
                 }
                 socketio.emit(
-                    self.printer3d.state, message, namespace="/printing", broadcast=True
+                    self.state, message, namespace="/printing", broadcast=True,
                 )
         # self.galil.closeEncoderFile()
         # self.galil.closeLoadCellFile()
@@ -400,10 +450,37 @@ class PrintingThreads:
     @property
     def isBusy(self):
         """boolean -- whether the printer is printing"""
-        return self._thread.isAlive()
+        return self.print_thread.isAlive()
+
+    def shutdown(self):
+        if self.state not in ["busy", "printing"]:
+            message = {
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "text": "Shutting down",
+            }
+            socketio.emit("shutting down", message, namespace="/printing", broadcast=True)
+
+            func = request.environ.get("werkzeug.server.shutdown")
+            if func is None:
+                raise RuntimeError("Not running with the Werkzeug Server")
+
+            socketio.emit(
+                "shutdown completed", dict(), namespace="/printing", broadcast=True
+            )
+            time.sleep(1)
+            func()
+
+        else:
+            message = {
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "text": "Try to shutdown 3D printer when it's busy",
+            }
+            socketio.emit(
+                "shutdown failed", message, namespace="/printing", broadcast=True
+            )
 
 
-printingThreads = PrintingThreads()
+printControl = PrintControl()
 
 
 @blueprint.route("/")
@@ -414,143 +491,55 @@ def index():
 
 @socketio.on("connect", namespace="/printing")
 def connect():
-    socketio.emit(printer3d.state, dict(), namespace="/printing")
+    printControl.connect()
 
 
 @socketio.on("initialize", namespace="/printing")
 # pylint: disable=unused-argument
 def initialize(message):
-    if printer3d.state == "uninitialized":
-        printingThreads.initialize()
+    printControl.initialize()
 
 
 @socketio.on("planarization step 1", namespace="/printing")
 # pylint: disable=unused-argument
 def planarizationStep1(message):
-    printer_states = ["initialized", "planarized", "completed", "stopped"]
-    if printer3d.state in printer_states:
-        printingThreads.planarizationStep1()
+    printControl.planarizationStep1()
 
 
 @socketio.on("planarization step 2", namespace="/printing")
 # pylint: disable=unused-argument
 def planarizationStep2(message):
-    if printer3d.state is "planarizing":
-        printingThreads.planarizationStep2()
+    printControl.planarizationStep2()
 
 
 @socketio.on("start", namespace="/printing")
-def start(message):
-    if printer3d.state == "planarized":
-        jobId = message["job"]
-
-        if jobId:
-            # Prepares and archive all the files and information needed for the print job
-            job = PrintJob.query.get(jobId)
-            if not job:
-                return
-
-            # Removes the `current_job` folder to get a fresh start
-            try:
-                shutil.rmtree(os.path.join(Config.UPLOAD_FOLDER, "current_job"))
-            except FileNotFoundError:
-                pass
-            # except:
-            #     pass
-
-            _zipFile = os.path.join(Config.UPLOAD_FOLDER, "queue", job.zip_filename)
-            with ZipFile(_zipFile, "r") as f:
-                f.extractall(path=os.path.join(Config.UPLOAD_FOLDER, "current_job"))
-                # Removes hidden files from Mac
-                try:
-                    shutil.rmtree(
-                        os.path.join(Config.UPLOAD_FOLDER, "current_job", "__MACOSX")
-                    )
-                except FileNotFoundError:
-                    pass
-
-            # Moves the zip file in `queue` folder to `print_history` folder
-            os.rename(
-                _zipFile,
-                os.path.join(Config.UPLOAD_FOLDER, "print_history", job.zip_filename),
-            )
-
-            # Saves a print record in the database
-            printRecord = PrintRecord(
-                original_filename=job.original_filename,
-                upload_time=job.upload_time,
-                upload_ip=job.upload_ip,
-                start_ip=request.remote_addr,
-            )
-            printRecord.save(commit=False)
-
-            # Sends a `job selected` message to clients via sockets
-            message = {
-                "job": jobId,
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "text": "Print Job ({}) selected".format(job.original_filename),
-            }
-            # Once the job is selected and started, it will be deleted for queue.
-            # Therefore, we can use the `job deleted` event here, but with a
-            # different message.
-            socketio.emit("job deleted", message, namespace="/printing", broadcast=True)
-            job.delete()
-
-            printSettingsFile = glob.glob(
-                os.path.join(
-                    Config.UPLOAD_FOLDER, "current_job", "**/print_settings.json"
-                ),
-                recursive=True,
-            )[0]
-            printingThreads.printSettings = PrintSettings.fromFile(printSettingsFile)
-            printingThreads.jsonDir = os.path.dirname(printSettingsFile)
-            printingThreads.start()
+# pylint: disable=unused-argument
+def start_print(message):
+    printControl.start(message["job"])
 
 
 @socketio.on("pause", namespace="/printing")
 # pylint: disable=unused-argument
-def pause(message):
-    if printer3d.state == "printing":
-        printingThreads.pause()
+def pause_print(message):
+    printControl.pause()
 
 
 @socketio.on("resume", namespace="/printing")
 # pylint: disable=unused-argument
-def resume(message):
-    if printer3d.state == "paused":
-        printingThreads.resume()
+def resume_print(message):
+    printControl.resume()
 
 
 @socketio.on("stop", namespace="/printing")
 # pylint: disable=unused-argument
 def stop(message):
-    if printer3d.state == "printing" or printer3d.state == "paused":
-        printingThreads.stop()
+    printControl.stop()
 
 
 @socketio.on("shutdown", namespace="/printing")
+# pylint: disable=unused-argument
 def shutdown(message):
-    if printer3d.state not in ["busy", "printing"]:
-        message = {
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "text": "Shutting down",
-        }
-        socketio.emit("shutting down", message, namespace="/printing", broadcast=True)
-
-        func = request.environ.get("werkzeug.server.shutdown")
-        if func is None:
-            raise RuntimeError("Not running with the Werkzeug Server")
-
-        socketio.emit("shutdown completed", dict(), namespace="/printing", broadcast=True)
-        time.sleep(1)
-        func()
-
-    else:
-        message = {
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "text": "Try to shutdown 3D printer when it's busy",
-        }
-        socketio.emit("shutdown failed", message, namespace="/printing", broadcast=True)
+    printControl.shutdown()
 
 
 @blueprint.route("handle-upload", methods=["POST"])
@@ -595,11 +584,11 @@ def handleUpload():
 
 @socketio.on("delete job", namespace="/printing")
 def deleteJob(message):
-    jobId = message["job"]
-    job = PrintJob.query.get_or_404(jobId)
+    job_id = message["job"]
+    job = PrintJob.query.get_or_404(job_id)
     os.remove(os.path.join(Config.UPLOAD_FOLDER, "queue", job.zip_filename))
     message = {
-        "job": jobId,
+        "job": job_id,
         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "text": "Print Job ({}) Deleted".format(job.original_filename),
     }
