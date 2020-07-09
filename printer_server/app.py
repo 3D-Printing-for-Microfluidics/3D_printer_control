@@ -8,12 +8,13 @@ from printer_server.extensions import db, migrate, socketio
 from printer_server import commands, models
 from printer_server.views import printing, manual_controls
 from printer_server.settings import ProdConfig
-from printer_server.hardware import printer3d
+from printer_server.hardware import hardware_driver_handles
 from printer_server.logging_handler import SQLAlchemyHandler
 
 
 def create_app(config_object=ProdConfig):
-    """An application factory, as explained here: http://flask.pocoo.org/docs/patterns/appfactories/.
+    """An application factory, as explained here:
+    http://flask.pocoo.org/docs/patterns/appfactories/.
 
     :param config_object: The configuration object to use.
     """
@@ -75,7 +76,7 @@ def register_commands(app):
 
 
 def register_hardware(app):
-    app.printer3d = printer3d
+    app.hardware_driver_handles = hardware_driver_handles
 
 
 def register_logger(app):

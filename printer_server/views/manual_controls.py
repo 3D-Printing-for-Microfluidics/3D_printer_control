@@ -9,7 +9,7 @@ from flask import Blueprint, request, render_template
 
 from printer_server.extensions import socketio
 from printer_server.settings import Config
-from printer_server.hardware import printer3d
+from printer_server.hardware import hardware_driver_handles
 
 
 class External_Control:
@@ -23,10 +23,10 @@ class External_Control:
         return self.enable_flag
 
 
-galil = printer3d.galil
-projector = printer3d.projector
-tiptilt = printer3d.tiptilt
-kdc = printer3d.kdc
+galil = hardware_driver_handles.galil
+projector = hardware_driver_handles.projector
+tiptilt = hardware_driver_handles.tiptilt
+kdc = hardware_driver_handles.kdc
 external_control_enable = External_Control()
 position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
 

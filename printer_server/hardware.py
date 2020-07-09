@@ -22,4 +22,4 @@ class Printer3D:
             self.tiptilt = TipTilt(verbose=True)
 
 
-printer3d = Printer3D()
+hardware_driver_handles = Printer3D()

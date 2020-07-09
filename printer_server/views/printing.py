@@ -13,7 +13,7 @@ from functools import wraps
 from flask import Blueprint, request, render_template
 
 from printer_server.settings import Config
-from printer_server.hardware import printer3d, PrintSettings
+from printer_server.hardware import hardware_driver_handles, PrintSettings
 
 from printer_server.models import PrintJob, PrintRecord
 from printer_server.extensions import db, socketio
@@ -88,10 +88,10 @@ class PrintControl:
 
     def __init__(self):
         self._state = "uninitialized"
-        self.galil = printer3d.galil
-        self.projector = printer3d.projector
-        self.kdc = printer3d.kdc
-        self.tiptilt = printer3d.tiptilt
+        self.galil = hardware_driver_handles.galil
+        self.projector = hardware_driver_handles.projector
+        self.kdc = hardware_driver_handles.kdc
+        self.tiptilt = hardware_driver_handles.tiptilt
         self.printSettings = None
         self.jsonDir = None
         self.printingStopped = threading.Event()
