@@ -8,7 +8,7 @@ from printer_server.extensions import db, migrate, socketio
 from printer_server import commands, models
 from printer_server.views import printing, manual_controls
 from printer_server.settings import ProdConfig
-from printer_server.hardware import hardware_driver_handles
+from printer_server.hardware_configuration import hardware_driver_handles
 from printer_server.logging_handler import SQLAlchemyHandler
 
 

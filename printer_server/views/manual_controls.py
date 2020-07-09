@@ -9,7 +9,7 @@ from flask import Blueprint, request, render_template
 
 from printer_server.extensions import socketio
 from printer_server.settings import Config
-from printer_server.hardware import hardware_driver_handles
+from printer_server.hardware_configuration import hardware_driver_handles
 
 
 class External_Control:
