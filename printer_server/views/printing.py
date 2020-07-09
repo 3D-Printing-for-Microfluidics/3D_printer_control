@@ -13,8 +13,8 @@ from functools import wraps
 from flask import Blueprint, request, render_template
 
 from printer_server.settings import Config
-from printer_server.hardware_configuration import hardware_driver_handles, PrintSettings
-
+from printer_server.hardware_configuration import hardware_driver_handles
+from printer_server.print_settings import PrintSettings
 from printer_server.models import PrintJob, PrintRecord
 from printer_server.extensions import db, socketio
 

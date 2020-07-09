@@ -2,7 +2,6 @@ from printer_server.hardware_drivers.galil import Galil, Galil_dummy
 from printer_server.hardware_drivers.projector import Projector, Projector_dummy
 from printer_server.hardware_drivers.kdc101 import KDC101, KDC101_dummy
 from printer_server.hardware_drivers.tiptilt import TipTilt, TipTilt_dummy
-from printer_server.hardware_drivers.print_settings import PrintSettings
 
 projectorResolution = (2560, 1600)
 dummy = False
