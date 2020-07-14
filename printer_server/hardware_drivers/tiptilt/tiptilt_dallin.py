@@ -118,11 +118,13 @@ class TipTilt(serial.Serial):
     # returns "Done" or "Error"
     def move_relative(self, axis, distance_um, fast=False):
         if fast:  # coarse mode uses less precise positioning for quicker moves
-            return self.send("MC{} {}".format(get_axis_index(axis), distance_um))
+            return self.send("Mr{} {}".format(get_axis_index(axis), distance_um))
         return self.send("MR{} {}".format(get_axis_index(axis), distance_um))
 
     # returns "Done" or "Error"
-    def move_absolute(self, axis, distance_um):
+    def move_absolute(self, axis, distance_um, fast=False):
+        if fast:  # coarse mode uses less precise positioning for quicker moves
+            return self.send("Ma{} {}".format(get_axis_index(axis), distance_um))
         return self.send("MA{} {}".format(get_axis_index(axis), distance_um))
 
     # wrapper to plug into existing calibration threads interface
@@ -133,7 +135,7 @@ class TipTilt(serial.Serial):
         if relative:
             self.move_relative(axis, distance_um, fast)
         else:
-            self.move_absolute(axis, distance_um)
+            self.move_absolute(axis, distance_um, fast)
 
 
 if __name__ == '__main__':
