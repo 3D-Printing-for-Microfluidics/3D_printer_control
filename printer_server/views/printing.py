@@ -544,14 +544,20 @@ def shutdown(message):
 
 @blueprint.route("handle-upload", methods=["POST"])
 def handleUpload():
-    for _, file in enumerate(request.files.getlist("file")):
+    """Upload a print job.
+
+    Grabs supplied files from the http request data, saves them to the
+    upload folder on disk, and creates a new print job entry in the
+    Print Queue table in the database.
+    """
+    for _, f in enumerate(request.files.getlist("file")):
         uploadTime = datetime.now()
         newFilename = os.path.join(
             Config.UPLOAD_FOLDER,
             "queue",
             "{}.zip".format(uploadTime.strftime("job-%Y-%m-%dT%H-%M-%S.%f")),
         )
-        file.save(newFilename)
+        f.save(newFilename)
 
         if not PrintSettings.validate(
             newFilename, path=os.path.join(Config.UPLOAD_FOLDER, "tmp")
@@ -564,7 +570,7 @@ def handleUpload():
             os.remove(newFilename)
         else:
             newJob = PrintJob(
-                original_filename=file.filename,
+                original_filename=f.filename,
                 upload_time=uploadTime,
                 upload_ip=request.remote_addr,
             ).save()
@@ -572,18 +578,21 @@ def handleUpload():
                 "job uploaded",
                 {
                     "id": newJob.id,
-                    "name": file.filename,
+                    "name": f.filename,
                     "uploadTime": uploadTime.strftime("%Y-%m-%d %H:%M:%S"),
                     "uploadIP": request.remote_addr,
                 },
                 namespace="/printing",
                 broadcast=True,
             )
-    return ""
+    return
 
 
 @socketio.on("delete job", namespace="/printing")
 def deleteJob(message):
+    """Delete a print job form the queue by removing it from the
+    Print Queue table in the database.
+    """
     job_id = message["job"]
     job = PrintJob.query.get_or_404(job_id)
     os.remove(os.path.join(Config.UPLOAD_FOLDER, "queue", job.zip_filename))
