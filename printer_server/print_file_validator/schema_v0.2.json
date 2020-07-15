@@ -1,0 +1,370 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "id": "v2",
+    "description": "HR3 3D printer print job file schema for varying optical dose around and above channels, valves, DC's etc.",
+    "type": "object",
+    "properties": {
+        "Header": {
+            "type": "object",
+            "properties": {
+                "Schema version": {
+                    "type": "string",
+                    "default": "0.2",
+                    "enum": [
+                        "0.2"
+                    ],
+                    "description": "What version of the json schema to use to parse the file"
+                },
+                "Image directory": {
+                    "type": "string",
+                    "default": "slices",
+                    "description": "Directory relative to the json print job file where the images are saved."
+                },
+                "Comment": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Layer comments"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "Schema version",
+                "Image directory"
+            ]
+        },
+        "Design": {
+            "type": "object",
+            "properties": {
+                "Purpose": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "Calibration device"
+                    ],
+                    "description": "Information about what purpose the device is intended for."
+                },
+                "Description": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "Includes vertical and horizontal channels with widths varying from 1-5 px."
+                    ],
+                    "description": "More detailed explanation of the structure of the device."
+                },
+                "Resin": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "PEGDA"
+                    ],
+                    "description": "Resin intended for creating the device"
+                },
+                "3D printer": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "HR3.2"
+                    ],
+                    "description": "3D printer that the design what created for"
+                },
+                "Design file": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "my-design.scad",
+                        "path/to/design/on/caedem/server/filename.scad"
+                    ],
+                    "description": "Name of the scad file and/or the path to where the file is saved."
+                },
+                "STL file": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "my-design.stl",
+                        "path/to/stl/on/caedem/server/filename.stl"
+                    ],
+                    "description": "Name of the stl file and/or the path to where the file is saved."
+                },
+                "Slicer": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "Matt's web based slicer",
+                        "Hua's slicer"
+                    ],
+                    "description": "Name of the slicer used to make the image stack."
+                },
+                "Date": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
+        "Default layer settings": {
+            "type": "object",
+            "properties": {
+                "Comment": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Layer comments"
+                },
+                "Number of duplications": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 1,
+                    "description": "Custom number of times to duplicate a layer"
+                },
+                "Position settings": {
+                    "type": "object",
+                    "properties": {
+                        "Layer thickness (um)": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 10,
+                            "description": "Custom layer thickness"
+                        },
+                        "Distance up (mm)": {
+                            "type": "number",
+                            "exclusiveMinimum": 0,
+                            "description": "Distance to move the build up after completing a layer."
+                        },
+                        "Initial wait (ms)": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 0,
+                            "description": "Time to wait between exposures."
+                        },
+                        "BP up speed (mm/sec)": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 20,
+                            "description": "Specify the velocity of the build platform when moving up"
+                        },
+                        "BP up acceleration (mm/sec^2)": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 20,
+                            "description": "Specify the acceleration of the build platform when moving up"
+                        },
+                        "Up wait (ms)": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 0,
+                            "description": "How long to wait after the build platform has been moved up to start moving back down."
+                        },
+                        "BP down speed (mm/sec)": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 20,
+                            "description": "Specify the velocity of the build platform when moving down"
+                        },
+                        "BP down acceleration (mm/sec^2)": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 20,
+                            "description": "Specify the acceleration of the build platform when moving down"
+                        },
+                        "Final wait (ms)": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 0,
+                            "description": "Time to wait after final exposure on a layer"
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                        "Layer thickness (um)",
+                        "Distance up (mm)",
+                        "Initial wait (ms)",
+                        "BP up speed (mm/sec)",
+                        "BP up acceleration (mm/sec^2)",
+                        "Up wait (ms)",
+                        "BP down speed (mm/sec)",
+                        "BP down acceleration (mm/sec^2)",
+                        "Final wait (ms)"
+                    ]
+                },
+                "Image settings": {
+                    "type": "object",
+                    "properties": {
+                        "Image file": {
+                            "type": "string",
+                            "description": "Default image file"
+                        },
+                        "Layer exposure time (ms)": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Default time to expose a single image layer for."
+                        },
+                        "Light engine power setting": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 100,
+                            "maximum": 200,
+                            "description": "Default power to expose an image at."
+                        },
+                        "Relative focus position (um)": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Default realtive focus position for this layer."
+                        },
+                        "Wait before exposure (ms)": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Wait time before exposure"
+                        },
+                        "Wait after exposure (ms)": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Wait time after exposure"
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                        "Image file",
+                        "Layer exposure time (ms)",
+                        "Light engine power setting",
+                        "Relative focus position (um)",
+                        "Wait before exposure (ms)",
+                        "Wait after exposure (ms)"
+                    ]
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "Number of duplications",
+                "Position settings",
+                "Image settings"
+            ]
+        },
+        "Layers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "Comment": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Layer comments"
+                    },
+                    "Number of duplications": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "default": 1,
+                        "description": "Custom number of times to duplicate a layer"
+                    },
+                    "Position settings": {
+                        "type": "object",
+                        "properties": {
+                            "Layer thickness (um)": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "default": 10,
+                                "description": "Custom layer thickness"
+                            },
+                            "Distance up (mm)": {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "description": "Distance to move the build up after completing a layer."
+                            },
+                            "Initial wait (ms)": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "default": 0,
+                                "description": "Time to wait between exposures."
+                            },
+                            "BP up speed (mm/sec)": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "default": 20,
+                                "description": "Specify the velocity of the build platform when moving up"
+                            },
+                            "BP up acceleration (mm/sec^2)": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "default": 20,
+                                "description": "Specify the acceleration of the build platform when moving up"
+                            },
+                            "Up wait (ms)": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "default": 0,
+                                "description": "How long to wait after the build platform has been moved up to start moving back down."
+                            },
+                            "BP down speed (mm/sec)": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "default": 20,
+                                "description": "Specify the velocity of the build platform when moving down"
+                            },
+                            "BP down acceleration (mm/sec^2)": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "default": 20,
+                                "description": "Specify the acceleration of the build platform when moving down"
+                            },
+                            "Final wait (ms)": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "default": 0,
+                                "description": "Time to wait after final exposure on a layer"
+                            }
+                        },
+                        "additionalProperties": false
+                    },
+                    "Image settings list": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "Image file": {
+                                    "type": "string",
+                                    "default": "png",
+                                    "description": "Default image file"
+                                },
+                                "Layer exposure time (ms)": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "description": "Default time to expose a single image layer for."
+                                },
+                                "Light engine power setting": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "default": 100,
+                                    "maximum": 200,
+                                    "description": "Default power to expose an image at."
+                                },
+                                "Relative focus position (um)": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "description": "Default realtive focus position for this layer."
+                                },
+                                "Wait before exposure (ms)": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "description": "Wait time before exposure"
+                                },
+                                "Wait after exposure (ms)": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "description": "Wait time after exposure"
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "additionalProperties": false
+            },
+            "additionalProperties": false,
+            "required": []
+        },
+        "additionalProperties": false
+    },
+    "additionalProperties": false,
+    "required": [
+        "Header",
+        "Default layer settings"
+    ]
+}

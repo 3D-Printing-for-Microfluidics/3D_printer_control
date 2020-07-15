@@ -1,0 +1,212 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "id": "v1",
+    "description": "HR3 3D printer print job file schema.",
+    "type": "object",
+    "properties": {
+        "Design": {
+            "type": "object",
+            "properties": {
+                "Purpose": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "Calibration device"
+                    ],
+                    "description": "Information about what purpose the device is intended for."
+                },
+                "Description": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "Includes vertical and horizontal channels with widths varying from 1-5 px."
+                    ],
+                    "description": "More detailed explanation of the structure of the device."
+                },
+                "Resin": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "PEGDA"
+                    ],
+                    "description": "Resin intended for creating the device"
+                },
+                "3D printer": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "HR3.2"
+                    ],
+                    "description": "3D printer that the design what created for"
+                },
+                "Design file": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "my-design.scad",
+                        "path/to/design/on/caedem/server/filename.scad"
+                    ],
+                    "description": "Name of the scad file and/or the path to where the file is saved."
+                },
+                "STL file": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "my-design.stl",
+                        "path/to/stl/on/caedem/server/filename.stl"
+                    ],
+                    "description": "Name of the stl file and/or the path to where the file is saved."
+                },
+                "Slicer": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                        "Matt's web based slicer",
+                        "Hua's slicer"
+                    ],
+                    "description": "Name of the slicer used to make the image stack."
+                },
+                "Date": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
+        "Header": {
+            "type": "object",
+            "properties": {
+                "Comment": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Additional comments not covered in the design section"
+                },
+                "Schema version": {
+                    "type": "string",
+                    "default": "0.1",
+                    "enum": [
+                        "0.1"
+                    ],
+                    "description": "What version of the json schema to use to parse the file."
+                },
+                "Image directory": {
+                    "type": "string",
+                    "description": "Directory relative to the json print job file where the images are saved."
+                }
+            },
+            "required": [
+                "Schema version",
+                "Image directory"
+            ],
+            "additionalProperties": false
+        },
+        "Default settings": {
+            "type": "object",
+            "properties": {
+                "Comment": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Settings used for each layer, if not overridden by layer specific settings."
+                },
+                "Light engine power setting": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Default power setting."
+                },
+                "Layer exposure time (ms)": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Default exposure time in milliseconds."
+                },
+                "Layer thickness (um)": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Default layer thickness in micrometers."
+                },
+                "Number of duplications": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Default number of times to duplicate the layer."
+                },
+                "Command chain": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Command chain for the 3D printer to use when moving the stages."
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "Light engine power setting",
+                "Layer exposure time (ms)",
+                "Layer thickness (um)",
+                "Number of duplications",
+                "Command chain"
+            ]
+        },
+        "Layers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "Images": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9]*.png$"
+                        },
+                        "minItems": 1,
+                        "description": "List of images to expose on a particular layer"
+                    },
+                    "Comment": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Comment about special behavior on a layer"
+                    },
+                    "Light engine power setting": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Custom image power setting. "
+                        },
+                        "minItems": 1
+                    },
+                    "Layer exposure time (ms)": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Custom image exposure time"
+                        },
+                        "minItems": 1
+                    },
+                    "Layer thickness (um)": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Custom image thickness"
+                        },
+                        "minItems": 1
+                    },
+                    "Number of duplications": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Custom number of times to duplicate an image"
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "Images"
+                ]
+            }
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "Header",
+        "Default settings",
+        "Layers"
+    ]
+}
