@@ -49,18 +49,19 @@ def check_slices_folder_exists(zip_file_handle):
 def check_version(print_settings):
     """Check the version of print settings file. Should be '0.2'."""
     if print_settings["Header"]["Schema version"] != "0.2":
-        msg = "File is not version 0.2:"
-        msg += "\n  Use converter to convert to version 0.2"
+        msg = "File is not version 0.2. Use converter to convert to version 0.2"
         raise ValueError(msg)
 
 
 def validate_against_schema(print_settings, schema):
     """Check the print settings against the schema."""
+    here = Path(__file__).parent.absolute()
+    schema = here / Path(schema)
     try:
         Draft7Validator(read_json(schema)).validate(print_settings)
     except ValidationError as e:
         path_string = " -> ".join(f"'{str(v)}'" for v in e.path)
-        msg = f"Schema mismatch:\n  {e.message}\n  Check {path_string}"
+        msg = f"  {e.message}\n  Check {path_string}"
         raise ValueError(msg)
 
 
@@ -71,7 +72,7 @@ def check_image_format(temp_dir):
         image_file = temp_dir / Path(image_file)
         with Image.open(image_file) as img:
             if img.format != "PNG" or img.mode != "L":
-                msg += f"Bad image:\n  '{image_file}' must be an 8-bit grayscale PNG."
+                msg += f"Bad image. '{image_file}' must be an 8-bit grayscale PNG."
                 raise ValueError(msg)
 
 
@@ -82,7 +83,7 @@ def check_referenced_images_exist(print_settings, temp_dir):
     slices = list(temp_dir.rglob("*.png"))
     img = print_settings["Default layer settings"]["Image settings"]["Image file"]
     if temp_dir / Path("slices") / Path(img) not in slices:
-        msg = f"Missing image:\n  Default image {img} could not be found.\n"
+        msg = f"Missing image. Default image {img} could not be found.\n"
         msg += "  Check 'Default layer settings' -> 'Image settings' -> 'Image file'"
         raise ValueError(msg)
     for layer in print_settings["Layers"]:
@@ -90,7 +91,7 @@ def check_referenced_images_exist(print_settings, temp_dir):
             img = image_setting["Image file"]
             img_path = temp_dir / Path("slices") / Path(image_setting["Image file"])
             if img_path not in slices:
-                msg = f"Missing image:\n  '{img} could not be found."
+                msg = f"Missing image: '{img}' could not be found."
                 raise ValueError(msg)
 
 

@@ -377,11 +377,11 @@ $(document).ready(function () {
         update_print_message(message);
     });
 
-    socket.on("my error", function (message) {
+    socket.on("validation error", function (message) {
         var flash_msg = `
        <div class="alert alert-${message.category}">
          <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
-        ${message.text}
+        <pre>${message.text}</pre>
        </div>
         `;
         $("#printer-controls").before(flash_msg);

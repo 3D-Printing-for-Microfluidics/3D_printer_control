@@ -15,6 +15,7 @@ from flask import Blueprint, request, render_template
 from printer_server.settings import Config
 from printer_server.hardware_configuration import hardware_driver_handles
 from printer_server.print_settings import PrintSettings
+from printer_server.print_file_validator import validate_v02
 from printer_server.models import PrintJob, PrintRecord
 from printer_server.extensions import db, socketio
 
@@ -559,16 +560,9 @@ def handleUpload():
         )
         f.save(newFilename)
 
-        if not PrintSettings.validate(
-            newFilename, path=os.path.join(Config.UPLOAD_FOLDER, "tmp")
-        ):
-            socketio.emit(
-                "my error",
-                {"text": "Job validation failed wow", "category": "danger"},
-                namespace="/printing",
-            )
-            os.remove(newFilename)
-        else:
+        try:
+            validate_v02(newFilename)
+            print(f"{f.filename} uploaded successfully.")
             newJob = PrintJob(
                 original_filename=f.filename,
                 upload_time=uploadTime,
@@ -585,7 +579,16 @@ def handleUpload():
                 namespace="/printing",
                 broadcast=True,
             )
-    return
+        except ValueError as e:
+            msg = f"Job validation failed for {f.filename}:\n {str(e).strip()}"
+            print(msg)
+            socketio.emit(
+                "validation error",
+                {"text": msg, "category": "danger"},
+                namespace="/printing",
+            )
+            os.remove(newFilename)
+    return ""
 
 
 @socketio.on("delete job", namespace="/printing")
