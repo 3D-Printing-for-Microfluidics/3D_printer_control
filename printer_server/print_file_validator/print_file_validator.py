@@ -8,7 +8,10 @@ from PIL import Image
 
 
 def validate_v02(print_file):
-    """Validate a version 0.2 print file."""
+    """Validate a version 0.2 print file and return the print settings
+    as JSON. If an error is detected, a ValueError is raised with
+    appropriate information.
+    """
     with ZipFile(print_file, "r") as zip_file_handle, TemporaryDirectory() as temp_dir:
         temp_dir = Path(temp_dir)
         zip_file_handle.extractall(temp_dir)
@@ -18,6 +21,7 @@ def validate_v02(print_file):
         validate_against_schema(print_settings, "schema_v0.2.json")
         check_image_format(temp_dir)
         check_referenced_images_exist(print_settings, temp_dir)
+        return print_settings
 
 
 def read_json(path_to_file):
