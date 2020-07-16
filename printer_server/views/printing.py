@@ -14,9 +14,10 @@ from flask import Blueprint, request, render_template
 
 from printer_server.settings import Config
 from printer_server.hardware_configuration import hardware_driver_handles
-from printer_server.print_settings import PrintSettings
+
+# from printer_server.print_settings import print_settings
 from printer_server.print_file_validator import validate_v02
-from printer_server.models import PrintJob, PrintRecord
+from printer_server.models import PrintQueue, PrintRecord
 from printer_server.extensions import db, socketio
 
 blueprint = Blueprint("printing", __name__, url_prefix="/", static_folder="../static")
@@ -68,21 +69,21 @@ class PrintControl:
     simple method call but also enables us to implement resuming
     printing very easily.
 
-    .. py:attribute:: jsonDir
+    .. py:attribute:: json_dir
 
         the image path
 
-    .. py:attribute:: printingStopped
+    .. py:attribute:: printing_stopped
 
         a ``threading.Event`` object to set flag to stop printing
 
-    .. py:attribute:: printingPaused
+    .. py:attribute:: printing_paused
 
         a ``threading.Event`` object to set flag to pause printing
 
-    .. py:attribute:: pausedLayer
+    .. py:attribute:: paused_layer
 
-        the layer where the print is paused. If ``pausedLayer``
+        the layer where the print is paused. If ``paused_layer``
         is ``i``, it will start printing layer ``i`` after resume.
 
     """
@@ -93,11 +94,11 @@ class PrintControl:
         self.projector = hardware_driver_handles.projector
         self.kdc = hardware_driver_handles.kdc
         self.tiptilt = hardware_driver_handles.tiptilt
-        self.printSettings = None
-        self.jsonDir = None
-        self.printingStopped = threading.Event()
-        self.printingPaused = threading.Event()
-        self.pausedLayer = 1
+        self.print_settings = None
+        self.json_dir = None
+        self.printing_stopped = threading.Event()
+        self.printing_paused = threading.Event()
+        self.paused_layer = 1
         self.print_thread = None  # will be initialized later on start
         self.logs_path = Path.cwd() / "logs"
         self.logs_path_directory_for_this_run = None  # initialized later
@@ -122,7 +123,7 @@ class PrintControl:
         ]:
             self._state = state
         else:
-            raise ValueError("Invalid state: {}".format(state))
+            raise ValueError(f"Invalid state: {state}")
 
     def calculateThickness(self, start, end):
         """ Helper funtion to calculate the layer thickness in um
@@ -169,97 +170,86 @@ class PrintControl:
     @run_in_thread("paused", "Pause Printing")
     def pause(self):
         """Pause the printing process. It is implemented with a
-        ``threading.Event`` object, :py:attr:`printingPaused`.
-        The :py:meth:`printingPaused.is_set()` is only checked at
-        the beginning of every layer. If ``True``, the printing
+        threading.Event object, `printing_paused`.
+        The `printing_paused.is_set()` flag is only checked at
+        the beginning of every layer. If `True`, the printing
         will be paused. If the operations of a layer have started,
         the 3D printer will finish that layer first. After being
         paused, the 3D printer can resume and continue finishing
         the print job.
         """
         if self.state == "printing":
-            self.printingPaused.set()
+            self.printing_paused.set()
             self.print_thread.join()
 
     @run_in_thread("stopped", "Stop Printing")
     def stop(self):
         """Stop the printing process. It works basically the same
-        as :py:meth:`pause`, except the 3D printer can not resume
-        and finish the previous print job.
+        as `pause`, except the 3D printer can not resume and finish the
+        previous print job.
         """
         if self.state in ["printing", "paused"]:
-            self.printingStopped.set()
+            self.printing_stopped.set()
             self.print_thread.join()
             # self.galil.closeEncoderFile()
             # self.galil.closeLoadCellFile()
 
     def start(self, job_id):
-        """This method starts a new print.
+        """Prepare for a print and then kick off the hardware in a
+        separate thread running the method `print_worker`.
 
-        If printer is planarized, this method starts printing from
-        layer 1 in a new thread. When printing is completed, paused,
-        or stopped, the thread ends gracefully.
+        The selected print job is retrieved from the Print Queue table
+        in the database. The `current_job` folder is cleared and the job
+        is extracted there. The original (still zipped) print file is
+        also copied to the `print_history` folder. A new entry in the
+        `Print History` table in the database is created for the current
+        job, and it's entry in the Print Queue table is deleted. The
+        print settings file is parsed and the settings saved, then the
+        hardware operations are kicked off in a print_worker thread.
         """
         if self.state != "planarized" or not job_id:
             return
-
-        # Prepares and archive all the files and information needed for the print job
-        job = PrintJob.query.get(job_id)
+        job = PrintQueue.query.get(job_id)  # get job from print queue database
         if not job:
             return
-
-        # Removes the `current_job` folder to get a fresh start
         try:
             shutil.rmtree(os.path.join(Config.UPLOAD_FOLDER, "current_job"))
         except FileNotFoundError:
             pass
-        # except:
-        #     pass
-
         _zipFile = os.path.join(Config.UPLOAD_FOLDER, "queue", job.zip_filename)
         with ZipFile(_zipFile, "r") as f:
             f.extractall(path=os.path.join(Config.UPLOAD_FOLDER, "current_job"))
-            # Removes hidden files from Mac
-            try:
-                shutil.rmtree(
-                    os.path.join(Config.UPLOAD_FOLDER, "current_job", "__MACOSX")
-                )
-            except FileNotFoundError:
-                pass
 
-        # Moves the zip file in `queue` folder to `print_history` folder
+        # from here out the job is already extracted in current_job
+
         os.rename(
             _zipFile,
             os.path.join(Config.UPLOAD_FOLDER, "print_history", job.zip_filename),
         )
 
-        # Saves a print record in the database
-        printRecord = PrintRecord(
+        print_db_entry = PrintRecord(
             original_filename=job.original_filename,
             upload_time=job.upload_time,
             upload_ip=job.upload_ip,
             start_ip=request.remote_addr,
         )
-        printRecord.save(commit=False)
+        print_db_entry.save(commit=False)  # save job to Print History table in database
 
-        # Sends a `job selected` message to clients via sockets
         message = {
             "job": job_id,
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "text": "Print Job ({}) selected".format(job.original_filename),
+            "text": f"Print Job ({job.original_filename}) selected",
         }
-        # Once the job is selected and started, it will be deleted for queue.
-        # Therefore, we can use the `job deleted` event here, but with a
-        # different message.
         socketio.emit("job deleted", message, namespace="/printing", broadcast=True)
-        job.delete()
+        job.delete()  # delete job from Print Queue table in database
 
-        printSettingsFile = glob.glob(
+        print_settings_file = glob.glob(
             os.path.join(Config.UPLOAD_FOLDER, "current_job", "**/print_settings.json"),
             recursive=True,
         )[0]
-        self.printSettings = PrintSettings.fromFile(printSettingsFile)
-        self.jsonDir = os.path.dirname(printSettingsFile)
+
+        self.print_settings = print_settings.fromFile(print_settings_file)
+        self.json_dir = os.path.dirname(print_settings_file)
 
         self.state = "printing"
         message = {
@@ -277,15 +267,15 @@ class PrintControl:
         """This method resumes a paused print.
 
         If printing is paused, this method starts printing from
-        :py:attr:`pausedLayer` in a new thread. When printing is
-        completed, paused, or stopped, the thread ends gracefully.
+        `paused_layer` in a new thread. When printing is completed,
+        paused, or stopped, the thread ends gracefully.
         """
         if self.state != "paused":
             return
         self.state = "printing"
         message = {
             "percent": int(
-                100 * (self.pausedLayer - 1) / self.printSettings.totalLayerNum
+                100 * (self.paused_layer - 1) / self.print_settings.totalLayerNum
             ),
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "text": "Resume Printing",
@@ -294,7 +284,7 @@ class PrintControl:
 
         app = db.get_app()
         self.print_thread = threading.Thread(
-            target=self.print_worker, args=(self.pausedLayer, app)
+            target=self.print_worker, args=(self.paused_layer, app)
         )
         self.print_thread.start()
 
@@ -324,7 +314,7 @@ class PrintControl:
            exits the for-loop, cleans up, and ends gracefully.
 
             #. If printing is paused, the current layer number
-               will be saved to :py:attr:`pausedLayer`, and the
+               will be saved to :py:attr:`paused_layer`, and the
                build platform will move up 30 mm and wait for
                further instruction.
             #. If printing is stopped, the build platform will
@@ -339,8 +329,8 @@ class PrintControl:
                     See http://flask-sqlalchemy.pocoo.org/contexts/.
         """
         # Initialize parameters
-        self.printingStopped.clear()
-        self.printingPaused.clear()
+        self.printing_stopped.clear()
+        self.printing_paused.clear()
 
         # Create log
         date_and_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -354,56 +344,46 @@ class PrintControl:
         # Move build platform to the starting position
         if startingLayer == 1:
             start, end, start_time, end_time = self.galil.printCycle(
-                self.printSettings.getLayerThicknessMm(1),
-                self.printSettings.getCommandChain(1),
+                self.print_settings.getLayerThicknessMm(1),
+                self.print_settings.getCommandChain(1),
             )
             with open(encoder_print_file_name, "a") as f:
-                f.write(
-                    "Layer {}: start {}, end {}, thickness {}, time {}, duration {}\n".format(
-                        1,
-                        start,
-                        end,
-                        self.calculateThickness(start, end),
-                        datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
-                        end_time - start_time,
-                    )
-                )
+                msg = f"Layer {1}: start {start}, end {end}, "
+                msg += f"thickness {self.calculateThickness(start, end)}, "
+                msg += f"time {datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}, "
+                msg += f"duration {end_time - start_time}\n"
+                f.write(msg)
         else:
-            self.galil.resume(self.printSettings.getLayerThicknessMm(startingLayer))
+            self.galil.resume(self.print_settings.getLayerThicknessMm(startingLayer))
 
         # Iterate from the startingLayer to the last
-        totalLayerNum = self.printSettings.totalLayerNum
+        totalLayerNum = self.print_settings.totalLayerNum
         for i in range(startingLayer, totalLayerNum + 1):
-            if self.printingStopped.is_set() or self.printingPaused.is_set():
-                self.pausedLayer = i  # layer i has not been exposed
+            if self.printing_stopped.is_set() or self.printing_paused.is_set():
+                self.paused_layer = i  # layer i has not been exposed
                 break
 
             # self.galil.encoder_print_file.write("Layer %d \r\n" %(i))
             if i != startingLayer:
                 start, end, start_time, end_time = self.galil.printCycle(
-                    self.printSettings.getLayerThicknessMm(i),
-                    self.printSettings.getCommandChain(i),
+                    self.print_settings.getLayerThicknessMm(i),
+                    self.print_settings.getCommandChain(i),
                 )
-                with open(encoder_print_file_name, "a") as f:
-                    f.write(
-                        "Layer {}: start {}, end {}, thickness {}, time {}, duration {}\n".format(
-                            i,
-                            start,
-                            end,
-                            self.calculateThickness(start, end),
-                            datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
-                            end_time - start_time,
-                        )
-                    )
+            with open(encoder_print_file_name, "a") as f:
+                msg = f"Layer {i}: start {start}, end {end}, "
+                msg += f"thickness {self.calculateThickness(start, end)}, "
+                msg += f"time {datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}, "
+                msg += f"duration {end_time - start_time}\n"
+                f.write(msg)
 
             images = [
-                os.path.join(self.jsonDir, im) for im in self.printSettings.getImages(i)
+                os.path.join(self.json_dir, im) for im in self.print_settings.getImages(i)
             ]
 
             self.projector.projectMulti(
                 images,
-                self.printSettings.getExposureTimeMs(i),
-                self.printSettings.getLedPowers(i),
+                self.print_settings.getExposureTimeMs(i),
+                self.print_settings.getLedPowers(i),
             )
 
             socketio.emit(
@@ -411,7 +391,7 @@ class PrintControl:
                 {
                     "percent": int(100 * i / totalLayerNum),
                     "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "text": "Layer {}".format(i),
+                    "text": f"Layer {i}",
                 },
                 namespace="/printing",
                 broadcase=True,
@@ -421,7 +401,7 @@ class PrintControl:
         # self.galil.stopLoadCell()
         self.projector.stop_sequencer()
         self.projector.clear_image()
-        if self.printingPaused.is_set():
+        if self.printing_paused.is_set():
             self.galil.pause()
         else:
             self.galil.goToZmax()
@@ -432,11 +412,11 @@ class PrintControl:
                     PrintRecord.id.desc()
                 ).first()
                 latestPrintRecord.end_time = datetime.now()
-                if self.printingStopped.is_set():
+                if self.printing_stopped.is_set():
                     latestPrintRecord.completed = False
                 latestPrintRecord.save()
 
-            if not self.printingStopped.is_set() and not self.printingPaused.is_set():
+            if not self.printing_stopped.is_set() and not self.printing_paused.is_set():
                 self.state = "completed"
                 message = {
                     "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -481,66 +461,66 @@ class PrintControl:
             )
 
 
-printControl = PrintControl()
+print_control = PrintControl()
 
 
 @blueprint.route("/")
 def index():
-    allJobs = PrintJob.query.all()
+    allJobs = PrintQueue.query.all()
     return render_template("printing.html", allJobs=allJobs)
 
 
 @socketio.on("connect", namespace="/printing")
 def connect():
-    printControl.connect()
+    print_control.connect()
 
 
 @socketio.on("initialize", namespace="/printing")
 # pylint: disable=unused-argument
 def initialize(message):
-    printControl.initialize()
+    print_control.initialize()
 
 
 @socketio.on("planarization step 1", namespace="/printing")
 # pylint: disable=unused-argument
 def planarizationStep1(message):
-    printControl.planarizationStep1()
+    print_control.planarizationStep1()
 
 
 @socketio.on("planarization step 2", namespace="/printing")
 # pylint: disable=unused-argument
 def planarizationStep2(message):
-    printControl.planarizationStep2()
+    print_control.planarizationStep2()
 
 
 @socketio.on("start", namespace="/printing")
 # pylint: disable=unused-argument
 def start_print(message):
-    printControl.start(message["job"])
+    print_control.start(message["job"])
 
 
 @socketio.on("pause", namespace="/printing")
 # pylint: disable=unused-argument
 def pause_print(message):
-    printControl.pause()
+    print_control.pause()
 
 
 @socketio.on("resume", namespace="/printing")
 # pylint: disable=unused-argument
 def resume_print(message):
-    printControl.resume()
+    print_control.resume()
 
 
 @socketio.on("stop", namespace="/printing")
 # pylint: disable=unused-argument
 def stop(message):
-    printControl.stop()
+    print_control.stop()
 
 
 @socketio.on("shutdown", namespace="/printing")
 # pylint: disable=unused-argument
 def shutdown(message):
-    printControl.shutdown()
+    print_control.shutdown()
 
 
 @blueprint.route("handle-upload", methods=["POST"])
@@ -552,29 +532,29 @@ def handleUpload():
     Print Queue table in the database.
     """
     for _, f in enumerate(request.files.getlist("file")):
-        uploadTime = datetime.now()
-        newFilename = os.path.join(
+        upload_time = datetime.now()
+        filename_on_disk = os.path.join(
             Config.UPLOAD_FOLDER,
             "queue",
-            "{}.zip".format(uploadTime.strftime("job-%Y-%m-%dT%H-%M-%S.%f")),
+            f"{upload_time.strftime('job-%Y-%m-%d_%H-%M-%S.%f')}.zip",
         )
-        f.save(newFilename)
+        f.save(filename_on_disk)
 
         try:
-            validate_v02(newFilename)
+            validate_v02(filename_on_disk)
             print(f"{f.filename} uploaded successfully.")
-            newJob = PrintJob(
+            new_print_job = PrintQueue(
                 original_filename=f.filename,
-                upload_time=uploadTime,
+                upload_time=upload_time,
                 upload_ip=request.remote_addr,
             ).save()
             socketio.emit(
                 "job uploaded",
                 {
-                    "id": newJob.id,
+                    "id": new_print_job.id,
                     "name": f.filename,
-                    "uploadTime": uploadTime.strftime("%Y-%m-%d %H:%M:%S"),
-                    "uploadIP": request.remote_addr,
+                    "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "upload_ip": request.remote_addr,
                 },
                 namespace="/printing",
                 broadcast=True,
@@ -587,7 +567,7 @@ def handleUpload():
                 {"text": msg, "category": "danger"},
                 namespace="/printing",
             )
-            os.remove(newFilename)
+            os.remove(filename_on_disk)
     return ""
 
 
@@ -597,12 +577,12 @@ def deleteJob(message):
     Print Queue table in the database.
     """
     job_id = message["job"]
-    job = PrintJob.query.get_or_404(job_id)
+    job = PrintQueue.query.get_or_404(job_id)
     os.remove(os.path.join(Config.UPLOAD_FOLDER, "queue", job.zip_filename))
     message = {
         "job": job_id,
         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "text": "Print Job ({}) Deleted".format(job.original_filename),
+        "text": f"Print Job ({job.original_filename}) Deleted",
     }
     job.delete()
     socketio.emit("job deleted", message, namespace="/printing", broadcast=True)

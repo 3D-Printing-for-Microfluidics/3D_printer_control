@@ -356,13 +356,13 @@ $(document).ready(function () {
     <tr id="row-${message.id}" class="clickable-row">
       <th scope="row">${$("#job-table > tbody > tr").length + 1}</th>
       <td>${message.name}</td>
-      <td>${message.uploadTime}</td>
-      <td>${message.uploadIP}</td>
+      <td>${message.upload_time}</td>
+      <td>${message.upload_ip}</td>
       <td><a class="btn btn-sm btn-warning delete-job" id="delete-job${message.id}" role="button" aria-pressed="true" data-toggle="modal" data-target="#confirmModal">delete</a></td>
     </tr>
         `;
         $("#job-table > tbody").append(new_row);
-        var new_msg = { time: message.uploadTime, text: "Print Job (" + message.name + ") Uploaded" };
+        var new_msg = { time: message.upload_time, text: "Print Job (" + message.name + ") Uploaded" };
         update_print_message(new_msg);
     });
 
