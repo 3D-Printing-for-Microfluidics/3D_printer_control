@@ -43,7 +43,7 @@
         <li class="page-item disabled">
             {% endif %}
             <a class="page-link"
-                href="{{ url_for('digital.archive', page=recs.prev_num, start=startDate, end=endDate) }}"
+                href="{{ url_for('print_history.printHistroy', page=recs.prev_num, start=startDate, end=endDate) }}"
                 aria-label="Previous">
                 <span aria-hidden="true">&laquo;</span>
                 <span class="sr-only">Previous</span>
@@ -52,12 +52,14 @@
 
         {% if startPage > 3 %}
         <li class="page-item">
-            <a class="page-link" href="{{ url_for('digital.archive', page=1, start=startDate, end=endDate) }}">
+            <a class="page-link"
+                href="{{ url_for('print_history.printHistroy', page=1, start=startDate, end=endDate) }}">
                 1
             </a>
         </li>
         <li class="page-item">
-            <a class="page-link" href="{{ url_for('digital.archive', page=2, start=startDate, end=endDate) }}">
+            <a class="page-link"
+                href="{{ url_for('print_history.printHistroy', page=2, start=startDate, end=endDate) }}">
                 2
             </a>
         </li>
@@ -73,7 +75,7 @@
         <li class="page-item">
             {% endif %}
             <a class="page-link"
-                href="{{ url_for('digital.archive', page=i, start=startDate, end=endDate) }}">{{ i }}</a>
+                href="{{ url_for('print_history.printHistroy', page=i, start=startDate, end=endDate) }}">{{ i }}</a>
         </li>
         {% endfor %}
 
@@ -83,12 +85,13 @@
         </li>
         <li class="page-item">
             <a class="page-link"
-                href="{{ url_for('digital.archive', page=recs.pages-1, start=startDate, end=endDate) }}">
+                href="{{ url_for('print_history.printHistroy', page=recs.pages-1, start=startDate, end=endDate) }}">
                 {{ recs.pages-1 }}
             </a>
         </li>
         <li class="page-item">
-            <a class="page-link" href="{{ url_for('digital.archive', page=recs.pages, start=startDate, end=endDate) }}">
+            <a class="page-link"
+                href="{{ url_for('print_history.printHistroy', page=recs.pages, start=startDate, end=endDate) }}">
                 {{ recs.pages }}
             </a>
         </li>
@@ -101,7 +104,7 @@
         <li class="page-item disabled">
             {% endif %}
             <a class="page-link"
-                href="{{ url_for('digital.archive', page=recs.next_num, start=startDate, end=endDate) }}"
+                href="{{ url_for('print_history.printHistroy', page=recs.next_num, start=startDate, end=endDate) }}"
                 aria-label="Next">
                 <span aria-hidden="true">&raquo;</span>
                 <span class="sr-only">Next</span>
@@ -133,7 +136,11 @@
             <td>{{ rec.upload_ip }}</td>
             <td>{{ rec.start_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
             <td>{{ rec.start_ip }}</td>
+            {% if rec.end_time %}
             <td>{{ rec.end_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+            {% else %}
+            <td></td>
+            {% endif %}
             <td>{{ 'Yes' if rec.completed else 'No' }}</td>
         </tr>
         {% endfor %}
@@ -160,7 +167,7 @@
     $('#datepicker-to').parent().addClass('ml-1 mr-3');
 
     $('#submit').on('click', function (e) {
-        location.href = '{{ url_for('digital.archive') }}' + '?start=' + $('#datepicker-from').val() + '&end=' + $('#datepicker-to').val();
+        location.href = '{{ url_for('print_history.printHistroy') }}' + '?start=' + $('#datepicker-from').val() + '&end=' + $('#datepicker-to').val();
     });
 </script>
 {% endblock %}
