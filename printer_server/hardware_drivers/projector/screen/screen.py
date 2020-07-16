@@ -7,7 +7,7 @@ Projector screen module
 # The `tkinter` in standard library is not technically thread-safe.
 # `mttkinter` wraps it to make it thread-safe.
 import threading
-from mttkinter import mtTkinter as tkinter
+import tkinter
 from PIL import Image, ImageTk
 
 
@@ -89,11 +89,10 @@ class ScreenThread(threading.Thread):
     """
 
     def __init__(self, resolution, fullscreen):
-        super().__init__()
+        super().__init__(daemon=True)
         self.resolution = resolution
         self.fullscreen = fullscreen
         self.screen = None
-        self.running = True
 
     def run(self):
         """Create a Tk window and run it. Instead of the normal
@@ -103,11 +102,8 @@ class ScreenThread(threading.Thread):
         the tk window is on top.
         """
         self.screen = Screen(self.resolution, self.fullscreen)
-        while self.running:
-            self.screen.root.update()
-            self.screen.root.update_idletasks()
-        self.screen.root.quit()
+        self.screen.root.mainloop()
 
     def stop(self):
         """Stop the thread"""
-        self.running = False
+        self.screen.root.quit()
