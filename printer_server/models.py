@@ -18,7 +18,7 @@ class User(SurrogatePK, Model):
     __tablename__ = "Users"
     username = Column(db.String(80), unique=True, nullable=False)
     email = Column(db.String(80), unique=True, nullable=False)
-    password = Column(db.Binary(128), nullable=True) #: The hashed password
+    password = Column(db.Binary(128), nullable=True)  #: The hashed password
     created_at = Column(db.DateTime, nullable=False, default=dt.datetime.utcnow)
     first_name = Column(db.String(30), nullable=True)
     last_name = Column(db.String(30), nullable=True)
@@ -51,7 +51,7 @@ class User(SurrogatePK, Model):
         return "<User({username!r})>".format(username=self.username)
 
 
-class PrintJob(SurrogatePK, Model):
+class PrintQueue(SurrogatePK, Model):
     """Print jobs in queue
 
     .. py:attribute:: original_filename
@@ -84,7 +84,7 @@ class PrintJob(SurrogatePK, Model):
             upload_time -- 2018/04/30 10:00:00.123456.
             zip_filename -- job-2018-05-10T02-41-18.960939.zip
         """
-        return "{}.zip".format(self.upload_time.strftime("job-%Y-%m-%dT%H-%M-%S.%f"))
+        return "{}.zip".format(self.upload_time.strftime("job-%Y-%m-%d_%H-%M-%S.%f"))
 
 
 class PrintRecord(SurrogatePK, Model):
@@ -142,7 +142,7 @@ class PrintRecord(SurrogatePK, Model):
             upload_time -- 2018/04/30 10:00:00.123456.
             zip_filename -- job-2018-05-10T02-41-18.960939.zip
         """
-        return "{}.zip".format(self.upload_time.strftime("job-%Y-%m-%dT%H-%M-%S.%f"))
+        return "{}.zip".format(self.upload_time.strftime("job-%Y-%m-%d_%H-%M-%S.%f"))
 
 
 class ServerLog(SurrogatePK, Model):
@@ -151,9 +151,7 @@ class ServerLog(SurrogatePK, Model):
     level = Column(db.String)  # info, debug, or error?
     trace = Column(db.String)  # the full traceback printout
     msg = Column(db.String)  # any custom log you may have included
-    created_at = Column(
-        db.DateTime, default=dt.datetime.utcnow
-    )  # the current timestamp
+    created_at = Column(db.DateTime, default=dt.datetime.utcnow)  # the current timestamp
 
     def __init__(self, logger=None, level=None, trace=None, msg=None):
         self.logger = logger
