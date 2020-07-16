@@ -6,7 +6,7 @@ from flask import Flask, render_template
 from flask.logging import default_handler
 from printer_server.extensions import db, migrate, socketio
 from printer_server import commands, models
-from printer_server.views import printing, manual_controls, print_history
+from printer_server.views import printing, manual_controls, print_history, chart
 from printer_server.settings import ProdConfig
 from printer_server.hardware_configuration import hardware_driver_handles
 from printer_server.logging_handler import SQLAlchemyHandler
@@ -43,6 +43,7 @@ def register_blueprints(app):
     app.register_blueprint(printing.blueprint)
     app.register_blueprint(manual_controls.blueprint)
     app.register_blueprint(print_history.blueprint)
+    app.register_blueprint(chart.blueprint)
 
 
 def register_errorhandlers(app):
