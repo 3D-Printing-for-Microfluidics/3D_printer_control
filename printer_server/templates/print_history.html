@@ -3,7 +3,7 @@
 {% block title %}3D Printer{% endblock %}
 
 {% block printer3d_state %}
-<h2>Print Record</h2>
+<h2>Print History</h2>
 {% endblock %}
 
 {% block styles %}
@@ -131,7 +131,7 @@
         {% for rec in recs.items %}
         <tr id="row-{{ rec.id }}">
             <th scope="row">{{ rec.id }}</th>
-            <td>{{ rec.original_filename }}</td>
+            <td><a href="{{ url_for('print_history.download', job_id=rec.id) }}">{{ rec.original_filename }}</a></td>
             <td>{{ rec.upload_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
             <td>{{ rec.upload_ip }}</td>
             <td>{{ rec.start_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
