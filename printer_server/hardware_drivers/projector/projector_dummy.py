@@ -15,7 +15,6 @@ class Projector_dummy:
         self.max_exp_time = 10000  # max single projection time in ms
         # setup screen thread
         self.screenThread = ScreenThread(self.resolution, self.fullscreen)
-        atexit.register(self.screenThread.stop)  # stop screen thread on exit
 
     @dummy_log
     def connect(self):
@@ -23,7 +22,7 @@ class Projector_dummy:
 
     @dummy_log
     def disconnect(self):
-        self.screenThread.stop()
+        pass
 
     @dummy_log
     def send(self, data):
