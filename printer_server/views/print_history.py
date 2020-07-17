@@ -37,7 +37,7 @@ def calcPageNum(currentPage, totalPage):
 
 
 @blueprint.route("/print_history")
-def printHistroy():
+def index():
     page = request.args.get("page", 1, type=int)
 
     _PR = PrintRecord

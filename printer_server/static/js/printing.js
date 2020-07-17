@@ -17,11 +17,11 @@ $("#job-table").on("click", ".clickable-row", function (event) {
     if ($(this).hasClass("table-success")) {
         $(this).removeClass("table-success");
         start_job_id = "";
-        $("#start-btn").prop("disabled", true).addClass("btn-secondary");
+        $("#start-btn").prop("disabled", true);
     } else {
         $(this).addClass("table-success").siblings().removeClass("table-success");
         start_job_id = $(this).attr("id").replace("row-", "")
-        $("#start-btn").prop("disabled", false).removeClass("btn-secondary");
+        $("#start-btn").prop("disabled", false);
     }
 });
 
@@ -235,7 +235,7 @@ $(document).ready(function () {
     socket.on("planarized", function (message) {
         $("#printer-state").text("Planarized");
         show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
-        $("#start-btn").removeClass("d-none").addClass("btn-secondary");
+        $("#start-btn").removeClass("d-none");
     });
 
     socket.on("printing", function (message) {

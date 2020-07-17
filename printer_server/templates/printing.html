@@ -15,23 +15,23 @@
 
 <div class="row mb-2" id="printer-controls">
     <div class="col-auto mr-auto">
-        <button type="button" class="printer-btn btn btn-lg btn-primary d-none" data-toggle="modal"
+        <button type="button" class="printer-btn btn btn-lg btn-outline-info d-none" data-toggle="modal"
             data-target="#confirmModal" id="init-btn">Initialize</button>
-        <button type="button" class="printer-btn btn btn-lg btn-primary d-none" data-toggle="modal"
+        <button type="button" class="printer-btn btn btn-lg btn-outline-info d-none" data-toggle="modal"
             data-target="#confirmModal" id="plana1-btn">Planarize</button>
-        <button type="button" class="printer-btn btn btn-lg btn-primary d-none" data-toggle="modal"
+        <button type="button" class="printer-btn btn btn-lg btn-outline-info d-none" data-toggle="modal"
             data-target="#confirmModal" id="plana2-btn">Finish planarizion</button>
-        <button type="button" class="printer-btn btn btn-lg btn-success d-none" data-toggle="modal"
+        <button type="button" class="printer-btn btn btn-lg btn-outline-success d-none" data-toggle="modal"
             data-target="#confirmModal" id="start-btn" disabled>Start</button>
-        <button type="button" class="printer-btn btn btn-lg btn-primary d-none" data-toggle="modal"
+        <button type="button" class="printer-btn btn btn-lg btn-outline-info d-none" data-toggle="modal"
             data-target="#confirmModal" id="pause-btn">Pause</button>
-        <button type="button" class="printer-btn btn btn-lg btn-success d-none" data-toggle="modal"
+        <button type="button" class="printer-btn btn btn-lg btn-outline-success d-none" data-toggle="modal"
             data-target="#confirmModal" id="resume-btn">Resume</button>
-        <button type="button" class="printer-btn btn btn-lg btn-primary d-none" data-toggle="modal"
+        <button type="button" class="printer-btn btn btn-lg btn-outline-info d-none" data-toggle="modal"
             data-target="#confirmModal" id="stop-btn">Stop</button>
     </div>
     <div class="col-auto">
-        <button class="btn btn-lg btn-primary" type="button" data-toggle="collapse" data-target="#collapseUpload"
+        <button class="btn btn-lg btn-outline-info" type="button" data-toggle="collapse" data-target="#collapseUpload"
             aria-expanded="false" aria-controls="collapseUpload" id="create-job">Create a job</button>
     </div>
 </div>
@@ -52,7 +52,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal"
                     id="print-alert-cancel">Cancel</button>
-                <button type="button" class="btn btn-primary" data-dismiss="modal"
+                <button type="button" class="btn btn-outline-info" data-dismiss="modal"
                     id="print-alert-confirm">Confirm</button>
             </div>
         </div>
@@ -70,11 +70,11 @@
             <div class="panel-body">
                 <small>Select files from your computer</small>
                 <div class="form-inline">
-                    <button type="button" class="btn btn-sm btn-primary"
+                    <button type="button" class="btn btn-sm btn-outline-info"
                         onClick="document.getElementById('file-picker').click();" id="choose-file">Choose</button>&nbsp;
                     <input id="file-picker" multiple="" name="file" style="display:none" type="file">
                     <span id="file-number">0 file selected</span>
-                    <button type="button" class="ml-auto btn btn-sm btn-primary" id="upload-btn">Upload</button>
+                    <button type="button" class="ml-auto btn btn-sm btn-outline-info" id="upload-btn">Upload</button>
                 </div>
 
                 <!-- Drop Zone -->
@@ -120,7 +120,7 @@
             <td>{{ job.original_filename }}</td>
             <td>{{ job.upload_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
             <td>{{ job.upload_ip }}</td>
-            <td><a class="btn btn-sm btn-warning delete-job" id="delete-job{{ job.id }}" role="button"
+            <td><a class="btn btn-sm btn-outline-warning delete-job" id="delete-job{{ job.id }}" role="button"
                     aria-pressed="true" data-toggle="modal" data-target="#confirmModal">delete</a></td>
         </tr>
         {% endfor %}
@@ -149,8 +149,6 @@
     <div class="col-auto mr-auto">
         <button type="button" class="printer-btn btn btn-sm btn-outline-danger d-none" data-toggle="modal"
             data-target="#confirmModal" id="shutdown-btn">Shutdown</button>
-        <a href="{{ url_for('manual_controls.index') }}" class="printer-btn btn btn-sm btn-outline-info" role="button"
-            aria-pressed="true" id="admin-btn">Manual Controls</a>
     </div>
 </div>
 

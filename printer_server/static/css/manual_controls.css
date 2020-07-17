@@ -19,8 +19,8 @@
 }
 
 .btn-fixed-width:not(:disabled):not(.disabled).active {
-    background-color: #007bff;
-    border-color: #007bff;
+    background-color: #3498DB;
+    border-color: #3498DB;
 }
 
 /* extra margin for rows with large headings */
@@ -48,18 +48,38 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #006dcc;
+    background: #3498DB;
     cursor: pointer;
 }
 .slider::-moz-range-thumb {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #006dcc;
+    background: #3498DB;
     cursor: pointer;
 }
 
 .container {
     padding-left: 0px;
     padding-right: 0px;
+}
+
+.form-control{
+    color: white;
+    background-color:#666;
+
+    /* color: #666; */
+}
+
+/* .form-control-file{
+    color: white;
+    background-color:#666;
+
+    /* color: #666; */
+} */
+
+.form-control:hover{
+    color:#666;
+    background-color:white;
+
 }

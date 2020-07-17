@@ -26,3 +26,11 @@ pre {
     --font-family-sans-serif:"Lato";
     font-size: 1rem;
 }
+
+.delete-job {
+    color: #F39C12 !important;
+}
+
+.delete-job:hover {
+    color: inherit !important;
+}
