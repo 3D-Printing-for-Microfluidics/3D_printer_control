@@ -87,7 +87,6 @@ class Projector:
         # register exit handlers
         atexit.register(self.disconnect)  # close the TCP conenction on exit
         atexit.register(self.stop_sequencer)  # make sure DMD is stopped on exit
-        atexit.register(self.screenThread.stop)  # stop screen thread on exit
 
     def connect(self, attempts=10, timeout=1):
         print("Connecting to light engine, this may take up to 1 minute...")

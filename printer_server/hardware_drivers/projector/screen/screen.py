@@ -8,6 +8,7 @@ Projector screen module
 # `mttkinter` wraps it to make it thread-safe.
 import threading
 import tkinter
+import atexit
 from PIL import Image, ImageTk
 
 
@@ -102,6 +103,7 @@ class ScreenThread(threading.Thread):
         the tk window is on top.
         """
         self.screen = Screen(self.resolution, self.fullscreen)
+        atexit.register(self.stop)
         self.screen.root.mainloop()
 
     def stop(self):
