@@ -34,3 +34,15 @@ pre {
 .delete-job:hover {
     color: inherit !important;
 }
+
+.table-success,.table-success>td,.table-success>th{
+    background-color:#222;
+}
+.table-success:hover,.table-success:hover>td,.table-success:hover>th{
+    background-color:#222 !important;
+}
+.table-success{
+    outline-width: 1px;
+    outline-style: solid;
+    outline-color: rgb(0, 188, 140);
+}

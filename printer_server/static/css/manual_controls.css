@@ -65,21 +65,5 @@
 }
 
 .form-control{
-    color: white;
-    background-color:#666;
-
-    /* color: #666; */
-}
-
-/* .form-control-file{
-    color: white;
-    background-color:#666;
-
-    /* color: #666; */
-} */
-
-.form-control:hover{
-    color:#666;
-    background-color:white;
-
+    background-color: rgb(230, 230, 230);
 }
