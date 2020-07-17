@@ -22,6 +22,10 @@ class Projector_dummy:
         self.screenThread.start()
 
     @dummy_log
+    def disconnect(self):
+        self.screenThread.stop()
+
+    @dummy_log
     def send(self, data):
         pass
 
