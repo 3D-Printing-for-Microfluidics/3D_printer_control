@@ -3,6 +3,7 @@
 import os
 # import imghdr
 # import copy
+import threading
 from PIL import Image
 from flask import Blueprint, request, render_template
 # from datetime import datetime
@@ -75,7 +76,10 @@ def moveCalibrationMotor(message):
 @socketio.on('calibration_motor_home', namespace='/calibrate')
 def homeCalibrationMotor(message):
     axis = message["axis"]
-    manualControls.homeCalibrationMotor(axis)
+    #manualControls.homeCalibrationMotor(axis)
+    t = threading.Thread(target=manualControls.homeCalibrationMotor, args=(axis,))
+    t.start()
+
 
 @socketio.on('light_engine_stop', namespace='/calibrate')
 def lightEngineStop():
