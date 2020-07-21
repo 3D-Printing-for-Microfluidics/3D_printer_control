@@ -27,12 +27,13 @@ pre {
     font-size: 1rem;
 }
 
-.delete-job {
-    color: #F39C12 !important;
+.delete-job.btn:not(:disabled):not(.disabled) {
+    color: #F39C12;
+    background-color: #222
 }
 
-.delete-job:hover {
-    color: inherit !important;
+.btn:not(:disabled):not(.disabled):hover {
+    color: inherit;
 }
 
 .table-success,.table-success>td,.table-success>th{
