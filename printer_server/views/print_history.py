@@ -49,19 +49,19 @@ def index():
 
     try:
         start_date = request.args.get("start", one_week_ago)
-        date_list = [int(i) for i in start_date.split("-")]
-        query = query.filter(PrintRecord.start_time >= datetime(*date_list))
+        dtart_date_dt = datetime(*[int(i) for i in start_date.split("-")])
+        query = query.filter(PrintRecord.start_time >= dtart_date_dt)
     except ValueError:
         flash("Bad start date", category="danger")
 
     try:
         end_date = request.args.get("end", today)
-        date_list = [int(i) for i in end_date.split("-")]
-        query = query.filter(PrintRecord.start_time <= datetime(*date_list))
+        end_time_dt = datetime(*[int(i) for i in end_date.split("-")]) + timedelta(days=1)
+        query = query.filter(PrintRecord.start_time <= end_time_dt)
     except ValueError:
         flash("Bad end date", category="danger")
 
-    print_records = query.order_by(PrintRecord.id.desc()).paginate(current_page, 1)
+    print_records = query.order_by(PrintRecord.id.desc()).paginate(current_page, 20)
     start_page, end_page = calculate_page_range(current_page, print_records.pages)
 
     return render_template(
