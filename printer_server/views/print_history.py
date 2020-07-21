@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Blueprint, request, render_template, flash, send_file
 
 from printer_server.settings import Config
@@ -17,62 +17,60 @@ def flash_errors(form, category="warning"):
             flash("{0} - {1}".format(getattr(form, field).label.text, error), category)
 
 
-def calcPageNum(currentPage, totalPage):
-    """Default the max page shown being 9.
+def calculate_page_range(current_page, total_pages):
+    """Calculate the page range to be displayed on the navbar.
 
-    :param currentPage: current page number
-    :param totalPage: total page number
+    :param current_page: current page number
+    :param total_pages: total page number
     :returns: the page number to show in pagination
     """
-    if currentPage <= 7:
-        startPage, endPage = 1, totalPage
-    elif currentPage - 3 < 1:
-        startPage, endPage = 1, 7
-    elif currentPage + 3 > totalPage:
-        startPage, endPage = totalPage - 6, totalPage
-    else:
-        startPage, endPage = currentPage - 3, currentPage + 3
 
-    return startPage, endPage
+    # num_pages_to_display = 7
+
+    # if current_page <= num_pages_to_display:
+    #     start_page, end_page = 1, total_pages
+    # elif current_page - 3 < 1:
+    #     start_page, end_page = 1, num_pages_to_display
+    # elif current_page + 3 > total_pages:
+    #     start_page, end_page = total_pages - 6, total_pages
+    # else:
+    #     start_page, end_page = current_page - 3, current_page + 3
+
+    # return start_page, end_page
+    return 1, total_pages
 
 
 @blueprint.route("/print_history")
 def index():
-    page = request.args.get("page", 1, type=int)
-
-    _PR = PrintRecord
-    _q = _PR.query
-
-    try:
-        startDate = request.args.get("start", "")
-        if startDate:
-            temp = [int(i) for i in startDate.split("-")]
-            _startDate = datetime(*temp)
-            _startDate = datetime(*temp)
-            _q = _q.filter(_PR.start_time >= _startDate)
-
-    except ValueError:
-        flash("Incorrect start date", category="danger")
+    query = PrintRecord.query
+    current_page = request.args.get("current_page", 1, type=int)
+    today = datetime.now().strftime("%Y-%m-%d")
+    one_week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
 
     try:
-        endDate = request.args.get("end", "")
-        if endDate:
-            temp = [int(i) for i in endDate.split("-")]
-            _endDate = datetime(*temp)
-            _q = _q.filter(_PR.start_time <= _endDate)
+        start_date = request.args.get("start", one_week_ago)
+        date_list = [int(i) for i in start_date.split("-")]
+        query = query.filter(PrintRecord.start_time >= datetime(*date_list))
     except ValueError:
-        flash("Incorrect end date", category="danger")
+        flash("Bad start date", category="danger")
 
-    recs = _q.order_by(_PR.id.desc()).paginate(page, 50)
-    startPage, endPage = calcPageNum(page, recs.pages)
+    try:
+        end_date = request.args.get("end", today)
+        date_list = [int(i) for i in end_date.split("-")]
+        query = query.filter(PrintRecord.start_time <= datetime(*date_list))
+    except ValueError:
+        flash("Bad end date", category="danger")
+
+    print_records = query.order_by(PrintRecord.id.desc()).paginate(current_page, 1)
+    start_page, end_page = calculate_page_range(current_page, print_records.pages)
 
     return render_template(
         "print_history.html",
-        recs=recs,
-        startPage=startPage,
-        endPage=endPage,
-        startDate=startDate,
-        endDate=endDate,
+        print_records=print_records,
+        start_page=start_page,
+        end_page=end_page,
+        start_date=start_date,
+        end_date=end_date,
     )
 
 
