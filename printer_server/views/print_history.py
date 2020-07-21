@@ -42,10 +42,9 @@ def index():
     query = PrintRecord.query
     current_page = request.args.get("current_page", 1, type=int)
     today = datetime.now().strftime("%Y-%m-%d")
-    one_week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
 
     try:
-        start_date = request.args.get("start", one_week_ago)
+        start_date = request.args.get("start", today)
         dtart_date_dt = datetime(*[int(i) for i in start_date.split("-")])
         query = query.filter(PrintRecord.start_time >= dtart_date_dt)
     except ValueError:
@@ -58,7 +57,7 @@ def index():
     except ValueError:
         flash("Bad end date", category="danger")
 
-    print_records = query.order_by(PrintRecord.id.desc()).paginate(current_page, 2)
+    print_records = query.order_by(PrintRecord.id.desc()).paginate(current_page, 20)
     start, end, boundaries = calculate_page_range(current_page, print_records.pages)
 
     return render_template(
