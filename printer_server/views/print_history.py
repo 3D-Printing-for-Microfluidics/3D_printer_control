@@ -22,22 +22,19 @@ def calculate_page_range(current_page, total_pages):
 
     :param current_page: current page number
     :param total_pages: total page number
-    :returns: the page number to show in pagination
+    :returns: the page number range to show in the pagination navbar and
+     whether or not to display the beginning and end page shortcuts
     """
-
-    # num_pages_to_display = 7
-
-    # if current_page <= num_pages_to_display:
-    #     start_page, end_page = 1, total_pages
-    # elif current_page - 3 < 1:
-    #     start_page, end_page = 1, num_pages_to_display
-    # elif current_page + 3 > total_pages:
-    #     start_page, end_page = total_pages - 6, total_pages
-    # else:
-    #     start_page, end_page = current_page - 3, current_page + 3
-
-    # return start_page, end_page
-    return 1, total_pages
+    window_size = 7
+    if total_pages <= window_size:
+        return 1, total_pages, (False, False)
+    start = current_page - window_size / 2
+    end = current_page + window_size / 2
+    if start <= 1:
+        return 1, window_size, (False, True)
+    if end >= total_pages:
+        return total_pages - window_size + 1, total_pages, (True, False)
+    return int(start) + 1, int(end), (True, True)
 
 
 @blueprint.route("/print_history")
@@ -61,16 +58,17 @@ def index():
     except ValueError:
         flash("Bad end date", category="danger")
 
-    print_records = query.order_by(PrintRecord.id.desc()).paginate(current_page, 20)
-    start_page, end_page = calculate_page_range(current_page, print_records.pages)
+    print_records = query.order_by(PrintRecord.id.desc()).paginate(current_page, 2)
+    start, end, boundaries = calculate_page_range(current_page, print_records.pages)
 
     return render_template(
         "print_history.html",
         print_records=print_records,
-        start_page=start_page,
-        end_page=end_page,
+        start=start,
+        end=end,
         start_date=start_date,
         end_date=end_date,
+        boundaries=boundaries,
     )
 
 

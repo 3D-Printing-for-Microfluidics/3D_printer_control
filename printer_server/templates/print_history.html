@@ -29,7 +29,6 @@
 <table class="table table-sm table-bordered">
     <thead>
         <tr>
-            <!-- <th scope="col">#</th> -->
             <th scope="col">Name</th>
             <th scope="col">Start Time</th>
             <th scope="col">End Time</th>
@@ -40,7 +39,6 @@
     <tbody>
         {% for rec in print_records.items %}
         <tr id="row-{{ rec.id }}">
-            <!-- <th scope="row">{{ rec.id }}</th> -->
             <td><a href="{{ url_for('print_history.download', job_id=rec.id) }}">{{ rec.original_filename }}</a></td>
             <td>{{ rec.start_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
             {% if rec.end_time %}
@@ -72,7 +70,7 @@
             </a>
         </li>
 
-        {% if start_page > 3 %}
+        {% if boundaries[0] %}
         <li class="page-item">
             <a class="page-link"
                 href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date) }}">
@@ -90,7 +88,7 @@
         </li>
         {% endif %}
 
-        {% for i in range(start_page, end_page+1) %}
+        {% for i in range(start, end+1) %}
         {% if i == print_records.page %}
         <li class="page-item active">
             {% else %}
@@ -101,7 +99,7 @@
         </li>
         {% endfor %}
 
-        {% if end_page < print_records.pages-3 %}
+        {% if boundaries[1] %}
         <li class="page-item disabled">
             <a class="page-link" href="#">...</a>
         </li>
