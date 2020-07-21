@@ -130,7 +130,7 @@ class PrintRecord(SurrogatePK, Model):
     start_ip = Column(db.String(30))
     start_time = Column(db.DateTime, nullable=False, default=dt.datetime.utcnow)
     end_time = Column(db.DateTime)
-    completed = Column(db.Boolean, nullable=False, default=True)
+    completed = Column(db.Boolean, nullable=False, default=False)
 
     @property
     def zip_filename(self):
