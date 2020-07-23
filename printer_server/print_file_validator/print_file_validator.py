@@ -16,9 +16,9 @@ def validate_v02(print_file):
         temp_dir = Path(temp_dir)
         zip_file_handle.extractall(temp_dir)
         print_settings = check_for_unique_print_settings(temp_dir)
-        check_slices_folder_exists(zip_file_handle)
         check_version(print_settings)
         validate_against_schema(print_settings, "schema_v0.2.json")
+        check_slices_folder_exists(zip_file_handle, print_settings)
         check_image_format(temp_dir)
         check_referenced_images_exist(print_settings, temp_dir)
         return print_settings
@@ -40,10 +40,11 @@ def check_for_unique_print_settings(unzipped_dir):
     return read_json(json_files[0])
 
 
-def check_slices_folder_exists(zip_file_handle):
-    """Ensure there is a `slices` folder in the print file."""
-    if not any(f.startswith("slices") for f in zip_file_handle.namelist()):
-        raise ValueError("Could not find 'slices' folder")
+def check_slices_folder_exists(zip_file_handle, print_settings):
+    """Ensure the specified image folder exists in the print file."""
+    slices_folder = print_settings["Header"]["Image directory"]
+    if not any(slices_folder for f in zip_file_handle.namelist()):
+        raise ValueError(f"Could not find image folder: {slices_folder}")
 
 
 def check_version(print_settings):
@@ -81,15 +82,17 @@ def check_referenced_images_exist(print_settings, temp_dir):
     included in the print file.
     """
     slices = list(temp_dir.rglob("*.png"))
+    slices_folder = Path(print_settings["Header"]["Image directory"])
     img = print_settings["Default layer settings"]["Image settings"]["Image file"]
-    if temp_dir / Path("slices") / Path(img) not in slices:
+
+    if temp_dir / slices_folder / Path(img) not in slices:
         msg = f"Missing image. Default image {img} could not be found.\n"
         msg += "  Check 'Default layer settings' -> 'Image settings' -> 'Image file'"
         raise ValueError(msg)
     for layer in print_settings["Layers"]:
         for image_setting in layer["Image settings list"]:
             img = image_setting["Image file"]
-            img_path = temp_dir / Path("slices") / Path(image_setting["Image file"])
+            img_path = temp_dir / slices_folder / Path(image_setting["Image file"])
             if img_path not in slices:
                 msg = f"Missing image: '{img}' could not be found."
                 raise ValueError(msg)
