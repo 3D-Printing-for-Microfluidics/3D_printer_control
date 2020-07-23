@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Galil control module."""
-import re
 import time
 import json
 import atexit
@@ -37,13 +36,6 @@ def parseResponseString(string, axis="A"):
 
 
 class Galil:
-
-    # regular expressions for parsing command chains
-    waitRegex = re.compile(r"WAIT (-?\d+(\.\d+)?)")
-    moveRegex = re.compile(
-        r"^(UP|DOWN) (-?\d+(\.\d+)?) SPEED (-?\d+(\.\d+)?) ACC (-?\d+(\.\d+)?)"
-    )
-
     def __init__(self, address=None, verbose=False):
 
         # import here so test system doesn't have to install gclib
@@ -93,60 +85,6 @@ class Galil:
         self.waitForMotionComplete(self.bottom_position)
         return self.getPosition()
 
-    def resume(self, layerThickness):
-        # dummy for now, to satisfy old Solus method
-        pass
-
-    def goToFirstLayerHeight(self, layerThickness):
-        cnts = self.bottom_position - self.mmToCnts(layerThickness)
-        start_position = self.getPosition()
-        self.absMove(speed=25, cnts=cnts)
-        end_position = self.getPosition()
-        return start_position, end_position
-
-    def goToPlanarizationPullOff(self):
-        pass
-
-    def printCycle(self, layerThicknessMm, commandChain):
-        start_time = datetime.now()
-        start_position = self.getPosition()
-
-        # keep track of which command is the last down command
-        lastDownCommand = 0
-        for i, command in enumerate(commandChain):
-            m2 = self.moveRegex.fullmatch(command)
-            if m2 and m2.group(1) == "DOWN":
-                lastDownCommand = i
-
-        # parse the commands and move accordingly
-        for i, command in enumerate(commandChain):
-            m1 = self.waitRegex.fullmatch(command)
-            m2 = self.moveRegex.fullmatch(command)
-            if m1:  # is a wait command
-                wait_seconds = float(m1.group(1))
-                time.sleep(wait_seconds)
-            elif m2:  # is a move command
-                direction = m2.group(1)
-                distance = float(m2.group(2))
-                speed = float(m2.group(4))
-                acceleration = float(m2.group(6))
-                distance *= (
-                    -1 if direction == "UP" else 1
-                )  # calculate the sign using direction, up is negative
-                if (
-                    i == lastDownCommand
-                ):  # take off the layer thickness if this is the last downward move
-                    distance -= layerThicknessMm
-                self.relMove(speed=speed, mm=distance, acceleration=acceleration)
-
-        # report starting and ending positions
-        end_position = self.getPosition()
-        end_time = datetime.now()
-        return start_position, end_position, start_time, end_time
-
-    def pause(self):
-        pass
-
     # find and connect to the Galil controller
     def connect(self):
         # Get Ethernet controllers requesting IP addresses
@@ -160,9 +98,7 @@ class Galil:
                 self.controller_name = available[address]
                 if self.verbose:
                     print("Found", available[address], "at", self.address)
-                print(
-                    "Connecting to {} at {}".format(self.controller_name, self.address)
-                )
+                print("Connecting to {} at {}".format(self.controller_name, self.address))
                 self.g.GOpen("{} --direct".format(self.address))
                 if self.verbose:
                     print("GInfo returned:", self.g.GInfo())
@@ -203,27 +139,19 @@ class Galil:
                 response = self.g.GCommand(
                     command
                 )  # send the command and save the response
-                response = "".join(
-                    response
-                )  # join the returned char array into a string
+                response = "".join(response)  # join the returned char array into a string
                 if self.verbose and notify and response != "":
-                    f.write(
-                        "Reply: '{}'\n".format(response)
-                    )  # record reply in log file
+                    f.write("Reply: '{}'\n".format(response))  # record reply in log file
                     print(
                         "Reply: '{}'".format(response)
                     )  # print the response if in verbose mode
                 return response  # return the response
             except self.gclib_error as error:  # if there is an error
-                error_code = self.g.GCommand(
-                    "TC 1"
-                )  # get the human readable error code
+                error_code = self.g.GCommand("TC 1")  # get the human readable error code
                 if error_code not in ("", "0"):
                     error = error_code
                 print(
-                    "Error: Last command '{}' returned error '{}'".format(
-                        command, error
-                    )
+                    "Error: Last command '{}' returned error '{}'".format(command, error)
                 )
                 return error
 
@@ -255,9 +183,7 @@ class Galil:
     # get the acceleration for the specified axis (mm/sec^2)
     def getAcceleration(self, axis="A"):
         a = convertAxis(axis)  # check that the axis is valid
-        response = self.send(
-            "AC ?", notify=False
-        )  # query the acceleration for all axes
+        response = self.send("AC ?", notify=False)  # query the acceleration for all axes
         acc = parseResponseString(
             response, a
         )  # pull out the acceleration value for the axis we care about
@@ -268,12 +194,8 @@ class Galil:
     # set the acceleration for the specified axis (mm/sec^2)
     def setAcceleration(self, acceleration, axis="A"):
         a = convertAxis(axis)  # check that the axis is valid
-        self.send(
-            "AC{}={}".format(a, acceleration * self.ctspmm[a])
-        )  # set acceleration
-        self.send(
-            "DC{}={}".format(a, acceleration * self.ctspmm[a])
-        )  # set deceleration
+        self.send("AC{}={}".format(a, acceleration * self.ctspmm[a]))  # set acceleration
+        self.send("DC{}={}".format(a, acceleration * self.ctspmm[a]))  # set deceleration
 
     # get the speed for the specified axis (mm/sec)
     def getSpeed(self, axis="A"):
@@ -314,9 +236,7 @@ class Galil:
             old_speed = self.getSpeed()  # record the previous speed
             self.setSpeed(speed)  # set speed (mm/sec)
         if acceleration is not None:  # if acceleration is going to be altered
-            old_acceleration = (
-                self.getAcceleration()
-            )  # record the previous acceleration
+            old_acceleration = self.getAcceleration()  # record the previous acceleration
             self.setAcceleration(acceleration)  # change it
         if mm is not None:  # if mm were supplied
             cnts = self.mmToCnts(mm)  # convert to counts
@@ -347,9 +267,7 @@ class Galil:
             old_speed = self.getSpeed()  # record the previous speed
             self.setSpeed(speed)  # set speed (mm/sec)
         if acceleration is not None:  # if acceleration is going to be altered
-            old_acceleration = (
-                self.getAcceleration()
-            )  # record the previous acceleration
+            old_acceleration = self.getAcceleration()  # record the previous acceleration
             self.setAcceleration(acceleration)  # change it
         if mm is not None:  # if mm were supplied
             cnts = self.mmToCnts(mm)  # convert to counts
@@ -384,9 +302,7 @@ class Galil:
         start_time = time.time()
         last_position = self.getPosition(notify=False)  # save the last position
         self.data[self.move_num] = []
-        self.data[self.move_num].append(
-            {"time": time.time(), "position": last_position}
-        )
+        self.data[self.move_num].append({"time": time.time(), "position": last_position})
         counter = 0
         time_count = 0
         while (
@@ -426,9 +342,7 @@ class Galil:
                     )  # record sent command in log file
                 # exit("Z motor didn't reach position. Got to {} but needed {}".format(last_position, cnts))
                 break
-        self.data[self.move_num].append(
-            {"time": time.time(), "position": last_position}
-        )
+        self.data[self.move_num].append({"time": time.time(), "position": last_position})
         self.data[self.move_num].append({"duration": time.time() - start_time})
         self.move_num = self.move_num + 1
 
@@ -485,33 +399,3 @@ if __name__ == "__main__":
     g = Galil(verbose=False)
     g.connect()
     g.interactiveMode()
-    # g.home()
-    # error_array = []
-    # g.motorOn()
-    # print(g.getPosition())
-    # g.send("DP 0")
-    # print(g.getPosition())
-    # prev = 0
-    # for layer in range(100):
-
-    #     target = -layer*80
-    #     thickness = 80
-
-    #     dist = -1
-    #     start = g.getPosition()
-    #     g.relMove(speed=25, mm=dist)
-    #     end = g.getPosition()
-
-    #     dist = 0.99
-    #     middle = g.getPosition()
-    #     g.relMove(speed=25, mm=dist)
-    #     end = g.getPosition()
-
-    #     error = thickness + end - prev
-    #     actual_thickness = end - prev
-
-    #     print("start", start, "middle", middle, "end", end, "thickness", actual_thickness, "error", error)
-    #     prev = end
-    #     error_array.append(error)
-
-    # print("accumulated error", sum(error_array))
