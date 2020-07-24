@@ -145,8 +145,6 @@ class Projector:
             reply = self.socket.recv(1024)
             f.write("Reply: {}\n".format(reply))
             reply = str(reply.decode())
-            # print('Sent', repr(data))
-            # print('Reply', repr(reply.decode()))
             print("Sent :", str(data).replace("\r\n", " "))
             print("Reply:", reply.replace("\r\n", " "))
         return reply
@@ -285,7 +283,7 @@ class Projector:
     def get_led_intensity(self):
         """
         Get the recorded light feedback value of the last strobe from the light sensors. This should correspond
-        to the current amplitude set, if not any protections have been triggered.
+        to the current amplitude set, if no protections have been triggered.
 
         Return type +OK and feedback value.
         """
@@ -585,15 +583,25 @@ class Projector:
         """
         self.screenThread.screen.clear()
 
+    def read_all_status(self):
+        """
+        Return commonly queried status.
+        """
+        return {
+            "dmd_status": self.get_dmd_status(),
+            "led_feedback": self.get_led_intensity(),
+            "led_temp": self.get_led_temp(),
+            "led_driver_temp": self.get_led_driver_board_temp(),
+            "led_sticky_errors": self.get_sticky_errors(),
+            "led_driver_status": self.get_led_driver_status(),
+        }
+
     def project(self, image, exposure, power, repeats=1):
         """
         Call all of the necessary methods to project an image, and block until projection
         is complete.
         """
-        print("start exposure")
         self.set_led_amplitude(power)
-        print("exp time", exposure)
-
         if repeats == 0:  # if continuous display is desired
             self.set_sequencer_lut_definition(
                 33100, 0, 0, 7, 0, 0, 0

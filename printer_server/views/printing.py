@@ -20,7 +20,6 @@ from printer_server.models import PrintQueue, PrintRecord
 from printer_server.extensions import db, socketio
 
 blueprint = Blueprint("printing", __name__, url_prefix="/", static_folder="../static")
-fmt = "%Y-%m-%d %H:%M:%S"
 
 
 def run_in_thread(state, text):
@@ -66,21 +65,25 @@ class PrintControl:
 
     def __init__(self):
         self._state = "uninitialized"
+
+        # hardware handles
         self.galil = hardware_driver_handles.galil
         self.projector = hardware_driver_handles.projector
         self.kdc = hardware_driver_handles.kdc
         self.tiptilt = hardware_driver_handles.tiptilt
+
+        # folders relevant to printing
+        self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
+        self.current_job = Path(Config.UPLOAD_FOLDER) / Path("current_job")
+        self.print_history = Path(Config.UPLOAD_FOLDER) / Path("print_history")
+
+        # values used during printing
         self.print_settings = None
         self.layer_map = []
         self.next_layer = 0
-        self.current_job = Path(Config.UPLOAD_FOLDER) / Path("current_job")
-        self.print_history = Path(Config.UPLOAD_FOLDER) / Path("print_history")
-        self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
+        self.print_thread = None  # will be initialized later on start
         self.printing_stopped = threading.Event()
         self.printing_paused = threading.Event()
-        self.print_thread = None  # will be initialized later on start
-        self.logs_path = Path.cwd() / "logs"
-        self.logs_path_directory_for_this_run = None  # initialized later
 
     @property
     def state(self):
@@ -155,7 +158,7 @@ class PrintControl:
         """
         time.sleep(position_settings["Initial wait (ms)"] / 1000)
         start_position = self.galil.getPosition()
-        start_time = datetime.now()
+        start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.galil.relMove(
             mm=position_settings["Distance up (mm)"],
             speed=position_settings["BP up speed (mm/sec)"],
@@ -169,10 +172,16 @@ class PrintControl:
             acceleration=position_settings["BP up acceleration (mm/sec^2)"],
         )
         end_position = self.galil.getPosition()
-        end_time = datetime.now()
+        end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         time.sleep(position_settings["Final wait (ms)"] / 1000)
         thickness = self.galil.cntsToMm(abs(end_position - start_position) * 1000)
-        return [start_time, start_position, end_time, end_position, thickness]
+        return {
+            "start time": start_time,
+            "end time": end_time,
+            "start position": start_position,
+            "end position": end_position,
+            "thickness (um)": thickness,
+        }
 
     def perform_exposures(self, image_settings_list):
         """Perform all exposures for a layer according to
@@ -184,13 +193,26 @@ class PrintControl:
             exposure_time_ms = settings["Layer exposure time (ms)"]
             power = settings["Light engine power setting"]
             defocus_um = settings["Relative focus position (um)"]
+
+            start_position = self.kdc.getCurrentPos()
             if defocus_um != 0:
                 self.kdc.move(defocus_um)
             time.sleep(settings["Wait before exposure (ms)"] / 1000)
+            defocus_position = self.kdc.getCurrentPos()
+            pre_exposure_status = self.projector.read_all_status()
             self.projector.project(image, exposure_time_ms, power)
+            post_exposure_status = self.projector.read_all_status()
             time.sleep(settings["Wait after exposure (ms)"] / 1000)
             if defocus_um != 0:
                 self.kdc.move(-defocus_um)
+            end_position = self.kdc.getCurrentPos()
+            return {
+                "pre exposure position": start_position,
+                "defocused position": defocus_position,
+                "post exposure position": end_position,
+                "pre exposure status": pre_exposure_status,
+                "post exposure status": post_exposure_status,
+            }
 
     def connect(self):
         socketio.emit(self.state, dict(), namespace="/printing")
@@ -354,6 +376,7 @@ class PrintControl:
 
         # create logs
         position_log = str(self.current_job / "position_data.txt")
+        exposure_log = str(self.current_job / "exposure_data.txt")
 
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
@@ -375,15 +398,12 @@ class PrintControl:
             # do moves and log data
             position_data = self.move_build_platform(position_settings)
             with open(position_log, "a") as f:
-                msg = f"Layer {layer} position data: "
-                msg += f"start {position_data[1]}, end {position_data[3]}, "
-                msg += f"thickness {position_data[4]}, "
-                msg += f"start_time {position_data[0]}, end_time {position_data[2]}, "
-                msg += f"duration {position_data[2] - position_data[0]}\n"
-                f.write(msg)
+                f.write(f"layer {layer} data: {position_data}\n")
 
             # do exposures and log data
-            self.perform_exposures(image_settings_list)
+            exposure_data = self.perform_exposures(image_settings_list)
+            with open(exposure_log, "a") as f:
+                f.write(f"layer {layer} data: {exposure_data}\n")
 
             # update frontend message pane and progress bar
             msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"

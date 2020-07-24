@@ -1,5 +1,4 @@
 import time
-import atexit
 
 from printer_server.logging_handler import dummy_log
 
@@ -26,7 +25,7 @@ class Projector_dummy:
 
     @dummy_log
     def send(self, data):
-        pass
+        return f"sent {data}"
 
     def load_defaults(self):
         return self.send("LOAD DEFAULTS")
@@ -159,11 +158,20 @@ class Projector_dummy:
     def get_logs(self):
         return self.send("GET LOGS")
 
+    def read_all_status(self):
+        return {
+            "dmd_status": self.get_dmd_status(),
+            "led_feedback": self.get_led_intensity(),
+            "led_temp": self.get_led_temp(),
+            "led_driver_temp": self.get_led_driver_board_temp(),
+            "led_sticky_errors": self.get_sticky_errors(),
+            "led_driver_status": self.get_led_driver_status(),
+        }
+
     def split_exposure_time(self, exposure):
         """
         Split a long exposure time into an array of smaller exposure times.
         """
-        print(exposure)
         n = int(exposure // self.max_exp_time)
         if exposure % self.max_exp_time != 0:
             exposure = [self.max_exp_time] * n + [exposure % self.max_exp_time]
