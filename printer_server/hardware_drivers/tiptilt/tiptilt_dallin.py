@@ -89,7 +89,11 @@ class TipTilt(serial.Serial):
 
     # returns a float
     def get_position(self, axis):
-        return self.send("GP{}".format(get_axis_index(axis)))
+        position = self.send("GP{}".format(get_axis_index(axis)))
+        if position == -100:
+            return "undef"
+        else:
+            return position
 
     # returns a float
     def get_min_position(self, axis):
