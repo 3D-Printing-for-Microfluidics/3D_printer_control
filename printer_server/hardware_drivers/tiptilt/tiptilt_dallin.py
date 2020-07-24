@@ -90,7 +90,7 @@ class TipTilt(serial.Serial):
     # returns a float
     def get_position(self, axis):
         position = self.send("GP{}".format(get_axis_index(axis)))
-        if position == -100:
+        if position == 12345:
             return "undef"
         else:
             return position
