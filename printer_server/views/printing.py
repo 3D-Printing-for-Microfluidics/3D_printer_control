@@ -3,7 +3,6 @@
 
 import os
 import time
-import glob
 import json
 import shutil
 import threading
@@ -72,13 +71,13 @@ class PrintControl:
         self.kdc = hardware_driver_handles.kdc
         self.tiptilt = hardware_driver_handles.tiptilt
         self.print_settings = None
-        self.total_exposures = 0
+        self.layer_map = []
+        self.next_layer = 0
         self.current_job = Path(Config.UPLOAD_FOLDER) / Path("current_job")
         self.print_history = Path(Config.UPLOAD_FOLDER) / Path("print_history")
         self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
         self.printing_stopped = threading.Event()
         self.printing_paused = threading.Event()
-        self.paused_layer = 1
         self.print_thread = None  # will be initialized later on start
         self.logs_path = Path.cwd() / "logs"
         self.logs_path_directory_for_this_run = None  # initialized later
@@ -136,23 +135,23 @@ class PrintControl:
         )
         return layer.get("Number of duplications", d)
 
-    def get_total_exposures(self):
-        """Return the total number of exposures in the print, including
+    def generate_layer_map(self):
+        """Return an array of tuples that represent layers and their
         duplications.
         """
         default_dups = self.print_settings["Default layer settings"][
             "Number of duplications"
         ]
-        total_layers = 0
-        for layer in self.print_settings["Layers"]:
-            total_layers += layer.get("Number of duplications", default_dups)
-        return total_layers
+        layers = []
+        for i, layer in enumerate(self.print_settings["Layers"]):
+            dups = layer.get("Number of duplications", default_dups)
+            for j in range(dups):
+                layers.append((i, j))
+        return layers
 
-    def move_build_platform(self, position_settings, i, j, layer_log, app):
+    def move_build_platform(self, position_settings):
         """Perform the build platform movements for a layer according to
         the position_settings.
-
-        Append logged information to layer_log if supplied.
         """
         time.sleep(position_settings["Initial wait (ms)"] / 1000)
         start_position = self.galil.getPosition()
@@ -173,36 +172,18 @@ class PrintControl:
         end_time = datetime.now()
         time.sleep(position_settings["Final wait (ms)"] / 1000)
         thickness = self.galil.cntsToMm(abs(end_position - start_position) * 1000)
+        return [start_time, start_position, end_time, end_position, thickness]
 
-        print(f"trying to open {layer_log}")
-        with app.app_context():
-            with open(layer_log, "a") as f:
-                msg = f"Layer {i} duplicate {j} position data: "
-                msg += f"start {start_position}, end {end_position}, "
-                msg += f"thickness {thickness}, "
-                msg += f"start_time {start_time}, end_time {end_time}, "
-                msg += f"duration {end_time - start_time}\n"
-                f.write(msg)
-
-    def perform_exposures(self, image_settings_list, i, j, layer_log, app):
+    def perform_exposures(self, image_settings_list):
         """Perform all exposures for a layer according to
         image_settings_list.
-
-        Append logged information to layer_log if supplied.
         """
         slices_folder = Path(self.print_settings["Header"]["Image directory"])
-        for setting_index, settings in enumerate(image_settings_list):
+        for settings in image_settings_list:
             image = self.current_job / slices_folder / Path(settings["Image file"])
             exposure_time_ms = settings["Layer exposure time (ms)"]
             power = settings["Light engine power setting"]
             defocus_um = settings["Relative focus position (um)"]
-
-            with app.app_context():
-                with open(layer_log, "a") as f:
-                    msg = f"Layer {i} duplicate {j} "
-                    msg += f"exposure {setting_index} data: {settings}\n"
-                    f.write(msg)
-
             if defocus_um != 0:
                 self.kdc.move(defocus_um)
             time.sleep(settings["Wait before exposure (ms)"] / 1000)
@@ -275,17 +256,16 @@ class PrintControl:
         Print History table in the database is created for the current
         job, and it's entry in the Print Queue table is deleted. The
         print settings file is parsed and the settings saved, then the
-        hardware operations are kicked off in a print_worker thread.
+        hardware operations are kicked off in a new thread.
         """
-        print("starting")
         if self.state != "planarized" or not job_id:
             return
         job_in_queue = PrintQueue.query.get(job_id)
         if not job_in_queue:
             return
-
         zipped_job_file = self.queue / Path(job_in_queue.zip_filename)
 
+        # clear any old contents from the current_job folder
         try:
             shutil.rmtree(self.current_job)
         except FileNotFoundError:
@@ -319,6 +299,7 @@ class PrintControl:
         # parse and save print_settings
         with open(next(self.current_job.rglob("*.json")), "r") as file_handle:
             self.print_settings = json.load(file_handle)
+        self.next_layer = 0
 
         # update frontend progress bar
         self.state = "printing"
@@ -329,164 +310,103 @@ class PrintControl:
         }
         socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
 
+        # start printing process in a new thread
         app = db.get_app()
-        self.print_thread = threading.Thread(target=self.print_worker, args=(1, app))
-        print("starting thread")
+        self.print_thread = threading.Thread(target=self.print_worker, args=[app])
         self.print_thread.start()
 
     def resume(self):
-        """Resume a paused print.
-
-        If printing is paused, this method starts printing from
-        `paused_layer` in a new thread. When printing is completed,
-        paused, or stopped, the thread ends gracefully.
-        """
+        """Resume a paused print."""
         if self.state != "paused":
             return
         self.state = "printing"
+        # update fontend
         msg = {
-            "percent": int(100 * (self.paused_layer - 1) / self.total_exposures),
+            "percent": int(100 * (self.next_layer - 1) / len(self.layer_map)),
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "text": "Resume Printing",
         }
         socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
-
+        # resume printing in a new thread
         app = db.get_app()
-        self.print_thread = threading.Thread(
-            target=self.print_worker, args=(self.paused_layer, app)
-        )
+        self.print_thread = threading.Thread(target=self.print_worker, args=[app])
         self.print_thread.start()
 
-    def print_worker(self, start_on_layer, app):
+    def print_worker(self, app):
         """Do a 3D print.
 
         This method should not be called from the main thread since
         it will block the main thread until it is done and cannot be
         interrupted.
 
-
-        :param int start_on_layer: the layer to start printing from
-        :param app: the current flask ``app`` object. We have to
-                    get ``app`` in the main thread, and pass it
-                    to the working thread. The reason that we need
-                    ``app`` is that in order to interact with
-                    database, we have to be under ``app_context``.
+        :param app: The current flask app object. We have to get app in
+                    the main thread, and pass it to the working thread
+                    so we can use app_context to interact with the
+                    database.
                     See http://flask-sqlalchemy.pocoo.org/contexts/.
         """
-
-        print("got into print worker")
         if self.state != "printing":
             return
-        # Initialize parameters
+        # clear old flags
         self.printing_stopped.clear()
         self.printing_paused.clear()
-        self.total_exposures = self.get_total_exposures()
+        self.layer_map = self.generate_layer_map()
 
-        # Create logs
-        layer_log = str(self.current_job / "layer_data.txt")
-        load_cell_file_name = str(self.current_job / "load_cell_data.csv")
+        # create logs
+        position_log = str(self.current_job / "position_data.txt")
 
-        import random
-
-        with open(load_cell_file_name, "a") as f:
-            for _ in range(100):
-                r1 = random.randint(0, 1000)
-                r2 = random.randint(0, 1000)
-                r3 = random.randint(0, 1000)
-                f.write(f"{r1}, {r2}, {r3}\n")
-
-        # Move build platform to the starting position if this is the first layer
-        if start_on_layer == 1:
+        # move build platform to the starting position if this is the first layer
+        if self.next_layer == 0:
             self.galil.goToZmin()
 
         # iterate over layers
-
-        for i, current_layer in enumerate(self.print_settings["Layers"], 1):
+        for i, layer in enumerate(self.layer_map):
+            if i < self.next_layer:
+                continue  # skip previous layers if print was paused
             if self.printing_stopped.is_set() or self.printing_paused.is_set():
-                self.paused_layer = i
-                break
+                break  # pause, don't do anything else
+            self.next_layer = i + 1
 
-            # get to the desired layer
-            # if i != start_on_layer:
-            #     print(f"skip layer {i}")
-            #     continue
+            # read settings for this layer
+            current_layer_settings = self.print_settings["Layers"][layer[0]]
+            position_settings = self.get_position_settings(current_layer_settings)
+            image_settings_list = self.get_image_settings(current_layer_settings)
 
-            duplications = self.get_num_duplications(current_layer)
-            image_settings_list = self.get_image_settings(current_layer)
-            position_settings = self.get_position_settings(current_layer)
+            # do moves and log data
+            position_data = self.move_build_platform(position_settings)
+            with open(position_log, "a") as f:
+                msg = f"Layer {layer} position data: "
+                msg += f"start {position_data[1]}, end {position_data[3]}, "
+                msg += f"thickness {position_data[4]}, "
+                msg += f"start_time {position_data[0]}, end_time {position_data[2]}, "
+                msg += f"duration {position_data[2] - position_data[0]}\n"
+                f.write(msg)
 
-            for j in range(duplications):
+            # do exposures and log data
+            self.perform_exposures(image_settings_list)
 
-                # self.move_build_platform(position_settings, layer_log, i, j, app)
-                time.sleep(position_settings["Initial wait (ms)"] / 1000)
-                start_position = self.galil.getPosition()
-                start_time = datetime.now()
-                self.galil.relMove(
-                    mm=position_settings["Distance up (mm)"],
-                    speed=position_settings["BP up speed (mm/sec)"],
-                    acceleration=position_settings["BP up acceleration (mm/sec^2)"],
-                )
-                time.sleep(position_settings["Up wait (ms)"] / 1000)
-                self.galil.relMove(
-                    mm=position_settings["Layer thickness (um)"] / 1000
-                    - position_settings["Distance up (mm)"],
-                    speed=position_settings["BP up speed (mm/sec)"],
-                    acceleration=position_settings["BP up acceleration (mm/sec^2)"],
-                )
-                end_position = self.galil.getPosition()
-                end_time = datetime.now()
-                time.sleep(position_settings["Final wait (ms)"] / 1000)
-                thickness = self.galil.cntsToMm(abs(end_position - start_position) * 1000)
+            # update frontend message pane and progress bar
+            msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
+            socketio.emit(
+                "print progress",
+                {
+                    "percent": int(100 * i / len(self.layer_map)),
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "text": msg,
+                },
+                namespace="/printing",
+                broadcase=True,
+            )
 
-                with app.app_context():
-                    with open(layer_log, "a") as f:
-                        msg = f"Layer {i} duplicate {j} position data: "
-                        msg += f"start {start_position}, end {end_position}, "
-                        msg += f"thickness {thickness}, "
-                        msg += f"start_time {start_time}, end_time {end_time}, "
-                        msg += f"duration {end_time - start_time}\n"
-                        f.write(msg)
-
-                # self.perform_exposures(image_settings_list, layer_log, i, j, app)
-                slices_folder = Path(self.print_settings["Header"]["Image directory"])
-                for setting_index, settings in enumerate(image_settings_list):
-                    image = (
-                        self.current_job / slices_folder / Path(settings["Image file"])
-                    )
-                    exposure_time_ms = settings["Layer exposure time (ms)"]
-                    power = settings["Light engine power setting"]
-                    defocus_um = settings["Relative focus position (um)"]
-
-                    with app.app_context():
-                        with open(layer_log, "a") as f:
-                            msg = f"Layer {i} duplicate {j} "
-                            msg += f"exposure {setting_index} data: {settings}\n"
-                            f.write(msg)
-
-                    if defocus_um != 0:
-                        self.kdc.move(defocus_um)
-                    time.sleep(settings["Wait before exposure (ms)"] / 1000)
-                    self.projector.project(image, exposure_time_ms, power)
-                    time.sleep(settings["Wait after exposure (ms)"] / 1000)
-                    if defocus_um != 0:
-                        self.kdc.move(-defocus_um)
-
-                socketio.emit(
-                    "print progress",
-                    {
-                        "percent": int(100 * (i + j) / self.total_exposures),
-                        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "text": f"Layer {i}",
-                    },
-                    namespace="/printing",
-                    broadcase=True,
-                )
-
-        # Clean up
+        # always turn off the projector
         self.projector.stop_sequencer()
         self.projector.clear_image()
+
+        # if print is finished, move build platform back to top
         if not self.printing_paused.is_set():
             self.galil.goToZmax()
+
+            # update fontend, zip logs into archive in print_history, and update db entrty
             with app.app_context():
                 latest_record = PrintRecord.query.order_by(PrintRecord.id.desc()).first()
                 latest_record.end_time = datetime.now()
