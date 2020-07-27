@@ -110,7 +110,7 @@ def add_to_queue(job_id):
         PrintQueue(
             original_filename=job.original_filename,
             upload_time=upload_time,
-            upload_ip=request.remote_addr,
+            upload_ip=job.upload_ip,
         ).save()
     except ValueError as e:
         msg = f"Job validation failed for {job.original_filename}:\n {str(e).strip()}"
