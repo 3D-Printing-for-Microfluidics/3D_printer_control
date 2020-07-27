@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Internal Server Error{% endblock %}
@@ -7,4 +6,6 @@
 <h2>Internal Server Error</h2>
 {% endblock %}
 
-
+{% block page_content %}
+{{ msg }}
+{% endblock %}

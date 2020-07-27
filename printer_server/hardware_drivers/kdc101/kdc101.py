@@ -11,35 +11,38 @@ def find_device():
         if "K-Cube" in device.description:
             print("Found {}".format(device))
             return device.device
-    return None                                # stage not found
+    return None  # stage not found
 
-class KDC101():
+
+class KDC101:
     # Port Settings
     baud_rate = 115200
     data_bits = 8
     stop_bits = 1
     Parity = serial.PARITY_NONE
-    Channel = 1                     # channel is always 1 for a K Cube/T Cube
-    Device_Unit_SF = 34304.         # pg 34 of protocol PDF (as of Issue 23)
-    destination = 0x50              # destination byte; 0x50 for T Cube/K Cube, USB controllers
-    source = 0x01                   # source Byte
+    Channel = 1  # channel is always 1 for a K Cube/T Cube
+    Device_Unit_SF = 34304.0  # pg 34 of protocol PDF (as of Issue 23)
+    destination = 0x50  # destination byte; 0x50 for T Cube/K Cube, USB controllers
+    source = 0x01  # source Byte
     maxPos = 25.0
     minPos = 0.0
     relativeMode = True
     homed = False
 
     def __init__(self, defaultPos=0):
-        #Controller's Port and Channel
+        # Controller's Port and Channel
         self.port = find_device()
         if self.port is None:
-            raise ValueError('Thor Labs stage not found')
+            raise ValueError("Thor Labs stage not found")
         self.defaultPos = defaultPos
-        self.KDC101 = serial.Serial(port=self.port,
-                                    baudrate=self.baud_rate,
-                                    bytesize=self.data_bits,
-                                    parity=self.Parity,
-                                    stopbits=self.stop_bits,
-                                    timeout=0.1)
+        self.KDC101 = serial.Serial(
+            port=self.port,
+            baudrate=self.baud_rate,
+            bytesize=self.data_bits,
+            parity=self.Parity,
+            stopbits=self.stop_bits,
+            timeout=0.1,
+        )
         self.getHardwareInfo()
         self.enableStage(enable=True)
         atexit.register(self.KDC101.close)
@@ -47,25 +50,36 @@ class KDC101():
 
     def home(self):
         # Home Stage; MGMSG_MOT_MOVE_HOME
-        self.KDC101.write(pack('<HBBBB', 0x0443, self.Channel, 0x00, self.destination, self.source))
-        print('Homing stage...')
+        self.KDC101.write(
+            pack("<HBBBB", 0x0443, self.Channel, 0x00, self.destination, self.source)
+        )
+        print("Homing stage...")
 
-        #Confirm stage homed before advancing; MGMSG_MOT_MOVE_HOMED
-        Rx = ''
-        Homed = pack('<H', 0x0444)
+        # Confirm stage homed before advancing; MGMSG_MOT_MOVE_HOMED
+        Rx = ""
+        Homed = pack("<H", 0x0444)
         # we do this with number of attempts as it might otherwise freeze here (300 attempts = ~25 sec)
         # if it freezes, we just home again
         attempts = 0
         while Rx != Homed and not self.homed:
             if attempts > 300:
                 print("Homing Failed: Trying again")
-                self.KDC101.write(pack('<HBBBB', 0x0443, self.Channel, 0x00, self.destination, self.source))
+                self.KDC101.write(
+                    pack(
+                        "<HBBBB",
+                        0x0443,
+                        self.Channel,
+                        0x00,
+                        self.destination,
+                        self.source,
+                    )
+                )
                 attempts = 0
             Rx = self.KDC101.read(2)
             attempts = attempts + 1
 
         self.homed = True
-        print('Stage Homed')
+        print("Stage Homed")
         self.flushUSB()
 
     def move(self, pos, microns=True, relative=True):
@@ -77,14 +91,14 @@ class KDC101():
             self.setAbsolute()
 
         if microns:
-            position = pos * 1e-3 # translate into um
+            position = pos * 1e-3  # translate into um
         else:
             position = pos
 
         if self.relativeMode:
             # Move to absolute position in mm; MGMSG_MOT_MOVE_ABSOLUTE (long version)
             # currPos = self.getCurrentPos()
-            dUnitpos = int(self.Device_Unit_SF*position)
+            dUnitpos = int(self.Device_Unit_SF * position)
             code = 0x0448
 
             # if currPos returns as 'undef' we don't know the position of the stage.
@@ -96,15 +110,26 @@ class KDC101():
             #         print("It's false: currPos: {} pos: {}".format(currPos, position))
             #         return False
         elif abs(position) < 25:
-            dUnitpos = int(self.Device_Unit_SF*abs(position))
+            dUnitpos = int(self.Device_Unit_SF * abs(position))
             code = 0x0453
         else:
             return False
-        
+
         # we do this recursively otherwise it might freeze here (each ittr = ~10 sec)
         # if it freezes, we just home again
-        self.KDC101.write(pack('<HBBBBHi', code, 0x06, 0x00, self.destination|0x80, self.source, self.Channel, dUnitpos))
-        print('Moving stage', pos, "...")
+        self.KDC101.write(
+            pack(
+                "<HBBBBHi",
+                code,
+                0x06,
+                0x00,
+                self.destination | 0x80,
+                self.source,
+                self.Channel,
+                dUnitpos,
+            )
+        )
+        print("Moving stage", pos, "...")
         finished_succeccfully = self.confirmMoveFinished()
         if not finished_succeccfully:
             self.move(0)
@@ -117,9 +142,9 @@ class KDC101():
         self.relativeMode = False
 
     def confirmMoveFinished(self):
-        #Confirm stage completed move before advancing; MGMSG_MOT_MOVE_COMPLETED
-        Rx = ''
-        Moved = pack('<H', 0x0464)
+        # Confirm stage completed move before advancing; MGMSG_MOT_MOVE_COMPLETED
+        Rx = ""
+        Moved = pack("<H", 0x0464)
         attempts = 0
         while Rx != Moved:
             if attempts > 100:
@@ -128,27 +153,31 @@ class KDC101():
             Rx = self.KDC101.read(2)
             attempts = attempts + 1
 
-        print('Move Complete')
+        print("Move Complete")
         self.flushUSB()
         return True
 
     def initialize(self):
-        #Create Serial Object
+        # Create Serial Object
         self.getHardwareInfo()
         self.enableStage(enable=True)
 
     def sendServerAlive(self):
-        self.KDC101.write(pack('<HBBBB', 0x0492, 0x00, 0x00, self.destination, self.source))
+        self.KDC101.write(
+            pack("<HBBBB", 0x0492, 0x00, 0x00, self.destination, self.source)
+        )
 
     def getHardwareInfo(self):
-        #Get HW info; MGMSG_HW_REQ_INFO; may be require by a K Cube to allow confirmation Rx messages
-        self.KDC101.write(pack('<HBBBB', 0x0005, 0x00, 0x00, 0x50, 0x01))
+        # Get HW info; MGMSG_HW_REQ_INFO; may be require by a K Cube to allow confirmation Rx messages
+        self.KDC101.write(pack("<HBBBB", 0x0005, 0x00, 0x00, 0x50, 0x01))
         self.flushUSB()
 
     def enableStage(self, enable=True):
-        #Enable Stage; MGMSG_MOD_SET_CHANENABLESTATE
+        # Enable Stage; MGMSG_MOD_SET_CHANENABLESTATE
         state = 0x01 if enable else 0x02
-        self.KDC101.write(pack('<HBBBB', 0x0210, self.Channel, state, self.destination, self.source))
+        self.KDC101.write(
+            pack("<HBBBB", 0x0210, self.Channel, state, self.destination, self.source)
+        )
         time.sleep(0.1)
 
     def flushUSB(self):
@@ -162,28 +191,35 @@ class KDC101():
         self.getCurrentPosHelper()
         self.getCurrentPosHelper()
         return self.getCurrentPosHelper()
-        
-    def getCurrentPosHelper(self):
-        #Request Position; MGMSG_MOT_REQ_POSCOUNTER
-        self.KDC101.write(pack('<HBBBB', 0x0411, self.Channel, 0x00, self.destination, self.source))
 
-        #Read back position returns by the cube; Rx message MGMSG_MOT_GET_POSCOUNTER
-        _, _, position_dUnits = unpack('<6sHI', self.KDC101.read(12)) # first two returns are header and chan_dent
-        getpos = position_dUnits/float(self.Device_Unit_SF)
+    def getCurrentPosHelper(self):
+        # Request Position; MGMSG_MOT_REQ_POSCOUNTER
+        self.KDC101.write(
+            pack("<HBBBB", 0x0411, self.Channel, 0x00, self.destination, self.source)
+        )
+
+        # Read back position returns by the cube; Rx message MGMSG_MOT_GET_POSCOUNTER
+        _, _, position_dUnits = unpack(
+            "<6sHI", self.KDC101.read(12)
+        )  # first two returns are header and chan_dent
+        getpos = position_dUnits / float(self.Device_Unit_SF)
 
         if int(getpos) == 33400:
-            return 'undef'
+            return "undef"
 
         if int(getpos) == 125203:
             getpos = 0.0
 
-        getpos = round(getpos*1000, 1)  # convert to microns and round to 1 decimal place
-        self.flushUSB() # added to test if it fixes the read error
-        
+        getpos = round(
+            getpos * 1000, 1
+        )  # convert to microns and round to 1 decimal place
+        self.flushUSB()  # added to test if it fixes the read error
+
         if not self.homed and getpos == 0.0:
-            return 'undef'
-        
+            return "undef"
+
         return getpos
+
 
 if __name__ == "__main__":
     kc = KDC101()

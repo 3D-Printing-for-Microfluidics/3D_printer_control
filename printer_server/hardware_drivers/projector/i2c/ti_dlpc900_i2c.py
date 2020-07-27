@@ -5,8 +5,8 @@ from smbus2 import SMBus
 
 
 TI_I2C_ADDR = 0x1A
-TI_REG_R_PIXEL_MODE = 0X03
-TI_REG_W_PIXEL_MODE = 0X83
+TI_REG_R_PIXEL_MODE = 0x03
+TI_REG_W_PIXEL_MODE = 0x83
 TI_REG_R_TEST_PATTERN = 0x0A
 TI_REG_W_TEST_PATTERN = 0x8A
 TI_REG_R_IT6535 = 0x0C
@@ -20,7 +20,7 @@ TI_REG_W_SEQUENCE = 0xE5
 TI_REG_R_DISPLAY_MODE = 0x69
 TI_REG_W_DISPLAY_MODE = 0xE9
 TI_REG_R_PATTERN_DISPLAY_LUT_CONFIG = 0x75
-TI_REG_W_PATTERN_DISPLAY_LUT_CONFIG = 0xF5 # Bit 0-10 = Numer of LUT entries, 15:11 reserved, 16:47 Number of times to repeat pattern sequence  0=forever
+TI_REG_W_PATTERN_DISPLAY_LUT_CONFIG = 0xF5  # Bit 0-10 = Numer of LUT entries, 15:11 reserved, 16:47 Number of times to repeat pattern sequence  0=forever
 TI_REG_W_PATTERN_DISPLAY_LUT = 0xF8
 TI_SEQUENCE_ON = 0x2
 TI_SEQUENCE_OFF = 0x0
@@ -36,26 +36,28 @@ TI_DISPLAY_MODE_ON_THE_FLY = 0x3
 # helper function for converting error codes to human readable format
 def convert_error_code(code):
     return {
-        0: 'No error',
-        1: 'Batch file checksum error',
-        2: 'Device failure',
-        3: 'Invalid command number',
-        4: 'Incompatible controller / DMD',
-        5: 'Command not allowed in current mode',
-        6: 'Invalid command parameter',
-        7: 'Item referred by the parameter is not present',
-        8: 'Out of resource (RAM / Flash)',
-        9: 'Invalid BMP compression type',
-        10: 'Pattern bit number out of range',
-        11: 'Pattern BMP not present in flash',
-        12: 'Pattern dark time is out of range',
-        13: 'Signal delay parameter is out of range',
-        14: 'Pattern exposure time is out of range',
-        15: 'Pattern number is out of range',
-        16: 'Invalid pattern definition (errors other than 9-15)',
-        17: 'Pattern image memory address is out of range',
-        255: 'Internal Error'
-    }.get(code, "Not defined")    # "Not defined" is default if code is not found
+        0: "No error",
+        1: "Batch file checksum error",
+        2: "Device failure",
+        3: "Invalid command number",
+        4: "Incompatible controller / DMD",
+        5: "Command not allowed in current mode",
+        6: "Invalid command parameter",
+        7: "Item referred by the parameter is not present",
+        8: "Out of resource (RAM / Flash)",
+        9: "Invalid BMP compression type",
+        10: "Pattern bit number out of range",
+        11: "Pattern BMP not present in flash",
+        12: "Pattern dark time is out of range",
+        13: "Signal delay parameter is out of range",
+        14: "Pattern exposure time is out of range",
+        15: "Pattern number is out of range",
+        16: "Invalid pattern definition (errors other than 9-15)",
+        17: "Pattern image memory address is out of range",
+        255: "Internal Error",
+    }.get(
+        code, "Not defined"
+    )  # "Not defined" is default if code is not found
 
 
 class DLPC900_Exception(Exception):
@@ -65,7 +67,7 @@ class DLPC900_Exception(Exception):
 
 
 class TI_DLPC900_I2C:
-    I2C_IO_DELAY = 0.01   # Delay after every I2C command, 10ms
+    I2C_IO_DELAY = 0.01  # Delay after every I2C command, 10ms
 
     def __init__(self, verbosity=logging.DEBUG):
         """Initialize the i2c bus and set defaults."""
@@ -88,8 +90,11 @@ class TI_DLPC900_I2C:
             except Exception as e:
                 self.log(logging.INFO, "I2C read error {}".format(e))
                 caught_exception = e
-                time.sleep(1)                   # wait 1 second to retry
-        self.log(logging.ERROR, "I2C read error in projector! {} sequential reads failed".format(retry))
+                time.sleep(1)  # wait 1 second to retry
+        self.log(
+            logging.ERROR,
+            "I2C read error in projector! {} sequential reads failed".format(retry),
+        )
         raise caught_exception
 
     def write_register(self, register, val, retry=3):
@@ -105,8 +110,11 @@ class TI_DLPC900_I2C:
             except Exception as e:
                 self.log(logging.INFO, "I2C write error {}".format(e))
                 caught_exception = e
-                time.sleep(1)                   # wait 1 second to retry
-        self.log(logging.ERROR, "I2C write error in projector! {} sequential writes failed".format(retry))
+                time.sleep(1)  # wait 1 second to retry
+        self.log(
+            logging.ERROR,
+            "I2C write error in projector! {} sequential writes failed".format(retry),
+        )
         raise caught_exception
 
     def log(self, lvl, msg):
@@ -170,12 +178,16 @@ class TI_DLPC900_I2C:
 
     def get_all_status(self):
         """Return all status register output as a string"""
-        return json.dumps({
-            'hardware status': self.get_hardware_status(),
-            'system status': self.get_system_status(),
-            'main status': self.get_main_status(),
-            'error status': self.get_error_code()
-        }, indent=2, sort_keys=True)
+        return json.dumps(
+            {
+                "hardware status": self.get_hardware_status(),
+                "system status": self.get_system_status(),
+                "main status": self.get_main_status(),
+                "error status": self.get_error_code(),
+            },
+            indent=2,
+            sort_keys=True,
+        )
 
     def start_sequencer(self):
         """Start the DMD sequencer."""
@@ -198,13 +210,13 @@ class TI_DLPC900_I2C:
         See 2.4.1 "Display Mode Selection" in DLPC900 Programmers Guide.
         """
         pattern_modes = {
-            "Video mode"              : TI_DISPLAY_MODE_NORMAL,
-            "Pre-stored pattern mode" : TI_DISPLAY_MODE_PRE_STORED,     # images from flash
-            "Video pattern mode"      : TI_DISPLAY_MODE_VIDEO_PATTERN,
-            "Pattern On-The-Fly mode" : TI_DISPLAY_MODE_ON_THE_FLY      # images loaded through USB/I2C
+            "Video mode": TI_DISPLAY_MODE_NORMAL,
+            "Pre-stored pattern mode": TI_DISPLAY_MODE_PRE_STORED,  # images from flash
+            "Video pattern mode": TI_DISPLAY_MODE_VIDEO_PATTERN,
+            "Pattern On-The-Fly mode": TI_DISPLAY_MODE_ON_THE_FLY,  # images loaded through USB/I2C
         }
         self.log(logging.INFO, "Set DMD operation mode to: {}".format(mode))
-        time.sleep(5)   # must wait for at least 5 seconds to read or write display mode
+        time.sleep(5)  # must wait for at least 5 seconds to read or write display mode
         if mode in pattern_modes.keys():
             self.write_register(TI_REG_W_DISPLAY_MODE, pattern_modes[mode])
         else:
@@ -221,8 +233,8 @@ class TI_DLPC900_I2C:
         """
 
         video_sources = {
-            "HDMI"        : TI_IT6536_HDMI,         # up to 30 Hz
-            "DisplayPort" : TI_IT6536_DISPLAYPORT,  # up to 60 Hz
+            "HDMI": TI_IT6536_HDMI,  # up to 30 Hz
+            "DisplayPort": TI_IT6536_DISPLAYPORT,  # up to 60 Hz
         }
         self.log(logging.INFO, "Set video source to: {}".format(source))
         if source in video_sources.keys():
@@ -255,10 +267,7 @@ class TI_DLPC900_I2C:
                0 = P1 VSync and P1 HSync
                1 = P2 VSync and P2 HSync
         """
-        pixel_modes = {
-            "Single" : 0x0,
-            "Dual"   : 0x2
-        }
+        pixel_modes = {"Single": 0x0, "Dual": 0x2}
         self.log(logging.INFO, "Set pixel mode to: {}".format(mode))
         if mode in pixel_modes.keys():
             self.write_register(TI_REG_W_PIXEL_MODE, pixel_modes[mode])
@@ -266,10 +275,10 @@ class TI_DLPC900_I2C:
             self.log(logging.ERROR, "Bad pixel mode supplied: {}".format(mode))
 
     def setInternalImage(self, num):
-        '''Display an image from the DLPC900 internal flash memory.
+        """Display an image from the DLPC900 internal flash memory.
 
         Valid range is 0-10.
-        '''
+        """
         self.log(logging.INFO, "Set internal image to number {}".format(num))
         self.write_register(TI_REG_W_DISPLAY_MODE, TI_DISPLAY_MODE_PRE_STORED)
         self.write_register(TI_REG_W_TEST_PATTERN, num)
@@ -321,9 +330,12 @@ class TI_DLPC900_I2C:
             bits 10:0 - Image pattern index (Not applicable in video pattern mode) Valid Range 0-255
             bits 115:11 - Bit position in the image pattern (Frame in video pattern mode) Valid range 0-23
         """
-        self.log(logging.INFO, "Set sequencer LUT definition {} {}".format(exposure, bitdepth))
+        self.log(
+            logging.INFO,
+            "Set sequencer LUT definition {} {}".format(exposure, bitdepth),
+        )
 
-        color = 1               # LED is on Red channel in the Visitech
+        color = 1  # LED is on Red channel in the Visitech
         clear = 1
         darktime = 0
         bit_index = 0
@@ -332,21 +344,28 @@ class TI_DLPC900_I2C:
         exposure = int(exposure)
 
         buffer = bytearray(12)
-        buffer[0] = pattern_index & 0xff
-        buffer[1] = pattern_index >> 8 & 0xff
-        buffer[2] = exposure & 0xff
-        buffer[3] = exposure >> 8 & 0xff
-        buffer[4] = exposure >> 16 & 0xff
+        buffer[0] = pattern_index & 0xFF
+        buffer[1] = pattern_index >> 8 & 0xFF
+        buffer[2] = exposure & 0xFF
+        buffer[3] = exposure >> 8 & 0xFF
+        buffer[4] = exposure >> 16 & 0xFF
         # buffer[5] = byte5
-        buffer[5] = clear & 0x1 | bitdepth << 1 & 0x0e | color << 4 & 0x70 | wait_for_trigger << 7 & 0x80
-        buffer[6] = darktime & 0xff
-        buffer[7] = darktime >> 8 & 0xff
-        buffer[8] = darktime >> 16 & 0xff
+        buffer[5] = (
+            clear & 0x1
+            | bitdepth << 1 & 0x0E
+            | color << 4 & 0x70
+            | wait_for_trigger << 7 & 0x80
+        )
+        buffer[6] = darktime & 0xFF
+        buffer[7] = darktime >> 8 & 0xFF
+        buffer[8] = darktime >> 16 & 0xFF
         buffer[9] = 0
         buffer[10] = 0
-        buffer[11] = (bit_index & 0x1f) << 3
+        buffer[11] = (bit_index & 0x1F) << 3
 
-        self.i2c_bus.write_i2c_block_data(self.address, TI_REG_W_PATTERN_DISPLAY_LUT, buffer)
+        self.i2c_bus.write_i2c_block_data(
+            self.address, TI_REG_W_PATTERN_DISPLAY_LUT, buffer
+        )
         time.sleep(self.I2C_IO_DELAY)
 
     def set_sequencer_lut_config(self, num_sequences=1, repeats=1):
@@ -366,14 +385,22 @@ class TI_DLPC900_I2C:
         bytes 2-5 - Number of times to repeat the pattern sequence
             0 = repeat forever
         """
-        self.log(logging.INFO, "Set sequencer LUT config to: {} sequences, {} repeats".format(num_sequences, repeats))
-        self.stop_sequencer() # sequencer must be stopped before writing config
-        num_sequences = int(num_sequences).to_bytes(2, byteorder='little')
-        repeats = int(repeats).to_bytes(4, byteorder='little')
+        self.log(
+            logging.INFO,
+            "Set sequencer LUT config to: {} sequences, {} repeats".format(
+                num_sequences, repeats
+            ),
+        )
+        self.stop_sequencer()  # sequencer must be stopped before writing config
+        num_sequences = int(num_sequences).to_bytes(2, byteorder="little")
+        repeats = int(repeats).to_bytes(4, byteorder="little")
         lut_config = bytearray(num_sequences + repeats)
-        self.i2c_bus.write_i2c_block_data(self.address, TI_REG_W_PATTERN_DISPLAY_LUT_CONFIG, lut_config)
+        self.i2c_bus.write_i2c_block_data(
+            self.address, TI_REG_W_PATTERN_DISPLAY_LUT_CONFIG, lut_config
+        )
         time.sleep(self.I2C_IO_DELAY)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     dmd = TI_DLPC900_I2C(verbosity=logging.DEBUG)
     print(dmd.get_all_status())

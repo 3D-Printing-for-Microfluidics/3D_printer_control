@@ -5,7 +5,8 @@ from fcntl import ioctl
 
 I2C_SLAVE = 0x0703
 
-class I2C():
+
+class I2C:
     """A basic i2c object with simple read and write methods."""
 
     def __init__(self, address, bus=1):

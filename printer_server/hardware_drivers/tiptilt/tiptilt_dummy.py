@@ -1,40 +1,38 @@
-import atexit
-import serial
-import serial.tools.list_ports
-import serial.serialutil
+from printer_server.logging_handler import dummy_log
 
-class TipTilt_dummy(serial.Serial):
 
-    def __init__(self, hwid='1A86:7523', verbose=True):
-        super().__init__(baudrate=115200, timeout=None)
-        # Button parameters
-        self.motors = ["Tip", "Tilt"] # if you add a motor here, make sure to add it's pins below
-        self.location = '1-1.3'
-        self.verbose = verbose
-        self.hwid = hwid
-        self.port = None                # start with no port
-        self.status = None              # status to be updated after every send
-        atexit.register(self.close)
-        print(" tiptilt - __init__({},{})".format(hwid, verbose))
+class TipTilt_dummy:
+    @dummy_log
+    def __init__(self, *args, **kwargs):
+        self.position = [0, 0]
 
-    def connect(self):
-        print(" tiptilt - connect()")
-
-    def home(self):
-        print(" tiptilt - home()")
-
-    def move(self, axis, distance_um, speed=10, relative=False, fast=False):
-        # """
-        # Move the specified number of um at the specified speed (in mm/min)
-        # """
-        print(" tiptilt - move({},{},{},{})".format(axis, distance_um, speed, relative))
-
-    def send(self, cmd):
-        # send the command to grbl
-        print(" tiptilt - send({})".format(cmd))
-
-    def transmit(self, cmd):
+    @dummy_log
+    def connect(self, *args, **kwargs):
         pass
 
-    def receive(self):
-        return ""
+    @dummy_log
+    def home(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def move(self, axis, distance_um, *args, **kwargs):
+        if "relative" in kwargs and kwargs["relative"]:
+            self.position[axis == "Tip"] += distance_um
+        else:
+            self.position[axis == "Tip"] = distance_um
+
+    @dummy_log
+    def send(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def transmit(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def receive(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def get_position(self, axis, *args, **kwargs):
+        return self.position[axis == "Tip"]

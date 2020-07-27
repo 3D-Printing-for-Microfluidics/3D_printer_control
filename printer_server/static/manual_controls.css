@@ -1,0 +1,73 @@
+/* widen the container for this page just a little */
+/* .container {
+    max-width: 640px;
+  } */
+
+  /* extra margin for all rows */
+.row {
+    margin-top:10px;
+}
+
+.btn {
+	cursor: pointer;
+}
+
+/* fixed width toggle buttons */
+.btn-fixed-width {
+    width: 70px;
+    padding: 5px;
+}
+
+.btn-fixed-width:not(:disabled):not(.disabled).active {
+    background-color: #3498DB;
+    border-color: #3498DB;
+}
+
+/* extra margin for rows with large headings */
+.top-buffer {
+     margin-top:20px;
+    }
+
+/* settings for exposure time slider */
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+    padding-right: 0px;
+    padding-left: 0px;
+    margin-top:10px;
+}
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #3498DB;
+    cursor: pointer;
+}
+.slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #3498DB;
+    cursor: pointer;
+}
+
+.container {
+    padding-left: 0px;
+    padding-right: 0px;
+}
+
+.form-control{
+    background-color: rgb(230, 230, 230);
+}
+
+h5, .h5{
+    margin-top: 6px;
+}

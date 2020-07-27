@@ -1,0 +1,51 @@
+.upload-dropbox {
+  height: 200px;
+  border-width: 2px;
+  margin-bottom: 20px;
+  border-style: dashed;
+  line-height: 200px;
+  text-align: center
+}
+
+.btn {
+	cursor: pointer;
+}
+
+.progress {
+  margin-bottom: 1rem;
+}
+
+#print-message {
+  font-size: 0.8rem;
+  height: 400px;
+  overflow-y: auto;
+}
+
+pre {
+    font-family: "Lato";
+    --font-family-sans-serif:"Lato";
+    font-size: 1rem;
+    margin-bottom: 0;
+}
+
+.delete-job.btn:not(:disabled):not(.disabled) {
+    color: #F39C12;
+    background-color: #222
+}
+
+.delete-job.btn:not(:disabled):not(.disabled):hover {
+    color: inherit;
+    background-color: #F39C12;
+}
+
+.table-success,.table-success>td,.table-success>th{
+    background-color:#222;
+}
+.table-success:hover,.table-success:hover>td,.table-success:hover>th{
+    background-color:#222 !important;
+}
+.table-success{
+    outline-width: 1px;
+    outline-style: solid;
+    outline-color: rgb(0, 188, 140);
+}

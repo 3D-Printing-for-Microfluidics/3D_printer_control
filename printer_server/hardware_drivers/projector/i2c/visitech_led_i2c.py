@@ -10,14 +10,14 @@ OCP_AMP_PER_UNIT_HW_VER1 = 0.196
 DEF_PWM_KEEP_OFF = 1
 DEF_PFACTOR = 100
 DEF_IFACTOR = 25
-DEF_LED_TEMP_LIMIT = 50                 # LED temp limit: 50 deg C
-DEF_BOARD_TEMP_LIMIT = 70               # Board temp limit: 70 deg C
-DEF_OCP_AMP = 25                        # Default over current protection value
-DEF_OPP_HW_VER_1 = 275                  # Default over power protection value
+DEF_LED_TEMP_LIMIT = 50  # LED temp limit: 50 deg C
+DEF_BOARD_TEMP_LIMIT = 70  # Board temp limit: 70 deg C
+DEF_OCP_AMP = 25  # Default over current protection value
+DEF_OPP_HW_VER_1 = 275  # Default over power protection value
 # registers and addresses
-C_REG_TOP_ADC_CH0_A = 0x0004            # Read ADC0 data (12-bit) - current feedback
-C_REG_TOP_ADC_CH1_A = 0x0008            # Read ADC0 data (12-bit) - light feedback
-C_REG_TOP_ON_OFF_A = 0x000C             # Strangle strobe signal (1-bit)
+C_REG_TOP_ADC_CH0_A = 0x0004  # Read ADC0 data (12-bit) - current feedback
+C_REG_TOP_ADC_CH1_A = 0x0008  # Read ADC0 data (12-bit) - light feedback
+C_REG_TOP_ON_OFF_A = 0x000C  # Strangle strobe signal (1-bit)
 C_REG_TOP_NFEEDBACK_DELAY_A = 0x0074
 LED_CURRENT_FEEDBACK = 0x4
 LED_AMPLITUDE_REGISTER = 0x14
@@ -40,12 +40,7 @@ STICKY_BIT_BOARD_TEMP = 1
 STICKY_BIT_DOOR_SWITCH_OPEN = 3
 STICKY_BIT_OCP = 4
 # feedback regulation modes
-REGULATION_MODES = {
-    'light'   : 0x26,
-    'current' : 0x24,
-    'combined': 0x2E,
-    'default' : 4
-}
+REGULATION_MODES = {"light": 0x26, "current": 0x24, "combined": 0x2E, "default": 4}
 
 
 class LED_Exception(Exception):
@@ -54,7 +49,7 @@ class LED_Exception(Exception):
         super().__init__(arg)
 
 
-class Visitech_LED_I2C():
+class Visitech_LED_I2C:
     def __init__(self, verbosity=logging.DEBUG):
         """Initialize the i2c bus and set defaults."""
         self.i2c_bus_num = 1
@@ -70,14 +65,15 @@ class Visitech_LED_I2C():
         register (bytes): two byte address of source register
         """
 
-        self.log(logging.DEBUG,
-                 'i2c read - reg:{}'.format(hex(register)))
-        register = int(register).to_bytes(2, byteorder='big')
+        self.log(logging.DEBUG, "i2c read - reg:{}".format(hex(register)))
+        register = int(register).to_bytes(2, byteorder="big")
         self.i2c_bus.write(register)
         ret = self.i2c_bus.read(4)
-        print('read  register {}={} ({})'.format(hexlify(register),
-                                                 hexlify(ret),
-                                                 int.from_bytes(ret, byteorder='big')))
+        print(
+            "read  register {}={} ({})".format(
+                hexlify(register), hexlify(ret), int.from_bytes(ret, byteorder="big")
+            )
+        )
         return ret
 
     def write_register(self, register, data):
@@ -86,13 +82,17 @@ class Visitech_LED_I2C():
         register (bytes): two byte address of destination register
         data (bytes): four bytes to write to register
         """
-        self.log(logging.DEBUG,
-                 'i2c write - reg:{} val:{}'.format(hex(register), hexlify(data)))
-        register = int(register).to_bytes(2, byteorder='big')
-        data = int(data).to_bytes(4, byteorder='big')
-        print('write register {}={} ({})'.format(hexlify(register),
-                                                 hexlify(data),
-                                                 int.from_bytes(data, byteorder='big')))
+        self.log(
+            logging.DEBUG,
+            "i2c write - reg:{} val:{}".format(hex(register), hexlify(data)),
+        )
+        register = int(register).to_bytes(2, byteorder="big")
+        data = int(data).to_bytes(4, byteorder="big")
+        print(
+            "write register {}={} ({})".format(
+                hexlify(register), hexlify(data), int.from_bytes(data, byteorder="big")
+            )
+        )
         self.i2c_bus.write(register + data)
 
     def load_defaults(self):
@@ -133,11 +133,11 @@ class Visitech_LED_I2C():
         Amplitude is an integer between 0 and 2000
         """
         if 0 > amplitude > 2000:
-            msg = 'Provided LED amplitude of {} is out of range' .format(amplitude)
+            msg = "Provided LED amplitude of {} is out of range".format(amplitude)
             self.log(logging.CRITICAL, msg)
             raise LED_Exception(msg)
         if amplitude > 100:
-            msg = 'LED amplitude of {} is higher than recommended maximum of 100'
+            msg = "LED amplitude of {} is higher than recommended maximum of 100"
             self.log(logging.WARN, msg)
         self.write_register(LED_AMPLITUDE_REGISTER, amplitude)
         self.write_register(LED_SV_UPDATE_REGISTER, 1)
@@ -168,19 +168,19 @@ class Visitech_LED_I2C():
         sticky_bits = self.read_register(LED_STICKYBITS_REGISTER)
         error_list = []
         if sticky_bits & (1 << STICKY_BIT_BOARD_TEMP):
-            error_list.append('BOARD TEMPERATURE LIMIT EXCEEDED')
+            error_list.append("BOARD TEMPERATURE LIMIT EXCEEDED")
         if sticky_bits & (1 << STICKY_BIT_LED_TEMP):
-            error_list.append('LED TEMPERATURE LIMIT EXCEEDED')
+            error_list.append("LED TEMPERATURE LIMIT EXCEEDED")
         if sticky_bits & (1 << STICKY_BIT_DOOR_SWITCH_OPEN):
-            error_list.append('LED SAFETY SWITCH OPEN')
+            error_list.append("LED SAFETY SWITCH OPEN")
         if sticky_bits & (1 << STICKY_BIT_OCP):
-            error_list.append('LED OVER CURRENT PROTECTION TRIGGERED')
+            error_list.append("LED OVER CURRENT PROTECTION TRIGGERED")
         self.clear_sticky_errors()
         return error_list
 
     def clear_sticky_errors(self):
         """Clear the current sticky errors by resetting the register."""
-        self.write_register(LED_STICKYBITS_REGISTER, 0xff)
+        self.write_register(LED_STICKYBITS_REGISTER, 0xFF)
 
     def get_led_temp(self):
         """Return the temperature of the LED in Celsius as a float."""
@@ -238,7 +238,9 @@ class Visitech_LED_I2C():
         It is not recommended to exceed the default value as this will
         shorten the lifetime of the LED.
         """
-        self.write_register(LED_OCPVALUE_REGISTER, int(limit / OCP_AMP_PER_UNIT_HW_VER1))
+        self.write_register(
+            LED_OCPVALUE_REGISTER, int(limit / OCP_AMP_PER_UNIT_HW_VER1)
+        )
 
     def get_regulation_mode(self):
         """Return the regulation mode in use for controlling light the
@@ -312,14 +314,14 @@ class Visitech_LED_I2C():
         # if analog current or light feedback values have changed, it is running
         mode = self.get_regulation_mode()
         curr, prev = None, None
-        if mode in (REGULATION_MODES['light'], REGULATION_MODES['combined']):
+        if mode in (REGULATION_MODES["light"], REGULATION_MODES["combined"]):
             prev = self.read_register(C_REG_TOP_ADC_CH1_A)
-        elif mode in (REGULATION_MODES['current'], REGULATION_MODES['default']):
+        elif mode in (REGULATION_MODES["current"], REGULATION_MODES["default"]):
             prev = self.read_register(C_REG_TOP_ADC_CH0_A)
         for _ in range(8):
-            if mode in (REGULATION_MODES['light'], REGULATION_MODES['combined']):
+            if mode in (REGULATION_MODES["light"], REGULATION_MODES["combined"]):
                 curr = self.read_register(C_REG_TOP_ADC_CH1_A)
-            elif mode in (REGULATION_MODES['current'], REGULATION_MODES['default']):
+            elif mode in (REGULATION_MODES["current"], REGULATION_MODES["default"]):
                 curr = self.read_register(C_REG_TOP_ADC_CH0_A)
             if curr != prev:
                 return True
@@ -328,31 +330,35 @@ class Visitech_LED_I2C():
 
     def get_all_status(self):
         """Return a string representing the current status"""
-        return json.dumps({
-            'running status': self.get_running_status(),
-            'amplitude': self.get_amplitude(),
-            'light feedback': self.get_light_feedback(),
-            'current feedback': self.get_current_feedback(),
-            'regulation mode': self.get_regulation_mode(),
-            'board temperature': self.get_board_temp(),
-            'led temperature': self.get_led_temp(),
-            'ocp limit': self.get_ocp_limit(),
-            'board temperature limit': self.get_board_temp_limit(),
-            'led temperature limit': self.get_led_temp_limit(),
-            'sticky errors': self.get_sticky_errors()
-        }, indent=2, sort_keys=True)
+        return json.dumps(
+            {
+                "running status": self.get_running_status(),
+                "amplitude": self.get_amplitude(),
+                "light feedback": self.get_light_feedback(),
+                "current feedback": self.get_current_feedback(),
+                "regulation mode": self.get_regulation_mode(),
+                "board temperature": self.get_board_temp(),
+                "led temperature": self.get_led_temp(),
+                "ocp limit": self.get_ocp_limit(),
+                "board temperature limit": self.get_board_temp_limit(),
+                "led temperature limit": self.get_led_temp_limit(),
+                "sticky errors": self.get_sticky_errors(),
+            },
+            indent=2,
+            sort_keys=True,
+        )
 
     def stress_test_i2c(self, iterations):
         """Repeatedly write and read from the LED aplitude register for
         iterations number of times.
         """
         for j in range(iterations):
-            self.log(logging.DEBUG, 'i2c stress test iteration {}'.format(j))
+            self.log(logging.DEBUG, "i2c stress test iteration {}".format(j))
             for i in range(100):
                 self.set_amplitude(i)
                 amplitude = self.get_amplitude()
                 if amplitude != i:
-                    raise LED_Exception('I2C stress test failed')
+                    raise LED_Exception("I2C stress test failed")
 
     def log(self, lvl, msg):
         """Log message.
@@ -366,7 +372,7 @@ class Visitech_LED_I2C():
                 print(msg)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     led = Visitech_LED_I2C(verbosity=logging.DEBUG)
     print(led.get_all_status())
     led.load_defaults()

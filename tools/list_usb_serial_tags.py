@@ -1,6 +1,7 @@
 import serial
 import serial.tools.list_ports
 
+
 def enumerate_usb_devices():
     x = serial.tools.list_ports.comports()
     print(x)
@@ -20,7 +21,7 @@ def enumerate_usb_devices():
         if "K-Cube" in device:
             print("Found {}".format(device))
             return device.device
-    return None                                # stage not found
+    return None  # stage not found
 
 
 if __name__ == "__main__":

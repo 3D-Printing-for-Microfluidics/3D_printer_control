@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 """
 Projector
@@ -70,21 +69,24 @@ class Projector:
     def __init__(self, resolution, fullscreen=True):
         self.resolution = resolution
         self.fullscreen = fullscreen
-        self.max_exp_time = 10000                   # max single projection time in ms
+        self.max_exp_time = 10000  # max single projection time in ms
 
         # setup TCP connection
         self.host = "192.168.0.10"
         self.port = 5000
-        self.socket = None                              # start as None so we can tell if a connection has been attempted
-        self.tcp_log = Path.cwd() / 'logs'              # a log to track all TCP communications for debugging, gets created on connect
+        self.socket = (
+            None  # start as None so we can tell if a connection has been attempted
+        )
+        self.tcp_log = (
+            Path.cwd() / "logs"
+        )  # a log to track all TCP communications for debugging, gets created on connect
 
         # setup screen thread
         self.screenThread = ScreenThread(self.resolution, self.fullscreen)
 
         # register exit handlers
-        atexit.register(self.disconnect)                # close the TCP conenction on exit
-        atexit.register(self.stop_sequencer)            # make sure DMD is stopped on exit
-        atexit.register(self.screenThread.stop)         # stop screen thread on exit
+        atexit.register(self.disconnect)  # close the TCP conenction on exit
+        atexit.register(self.stop_sequencer)  # make sure DMD is stopped on exit
 
     def connect(self, attempts=10, timeout=1):
         print("Connecting to light engine, this may take up to 1 minute...")
@@ -92,23 +94,25 @@ class Projector:
         # start TCP connection
         i = 0
         connected = False
-        while i < attempts:         # try up to attempts number of times to create a connection
+        while i < attempts:  # try up to attempts number of times to create a connection
             i += 1
-            try:                    # attempt a new connection
+            try:  # attempt a new connection
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect((self.host, self.port))
                 connected = True
             except OSError as e:
                 print("{}. Retrying in {} second(s)".format(e, timeout))
                 self.socket = None  # get rid of handle to bad socket
-                time.sleep(timeout) # wait to try again
-        if not connected:           # connection failed every time, notify user
+                time.sleep(timeout)  # wait to try again
+        if not connected:  # connection failed every time, notify user
             print("Light engine not found. It it plugged in and powered on?")
             exit("Light engine not found. It it plugged in and powered on?")
 
         # Create log
-        date_and_time = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
-        self.tcp_log = str(self.tcp_log / 'light_engine_TCP_dump_{}.txt'.format(date_and_time))
+        date_and_time = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
+        self.tcp_log = str(
+            self.tcp_log / "light_engine_TCP_dump_{}.txt".format(date_and_time)
+        )
 
         # start screen thread
         self.screenThread.start()
@@ -141,10 +145,8 @@ class Projector:
             reply = self.socket.recv(1024)
             f.write("Reply: {}\n".format(reply))
             reply = str(reply.decode())
-            # print('Sent', repr(data))
-            # print('Reply', repr(reply.decode()))
-            print('Sent :', str(data).replace("\r\n", " "))
-            print('Reply:', reply.replace("\r\n", " "))
+            print("Sent :", str(data).replace("\r\n", " "))
+            print("Reply:", reply.replace("\r\n", " "))
         return reply
 
     def load_defaults(self):
@@ -281,7 +283,7 @@ class Projector:
     def get_led_intensity(self):
         """
         Get the recorded light feedback value of the last strobe from the light sensors. This should correspond
-        to the current amplitude set, if not any protections have been triggered.
+        to the current amplitude set, if no protections have been triggered.
 
         Return type +OK and feedback value.
         """
@@ -403,7 +405,7 @@ class Projector:
 
         Return type +OK
         """
-        time.sleep(5)                               # must wait for at least 5 seconds to read or write operation mode
+        time.sleep(5)  # must wait for at least 5 seconds to read or write operation mode
         return self.send("SET OPERATION MODE {}".format(mode))
 
     def get_dmd_operation_mode(self):
@@ -415,7 +417,16 @@ class Projector:
         return self.send("GET OPERATION MODE")
 
     # pylint: disable=too-many-arguments
-    def set_sequencer_lut_definition(self, exposure, darktime=0, clear=1, bitdepth=7, wait_for_trigger=1, pattern_index=0, bit_index=0):
+    def set_sequencer_lut_definition(
+        self,
+        exposure,
+        darktime=0,
+        clear=1,
+        bitdepth=7,
+        wait_for_trigger=1,
+        pattern_index=0,
+        bit_index=0,
+    ):
         """
         Set the LUT definition of the DMD controller. Each line represents one pattern. Parameters are
         seperated by comma and are as following:
@@ -441,7 +452,17 @@ class Projector:
         Return type +OK
         """
 
-        return self.send("SET LUT DEFINITION\r\n{},{},{},{},{},{},{}".format(exposure, darktime, clear, bitdepth, wait_for_trigger, pattern_index, bit_index))
+        return self.send(
+            "SET LUT DEFINITION\r\n{},{},{},{},{},{},{}".format(
+                exposure,
+                darktime,
+                clear,
+                bitdepth,
+                wait_for_trigger,
+                pattern_index,
+                bit_index,
+            )
+        )
 
     def set_sequencer_lut_config(self, num_sequences=1, repeats=1):
         """
@@ -471,7 +492,11 @@ class Projector:
 
         Return type +OK
         """
-        return self.send("UPLOAD IMAGE PATTERN\r\n{}\r\n{}\r\n{}".format(pattern_index, bitmap_size, bitmap_data))
+        return self.send(
+            "UPLOAD IMAGE PATTERN\r\n{}\r\n{}\r\n{}".format(
+                pattern_index, bitmap_size, bitmap_data
+            )
+        )
 
     def set_video_source(self, source="HDMI"):
         """
@@ -558,29 +583,46 @@ class Projector:
         """
         self.screenThread.screen.clear()
 
+    def read_all_status(self):
+        """
+        Return commonly queried status.
+        """
+        return {
+            "dmd_status": self.get_dmd_status(),
+            "led_feedback": self.get_led_intensity(),
+            "led_temp": self.get_led_temp(),
+            "led_driver_temp": self.get_led_driver_board_temp(),
+            "led_sticky_errors": self.get_sticky_errors(),
+            "led_driver_status": self.get_led_driver_status(),
+        }
+
     def project(self, image, exposure, power, repeats=1):
         """
         Call all of the necessary methods to project an image, and block until projection
         is complete.
         """
-        print("start exposure")
         self.set_led_amplitude(power)
-        print("exp time", exposure)
-
-        if repeats == 0:    # if continuous display is desired
-            self.set_sequencer_lut_definition(33100, 0, 0, 7, 0, 0, 0)  # this provides the minimum blanking of 233 us of the full 33333 us cycle (at 30Hz on HDMI)
-            self.set_sequencer_lut_config(repeats=repeats)                      # 0 means repeat forever
-            self.screenThread.screen.draw(image)                                # draw to virtual screen
-            self.start_sequencer()                                              # start the sequencer and don't stop it (will be stopped on program exit)
-        else:               # normal display is desired
+        if repeats == 0:  # if continuous display is desired
+            self.set_sequencer_lut_definition(
+                33100, 0, 0, 7, 0, 0, 0
+            )  # this provides the minimum blanking of 233 us of the full 33333 us cycle (at 30Hz on HDMI)
+            self.set_sequencer_lut_config(repeats=repeats)  # 0 means repeat forever
+            self.screenThread.screen.draw(image)  # draw to virtual screen
+            self.start_sequencer()  # start the sequencer and don't stop it (will be stopped on program exit)
+        else:  # normal display is desired
             for t in self.split_exposure_time(exposure):
-                self.set_sequencer_lut_definition(exposure=t*1000)      # the TI board expects exposure in microseconds
-                self.set_sequencer_lut_config(repeats=repeats)          # set the number of repetitions
-                self.screenThread.screen.draw(image)                    # draw to the virtual screen
+                self.set_sequencer_lut_definition(
+                    exposure=t * 1000
+                )  # the TI board expects exposure in microseconds
+                self.set_sequencer_lut_config(
+                    repeats=repeats
+                )  # set the number of repetitions
+                self.screenThread.screen.draw(image)  # draw to the virtual screen
                 time.sleep(0.1)
-                self.start_sequencer()                                  # start the sequencer
+                self.start_sequencer()  # start the sequencer
                 time.sleep(0.1 + t * 1e-3)
-                self.stop_sequencer()                                   # stop the sequencer
+                self.stop_sequencer()  # stop the sequencer
+                self.clear_image()
 
     def projectMulti(self, images, exposureTimes, ledPowers):
         """Project multiple images with its own expoure time and
@@ -594,7 +636,8 @@ class Projector:
         for image, expTime, power in zip(images, exposureTimes, ledPowers):
             self.project(image, expTime, power)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     projectorResolution = (2560, 1600)
     p = Projector(projectorResolution)
     p.project("images/calibrate.png", exposure=1000, power=100)

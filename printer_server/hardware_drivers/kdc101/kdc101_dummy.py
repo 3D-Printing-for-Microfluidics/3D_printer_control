@@ -1,58 +1,58 @@
-import time
-import atexit
-from struct import pack, unpack
-import serial
-import serial.tools.list_ports
+from printer_server.logging_handler import dummy_log
 
-class KDC101_dummy():
-    #Port Settings
-    baud_rate = 115200
-    data_bits = 8
-    stop_bits = 1
-    Parity = serial.PARITY_NONE
-    Channel = 1                     # channel is always 1 for a K Cube/T Cube
-    Device_Unit_SF = 34304.         # pg 34 of protocol PDF (as of Issue 23)
-    destination = 0x50              # destination byte; 0x50 for T Cube/K Cube, USB controllers
-    source = 0x01                   # source Byte
-    maxPos = 25.0
-    minPos = 0.0
-    relativeMode = True
 
-    def __init__(self, defaultPos=0):
-        print(" kdc101 - __init({})__".format(defaultPos))
+class KDC101_dummy:
+    @dummy_log
+    def __init__(self, *args, **kwargs):
+        self.position = 0
 
+    @dummy_log
     def home(self):
-        print(" kdc101 - home()")
+        pass
 
-    def move(self, pos, microns=True, fast=False, relative=True):
-        print(" kdc101 - move({},{})".format(pos, microns))
+    @dummy_log
+    def move(self, *args, **kwargs):
+        if "relative" in kwargs and kwargs["relative"]:
+            self.position += args[0]
+        else:
+            self.position = args[0]
 
-    def setRelative(self):
-        print(" kdc101 - setRelative()")
+    @dummy_log
+    def setRelative(self, *args, **kwargs):
+        pass
 
-    def setAbsolute(self):
-        print(" kdc101 - setAbsolute()")
+    @dummy_log
+    def setAbsolute(self, *args, **kwargs):
+        pass
 
-    def confirmMoveFinished(self):
-        print(" kdc101 - confirmMoveFinished()")
+    @dummy_log
+    def confirmMoveFinished(self, *args, **kwargs):
+        pass
 
-    def initialize(self):
-        print(" kdc101 - initialize()")
+    @dummy_log
+    def initialize(self, *args, **kwargs):
+        pass
 
-    def sendServerAlive(self):
-        print(" kdc101 - sendServerAlive()")
+    @dummy_log
+    def sendServerAlive(self, *args, **kwargs):
+        pass
 
-    def getHardwareInfo(self):
-        print(" kdc101 - getHardwareInfo()")
+    @dummy_log
+    def getHardwareInfo(self, *args, **kwargs):
+        pass
 
-    def enableStage(self, enable=True):
-        print(" kdc101 - enableStage({})".format(enable))
+    @dummy_log
+    def enableStage(self, *args, **kwargs):
+        pass
 
-    def getUSBDevice(self):
-        print(" kdc101 - getUSBDevice()")
+    @dummy_log
+    def getUSBDevice(self, *args, **kwargs):
+        pass
 
-    def flushUSB(self):
-        print(" kdc101 - flushUSB()")
+    @dummy_log
+    def flushUSB(self, *args, **kwargs):
+        pass
 
-    def getCurrentPos(self):
-        print(" kdc101 - getCurrentPos()")
+    @dummy_log
+    def getCurrentPos(self, *args, **kwargs):
+        return self.position

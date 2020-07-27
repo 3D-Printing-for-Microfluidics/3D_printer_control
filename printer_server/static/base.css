@@ -1,0 +1,19 @@
+.container {
+  width: auto;
+  max-width: 680px;
+  padding: 0 15px;
+}
+
+.jumbotron {
+  padding-top: 1em;
+  padding-bottom: 1em;
+  margin-bottom: 1.5rem;
+}
+
+.navbar {
+  padding: 0
+}
+
+.jumbotron h2 {
+  margin-bottom: 0;
+}
