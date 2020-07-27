@@ -96,6 +96,9 @@ function initDropbox() {
 }
 
 var get_file_str = function () {
+    if (PENDING_FILES.length <= 0) {
+        return "No files selected."
+    }
     var file_str = PENDING_FILES.length > 1 ? " files" : " file";
     return PENDING_FILES.length + file_str + " selected"
 }
