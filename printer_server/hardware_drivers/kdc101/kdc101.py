@@ -27,6 +27,7 @@ class KDC101:
     maxPos = 25.0
     minPos = 0.0
     relativeMode = True
+    homed = False
 
     def __init__(self, defaultPos=0):
         # Controller's Port and Channel
@@ -57,9 +58,27 @@ class KDC101:
         # Confirm stage homed before advancing; MGMSG_MOT_MOVE_HOMED
         Rx = ""
         Homed = pack("<H", 0x0444)
-        while Rx != Homed:
+        # we do this with number of attempts as it might otherwise freeze here (300 attempts = ~25 sec)
+        # if it freezes, we just home again
+        attempts = 0
+        while Rx != Homed and not self.homed:
+            if attempts > 300:
+                print("Homing Failed: Trying again")
+                self.KDC101.write(
+                    pack(
+                        "<HBBBB",
+                        0x0443,
+                        self.Channel,
+                        0x00,
+                        self.destination,
+                        self.source,
+                    )
+                )
+                attempts = 0
             Rx = self.KDC101.read(2)
+            attempts = attempts + 1
 
+        self.homed = True
         print("Stage Homed")
         self.flushUSB()
 
@@ -96,6 +115,8 @@ class KDC101:
         else:
             return False
 
+        # we do this recursively otherwise it might freeze here (each ittr = ~10 sec)
+        # if it freezes, we just home again
         self.KDC101.write(
             pack(
                 "<HBBBBHi",
@@ -109,7 +130,9 @@ class KDC101:
             )
         )
         print("Moving stage", pos, "...")
-        self.confirmMoveFinished()
+        finished_succeccfully = self.confirmMoveFinished()
+        if not finished_succeccfully:
+            self.move(0)
         return True
 
     def setRelative(self):
@@ -122,11 +145,17 @@ class KDC101:
         # Confirm stage completed move before advancing; MGMSG_MOT_MOVE_COMPLETED
         Rx = ""
         Moved = pack("<H", 0x0464)
+        attempts = 0
         while Rx != Moved:
+            if attempts > 100:
+                print("Move Failed: Trying again")
+                return False
             Rx = self.KDC101.read(2)
+            attempts = attempts + 1
 
         print("Move Complete")
         self.flushUSB()
+        return True
 
     def initialize(self):
         # Create Serial Object
@@ -156,6 +185,14 @@ class KDC101:
         self.KDC101.flushOutput()
 
     def getCurrentPos(self):
+        # for some reason sometimes the first one fails.
+        # if it is startup, the first 2 fail
+        # so we get it twice
+        self.getCurrentPosHelper()
+        self.getCurrentPosHelper()
+        return self.getCurrentPosHelper()
+
+    def getCurrentPosHelper(self):
         # Request Position; MGMSG_MOT_REQ_POSCOUNTER
         self.KDC101.write(
             pack("<HBBBB", 0x0411, self.Channel, 0x00, self.destination, self.source)
@@ -176,26 +213,24 @@ class KDC101:
         getpos = round(
             getpos * 1000, 1
         )  # convert to microns and round to 1 decimal place
+        self.flushUSB()  # added to test if it fixes the read error
+
+        if not self.homed and getpos == 0.0:
+            return "undef"
+
         return getpos
 
 
 if __name__ == "__main__":
     kc = KDC101()
     print(kc.getCurrentPos())
-    print(kc.getCurrentPos())
-    print(kc.getCurrentPos())
     kc.home()
 
     for _ in range(2):
         print(kc.getCurrentPos())
-        print(kc.getCurrentPos())
-        print(kc.getCurrentPos())
         kc.move(1000)
-        print(kc.getCurrentPos())
-        print(kc.getCurrentPos())
         print(kc.getCurrentPos())
         kc.move(-1000)
 
-    print(kc.getCurrentPos())
-    print(kc.getCurrentPos())
+    kc.move(10000)
     print(kc.getCurrentPos())

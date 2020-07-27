@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Control view."""
 import os
-
+import threading
 from pathlib import Path
 from datetime import datetime
 from PIL import Image
@@ -160,11 +160,16 @@ def moveCalibrationMotor(message):
 @socketio.on("calibration_motor_home", namespace="/manual")
 def homeCalibrationMotor(message):
     axis = message["axis"]
-    if axis == "Distance":
-        kdc.home()
-    else:
-        tiptilt.home()
-    emit_calibration_positions()
+
+    def func(axis):
+        if axis == "Distance":
+            kdc.home()
+        else:
+            tiptilt.home()
+        emit_calibration_positions()
+
+    t = threading.Thread(target=func, args=[axis])
+    t.start()
 
 
 @socketio.on("light_engine_stop", namespace="/manual")
