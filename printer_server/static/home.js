@@ -197,6 +197,7 @@ $(document).ready(function () {
     // Set up the handler for the file input box.
     $("#file-picker").on("change", function () {
         addFiles(this.files);
+        this.value = null
     });
 
     // Handle the submit button.
