@@ -59,7 +59,12 @@ imagePath = os.path.join(Config.UPLOAD_FOLDER, "calibration_images", "temp.png")
 # Decorator to handle navigation to calibration page
 @blueprint.route("/manual")
 def index():
-    return render_template("manual_controls.html")
+    return render_template(
+        "manual_controls.html",
+        tip_position=tiptilt.get_position("Tip"),
+        tilt_position=tiptilt.get_position("Tilt"),
+        dist_position=kdc.getCurrentPos(),
+    )
 
 
 @socketio.on("set_external_control_enable", namespace="/manual")
