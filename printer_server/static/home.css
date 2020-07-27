@@ -25,6 +25,7 @@ pre {
     font-family: "Lato";
     --font-family-sans-serif:"Lato";
     font-size: 1rem;
+    margin-bottom: 0;
 }
 
 .delete-job.btn:not(:disabled):not(.disabled) {
