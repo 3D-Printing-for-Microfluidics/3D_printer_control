@@ -215,15 +215,14 @@ class Galil:
     def home(self, axis="A"):
         a = convertAxis(axis)  # check that the axis is valid
         self.motorOn()  # turn motor on
-        self.startJog(speed=-25)  # move up until the limit switch is triggered
+        self.startJog(speed=-15)  # move up until the limit switch is triggered
         self.g.GMotionComplete(a)  # block until motion planning is complete
         self.stopJog()  # restores pre-jog speed
         self.motorOn()  # turn motor back on (limit switch was tripped, which turns it off)
         self.send("HM")  # send home command
         self.send("BGA")  # start homing
-        self.waitForMotionComplete(
-            0
-        )  # block until motion is complete (encoder is set to 0 at end of homing)
+        # block until motion is complete (encoder is set to 0 at end of homing)
+        self.waitForMotionComplete(0)
         self.homed = True  # update class homed status
 
     # blocking call to relative move an axis the specified distance at speed (in mm/sec)
@@ -326,9 +325,8 @@ class Galil:
             else:
                 counter = 0
             time_count += 1
-            if (
-                time_count >= 1000
-            ):  # timeout for collecting data, motor won't reach position
+            # timeout for collecting data, motor won't reach position
+            if time_count >= 10000:
                 print(
                     "Warning - Z motor didn't reach position. Got to {} but needed {}".format(
                         last_position, cnts
@@ -340,7 +338,6 @@ class Galil:
                             last_position, cnts
                         )
                     )  # record sent command in log file
-                # exit("Z motor didn't reach position. Got to {} but needed {}".format(last_position, cnts))
                 break
         self.data[self.move_num].append({"time": time.time(), "position": last_position})
         self.data[self.move_num].append({"duration": time.time() - start_time})
