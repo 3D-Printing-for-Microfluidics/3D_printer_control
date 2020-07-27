@@ -13,6 +13,7 @@
 
 {% block page_content %}
 
+
 <container>
     <div class="row justify-content-center">
         <label>Filter by Start Time</label>
@@ -29,25 +30,30 @@
 <table class="table table-sm table-bordered">
     <thead>
         <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Start Time</th>
-            <th scope="col">End Time</th>
-            <th scope="col">Upload Time</th>
-            <th scope="col">Completed</th>
+            <th scope="col" class="justify-center">Name</th>
+            <th scope="col" class="justify-center">Start Time</th>
+            <th scope="col" class="justify-center">End Time</th>
+            <th scope="col" class="justify-center">Upload Time</th>
+            <th scope="col" class="justify-center">Completed</th>
+            <th scope="col" class="justify-center">Reprint</th>
         </tr>
     </thead>
     <tbody>
         {% for rec in print_records.items %}
         <tr id="row-{{ rec.id }}">
-            <td><a href="{{ url_for('print_history.download', job_id=rec.id) }}">{{ rec.original_filename }}</a></td>
-            <td>{{ rec.start_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+            <td class="align-middle"><a
+                    href="{{ url_for('print_history.download', job_id=rec.id) }}">{{ rec.original_filename }}</a></td>
+            <td class="align-middle justify-center">{{ rec.start_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
             {% if rec.end_time %}
-            <td>{{ rec.end_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+            <td class="align-middle justify-center">{{ rec.end_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
             {% else %}
-            <td></td>
+            <td class="align-middle justify-center"></td>
             {% endif %}
-            <td>{{ rec.upload_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
-            <td>{{ 'Yes' if rec.completed else 'No' }}</td>
+            <td class="align-middle justify-center">{{ rec.upload_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+            <td class="align-middle justify-center">{{ 'Yes' if rec.completed else 'No' }}</td>
+            <td class="align-middle justify-center"><button type="button" class="btn btn-outline-info btn-sm">Add to
+                    queue</button>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
@@ -144,4 +150,6 @@
         location.href = "{{ url_for('print_history.index') }}" + '?start=' + $('#start-date').val() + '&end=' + $('#end-date').val();
     });
 </script>
+<script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='print_history.js') }}"></script>
 {% endblock %}

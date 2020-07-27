@@ -1,9 +1,12 @@
 import os
+import shutil
 from datetime import datetime, timedelta
 from flask import Blueprint, request, render_template, flash, send_file
 
+from printer_server.models import PrintRecord, PrintQueue
 from printer_server.settings import Config
-from printer_server.models import PrintRecord
+from printer_server.extensions import socketio
+from printer_server.print_file_validator import validate_v02
 
 blueprint = Blueprint(
     "print_history", __name__, url_prefix="/", static_folder="../static"
@@ -81,3 +84,39 @@ def download(job_id):
         as_attachment=True,
         attachment_filename=job.original_filename,
     )
+
+
+@socketio.on("add_to_queue", namespace="/print_history")
+def add_to_queue(job_id):
+    """Add the print job to the print queue."""
+    job_id = job_id.split("-")[1]
+    job = PrintRecord.query.get_or_404(job_id)
+    upload_time = datetime.now()
+    old_filename = os.path.join(Config.UPLOAD_FOLDER, "print_history", job.zip_filename)
+    new_filename = os.path.join(
+        Config.UPLOAD_FOLDER,
+        "queue",
+        f"{upload_time.strftime('job-%Y-%m-%d_%H-%M-%S.%f')}.zip",
+    )
+    shutil.copyfile(old_filename, new_filename)
+
+    try:
+        validate_v02(new_filename)
+        msg = f"{job.original_filename} added to print queue."
+        print(msg)
+        socketio.emit(
+            "flash", {"text": msg, "category": "success"}, namespace="/print_history"
+        )
+        PrintQueue(
+            original_filename=job.original_filename,
+            upload_time=upload_time,
+            upload_ip=request.remote_addr,
+        ).save()
+    except ValueError as e:
+        msg = f"Job validation failed for {job.original_filename}:\n {str(e).strip()}"
+        socketio.emit(
+            "flash", {"text": msg, "category": "danger"}, namespace="/print_history"
+        )
+        print(msg)
+        os.remove(new_filename)
+    return ""
