@@ -32,8 +32,9 @@ pre {
     background-color: #222
 }
 
-.btn:not(:disabled):not(.disabled):hover {
+.delete-job.btn:not(:disabled):not(.disabled):hover {
     color: inherit;
+    background-color: #F39C12;
 }
 
 .table-success,.table-success>td,.table-success>th{
