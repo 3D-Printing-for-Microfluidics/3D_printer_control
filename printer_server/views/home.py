@@ -19,7 +19,7 @@ from printer_server.print_file_validator import validate_v02
 from printer_server.models import PrintQueue, PrintRecord
 from printer_server.extensions import db, socketio
 
-blueprint = Blueprint("printing", __name__, url_prefix="/", static_folder="../static")
+blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static")
 
 
 def run_in_thread(state, text):
@@ -482,7 +482,7 @@ print_control = PrintControl()
 @blueprint.route("/")
 def index():
     allJobs = PrintQueue.query.all()
-    return render_template("printing.html", allJobs=allJobs)
+    return render_template("home.html", allJobs=allJobs)
 
 
 @socketio.on("connect", namespace="/printing")

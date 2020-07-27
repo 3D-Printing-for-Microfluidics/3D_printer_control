@@ -4,7 +4,7 @@
 
 {% block styles %}
 {{ super() }}
-<link href="{{ url_for('static', filename='css/chart.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='chart.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block page_content %}
@@ -17,8 +17,8 @@
 
 {% block scripts %}
 {{super()}}
-<script src="{{ url_for('static', filename='js/ajax-socket.io-2.1.0.min.js') }}"></script>
-<!-- <script src="{{ url_for('static', filename='js/plotly-1.39.4.min.js') }}"></script> -->
-<script src="{{ url_for('static', filename='js/plotly-1.54.6.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/chart.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
+<!-- <script src="{{ url_for('static', filename='lib/plotly-1.39.4.min.js') }}"></script> -->
+<script src="{{ url_for('static', filename='lib/plotly-1.54.6.min.js') }}"></script>
+<script src="{{ url_for('static', filename='chart.js') }}"></script>
 {% endblock %}

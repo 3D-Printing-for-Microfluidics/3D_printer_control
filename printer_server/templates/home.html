@@ -8,7 +8,7 @@
 
 {% block styles %}
 {{ super() }}
-<link href="{{ url_for('static', filename='css/printing.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='home.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block page_content %}
@@ -156,6 +156,6 @@
 
 {% block scripts %}
 {{super()}}
-<script src="{{ url_for('static', filename='js/ajax-socket.io-2.1.0.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/printing.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='home.js') }}"></script>
 {% endblock %}

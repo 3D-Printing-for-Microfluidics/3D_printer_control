@@ -15,7 +15,7 @@ a:hover {
 /* Date picker formatting  */
 
 [type="date"] {
-    background:#fff url(../calendar.png)  97% 50% no-repeat ;
+    background:#fff url(calendar.png)  97% 50% no-repeat ;
 }
 [type="date"]::-webkit-inner-spin-button {
     display: none;
