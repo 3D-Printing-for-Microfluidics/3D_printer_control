@@ -67,3 +67,7 @@
 .form-control{
     background-color: rgb(230, 230, 230);
 }
+
+h5, .h5{
+    margin-top: 6px;
+}
