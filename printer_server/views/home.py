@@ -161,14 +161,14 @@ class PrintControl:
         start_position = self.galil.getPosition()
         start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.galil.relMove(
-            mm=position_settings["Distance up (mm)"],
+            mm=-position_settings["Distance up (mm)"],
             speed=position_settings["BP up speed (mm/sec)"],
             acceleration=position_settings["BP up acceleration (mm/sec^2)"],
         )
         time.sleep(position_settings["Up wait (ms)"] / 1000)
         self.galil.relMove(
-            mm=position_settings["Layer thickness (um)"] / 1000
-            - position_settings["Distance up (mm)"],
+            mm=position_settings["Distance up (mm)"]
+            - position_settings["Layer thickness (um)"] / 1000,
             speed=position_settings["BP up speed (mm/sec)"],
             acceleration=position_settings["BP up acceleration (mm/sec^2)"],
         )
