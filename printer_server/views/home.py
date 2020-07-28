@@ -81,6 +81,7 @@ class PrintControl:
         self.print_settings = None
         self.layer_map = []
         self.next_layer = 0
+        self.paused_position = None
         self.print_thread = None  # will be initialized later on start
         self.printing_stopped = threading.Event()
         self.printing_paused = threading.Event()
@@ -255,6 +256,8 @@ class PrintControl:
         if self.state == "printing":
             self.printing_paused.set()
             self.print_thread.join()
+            self.paused_position = self.galil.getPosition()
+            self.galil.goToZmax()
 
     @run_in_thread("stopped", "Stop Printing")
     def stop(self):
@@ -341,6 +344,8 @@ class PrintControl:
         """Resume a paused print."""
         if self.state != "paused":
             return
+        self.galil.absMove(self.paused_position)
+        self.paused_position = None
         self.state = "printing"
         # update fontend
         msg = {
