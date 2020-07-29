@@ -14,7 +14,7 @@ from .screen import ScreenThread
 # pylint:disable=too-many-public-methods
 class Projector:
     """
-    This is the new VIsitech driver which runs based on their Ethernet interface and API.
+    This driver is based on the Visitech Ethernet interface and API.
     Commands are sent over a TCP connection.
 
     Here is a list of possible errors for different commands:
@@ -66,9 +66,10 @@ class Projector:
 
     """
 
-    def __init__(self, resolution, fullscreen=True):
+    def __init__(self, resolution, fullscreen=True, verbose=True):
         self.resolution = resolution
         self.fullscreen = fullscreen
+        self.verbose = verbose
         self.max_exp_time = 10000  # max single projection time in ms
 
         # setup TCP connection
@@ -128,26 +129,27 @@ class Projector:
 
     def send(self, data):
         """
-        Send the data through the open TCP connection.
+        Send the data through the open TCP connection and return the
+        reply from the Projector.
 
-        Returns the reply from the Projector, with the +OK stripped if present. Error codes
-        will remain in the output if present.
-
+        A string is always returned, with a default value of ''. A
+        RuntimeError is raised if an error is detected in the response.
         """
         reply = None
         with open(self.tcp_log, "a") as f:
             data += "\r\n\r\n"
             data = data.encode()
-            f.write("Sent : {}\n".format(data))
-
-            # transmit data and read response
+            f.write(f"Sent {data}\n")
             self.socket.sendall(data)
             reply = self.socket.recv(1024)
-            f.write("Reply: {}\n".format(reply))
-            reply = str(reply.decode())
-            print("Sent :", str(data).replace("\r\n", " "))
-            print("Reply:", reply.replace("\r\n", " "))
-        return reply
+            f.write("Reply {reply}\n")
+        if self.verbose:
+            print(f"Sent {data}")
+            print(f"Reply {reply}")
+        reply = reply.decode().split("\r\n")
+        if "OK" not in reply[0]:
+            raise RuntimeError(f"Error returned by light engine ({reply[1]}) {reply[2]}")
+        return reply[1]
 
     def load_defaults(self):
         """
@@ -640,4 +642,8 @@ class Projector:
 if __name__ == "__main__":
     projectorResolution = (2560, 1600)
     p = Projector(projectorResolution)
-    p.project("images/calibrate.png", exposure=1000, power=100)
+    # p.project("images/calibrate.png", exposure=1000, power=100)
+    p.send(f"SET AMPLITUDE {100}")
+    p.send(f"SET AMPLITUDE {50}")
+    p.send(f"SET MPLITUDE {50}")
+    p.send(f"SET AMPLITUDE {'X'}")
