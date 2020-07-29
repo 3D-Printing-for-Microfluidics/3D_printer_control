@@ -42,3 +42,9 @@ class SQLAlchemyHandler(logging.Handler):
                 msg=record.__dict__["msg"],
             )
             log.save()
+
+
+class LoggingNameFilter(logging.Filter):
+    def filter(self, record):
+        record.name_last = record.name.rsplit(".", 1)[-1]
+        return True
