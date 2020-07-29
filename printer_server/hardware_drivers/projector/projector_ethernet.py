@@ -102,7 +102,7 @@ class Projector:
                 self.socket.connect((self.host, self.port))
                 connected = True
             except OSError as e:
-                print("{}. Retrying in {} second(s)".format(e, timeout))
+                print(f"{e}. Retrying in {timeout} second(s)")
                 self.socket = None  # get rid of handle to bad socket
                 time.sleep(timeout)  # wait to try again
         if not connected:  # connection failed every time, notify user
@@ -111,9 +111,7 @@ class Projector:
 
         # Create log
         date_and_time = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
-        self.tcp_log = str(
-            self.tcp_log / "light_engine_TCP_dump_{}.txt".format(date_and_time)
-        )
+        self.tcp_log = str(self.tcp_log / f"light_engine_TCP_dump_{date_and_time}.txt")
 
         # start screen thread
         self.screenThread.start()
@@ -169,7 +167,7 @@ class Projector:
 
         Return type +OK
         """
-        return self.send("SET STATIC IP ADDR {}".format(address))
+        return self.send(f"SET STATIC IP ADDR {address}")
 
     def get_version(self):
         """
@@ -227,7 +225,7 @@ class Projector:
 
         Return type +OK and ON or OFF
         """
-        return self.send("SET AMPLITUDE {}".format(amplitude))
+        return self.send(f"SET AMPLITUDE {amplitude}")
 
     def get_led_amplitude(self):
         """
@@ -243,7 +241,7 @@ class Projector:
 
         Return type +OK
         """
-        return self.send("SET OCP {}".format(value))
+        return self.send(f"SET OCP {value}")
 
     def get_led_driver_ocp(self):
         """
@@ -264,7 +262,7 @@ class Projector:
 
         Return type +OK
         """
-        return self.send("SET REG MODE {}".format(mode))
+        return self.send(f"SET REG MODE {mode}")
 
     def get_led_driver_regulation_mode(self):
         """
@@ -315,7 +313,7 @@ class Projector:
 
         Return type +OK
         """
-        return self.send("SET BOARD TEMP LIMIT {}".format(temperature))
+        return self.send(f"SET BOARD TEMP LIMIT {temperature}")
 
     def get_led_driver_board_temp_limit(self):
         """
@@ -333,7 +331,7 @@ class Projector:
 
         Return type +OK
         """
-        return self.send("SET LED TEMP LIMIT {}".format(temperature))
+        return self.send(f"SET LED TEMP LIMIT {temperature}")
 
     def get_led_temp_limit(self):
         """
@@ -408,7 +406,7 @@ class Projector:
         Return type +OK
         """
         time.sleep(5)  # must wait for at least 5 seconds to read or write operation mode
-        return self.send("SET OPERATION MODE {}".format(mode))
+        return self.send(f"SET OPERATION MODE {mode}")
 
     def get_dmd_operation_mode(self):
         """
@@ -453,18 +451,9 @@ class Projector:
 
         Return type +OK
         """
-
-        return self.send(
-            "SET LUT DEFINITION\r\n{},{},{},{},{},{},{}".format(
-                exposure,
-                darktime,
-                clear,
-                bitdepth,
-                wait_for_trigger,
-                pattern_index,
-                bit_index,
-            )
-        )
+        cmd = f"SET LUT DEFINITION\r\n{exposure},{darktime},{clear},{bitdepth},"
+        cmd += f"{wait_for_trigger},{pattern_index},{bit_index}"
+        return self.send(cmd)
 
     def set_sequencer_lut_config(self, num_sequences=1, repeats=1):
         """
@@ -476,7 +465,7 @@ class Projector:
 
         Return type +OK
         """
-        return self.send("SET LUT CONFIG {} {}".format(num_sequences, repeats))
+        return self.send(f"SET LUT CONFIG {num_sequences} {repeats}")
 
     def upload_image(self, pattern_index, bitmap_size, bitmap_data):
         """
@@ -495,9 +484,7 @@ class Projector:
         Return type +OK
         """
         return self.send(
-            "UPLOAD IMAGE PATTERN\r\n{}\r\n{}\r\n{}".format(
-                pattern_index, bitmap_size, bitmap_data
-            )
+            f"UPLOAD IMAGE PATTERN\r\n{pattern_index}\r\n{bitmap_size}\r\n{bitmap_data}"
         )
 
     def set_video_source(self, source="HDMI"):
@@ -510,7 +497,7 @@ class Projector:
         Return type +OK
         """
         # workaround for incorrect API - SET VIDEO SOURCE wasn't actually implemented
-        # return self.send("SET INPUT SOURCE {}".format(source))
+        # return self.send(f"SET INPUT SOURCE {source}")
         if source == "DISPLAYPORT":
             return self.send("INIT DISPLAYPORT")
         return self.send("INIT HDMI")
@@ -537,7 +524,7 @@ class Projector:
 
         Return type +OK
         """
-        return self.send("SET PIXEL MODE {}".format(mode))
+        return self.send(f"SET PIXEL MODE {mode}")
 
     def get_sticky_errors(self):
         """
