@@ -3,9 +3,11 @@
 Projector
 =========
 """
+import sys
 import time
 import atexit
 import socket
+import logging
 from pathlib import Path
 from datetime import datetime
 
@@ -79,11 +81,12 @@ class Projector:
 
     """
 
-    def __init__(self, resolution, fullscreen=True, verbose=True):
+    def __init__(self, resolution, fullscreen=True, log_level=logging.DEBUG):
         self.resolution = resolution
         self.fullscreen = fullscreen
-        self.verbose = verbose
         self.max_exp_time = 10000  # max single projection time in ms
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
 
         # setup TCP connection
         self.host = "192.168.0.10"
@@ -103,7 +106,7 @@ class Projector:
         atexit.register(self.stop_sequencer)  # make sure DMD is stopped on exit
 
     def connect(self, attempts=10, timeout=1):
-        print("Connecting to light engine, this may take up to 1 minute...")
+        self.log.info("Connecting to light engine, this may take up to 1 minute...")
 
         # start TCP connection
         i = 0
@@ -115,12 +118,13 @@ class Projector:
                 self.socket.connect((self.host, self.port))
                 connected = True
             except OSError as e:
-                print(f"{e}. Retrying in {timeout} second(s)")
+                self.log.info("%s. Retrying in %s second(s)", e, timeout)
                 self.socket = None  # get rid of handle to bad socket
                 time.sleep(timeout)  # wait to try again
         if not connected:  # connection failed every time, notify user
-            print("Light engine not found. It it plugged in and powered on?")
-            exit("Light engine not found. It it plugged in and powered on?")
+            msg = "Light engine not found. It it plugged in and powered on?"
+            self.log.critical(msg)
+            sys.exit(msg)
 
         # Create log
         date_and_time = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
@@ -151,15 +155,14 @@ class Projector:
             data += "\r\n\r\n"
             data = data.encode()
             f.write(f"Sent {data}\n")
+            self.log.debug("Sent:  '%s'", data.decode().rstrip())
             self.socket.sendall(data)
             reply = self.socket.recv(1024)
-            f.write("Reply {reply}\n")
-        if self.verbose:
-            print(f"Sent {data}")
-            print(f"Reply {reply}")
+            f.write(f"Reply {reply}\n")
         reply = reply.decode().split("\r\n")
         if "OK" not in reply[0]:
             raise RuntimeError(f"Error returned by light engine ({reply[1]}) {reply[2]}")
+        self.log.debug("Reply: '%s'", reply[1])
         return reply[1]
 
     def load_defaults(self):
@@ -643,6 +646,13 @@ class Projector:
         Call all of the necessary methods to project an image, and block
         until projection is complete.
         """
+        self.log.info(
+            "Exposing %s for %sms at power setting %s. Repeat %s",
+            image,
+            exposure,
+            power,
+            repeats,
+        )
         self.set_led_amplitude(power)
         if repeats == 0:  # if continuous display is desired
             # this provides the minimum blanking of 233 us of the full 33333 us cycle
