@@ -14,7 +14,6 @@ from flask import Blueprint, request, render_template
 
 from printer_server.settings import Config
 from printer_server.hardware_configuration import hardware_driver_handles
-
 from printer_server.print_file_validator import validate_v02
 from printer_server.models import PrintQueue, PrintRecord
 from printer_server.extensions import db, socketio
@@ -379,9 +378,13 @@ class PrintControl:
         self.printing_paused.clear()
         self.layer_map = self.generate_layer_map()
 
-        # create logs
+        # create logs and overwrite any pre-existing data
         position_log = str(self.current_job / "position_data.txt")
         exposure_log = str(self.current_job / "exposure_data.txt")
+        with open(position_log, "w") as f:
+            f.write("")
+        with open(exposure_log, "w") as f:
+            f.write("")
 
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
