@@ -41,7 +41,8 @@ class Galil():
         self.address = address
         self.bottom_position = 267840
         self.top_position = -400000
-
+        self.jogging = False
+        self.pre_jog_speed = 0
 
         # default configuration parameters
         self.axes = ["A"]
