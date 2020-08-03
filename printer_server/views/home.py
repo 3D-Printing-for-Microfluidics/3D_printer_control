@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-"""Main view."""
-
 import os
 import time
 import json
@@ -19,6 +16,26 @@ from printer_server.models import PrintQueue, PrintRecord
 from printer_server.extensions import db, socketio
 
 blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static")
+
+
+def has_bad_metadata(filename):
+    """Check to see if the zip file has a hidden __MACOSX folder."""
+    with ZipFile(filename, "r") as input_file:
+        for item in input_file.namelist():
+            if item.startswith("__MACOSX/"):
+                return True
+    return False
+
+
+def clean_uploaded_file(filename):
+    """Remove unwanted hidden files created by MAC OS in zipfiles."""
+    temp_filename = Path(Config.UPLOAD_FOLDER) / "queue" / "temp.zip"
+    with ZipFile(filename, "r") as old_file, ZipFile(temp_filename, "w") as new_file:
+        for item in old_file.infolist():
+            buffer = old_file.read(item.filename)
+            if not str(item.filename).startswith("__MACOSX/"):
+                new_file.writestr(item, buffer)
+    shutil.move(temp_filename, filename)
 
 
 def run_in_thread(state, text):
@@ -562,7 +579,9 @@ def handleUpload():
             f"{upload_time.strftime('job-%Y-%m-%d_%H-%M-%S.%f')}.zip",
         )
         f.save(filename_on_disk)
-
+        if has_bad_metadata(filename_on_disk):
+            print(f"Removing hiden '__MACOSX' folder from {f.filename}...")
+            clean_uploaded_file(filename_on_disk)
         try:
             validate_v02(filename_on_disk)
             print(f"{f.filename} uploaded successfully.")
