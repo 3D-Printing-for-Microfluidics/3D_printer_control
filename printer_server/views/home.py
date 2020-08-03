@@ -18,6 +18,20 @@ from printer_server.extensions import db, socketio
 blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static")
 
 
+def get_last_focused_position():
+    """Return the last focused position for the distance axis from the
+    position log file.
+    """
+    log_file = Path(Config.PROJECT_ROOT) / "logs" / "calibration_position_log.txt"
+    last_line = None
+    with open(log_file) as f:
+        for line in f:
+            last_line = line.rstrip()
+    for char in ["{", "}", ":", "'", ","]:
+        last_line = last_line.replace(char, "")
+    return float(last_line.split(" ")[-1])
+
+
 def has_bad_metadata(filename):
     """Check to see if the zip file has a hidden __MACOSX folder."""
     with ZipFile(filename, "r") as input_file:
@@ -241,6 +255,9 @@ class PrintControl:
             self.state = "busy"
             self.tiptilt.connect()
             self.kdc.initialize()
+            if not self.kdc.homed:
+                self.kdc.home()
+                self.kdc.move(get_last_focused_position(), relative=False)
             self.galil.connect()
             self.galil.motorOn()
             self.galil.home()

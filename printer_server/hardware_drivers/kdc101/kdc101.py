@@ -27,7 +27,6 @@ class KDC101:
     maxPos = 25.0
     minPos = 0.0
     relativeMode = True
-    homed = False
 
     def __init__(self, defaultPos=0):
         # Controller's Port and Channel
@@ -45,6 +44,10 @@ class KDC101:
         )
         self.getHardwareInfo()
         self.enableStage(enable=True)
+        self.homed = False
+        # the stage only returns a number other than 0 if it is already homed
+        if self.getCurrentPos() != 0:
+            self.homed = True
         atexit.register(self.KDC101.close)
         atexit.register(self.enableStage, enable=False)
 

@@ -5,6 +5,9 @@ class KDC101_dummy:
     @dummy_log
     def __init__(self, *args, **kwargs):
         self.position = 0
+        self.homed = False
+        if self.getCurrentPos() != 0:
+            self.homed = True
 
     @dummy_log
     def home(self):
