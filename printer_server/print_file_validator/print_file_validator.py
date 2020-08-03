@@ -34,8 +34,12 @@ def check_for_unique_print_settings(unzipped_dir):
     """Return the print settings as JSON, checking that there is only 1
     print settings file in the directory.
     """
-    json_files = list(unzipped_dir.rglob("*.json"))
-    if len(json_files) != 1:
+    json_files = list(unzipped_dir.glob("*.json"))
+    if len(json_files) < 1:
+        msg = "Could not find a json file. "
+        msg += "Make sure there is a json file in the top level directory."
+        raise ValueError(msg)
+    if len(json_files) > 1:
         raise ValueError(f"More than 1 json file: {json_files}")
     return read_json(json_files[0])
 
@@ -68,7 +72,7 @@ def validate_against_schema(print_settings, schema):
 
 def check_image_format(temp_dir):
     """Ensure all images in the print file are 8-bit grayscale PNG."""
-    slices = list(temp_dir.rglob("*.png"))
+    slices = list(temp_dir.glob("*.png"))
     for image_file in slices:
         image_file = temp_dir / Path(image_file)
         with Image.open(image_file) as img:
@@ -81,8 +85,8 @@ def check_referenced_images_exist(print_settings, temp_dir):
     """Ensure that all images referenced in the print settings are
     included in the print file.
     """
-    slices = list(temp_dir.rglob("*.png"))
     slices_folder = Path(print_settings["Header"]["Image directory"])
+    slices = list(temp_dir.glob(f"{slices_folder}/*.png"))
     img = print_settings["Default layer settings"]["Image settings"]["Image file"]
 
     if temp_dir / slices_folder / Path(img) not in slices:
@@ -99,7 +103,7 @@ def check_referenced_images_exist(print_settings, temp_dir):
 
 
 if __name__ == "__main__":
-    for print_job in Path("test_print_files_v2").rglob("*.zip"):
+    for print_job in Path("test_print_files_v2").glob("*.zip"):
         try:
             validate_v02(print_job)
             print(f"{print_job} is good")
