@@ -55,7 +55,6 @@ def run_in_thread(state, text):
                 self.state = state
                 socketio.emit(self.state, dict(), namespace="/printing", broadcast=True)
 
-            # self.state = "busy"
             msg = {
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "text": text,
@@ -119,6 +118,7 @@ class PrintControl:
             "paused",
             "stopped",
             "completed",
+            "busy",
         ]:
             self._state = state
         else:
@@ -238,6 +238,7 @@ class PrintControl:
     def initialize(self):
         """Put all hardware into starting configuration."""
         if self.state == "uninitialized":
+            self.state = "busy"
             self.tiptilt.connect()
             self.kdc.initialize()
             self.galil.connect()
@@ -250,6 +251,7 @@ class PrintControl:
     def planarizationStep1(self):
         """Lower build platform to lower position for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
+            self.state = "busy"
             self.galil.goToZmin()
 
     @run_in_thread("planarized", "Planarization Step 2")
