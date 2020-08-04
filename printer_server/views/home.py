@@ -224,10 +224,9 @@ class PrintControl:
             exposure_time_ms = settings["Layer exposure time (ms)"]
             power = settings["Light engine power setting"]
             defocus_um = settings["Relative focus position (um)"]
-
             start_position = self.kdc.getCurrentPos()
             if defocus_um != 0:
-                self.kdc.move(defocus_um)
+                self.kdc.move(start_position + defocus_um, relative=False)
             time.sleep(settings["Wait before exposure (ms)"] / 1000)
             defocus_position = self.kdc.getCurrentPos()
             pre_exposure_status = self.projector.read_all_status()
@@ -235,12 +234,11 @@ class PrintControl:
             post_exposure_status = self.projector.read_all_status()
             time.sleep(settings["Wait after exposure (ms)"] / 1000)
             if defocus_um != 0:
-                self.kdc.move(-defocus_um)
-            end_position = self.kdc.getCurrentPos()
+                self.kdc.move(start_position, relative=False)
             return {
                 "pre exposure position": start_position,
                 "defocused position": defocus_position,
-                "post exposure position": end_position,
+                "post exposure position": self.kdc.getCurrentPos(),
                 "pre exposure status": pre_exposure_status,
                 "post exposure status": post_exposure_status,
             }
