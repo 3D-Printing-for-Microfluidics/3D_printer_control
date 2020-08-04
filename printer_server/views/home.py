@@ -294,6 +294,26 @@ class PrintControl:
             self.paused_position = self.galil.getPosition()
             self.galil.goToZmax()
 
+    # @run_in_thread("printing", "Resume Printing")
+    def resume(self):
+        """Resume a paused print."""
+        if self.state != "paused":
+            return
+        self.galil.absMove(cnts=self.paused_position)
+        self.paused_position = None
+        # update fontend
+        msg = {
+            "percent": int(100 * (self.next_layer - 1) / len(self.layer_map)),
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "text": "Resume Printing",
+        }
+        self.state = "printing"
+        socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
+        # resume printing in a new thread
+        app = db.get_app()
+        self.print_thread = threading.Thread(target=self.print_worker, args=[app])
+        self.print_thread.start()
+
     @run_in_thread("stopped", "Stop Printing")
     def stop(self):
         """Stop the printing process.
@@ -371,25 +391,6 @@ class PrintControl:
         socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
 
         # start printing process in a new thread
-        app = db.get_app()
-        self.print_thread = threading.Thread(target=self.print_worker, args=[app])
-        self.print_thread.start()
-
-    def resume(self):
-        """Resume a paused print."""
-        if self.state != "paused":
-            return
-        self.galil.absMove(self.paused_position)
-        self.paused_position = None
-        self.state = "printing"
-        # update fontend
-        msg = {
-            "percent": int(100 * (self.next_layer - 1) / len(self.layer_map)),
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "text": "Resume Printing",
-        }
-        socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
-        # resume printing in a new thread
         app = db.get_app()
         self.print_thread = threading.Thread(target=self.print_worker, args=[app])
         self.print_thread.start()
