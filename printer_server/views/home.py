@@ -107,6 +107,7 @@ class PrintControl:
         self.print_history = Path(Config.UPLOAD_FOLDER) / Path("print_history")
 
         # values used during printing
+        self.focused_position = None
         self.print_settings = None
         self.layer_map = []
         self.next_layer = 0
@@ -226,7 +227,7 @@ class PrintControl:
             defocus_um = settings["Relative focus position (um)"]
             start_position = self.kdc.getCurrentPos()
             if defocus_um != 0:
-                self.kdc.move(start_position + defocus_um, relative=False)
+                self.kdc.move(self.focused_position + defocus_um, relative=False)
             time.sleep(settings["Wait before exposure (ms)"] / 1000)
             defocus_position = self.kdc.getCurrentPos()
             pre_exposure_status = self.projector.read_all_status()
@@ -234,7 +235,7 @@ class PrintControl:
             post_exposure_status = self.projector.read_all_status()
             time.sleep(settings["Wait after exposure (ms)"] / 1000)
             if defocus_um != 0:
-                self.kdc.move(start_position, relative=False)
+                self.kdc.move(self.focused_position, relative=False)
             return {
                 "pre exposure position": start_position,
                 "defocused position": defocus_position,
@@ -253,9 +254,10 @@ class PrintControl:
             self.state = "busy"
             self.tiptilt.connect()
             self.kdc.initialize()
+            self.focused_position = get_last_focused_position()
             if not self.kdc.homed:
                 self.kdc.home()
-                self.kdc.move(get_last_focused_position(), relative=False)
+                self.kdc.move(self.focused_position, relative=False)
             self.galil.connect()
             self.galil.motorOn()
             self.galil.home()
