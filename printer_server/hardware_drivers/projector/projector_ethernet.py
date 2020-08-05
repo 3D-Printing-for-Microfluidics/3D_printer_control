@@ -138,9 +138,12 @@ class Projector:
         self.set_led_driver_regulation_mode("LIGHT")
         self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
 
+        self.log.info("Light engine connected.")
+
     def disconnect(self):
         if self.socket is not None:
             self.socket.close()
+            self.log.info("Light engine disconnected.")
 
     def send(self, data):
         """
