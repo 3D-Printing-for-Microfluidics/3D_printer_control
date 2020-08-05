@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 """The app module, containing the app factory function."""
-import sys
-import logging
 from werkzeug.contrib.fixers import ProxyFix
 from flask import Flask, render_template
-from flask.logging import default_handler
 from printer_server.extensions import db, migrate, socketio
 from printer_server import commands, models
 from printer_server.views import home, manual_controls, print_history, chart
 from printer_server.settings import ProdConfig
 from printer_server.hardware_configuration import hardware_driver_handles
-from printer_server.logging_handler import SQLAlchemyHandler, LoggingNameFilter
+from printer_server.logging_handler import configure_loggers
 
 
 def create_app(config_object=ProdConfig):
@@ -84,20 +81,4 @@ def register_hardware(app):
 
 def register_logger(app):
     if not app.debug:
-        app.logger.removeHandler(default_handler)
-        root_logger = logging.getLogger()
-        # root_logger.setLevel(logging.NOTSET) # uncomment to see all mesasges everywhere
-
-        # logger that puts records in database
-        sh = SQLAlchemyHandler(app)
-        sh.setLevel(logging.WARNING)
-        root_logger.addHandler(sh)
-        app.logger.addHandler(sh)
-
-        # logger to print to console
-        console_handler = logging.StreamHandler(sys.stdout)
-        fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(name_last)s  %(message)s"
-        console_handler.setFormatter(logging.Formatter(fmt, "%Y-%m-%d %H:%M:%S"))
-        console_handler.addFilter(LoggingNameFilter())
-        root_logger.addHandler(console_handler)
-        app.logger.addHandler(console_handler)
+        configure_loggers(app)
