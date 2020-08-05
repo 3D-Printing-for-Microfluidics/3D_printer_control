@@ -70,7 +70,7 @@ class Galil:
         atexit.register(self.disconnect)
 
         # a log to track all communications for debugging, gets created on connect
-        self.log = Path.cwd() / "logs"
+        self.log_file = Path.cwd() / "logs"
 
     def initialize(self):
         self.motorOn()
@@ -106,8 +106,8 @@ class Galil:
 
                 # Create log
                 date_and_time = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
-                self.log = str(
-                    self.log
+                self.log_file = str(
+                    self.log_file
                     / "galil_controller_command_dump_{}.txt".format(date_and_time)
                 )
                 return
@@ -127,7 +127,7 @@ class Galil:
 
     # send a command to the controller, interpret errors if any are thrown
     def send(self, command, notify=True):
-        with open(self.log, "a") as f:
+        with open(self.log_file, "a") as f:
             if notify:
                 self.log.debug("Sent : '%s'", command)
                 f.write("Sent : '{}'\n".format(command))
@@ -314,7 +314,7 @@ class Galil:
                     last_position,
                     cnts,
                 )
-                with open(self.log, "a") as f:
+                with open(self.log_file, "a") as f:
                     f.write(
                         "Warning - possible position error got to {} needed {}".format(
                             last_position, cnts
