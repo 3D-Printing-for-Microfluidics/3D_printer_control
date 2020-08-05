@@ -5,7 +5,7 @@ from printer_server.hardware_drivers.projector import Projector, Projector_dummy
 from printer_server.hardware_drivers.kdc101 import KDC101, KDC101_dummy
 from printer_server.hardware_drivers.tiptilt import TipTilt, TipTilt_dummy
 
-default_log_level = logging.DEBUG
+default_log_level = logging.INFO
 dummy = False
 
 
