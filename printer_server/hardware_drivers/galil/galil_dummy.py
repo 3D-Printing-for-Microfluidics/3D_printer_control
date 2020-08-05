@@ -30,7 +30,7 @@ def parseResponseString(string, axis="A"):
 
 class Galil_dummy:
     @dummy_log
-    def __init__(self, address=None, verbose=False):
+    def __init__(self, address=None):
         self.axes = ["A"]
         self.travel = {"A": 100}  # max travel in mm
         self.ctspmm = {"A": 8000}  # counts/mm for each axis
