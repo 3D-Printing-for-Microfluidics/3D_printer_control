@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Galil control module."""
+import sys
 import time
 import json
 import atexit
+import logging
 from pathlib import Path
 from datetime import datetime
 
@@ -27,23 +29,25 @@ def convertAxis(axis):
 
 # return the value for the specified axis
 def parseResponseString(string, axis="A"):
-    string = string.replace(",", "")  # get rid of commas in response
-    array = string.split()  # split axes into an array
-    axis = convertAxis(axis)  # sterilize axis input
+    string = string.replace(",", "")
+    array = string.split()
+    axis = convertAxis(axis)
     axis_index = ord(axis.lower()) - 97  # converts A B C to 0 1 2
-    value = array[axis_index]  # index into the axis we want
+    value = array[axis_index]
     return int(value)
 
 
 class Galil:
-    def __init__(self, address=None, verbose=False):
+    def __init__(self, address=None, log_level=logging.DEBUG):
 
         # import here so test system doesn't have to install gclib
         import gclib
 
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+
         self.gclib_error = gclib.GclibError
 
-        self.verbose = verbose
         self.address = address
         self.bottom_position = 368000
         self.top_position = -400000
@@ -55,22 +59,18 @@ class Galil:
         self.axes = ["A"]
         self.travel = {"A": 100}  # max travel in mm
         self.ctspmm = {"A": 8000}  # counts/mm for each axis
-        self.data = {}  # for saving calibration data
-        self.move_num = 0  # also for saving calibration data
+        self.data = {}
+        self.move_num = 0
 
         # connection parameters
         self.connected = False
         self.homed = False
-        self.controller_name = "DMC31010"  # controller to search for
-        self.g = gclib.py()  # make an instance of the gclib python class
-        atexit.register(
-            self.disconnect
-        )  # register disconnect to always run at interpreter end
+        self.controller_name = "DMC31010"
+        self.g = gclib.py()
+        atexit.register(self.disconnect)
 
-        # a log with all IO sent to the controller
-        self.log = (
-            Path.cwd() / "logs"
-        )  # a log to track all communications for debugging, gets created on connect
+        # a log to track all communications for debugging, gets created on connect
+        self.log = Path.cwd() / "logs"
 
     def initialize(self):
         self.motorOn()
@@ -88,7 +88,7 @@ class Galil:
     # find and connect to the Galil controller
     def connect(self):
         # Get Ethernet controllers requesting IP addresses
-        print("Searching for {} controller...".format(self.controller_name))
+        self.log.info("Searching for %s controller...", self.controller_name)
         available = self.g.GAddresses()
         self.address = None
         # If there is more than one controller connected, this will only connect to the first
@@ -96,12 +96,12 @@ class Galil:
             if self.controller_name in available[address]:
                 self.address = address.strip("()")
                 self.controller_name = available[address]
-                if self.verbose:
-                    print("Found", available[address], "at", self.address)
-                print("Connecting to {} at {}".format(self.controller_name, self.address))
+                self.log.debug("Found %s at %s", available[address], self.address)
+                self.log.info(
+                    "Connecting to %s at %s", self.controller_name, self.address
+                )
                 self.g.GOpen("{} --direct".format(self.address))
-                if self.verbose:
-                    print("GInfo returned:", self.g.GInfo())
+                self.log.debug("GInfo returned: %s", self.g.GInfo())
                 self.connected = True
 
                 # Create log
@@ -110,10 +110,10 @@ class Galil:
                     self.log
                     / "galil_controller_command_dump_{}.txt".format(date_and_time)
                 )
-
-                # all done, return control
                 return
-        exit("{} not found.".format(self.controller_name))
+        msg = "{} not found.".format(self.controller_name)
+        self.log.critical(msg)
+        sys.exit(msg)
 
     # convert mm to counts for the specified axis
     def mmToCnts(self, mm, axis="A"):
@@ -128,31 +128,21 @@ class Galil:
     # send a command to the controller, interpret errors if any are thrown
     def send(self, command, notify=True):
         with open(self.log, "a") as f:
-            if self.verbose and notify:
-                print(
-                    "Sent : '{}'".format(command)
-                )  # print send command if in verbose mode
-                f.write(
-                    "Sent : '{}'\n".format(command)
-                )  # record sent command in log file
+            if notify:
+                self.log.debug("Sent : '%s'", command)
+                f.write("Sent : '{}'\n".format(command))
             try:
-                response = self.g.GCommand(
-                    command
-                )  # send the command and save the response
-                response = "".join(response)  # join the returned char array into a string
-                if self.verbose and notify and response != "":
-                    f.write("Reply: '{}'\n".format(response))  # record reply in log file
-                    print(
-                        "Reply: '{}'".format(response)
-                    )  # print the response if in verbose mode
-                return response  # return the response
-            except self.gclib_error as error:  # if there is an error
-                error_code = self.g.GCommand("TC 1")  # get the human readable error code
+                response = self.g.GCommand(command)
+                response = "".join(response)
+                if notify and response != "":
+                    self.log.debug("Reply: '%s'", response)
+                    f.write("Reply: '{}'\n".format(response))
+                return response
+            except self.gclib_error as error:
+                error_code = self.g.GCommand("TC 1")
                 if error_code not in ("", "0"):
                     error = error_code
-                print(
-                    "Error: Last command '{}' returned error '{}'".format(command, error)
-                )
+                self.log.error("Last command '%s' returned error '%s'", command, error)
                 return error
 
     # check both limit switches, return a tuple with their trip values
@@ -164,56 +154,50 @@ class Galil:
 
     # read the current position of the specified encoder
     def getPosition(self, axis="A", notify=True):
-        if axis is None:  # if no axis is specified
-            return self.send("TP", notify=notify)  # read all axes
-        axis = convertAxis(axis)  # check that the axis is valid
-        pos = self.send("TP{}".format(axis), notify=notify)  # get the encoder reading
+        if axis is None:
+            return self.send("TP", notify=notify)
+        axis = convertAxis(axis)
+        pos = self.send("TP{}".format(axis), notify=notify)
         return int(pos)
 
     # turn on the specified axis
     def motorOn(self, axis="A"):
-        axis = convertAxis(axis)  # make sure a valid axis was supplied
-        self.send("SH{}".format(axis))  # send the motor enable command
+        axis = convertAxis(axis)
+        self.send("SH{}".format(axis))
 
     # turn off the specified axis
     def motorOff(self, axis="A"):
-        axis = convertAxis(axis)  # make sure a valid axis was supplied
-        self.send("MO{}".format(axis))  # send the motor off command
+        axis = convertAxis(axis)
+        self.send("MO{}".format(axis))
 
     # get the acceleration for the specified axis (mm/sec^2)
     def getAcceleration(self, axis="A"):
-        a = convertAxis(axis)  # check that the axis is valid
-        response = self.send("AC ?", notify=False)  # query the acceleration for all axes
-        acc = parseResponseString(
-            response, a
-        )  # pull out the acceleration value for the axis we care about
-        return (
-            int(acc) / self.ctspmm[a]
-        )  # convert acceleration from cnts/sec^2 to mm/sec^2
+        a = convertAxis(axis)
+        response = self.send("AC ?", notify=False)
+        acc = parseResponseString(response, a)
+        return int(acc) / self.ctspmm[a]
 
     # set the acceleration for the specified axis (mm/sec^2)
     def setAcceleration(self, acceleration, axis="A"):
-        a = convertAxis(axis)  # check that the axis is valid
-        self.send("AC{}={}".format(a, acceleration * self.ctspmm[a]))  # set acceleration
-        self.send("DC{}={}".format(a, acceleration * self.ctspmm[a]))  # set deceleration
+        a = convertAxis(axis)
+        self.send("AC{}={}".format(a, acceleration * self.ctspmm[a]))
+        self.send("DC{}={}".format(a, acceleration * self.ctspmm[a]))
 
     # get the speed for the specified axis (mm/sec)
     def getSpeed(self, axis="A"):
-        a = convertAxis(axis)  # check that the axis is valid
-        response = self.send("SP ?", notify=False)  # query the speed for all axes
-        speed = parseResponseString(
-            response, a
-        )  # pull out the speed value for the axis we care about
-        return int(speed) / self.ctspmm[a]  # convert speed from cnts/sec to mm/sec
+        a = convertAxis(axis)
+        response = self.send("SP ?", notify=False)
+        speed = parseResponseString(response, a)
+        return int(speed) / self.ctspmm[a]
 
     # set the speed for the specified axis (mm/sec)
     def setSpeed(self, speed, axis="A"):
-        a = convertAxis(axis)  # check that the axis is valid
-        self.send("SP{}={}".format(a, speed * self.ctspmm[a]))  # set speed in mm/sec
+        a = convertAxis(axis)
+        self.send("SP{}={}".format(a, speed * self.ctspmm[a]))
 
     # run the Galil homing routine
     def home(self, axis="A"):
-        a = convertAxis(axis)  # check that the axis is valid
+        a = convertAxis(axis)
         self.motorOn()  # turn motor on
         self.startJog(speed=-15)  # move up until the limit switch is triggered
         self.g.GMotionComplete(a)  # block until motion planning is complete
@@ -231,72 +215,71 @@ class Galil:
         a = convertAxis(axis)  # check that the axis is valid
         old_speed = None
         old_acceleration = None
-        if speed is not None:  # if speed is going to be altered
-            old_speed = self.getSpeed()  # record the previous speed
-            self.setSpeed(speed)  # set speed (mm/sec)
-        if acceleration is not None:  # if acceleration is going to be altered
-            old_acceleration = self.getAcceleration()  # record the previous acceleration
-            self.setAcceleration(acceleration)  # change it
-        if mm is not None:  # if mm were supplied
-            cnts = self.mmToCnts(mm)  # convert to counts
-        if cnts is not None:  # if counts has been calculated or supplied
-            start_position = self.getPosition()  # save the starting position
-            self.send("PR{}={}".format(a, cnts))  # move desired distance
-            self.send("BG{}".format(a))  # begin motion
-            self.waitForMotionComplete(
-                start_position + cnts
-            )  # block until motion is complete
-        if speed is not None:  # if speed was altered
-            self.setSpeed(old_speed)  # restore previous speed
-        if acceleration is not None:  # if acceleration was altered
-            self.setAcceleration(old_acceleration)  # change it back to the old value
+        if speed is not None:
+            old_speed = self.getSpeed()
+            self.setSpeed(speed)
+        if acceleration is not None:
+            old_acceleration = self.getAcceleration()
+            self.setAcceleration(acceleration)
+        if mm is not None:
+            cnts = self.mmToCnts(mm)
+        if cnts is not None:
+            start_position = self.getPosition()
+            self.send("PR{}={}".format(a, cnts))
+            self.send("BG{}".format(a))
+            self.waitForMotionComplete(start_position + cnts)
+        if speed is not None:
+            self.setSpeed(old_speed)
+        if acceleration is not None:
+            self.setAcceleration(old_acceleration)
         return self.getPosition()
 
     # blocking call to move specified axis to absolute position at speed (in mm/sec)
     # pylint: disable=too-many-arguments
     def absMove(self, mm=None, cnts=None, speed=None, acceleration=None, axis="A"):
         if not self.homed:
-            exit(
-                "Must home before using absolute movements!"
-            )  # make sure stage is homed before any absolute moves are tried
-        a = convertAxis(axis)  # check that the axis is valid
+            msg = "Must home before using absolute movements!"
+            self.log.critical(msg)
+            sys.exit(msg)
+        a = convertAxis(axis)
         old_speed = None
         old_acceleration = None
-        if speed is not None:  # if speed is going to be altered
-            old_speed = self.getSpeed()  # record the previous speed
-            self.setSpeed(speed)  # set speed (mm/sec)
-        if acceleration is not None:  # if acceleration is going to be altered
-            old_acceleration = self.getAcceleration()  # record the previous acceleration
-            self.setAcceleration(acceleration)  # change it
-        if mm is not None:  # if mm were supplied
-            cnts = self.mmToCnts(mm)  # convert to counts
-        if cnts is not None:  # if counts has been calculated or supplied
-            self.send("PA{}={}".format(a, cnts))  # move to target position
-            self.send("BG{}".format(a))  # begin motion
-            self.waitForMotionComplete(cnts)  # wait for physical motion to complete
-        if speed is not None:  # if speed was altered
-            self.setSpeed(old_speed)  # restore previous speed
-        if acceleration is not None:  # if acceleration was altered
-            self.setAcceleration(old_acceleration)  # change it back to the old value
+        if speed is not None:
+            old_speed = self.getSpeed()
+            self.setSpeed(speed)
+        if acceleration is not None:
+            old_acceleration = self.getAcceleration()
+            self.setAcceleration(acceleration)
+        if mm is not None:
+            cnts = self.mmToCnts(mm)
+        if cnts is not None:
+            self.send("PA{}={}".format(a, cnts))
+            self.send("BG{}".format(a))
+            self.waitForMotionComplete(cnts)
+        if speed is not None:
+            self.setSpeed(old_speed)
+        if acceleration is not None:
+            self.setAcceleration(old_acceleration)
         return self.getPosition()
 
     # nonbocking call that start the axis moving at a specified speed.
     def startJog(self, speed=None, axis="A"):
-        if not self.jogging:  # only save the speed if we are not already jogging
+        if not self.jogging:
             self.pre_jog_speed = self.getSpeed()  # save the speed before jogging begins
-        self.jogging = True  # set flag indicating jogging motion
-        a = convertAxis(axis)  # check that the axis is valid
-        self.send("JG{}={}".format(a, speed * self.ctspmm[a]))  # set jogging speed
-        self.send("BG{}".format(a))  # begin motion
+        self.jogging = True
+        a = convertAxis(axis)
+        self.send("JG{}={}".format(a, speed * self.ctspmm[a]))
+        self.send("BG{}".format(a))
 
     # nonbocking call that stops the motion of the stage.
     def stopJog(self, axis="A"):
-        a = convertAxis(axis)  # check that the axis is valid
-        self.send("ST{}".format(a))  # stops motion
-        self.jogging = False  # clear flag indicating jogging motion
-        self.setSpeed(self.pre_jog_speed)  # restore jogging speed
+        a = convertAxis(axis)
+        self.send("ST{}".format(a))
+        self.jogging = False
+        self.setSpeed(self.pre_jog_speed)
 
-    # blocks execution until the encoder reading reaches the specified value. Also notifys all position data
+    # block execution until the encoder reading reaches target.
+    # Also notifys all position data
     def waitForMotionComplete(self, cnts, axis="A"):
         start_time = time.time()
         last_position = self.getPosition(notify=False)  # save the last position
@@ -304,14 +287,13 @@ class Galil:
         self.data[self.move_num].append({"time": time.time(), "position": last_position})
         counter = 0
         time_count = 0
-        while (
-            counter <= 10
-        ):  # only proceed when 10 good consecutive counts have been read
-            time.sleep(0.001)  # wait 1 ms
-            last_position = self.getPosition(notify=False)  # read position again
-            if any(self.checkLimits()):  # finish early if a limit is tripped
-                print("Limit switch triggered")  # notify user of limit
-                self.g.GMotionComplete(axis)  # wait for controller planning to finish
+        # only proceed when 10 good consecutive counts have been read
+        while counter <= 10:
+            time.sleep(0.001)
+            last_position = self.getPosition(notify=False)
+            if any(self.checkLimits()):
+                self.log.warning("Limit switch triggered")
+                self.g.GMotionComplete(axis)
                 return
             self.data[self.move_num].append(
                 {"time": time.time(), "position": last_position}
@@ -327,17 +309,17 @@ class Galil:
             time_count += 1
             # timeout for collecting data, motor won't reach position
             if time_count >= 10000:
-                print(
-                    "Warning - Z motor didn't reach position. Got to {} but needed {}".format(
-                        last_position, cnts
-                    )
+                self.log.warning(
+                    "Z motor didn't reach position. Got to %s but needed %s",
+                    last_position,
+                    cnts,
                 )
                 with open(self.log, "a") as f:
                     f.write(
                         "Warning - possible position error got to {} needed {}".format(
                             last_position, cnts
                         )
-                    )  # record sent command in log file
+                    )
                 break
         self.data[self.move_num].append({"time": time.time(), "position": last_position})
         self.data[self.move_num].append({"duration": time.time() - start_time})
@@ -348,12 +330,11 @@ class Galil:
         # save the coefficients for this run
         for coeff in ("KP", "KI", "KD", "IL"):
             response = self.send("{} ?,?,?".format(coeff))
-            response = response.replace(",", "")  # get rid of commas in response
-            response = response.split()  # split axes into an array
+            response = response.replace(",", "")
+            response = response.split()
             self.data["{}C".format(coeff)] = response[
                 2
             ]  # get C axis which will be at index 2
-        # save the file
         if filename is None:
             filename = "galil_data_P={}_I={}_D={}_IL={}.txt".format(
                 self.data["KPC"], self.data["KIC"], self.data["KDC"], self.data["ILC"]
@@ -367,21 +348,23 @@ class Galil:
         if self.connected is not False:
             try:
                 self.connected = False
-                self.g.GClose()  # don't forget to close connections!
-                if self.verbose:
-                    print("Disconnected from", self.controller_name)
+                self.g.GClose()
+                self.log.info("Disconnected from %s", self.controller_name)
             except self.gclib_error as e:
-                print("Unexpected GclibError on disconnect:", e)
+                self.log.error("Unexpected GclibError on disconnect: %s", e)
 
     # downlaod a DMC file to the controller
     def downloadProgram(self, filename):
-        print('Downloading "{}" to controller...'.format(filename))
+        self.log.info("Downloading '%s' to controller...", filename)
         return self.g.GProgramDownloadFile(filename)
 
-    # interactive mode - will return a prompt you can issue Galil commands to. Exits with KeyboardInterrupt
+    # interactive mode - will return a prompt you can issue Galil commands to.
+    # Exits with KeyboardInterrupt
     def interactiveMode(self):
         if not self.connected:
-            exit("Must be connected to Galil controller to run interactive mode")
+            msg = "Must be connected to Galil controller to run interactive mode"
+            self.log.critical(msg)
+            sys.exit(msg)
         try:
             while True:
                 cmd = input("Give Galil a command>> ")
@@ -393,6 +376,6 @@ class Galil:
 
 # runs if called from the console
 if __name__ == "__main__":
-    g = Galil(verbose=False)
+    g = Galil(log_level=logging.DEBUG)
     g.connect()
     g.interactiveMode()
