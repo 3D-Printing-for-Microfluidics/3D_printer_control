@@ -168,6 +168,7 @@ class Galil:
     # turn off the specified axis
     def motorOff(self, axis="A"):
         axis = convertAxis(axis)
+        self.log.warning("Axis %s motor turned off. It may sink due to gravity.", axis)
         self.send("MO{}".format(axis))
 
     # get the acceleration for the specified axis (mm/sec^2)
@@ -197,6 +198,7 @@ class Galil:
 
     # run the Galil homing routine
     def home(self, axis="A"):
+        self.log.info("Start homing...")
         a = convertAxis(axis)
         self.motorOn()  # turn motor on
         self.startJog(speed=-15)  # move up until the limit switch is triggered
@@ -208,6 +210,7 @@ class Galil:
         # block until motion is complete (encoder is set to 0 at end of homing)
         self.waitForMotionComplete(0)
         self.homed = True  # update class homed status
+        self.log.info("Homing complete.")
 
     # blocking call to relative move an axis the specified distance at speed (in mm/sec)
     # pylint: disable=too-many-arguments
@@ -225,6 +228,7 @@ class Galil:
             cnts = self.mmToCnts(mm)
         if cnts is not None:
             start_position = self.getPosition()
+            self.log.info("Move axis %s to relative position %s", a, cnts)
             self.send("PR{}={}".format(a, cnts))
             self.send("BG{}".format(a))
             self.waitForMotionComplete(start_position + cnts)
@@ -253,6 +257,7 @@ class Galil:
         if mm is not None:
             cnts = self.mmToCnts(mm)
         if cnts is not None:
+            self.log.info("Move axis %s to absolute position %s", a, cnts)
             self.send("PA{}={}".format(a, cnts))
             self.send("BG{}".format(a))
             self.waitForMotionComplete(cnts)
@@ -268,12 +273,14 @@ class Galil:
             self.pre_jog_speed = self.getSpeed()  # save the speed before jogging begins
         self.jogging = True
         a = convertAxis(axis)
+        self.log.info("Start jog on axis %s at speed %s mm/sec", a, speed)
         self.send("JG{}={}".format(a, speed * self.ctspmm[a]))
         self.send("BG{}".format(a))
 
     # nonbocking call that stops the motion of the stage.
     def stopJog(self, axis="A"):
         a = convertAxis(axis)
+        self.log.info("Stop jog on axis %s", a)
         self.send("ST{}".format(a))
         self.jogging = False
         self.setSpeed(self.pre_jog_speed)
