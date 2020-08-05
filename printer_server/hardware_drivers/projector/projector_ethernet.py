@@ -81,7 +81,7 @@ class Projector:
 
     """
 
-    def __init__(self, resolution, fullscreen=True, log_level=logging.DEBUG):
+    def __init__(self, resolution=(2560, 1600), fullscreen=True, log_level=logging.DEBUG):
         self.resolution = resolution
         self.fullscreen = fullscreen
         self.max_exp_time = 10000  # max single projection time in ms

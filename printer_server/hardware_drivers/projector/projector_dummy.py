@@ -8,7 +8,7 @@ from .screen import ScreenThread
 # pylint:disable=too-many-public-methods
 class Projector_dummy:
     @dummy_log
-    def __init__(self, resolution, fullscreen=True):
+    def __init__(self, resolution=(2560, 1600), fullscreen=True):
         self.resolution = resolution
         self.fullscreen = fullscreen
         self.max_exp_time = 10000  # max single projection time in ms
