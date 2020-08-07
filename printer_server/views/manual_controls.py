@@ -36,12 +36,21 @@ def write_to_position_log(message):
         f.write("{} {}\n".format(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), message))
 
 
-def emit_calibration_positions():
+@socketio.on("get_calibration_positions", namespace="/manual")
+def get_calibration_positions():
     message = {
         "tip": tiptilt.get_position("Tip"),
         "tilt": tiptilt.get_position("Tilt"),
         "distance": kdc.getCurrentPos(),
     }
+    socketio.emit(
+        "calibration_positions", message, namespace="/manual", broadcast=True,
+    )
+    return message
+
+
+def emit_calibration_positions():
+    message = get_calibration_positions()
     write_to_position_log(message)
     socketio.emit(
         "calibration_motor_move_complete", message, namespace="/manual", broadcast=True,
