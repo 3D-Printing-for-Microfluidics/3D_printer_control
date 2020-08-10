@@ -3,12 +3,14 @@ import time
 import json
 import shutil
 import threading
+import numpy as np
+from PIL import Image
 from pathlib import Path
 from zipfile import ZipFile
 from datetime import datetime
 from functools import wraps
-from flask import Blueprint, request, render_template
 
+from flask import Blueprint, request, render_template
 from printer_server.settings import Config
 from printer_server.hardware_configuration import hardware_driver_handles
 from printer_server.print_file_validator import validate_v02
@@ -50,6 +52,43 @@ def clean_uploaded_file(filename):
             if not str(item.filename).startswith("__MACOSX/"):
                 new_file.writestr(item, buffer)
     shutil.move(temp_filename, filename)
+
+
+def um_to_px(um):
+    """Return the number of pixels corresponding to the length 'um' by
+    rounding 'um' to the nearest 'pixel_pitch' increment.
+    """
+    pixel_pitch = 7.6
+    return int(pixel_pitch * round(um / pixel_pitch))
+
+
+def shift_image(img, x=0, y=0):
+    """Shift the image by the specified number of pixels in x and y.
+    Pixels that get shifted out of the image on one side disappear and
+    the new pixels on the opposite side are copied from the original
+    edge. This is accomplished by converting the image to a numpy array
+    and building a list of row and column indicies to slice it with.
+    """
+    new_filename = img.parent / f"{img.stem}_shifted_{x}x_{y}y.png"
+    img = np.array(Image.open(img))
+    idx = [[], []]
+    for axis, shift_by in enumerate((y, -x)):
+        if shift_by > 0:
+            idx[axis] = list(range(shift_by, img.shape[axis]))
+            for _ in range(shift_by):
+                idx[axis].append(img.shape[axis] - 1)
+        elif shift_by < 0:
+            idx[axis] = list(range(0, img.shape[axis] + shift_by))
+            for _ in range(-shift_by):
+                idx[axis].insert(0, 0)
+    if idx[0]:
+        img = img[idx[0], :]
+    if idx[1]:
+        img = img[:, idx[1]]
+    img = Image.fromarray(img).convert("L")
+    print(f"Saving new defocused image {new_filename}...")
+    img.save(new_filename)
+    return Path(new_filename)
 
 
 def run_in_thread(state, text):
@@ -228,6 +267,7 @@ class PrintControl:
             start_position = self.kdc.getCurrentPos()
             if defocus_um != 0:
                 self.kdc.move(self.focused_position + defocus_um, relative=False)
+                image = shift_image(image, x=um_to_px(defocus_um))
             time.sleep(settings["Wait before exposure (ms)"] / 1000)
             defocus_position = self.kdc.getCurrentPos()
             pre_exposure_status = self.projector.read_all_status()
