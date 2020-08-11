@@ -1,18 +1,9 @@
 import re
 import atexit
+import logging
 import serial
 import serial.tools.list_ports
 import serial.serialutil
-
-
-def findUsbPort(hwid):
-    ports = list(serial.tools.list_ports.comports())
-    for p in ports:
-        print(p, p.device, p.hwid, p.vid)
-        if hwid.upper() in p.hwid:
-            print("Found '{}' at '{}'".format(p.hwid, p.device))
-            return p.device
-    return None  # not found
 
 
 # helper function for converting axis name into index
@@ -22,38 +13,47 @@ def get_axis_index(axis):
 
 
 class TipTilt(serial.Serial):
-    def __init__(self, hwid="PID=16C0:0483 SER=5800580", verbose=True):
+    def __init__(self, hwid="PID=16C0:0483 SER=5800580", log_level=logging.DEBUG):
         super().__init__(baudrate=115200, timeout=None)
 
         # self.ser = serial.Serial(baudrate=115200, timeout=None)
         # self.ser.port = None
-
-        self.verbose = verbose
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
         self.hwid = hwid
         self.port = None  # start with no port
         self.r = re.compile(r"\d*\.?\d*$")  # regex for getter functions
         atexit.register(self.close)
 
+    def findUsbPort(self, hwid):
+        ports = list(serial.tools.list_ports.comports())
+        for p in ports:
+            if hwid.upper() in p.hwid:
+                self.log.debug("Found '%s' at '%s'", p.hwid, p.device)
+                return p.device
+        return None  # not found
+
     def connect(self):
-        self.port = findUsbPort(self.hwid)
+        self.port = self.findUsbPort(self.hwid)
         if self.port is None:
-            raise ValueError("Tip/Tilt not found")
+            msg = "Tip/Tilt stage not found!"
+            self.log.critical(msg)
+            raise RuntimeError(msg)
         if self.is_open:
             self.close()
         self.open()
         self.reset_input_buffer()
         self.reset_output_buffer()
-        print("Connected to", self.port)
+        self.log.info("Connected to %s", self.port)
         self.initialize()
 
     def send(self, cmd):
-        if self.verbose:
-            print("Sent: '{}'".format(cmd))
+        self.log.debug("Sent: '%s'", cmd)
         self.write(bytes(cmd + "\r", encoding="ascii"))  # write to serial tx buffer
         response, error = self.receive(cmd)
-        print(response)
+        self.log.debug("Reply: '%s'", response)
         if error:
-            print("There was an error!")
+            self.log.warning("There was an error! %s", response)
         return response
 
     def receive(self, cmd):
@@ -67,8 +67,6 @@ class TipTilt(serial.Serial):
             decoded_buffer = (
                 buffer.decode().rstrip().replace("\r\n", " ")
             )  # decode the byte response (as string) without newlines
-            if self.verbose:
-                print("Response: '{}'".format(decoded_buffer))
             message += decoded_buffer  # build response
             if "Error" in message:
                 error = True  # indicate error state
