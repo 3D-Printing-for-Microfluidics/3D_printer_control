@@ -19,8 +19,8 @@ class Printer3D:
         else:
             self.galil = Galil(log_level=default_log_level)
             self.projector = Projector(log_level=default_log_level)
-            self.kdc = KDC101()
-            self.tiptilt = TipTilt(verbose=True)
+            self.kdc = KDC101(log_level=default_log_level)
+            self.tiptilt = TipTilt(log_level=default_log_level)
 
 
 hardware_driver_handles = Printer3D()
