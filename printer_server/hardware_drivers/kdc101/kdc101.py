@@ -1,22 +1,16 @@
 import time
 import atexit
+import logging
 from struct import pack, unpack
 import serial
 import serial.tools.list_ports
 
-# helper function to find handle to K-Cube
-def find_device():
-    x = serial.tools.list_ports.comports()
-    for device in x:
-        if "K-Cube" in device.description:
-            print("Found {}".format(device))
-            return device.device
-    return None  # stage not found
-
 
 class KDC101:
-    def __init__(self):
+    def __init__(self, log_level=logging.DEBUG):
         self.homed = False
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
         self.Device_Unit_SF = 34304.0  # pg 34 of protocol PDF (as of Issue 23)
         self.Channel = 1
         self.destination = 0x50
@@ -27,10 +21,21 @@ class KDC101:
         self.port = None
         self.serial_handle = None
 
+    # helper function to find handle to K-Cube
+    def find_device(self):
+        x = serial.tools.list_ports.comports()
+        for device in x:
+            if "K-Cube" in device.description:
+                self.log.debug("Found %s", device)
+                return device.device
+        return None
+
     def connect(self):
-        self.port = find_device()
+        self.port = self.find_device()
         if self.port is None:
-            raise ValueError("Thor Labs stage not found")
+            msg = "Thor Labs stage not found"
+            self.log.critical(msg)
+            raise RuntimeError(msg)
         self.serial_handle = serial.Serial(
             port=self.port,
             baudrate=115200,
@@ -49,7 +54,7 @@ class KDC101:
         self.serial_handle.write(
             pack("<HBBBB", 0x0443, self.Channel, 0x00, self.destination, self.source)
         )
-        print("Homing stage...")
+        self.log.info("Homing stage...")
 
         # Confirm stage homed before advancing; MGMSG_MOT_MOVE_HOMED
         Rx = ""
@@ -59,7 +64,7 @@ class KDC101:
         attempts = 0
         while Rx != Homed and not self.homed:
             if attempts > 300:
-                print("Homing Failed: Trying again")
+                self.log.warning("Homing Failed: Trying again")
                 self.serial_handle.write(
                     pack(
                         "<HBBBB",
@@ -75,7 +80,7 @@ class KDC101:
             attempts = attempts + 1
 
         self.homed = True
-        print("Stage Homed")
+        self.log.info("Stage Homed")
         self.flushUSB()
 
     def move(self, pos, microns=True, relative=True):
@@ -103,7 +108,7 @@ class KDC101:
             # Matthew - 10/4/19 - this doesn't appear to have been tested well, removing it for now
             # if not isinstance(currPos, str):
             #     if self.minPos > currPos + position <= self.maxPos:
-            #         print("It's false: currPos: {} pos: {}".format(currPos, position))
+            #         self.log.debug("It's false: currPos: {} pos: {}".format(currPos, position))
             #         return False
         elif abs(position) < 25:
             dUnitpos = int(self.Device_Unit_SF * abs(position))
@@ -113,6 +118,7 @@ class KDC101:
 
         # we do this recursively otherwise it might freeze here (each ittr = ~10 sec)
         # if it freezes, we just home again
+        self.log.info("Moving stage to %s", pos)
         self.serial_handle.write(
             pack(
                 "<HBBBBHi",
@@ -125,9 +131,9 @@ class KDC101:
                 dUnitpos,
             )
         )
-        print("Moving stage", pos, "...")
         finished_succeccfully = self.confirmMoveFinished()
         if not finished_succeccfully:
+            self.log.warning("Move failed. Going to position 0")
             self.move(0)
         return True
 
@@ -144,12 +150,12 @@ class KDC101:
         attempts = 0
         while Rx != Moved:
             if attempts > 100:
-                print("Move Failed: Trying again")
+                self.log.warning("Move Failed: Trying again")
                 return False
             Rx = self.serial_handle.read(2)
             attempts = attempts + 1
 
-        print("Move Complete")
+        self.log.debug("Move Complete")
         self.flushUSB()
         return True
 
@@ -215,14 +221,8 @@ class KDC101:
 
 if __name__ == "__main__":
     kc = KDC101()
-    print(kc.getCurrentPos())
     kc.home()
-
     for _ in range(2):
-        print(kc.getCurrentPos())
         kc.move(1000)
-        print(kc.getCurrentPos())
         kc.move(-1000)
-
     kc.move(10000)
-    print(kc.getCurrentPos())
