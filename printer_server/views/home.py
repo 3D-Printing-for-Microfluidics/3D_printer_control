@@ -403,6 +403,7 @@ class PrintControl:
             original_filename=job_in_queue.original_filename,
             upload_time=job_in_queue.upload_time,
             upload_ip=job_in_queue.upload_ip,
+            start_time=datetime.now(),
             start_ip=request.remote_addr,
         )
         print_history_entry.save(commit=False)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Database models"""
-import datetime as dt
+from datetime import datetime
 
 from printer_server.database import (
     Column,
@@ -19,7 +19,7 @@ class User(SurrogatePK, Model):
     username = Column(db.String(80), unique=True, nullable=False)
     email = Column(db.String(80), unique=True, nullable=False)
     password = Column(db.Binary(128), nullable=True)  #: The hashed password
-    created_at = Column(db.DateTime, nullable=False, default=dt.datetime.utcnow)
+    created_at = Column(db.DateTime, nullable=False, default=datetime.now)
     first_name = Column(db.String(30), nullable=True)
     last_name = Column(db.String(30), nullable=True)
     active = Column(db.Boolean(), default=False)
@@ -128,7 +128,7 @@ class PrintRecord(SurrogatePK, Model):
     upload_time = Column(db.DateTime, nullable=False)
     upload_ip = Column(db.String(30))
     start_ip = Column(db.String(30))
-    start_time = Column(db.DateTime, nullable=False, default=dt.datetime.utcnow)
+    start_time = Column(db.DateTime, nullable=False, default=datetime.now)
     end_time = Column(db.DateTime)
     completed = Column(db.Boolean, nullable=False, default=False)
 
@@ -151,7 +151,7 @@ class ServerLog(SurrogatePK, Model):
     level = Column(db.String)  # info, debug, or error?
     trace = Column(db.String)  # the full traceback printout
     msg = Column(db.String)  # any custom log you may have included
-    created_at = Column(db.DateTime, default=dt.datetime.utcnow)  # the current timestamp
+    created_at = Column(db.DateTime, default=datetime.now)  # the current timestamp
 
     def __init__(self, logger=None, level=None, trace=None, msg=None):
         self.logger = logger
