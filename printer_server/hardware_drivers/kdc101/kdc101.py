@@ -15,45 +15,38 @@ def find_device():
 
 
 class KDC101:
-    # Port Settings
-    baud_rate = 115200
-    data_bits = 8
-    stop_bits = 1
-    Parity = serial.PARITY_NONE
-    Channel = 1  # channel is always 1 for a K Cube/T Cube
-    Device_Unit_SF = 34304.0  # pg 34 of protocol PDF (as of Issue 23)
-    destination = 0x50  # destination byte; 0x50 for T Cube/K Cube, USB controllers
-    source = 0x01  # source Byte
-    maxPos = 25.0
-    minPos = 0.0
-    relativeMode = True
+    def __init__(self):
+        self.homed = False
+        self.Device_Unit_SF = 34304.0  # pg 34 of protocol PDF (as of Issue 23)
+        self.Channel = 1
+        self.destination = 0x50
+        self.source = 0x01
+        self.maxPos = 25.0
+        self.minPos = 0.0
+        self.relativeMode = True
+        self.port = None
+        self.serial_handle = None
 
-    def __init__(self, defaultPos=0):
-        # Controller's Port and Channel
+    def connect(self):
         self.port = find_device()
         if self.port is None:
             raise ValueError("Thor Labs stage not found")
-        self.defaultPos = defaultPos
-        self.KDC101 = serial.Serial(
+        self.serial_handle = serial.Serial(
             port=self.port,
-            baudrate=self.baud_rate,
-            bytesize=self.data_bits,
-            parity=self.Parity,
-            stopbits=self.stop_bits,
+            baudrate=115200,
+            bytesize=8,
+            parity=serial.PARITY_NONE,
+            stopbits=1,
             timeout=0.1,
         )
         self.getHardwareInfo()
         self.enableStage(enable=True)
-        self.homed = False
-        # the stage only returns a number other than 0 if it is already homed
-        if self.getCurrentPos() != 0:
-            self.homed = True
-        atexit.register(self.KDC101.close)
+        atexit.register(self.serial_handle.close)
         atexit.register(self.enableStage, enable=False)
 
     def home(self):
         # Home Stage; MGMSG_MOT_MOVE_HOME
-        self.KDC101.write(
+        self.serial_handle.write(
             pack("<HBBBB", 0x0443, self.Channel, 0x00, self.destination, self.source)
         )
         print("Homing stage...")
@@ -61,13 +54,13 @@ class KDC101:
         # Confirm stage homed before advancing; MGMSG_MOT_MOVE_HOMED
         Rx = ""
         Homed = pack("<H", 0x0444)
-        # we do this with number of attempts as it might otherwise freeze here (300 attempts = ~25 sec)
-        # if it freezes, we just home again
+        # we do this with number of attempts as it might otherwise freeze here
+        # (300 attempts = ~25 sec) if it freezes, we just home again
         attempts = 0
         while Rx != Homed and not self.homed:
             if attempts > 300:
                 print("Homing Failed: Trying again")
-                self.KDC101.write(
+                self.serial_handle.write(
                     pack(
                         "<HBBBB",
                         0x0443,
@@ -78,7 +71,7 @@ class KDC101:
                     )
                 )
                 attempts = 0
-            Rx = self.KDC101.read(2)
+            Rx = self.serial_handle.read(2)
             attempts = attempts + 1
 
         self.homed = True
@@ -120,7 +113,7 @@ class KDC101:
 
         # we do this recursively otherwise it might freeze here (each ittr = ~10 sec)
         # if it freezes, we just home again
-        self.KDC101.write(
+        self.serial_handle.write(
             pack(
                 "<HBBBBHi",
                 code,
@@ -153,39 +146,35 @@ class KDC101:
             if attempts > 100:
                 print("Move Failed: Trying again")
                 return False
-            Rx = self.KDC101.read(2)
+            Rx = self.serial_handle.read(2)
             attempts = attempts + 1
 
         print("Move Complete")
         self.flushUSB()
         return True
 
-    def initialize(self):
-        # Create Serial Object
-        self.getHardwareInfo()
-        self.enableStage(enable=True)
-
     def sendServerAlive(self):
-        self.KDC101.write(
+        self.serial_handle.write(
             pack("<HBBBB", 0x0492, 0x00, 0x00, self.destination, self.source)
         )
 
     def getHardwareInfo(self):
-        # Get HW info; MGMSG_HW_REQ_INFO; may be require by a K Cube to allow confirmation Rx messages
-        self.KDC101.write(pack("<HBBBB", 0x0005, 0x00, 0x00, 0x50, 0x01))
+        # Get HW info; MGMSG_HW_REQ_INFO; may be require by a K Cube to
+        #  allow confirmation Rx messages
+        self.serial_handle.write(pack("<HBBBB", 0x0005, 0x00, 0x00, 0x50, 0x01))
         self.flushUSB()
 
     def enableStage(self, enable=True):
         # Enable Stage; MGMSG_MOD_SET_CHANENABLESTATE
         state = 0x01 if enable else 0x02
-        self.KDC101.write(
+        self.serial_handle.write(
             pack("<HBBBB", 0x0210, self.Channel, state, self.destination, self.source)
         )
         time.sleep(0.1)
 
     def flushUSB(self):
-        self.KDC101.flushInput()
-        self.KDC101.flushOutput()
+        self.serial_handle.flushInput()
+        self.serial_handle.flushOutput()
 
     def getCurrentPos(self):
         # for some reason sometimes the first one fails.
@@ -197,13 +186,13 @@ class KDC101:
 
     def getCurrentPosHelper(self):
         # Request Position; MGMSG_MOT_REQ_POSCOUNTER
-        self.KDC101.write(
+        self.serial_handle.write(
             pack("<HBBBB", 0x0411, self.Channel, 0x00, self.destination, self.source)
         )
 
         # Read back position returns by the cube; Rx message MGMSG_MOT_GET_POSCOUNTER
         _, _, position_dUnits = unpack(
-            "<6sHI", self.KDC101.read(12)
+            "<6sHI", self.serial_handle.read(12)
         )  # first two returns are header and chan_dent
         getpos = position_dUnits / float(self.Device_Unit_SF)
 

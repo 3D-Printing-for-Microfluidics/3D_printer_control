@@ -292,9 +292,9 @@ class PrintControl:
         """Put all hardware into starting configuration."""
         if self.state == "uninitialized":
             self.state = "busy"
-            self.tiptilt.connect()
-            self.kdc.initialize()
             self.focused_position = get_last_focused_position()
+            self.tiptilt.connect()
+            self.kdc.connect()
             if not self.kdc.homed:
                 self.kdc.home()
                 self.kdc.move(self.focused_position, relative=False)

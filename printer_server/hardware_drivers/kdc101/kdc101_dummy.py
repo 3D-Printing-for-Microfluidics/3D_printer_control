@@ -33,7 +33,7 @@ class KDC101_dummy:
         pass
 
     @dummy_log
-    def initialize(self, *args, **kwargs):
+    def connect(self, *args, **kwargs):
         pass
 
     @dummy_log
