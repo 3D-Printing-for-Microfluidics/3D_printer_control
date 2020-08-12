@@ -74,6 +74,7 @@ def index():
         start_date=start_date,
         end_date=end_date,
         boundaries=boundaries,
+        hostname=Config.HOSTNAME,
     )
 
 

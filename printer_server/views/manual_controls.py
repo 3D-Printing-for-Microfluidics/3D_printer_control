@@ -73,6 +73,7 @@ def index():
         tip_position=tiptilt.get_position("Tip"),
         tilt_position=tiptilt.get_position("Tilt"),
         dist_position=kdc.getCurrentPos(),
+        hostname=Config.HOSTNAME,
     )
 
 

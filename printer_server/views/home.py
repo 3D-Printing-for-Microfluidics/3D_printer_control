@@ -580,7 +580,7 @@ print_control = PrintControl()
 @blueprint.route("/")
 def index():
     allJobs = PrintQueue.query.all()
-    return render_template("home.html", allJobs=allJobs)
+    return render_template("home.html", allJobs=allJobs, hostname=Config.HOSTNAME)
 
 
 @socketio.on("connect", namespace="/printing")

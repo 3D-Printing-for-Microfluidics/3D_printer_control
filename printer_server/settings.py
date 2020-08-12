@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Application configuration."""
 import os
+import socket
 
 
 class Config(object):
@@ -16,6 +17,7 @@ class Config(object):
     DB_PATH = os.path.join(PROJECT_ROOT, DB_NAME)
     SQLALCHEMY_DATABASE_URI = "sqlite:///{0}".format(DB_PATH)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    HOSTNAME = socket.gethostname()
 
 
 class ProdConfig(Config):
