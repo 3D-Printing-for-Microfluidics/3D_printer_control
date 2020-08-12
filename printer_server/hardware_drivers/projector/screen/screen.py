@@ -6,9 +6,10 @@ Projector screen module
 # `mttkinter` stands for multi-threading tkinter.
 # The `tkinter` in standard library is not technically thread-safe.
 # `mttkinter` wraps it to make it thread-safe.
-import threading
-import tkinter
 import atexit
+import tkinter
+import logging
+import threading
 from PIL import Image, ImageTk
 
 
@@ -19,7 +20,10 @@ class Screen:
     Most importantly, it works.
     """
 
-    def __init__(self, resolution, fullscreen=True):
+    def __init__(self, resolution, fullscreen=True, log_level=logging.DEBUG):
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+
         self.width, self.height = resolution
         self.root = tkinter.Tk()
         # Uncomment the following line to get a fullscreen window
@@ -61,7 +65,7 @@ class Screen:
         try:
             pilImage = Image.open(fn)
         except (OSError, FileNotFoundError):
-            print("Image not found, drawing white")
+            self.log.warning("Image not found, drawing white")
             pilImage = Image.new(mode="L", size=(self.width, self.height), color=255)
         # Tk canvas only takes `PhotoImage` object
         self.tkImage = ImageTk.PhotoImage(pilImage)

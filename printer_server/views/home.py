@@ -2,6 +2,7 @@ import os
 import time
 import json
 import shutil
+import logging
 import threading
 import numpy as np
 from PIL import Image
@@ -18,6 +19,8 @@ from printer_server.models import PrintQueue, PrintRecord
 from printer_server.extensions import db, socketio
 
 blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static")
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 
 def get_last_focused_position():
@@ -86,7 +89,7 @@ def shift_image(img, x=0, y=0):
     if idx[1]:
         img = img[:, idx[1]]
     img = Image.fromarray(img).convert("L")
-    print(f"Saving new defocused image {new_filename}...")
+    log.info("Saving new defocused image %s", new_filename)
     img.save(new_filename)
     return Path(new_filename)
 
@@ -112,6 +115,7 @@ def run_in_thread(state, text):
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "text": text,
             }
+            log.info(msg["text"])
             socketio.emit("busy", msg, namespace="/printing", broadcast=True)
             _thread = threading.Thread(
                 target=func, args=(self, *args,), kwargs={**kwargs,}
@@ -348,6 +352,7 @@ class PrintControl:
             "text": "Resume Printing",
         }
         self.state = "printing"
+        log.info(msg["text"])
         socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
         # resume printing in a new thread
         app = db.get_app()
@@ -429,6 +434,7 @@ class PrintControl:
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "text": "Start Printing",
         }
+        log.info(msg["text"])
         socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
 
         # start printing process in a new thread
@@ -481,6 +487,10 @@ class PrintControl:
             position_settings = self.get_position_settings(current_layer_settings)
             image_settings_list = self.get_image_settings(current_layer_settings)
 
+            # update log messages
+            msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
+            log.info(msg)
+
             # do moves and log data
             position_data = self.move_build_platform(position_settings)
             with open(position_log, "a") as f:
@@ -492,7 +502,6 @@ class PrintControl:
                 f.write(f"layer {layer} data: {exposure_data}\n")
 
             # update frontend message pane and progress bar
-            msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
             socketio.emit(
                 "print progress",
                 {
@@ -523,6 +532,7 @@ class PrintControl:
                         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "text": "Printing Compeleted",
                     }
+                    log.info(msg["text"])
                     socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
                 latest_record.save()
                 shutil.make_archive(
@@ -542,23 +552,25 @@ class PrintControl:
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "text": "Shutting down",
             }
+            log.info(msg["text"])
             socketio.emit("shutting down", msg, namespace="/printing", broadcast=True)
 
             func = request.environ.get("werkzeug.server.shutdown")
             if func is None:
                 raise RuntimeError("Not running with the Werkzeug Server")
 
-            socketio.emit(
-                "shutdown completed", dict(), namespace="/printing", broadcast=True
-            )
+            msg = "Shutdown completed"
+            log.info(msg)
+            socketio.emit(msg, dict(), namespace="/printing", broadcast=True)
             time.sleep(1)
             func()
 
         else:
             msg = {
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "text": "Try to shutdown 3D printer when it's busy",
+                "text": "Don't try to shutdown 3D printer when it's busy",
             }
+            log.warning(msg["text"])
             socketio.emit("shutdown failed", msg, namespace="/printing", broadcast=True)
 
 
@@ -641,11 +653,11 @@ def handleUpload():
         )
         f.save(filename_on_disk)
         if has_bad_metadata(filename_on_disk):
-            print(f"Removing hiden '__MACOSX' folder from {f.filename}...")
+            log.debug("Removing hiden '__MACOSX' folder from %s ...", f.filename)
             clean_uploaded_file(filename_on_disk)
         try:
             validate_v02(filename_on_disk)
-            print(f"{f.filename} uploaded successfully.")
+            log.info("Print job %s uploaded successfully.", f.filename)
             new_print_job = PrintQueue(
                 original_filename=f.filename,
                 upload_time=upload_time,
@@ -663,8 +675,9 @@ def handleUpload():
                 broadcast=True,
             )
         except ValueError as e:
-            msg = f"Job validation failed for {f.filename}:\n {str(e).strip()}"
-            print(msg)
+            error_string = str(e).strip()
+            msg = f"Job validation failed for {f.filename}:\n {error_string}"
+            log.info("Job validation failed for %s: %s", f.filename, error_string)
             socketio.emit(
                 "validation error",
                 {"text": msg, "category": "danger"},
@@ -685,7 +698,8 @@ def deleteJob(message):
     msg = {
         "job": job_id,
         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "text": f"Print Job ({job.original_filename}) Deleted",
+        "text": f"Print Job ({job.original_filename}) deleted",
     }
     job.delete()
+    log.info(msg["text"])
     socketio.emit("job deleted", msg, namespace="/printing", broadcast=True)

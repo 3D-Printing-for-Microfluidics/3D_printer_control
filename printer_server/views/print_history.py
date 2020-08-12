@@ -1,5 +1,6 @@
 import os
 import shutil
+import logging
 from datetime import datetime, timedelta
 from flask import Blueprint, request, render_template, flash, send_file
 
@@ -11,6 +12,8 @@ from printer_server.print_file_validator import validate_v02
 blueprint = Blueprint(
     "print_history", __name__, url_prefix="/", static_folder="../static"
 )
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 
 def flash_errors(form, category="warning"):
@@ -103,7 +106,7 @@ def add_to_queue(job_id):
     try:
         validate_v02(new_filename)
         msg = f"{job.original_filename} added to print queue."
-        print(msg)
+        log.info(msg)
         socketio.emit(
             "flash", {"text": msg, "category": "success"}, namespace="/print_history"
         )
@@ -117,6 +120,6 @@ def add_to_queue(job_id):
         socketio.emit(
             "flash", {"text": msg, "category": "danger"}, namespace="/print_history"
         )
-        print(msg)
+        log.info(msg)
         os.remove(new_filename)
     return ""
