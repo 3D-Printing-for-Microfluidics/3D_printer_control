@@ -19,7 +19,6 @@ def validate_v02(print_file):
         check_version(print_settings)
         validate_against_schema(print_settings, "schema_v0.2.json")
         check_slices_folder_exists(zip_file_handle, print_settings)
-        check_image_format(temp_dir)
         check_referenced_images_exist(print_settings, temp_dir)
         return print_settings
 
@@ -70,15 +69,12 @@ def validate_against_schema(print_settings, schema):
         raise ValueError(msg)
 
 
-def check_image_format(temp_dir):
-    """Ensure all images in the print file are 8-bit grayscale PNG."""
-    slices = list(temp_dir.glob("*.png"))
-    for image_file in slices:
-        image_file = temp_dir / Path(image_file)
-        with Image.open(image_file) as img:
-            if img.format != "PNG" or img.mode != "L":
-                msg += f"Bad image. '{image_file}' must be an 8-bit grayscale PNG."
-                raise ValueError(msg)
+def check_image_format(image_file):
+    """Ensure the image is an 8-bit grayscale PNG."""
+    with Image.open(image_file) as img:
+        if img.format != "PNG" or img.mode != "L":
+            msg = f"Bad image. '{image_file}' must be an 8-bit grayscale PNG."
+            raise ValueError(msg)
 
 
 def check_referenced_images_exist(print_settings, temp_dir):
@@ -100,6 +96,7 @@ def check_referenced_images_exist(print_settings, temp_dir):
             if img_path not in slices:
                 msg = f"Missing image: '{img}' could not be found."
                 raise ValueError(msg)
+            check_image_format(img_path)
 
 
 if __name__ == "__main__":
