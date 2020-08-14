@@ -62,7 +62,7 @@ def um_to_px(um):
     rounding 'um' to the nearest 'pixel_pitch' increment.
     """
     pixel_pitch = 7.6
-    return int(pixel_pitch * round(um / pixel_pitch))
+    return int(round(um / pixel_pitch))
 
 
 def shift_image(img, x=0, y=0):
