@@ -263,7 +263,8 @@ class PrintControl:
         image_settings_list.
         """
         slices_folder = Path(self.print_settings["Header"]["Image directory"])
-        for settings in image_settings_list:
+        data = {}
+        for i, settings in enumerate(image_settings_list):
             image = self.current_job / slices_folder / Path(settings["Image file"])
             exposure_time_ms = settings["Layer exposure time (ms)"]
             power = settings["Light engine power setting"]
@@ -280,13 +281,14 @@ class PrintControl:
             time.sleep(settings["Wait after exposure (ms)"] / 1000)
             if defocus_um != 0:
                 self.kdc.move(self.focused_position, relative=False)
-            return {
+            data[i] = {
                 "pre exposure position": start_position,
                 "defocused position": defocus_position,
                 "post exposure position": self.kdc.getCurrentPos(),
                 "pre exposure status": pre_exposure_status,
                 "post exposure status": post_exposure_status,
             }
+        return data
 
     def connect(self):
         socketio.emit(self.state, dict(), namespace="/printing")
