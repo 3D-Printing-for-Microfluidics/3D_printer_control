@@ -301,10 +301,9 @@ class PrintControl:
             self.focused_position = get_last_focused_position()
             self.tiptilt.connect()
             
-            #multithread hardware inits
-            kdc_thread = threading.Thread(target=self.init_kdc, args=[])
-            galil_thread = threading.Thread(target=self.init_galil, args=[])
-            projector_thread = threading.Thread(target=self.init_projector, args=[])
+            kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
+            galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
+            projector_thread = threading.Thread(target=self.projector.connect, args=[])
             
             kdc_thread.start()
             galil_thread.start()
@@ -315,23 +314,20 @@ class PrintControl:
             galil_thread.join()
             projector_thread.join()
             
-    def init_kdc(self):
+    def kdc_setup_thread(self):
         """Initialize and home ThorLabs stage"""
         self.kdc.connect()
         if not self.kdc.homed:
             self.kdc.home()
             self.kdc.move(self.focused_position, relative=False)
     
-    def init_galil(self):
+    def galil_setup_thread(self):
         """Initialize and home Galil controller"""
         self.galil.connect()
         self.galil.motorOn()
         self.galil.home()
         self.galil.goToZmax()
     
-    def init_projector(self):
-        """Initialize projector"""
-        self.projector.connect()
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarizationStep1(self):
