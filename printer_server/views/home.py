@@ -300,15 +300,38 @@ class PrintControl:
             self.state = "busy"
             self.focused_position = get_last_focused_position()
             self.tiptilt.connect()
-            self.kdc.connect()
-            if not self.kdc.homed:
-                self.kdc.home()
-                self.kdc.move(self.focused_position, relative=False)
-            self.galil.connect()
-            self.galil.motorOn()
-            self.galil.home()
-            self.galil.goToZmax()
-            self.projector.connect()
+            
+            #multithread hardware inits
+            kdc_thread = threading.Thread(target=self.init_kdc, args=[])
+            galil_thread = threading.Thread(target=self.init_galil, args=[])
+            projector_thread = threading.Thread(target=self.init_projector, args=[])
+            
+            kdc_thread.start()
+            galil_thread.start()
+            projector_thread.start()
+            
+            #wait for harware to finish
+            kdc_thread.join()
+            galil_thread.join()
+            projector_thread.join()
+            
+    def init_kdc(self):
+        """Initialize and home ThorLabs stage"""
+        self.kdc.connect()
+        if not self.kdc.homed:
+            self.kdc.home()
+            self.kdc.move(self.focused_position, relative=False)
+    
+    def init_galil(self):
+        """Initialize and home Galil controller"""
+        self.galil.connect()
+        self.galil.motorOn()
+        self.galil.home()
+        self.galil.goToZmax()
+    
+    def init_projector(self):
+        """Initialize projector"""
+        self.projector.connect()
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarizationStep1(self):
