@@ -304,12 +304,9 @@ class PrintControl:
             kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
             galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
             projector_thread = threading.Thread(target=self.projector.connect, args=[])
-            
             kdc_thread.start()
             galil_thread.start()
             projector_thread.start()
-            
-            #wait for harware to finish
             kdc_thread.join()
             galil_thread.join()
             projector_thread.join()
