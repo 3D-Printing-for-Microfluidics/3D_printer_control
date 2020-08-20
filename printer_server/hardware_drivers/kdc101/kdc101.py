@@ -63,8 +63,8 @@ class KDC101:
         # (300 attempts = ~25 sec) if it freezes, we just home again
         attempts = 0
         while Rx != Homed and not self.homed:
-            if attempts > 300:
-                self.log.info("Homing Failed: Trying again")
+            if attempts > 30:
+                # self.log.info("Homing Failed: Trying again")
                 self.serial_handle.write(
                     pack(
                         "<HBBBB",
