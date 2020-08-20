@@ -4,14 +4,14 @@ import json
 import shutil
 import logging
 import threading
-import numpy as np
-from PIL import Image
 from pathlib import Path
 from zipfile import ZipFile
 from datetime import datetime
 from functools import wraps
-
+import numpy as np
+from PIL import Image
 from flask import Blueprint, request, render_template
+
 from printer_server.settings import Config
 from printer_server.hardware_configuration import hardware_driver_handles
 from printer_server.print_file_validator import validate_v02
@@ -21,6 +21,15 @@ from printer_server.extensions import db, socketio
 blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static")
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
+
+
+def flash_warning(text):
+    """Push a warning to the log and a flash box on the front end."""
+    text = text.capitalize()
+    log.warning(text)
+    socketio.emit(
+        "flash error", {"text": text, "category": "danger"}, namespace="/printing",
+    )
 
 
 def get_last_focused_position():
@@ -270,14 +279,18 @@ class PrintControl:
             power = settings["Light engine power setting"]
             defocus_um = settings["Relative focus position (um)"]
             start_position = self.kdc.getCurrentPos()
+            pre_exposure_status = self.projector.read_all_status()
+            if pre_exposure_status["led_sticky_errors"] != "":
+                flash_warning(pre_exposure_status["led_sticky_errors"])
             if defocus_um != 0:
                 self.kdc.move(self.focused_position + defocus_um, relative=False)
                 image = shift_image(image, x=um_to_px(defocus_um))
             time.sleep(settings["Wait before exposure (ms)"] / 1000)
             defocus_position = self.kdc.getCurrentPos()
-            pre_exposure_status = self.projector.read_all_status()
             self.projector.project(image, exposure_time_ms, power)
             post_exposure_status = self.projector.read_all_status()
+            if post_exposure_status["led_sticky_errors"] != "":
+                flash_warning(post_exposure_status["led_sticky_errors"])
             time.sleep(settings["Wait after exposure (ms)"] / 1000)
             if defocus_um != 0:
                 self.kdc.move(self.focused_position, relative=False)
@@ -300,7 +313,7 @@ class PrintControl:
             self.state = "busy"
             self.focused_position = get_last_focused_position()
             self.tiptilt.connect()
-            
+
             kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
             galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
             projector_thread = threading.Thread(target=self.projector.connect, args=[])
@@ -310,21 +323,20 @@ class PrintControl:
             kdc_thread.join()
             galil_thread.join()
             projector_thread.join()
-            
+
     def kdc_setup_thread(self):
         """Initialize and home ThorLabs stage"""
         self.kdc.connect()
         if not self.kdc.homed:
             self.kdc.home()
             self.kdc.move(self.focused_position, relative=False)
-    
+
     def galil_setup_thread(self):
         """Initialize and home Galil controller"""
         self.galil.connect()
         self.galil.motorOn()
         self.galil.home()
         self.galil.goToZmax()
-    
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarizationStep1(self):
@@ -385,6 +397,7 @@ class PrintControl:
         cannot resume and finish the previous print job.
         """
         if self.state in ["printing", "paused"]:
+            log.info("Print stopped.")
             self.printing_stopped.set()
             self.print_thread.join()
 
@@ -697,9 +710,7 @@ def handleUpload():
             msg = f"Job validation failed for {f.filename}:\n {error_string}"
             log.info("Job validation failed for %s: %s", f.filename, error_string)
             socketio.emit(
-                "validation error",
-                {"text": msg, "category": "danger"},
-                namespace="/printing",
+                "flash error", {"text": msg, "category": "danger"}, namespace="/printing",
             )
             os.remove(filename_on_disk)
     return ""

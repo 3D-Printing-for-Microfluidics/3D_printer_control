@@ -214,7 +214,7 @@ $(document).ready(function () {
     });
 
     socket.on("busy", function (message) {
-        $("#printer-state").text("3D Printer is Busy");
+        $("#printer-state").text("Printer is busy");
         show_btn();
         start_job_id = "";
         $(".clickable-row").removeClass("table-success");
@@ -382,7 +382,7 @@ $(document).ready(function () {
         update_print_message(message);
     });
 
-    socket.on("validation error", function (message) {
+    socket.on("flash error", function (message) {
         var flash_msg = `
        <div class="alert alert-${message.category}">
          <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
