@@ -205,7 +205,6 @@
                         },
                         "Relative focus position (um)": {
                             "type": "integer",
-                            "minimum": 0,
                             "description": "Default realtive focus position for this layer."
                         },
                         "Wait before exposure (ms)": {
@@ -336,7 +335,6 @@
                                 },
                                 "Relative focus position (um)": {
                                     "type": "integer",
-                                    "minimum": 0,
                                     "description": "Default realtive focus position for this layer."
                                 },
                                 "Wait before exposure (ms)": {
