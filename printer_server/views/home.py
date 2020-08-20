@@ -32,6 +32,13 @@ def flash_warning(text):
     )
 
 
+def door_is_open(visitech_sticky_errors):
+    """Return true if the door is open, else return false."""
+    if "open" in visitech_sticky_errors.capitalize():
+        return True
+    return False
+
+
 def get_last_focused_position():
     """Return the last focused position for the distance axis from the
     position log file.
@@ -301,6 +308,10 @@ class PrintControl:
                 "pre exposure status": pre_exposure_status,
                 "post exposure status": post_exposure_status,
             }
+        if door_is_open(pre_exposure_status["led_sticky_errors"]):
+            self.stop()
+        if door_is_open(post_exposure_status["led_sticky_errors"]):
+            self.stop()
         return data
 
     def connect(self):
