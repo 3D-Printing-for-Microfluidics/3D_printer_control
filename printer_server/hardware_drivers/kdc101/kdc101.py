@@ -64,7 +64,7 @@ class KDC101:
         attempts = 0
         while Rx != Homed and not self.homed:
             if attempts > 300:
-                self.log.warning("Homing Failed: Trying again")
+                self.log.info("Homing Failed: Trying again")
                 self.serial_handle.write(
                     pack(
                         "<HBBBB",
@@ -150,7 +150,7 @@ class KDC101:
         attempts = 0
         while Rx != Moved:
             if attempts > 100:
-                self.log.warning("Move Failed: Trying again")
+                self.log.info("Move Failed: Trying again")
                 return False
             Rx = self.serial_handle.read(2)
             attempts = attempts + 1

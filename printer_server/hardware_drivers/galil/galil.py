@@ -299,7 +299,7 @@ class Galil:
             time.sleep(0.001)
             last_position = self.getPosition(notify=False)
             if any(self.checkLimits()):
-                self.log.warning("Limit switch triggered")
+                self.log.info("Limit switch triggered")
                 self.g.GMotionComplete(axis)
                 return
             self.data[self.move_num].append(
