@@ -133,7 +133,8 @@ class Projector:
         # start screen thread
         self.screenThread.start()
 
-        # set default state for light engine
+        # set default state for light engine and clear previous errors
+        self.get_sticky_errors()
         self.set_video_source("HDMI")
         self.set_led_driver_regulation_mode("LIGHT")
         self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
