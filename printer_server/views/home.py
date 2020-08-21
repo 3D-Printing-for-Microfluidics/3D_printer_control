@@ -335,6 +335,8 @@ class PrintControl:
             galil_thread.join()
             projector_thread.join()
 
+            log.info("Printer initialized, all hardware ready.")
+
     def kdc_setup_thread(self):
         """Initialize and home ThorLabs stage"""
         self.kdc.connect()
