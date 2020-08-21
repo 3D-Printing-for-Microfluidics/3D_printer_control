@@ -38,16 +38,20 @@ var update_print_message = function (message) {
     if (!$.isEmptyObject(message)) {
         var new_text = `
         <div class="row">
-            <div class="col-4">
-            ${message.time}
-            </div>
-            <div class="col-8">
-            ${message.text}
-            </div>
+            <div class="col-4">${message.time}</div>
+            <div class="col-8">${message.text}</div>
         </div>
         `;
         $("#print-message").append(new_text);
     }
+}
+
+
+var write_to_message_box = function (message) {
+    // if (!$.isEmptyObject(message)) {
+    //     var new_text = `<div class="row">${message}</div>`;
+    //     $("#print-message").append(new_text);
+    // }
 }
 
 
@@ -291,7 +295,9 @@ $(document).ready(function () {
         update_print_message(message);
     });
 
-
+    socket.on("update_message_box", function (message) {
+        write_to_message_box(message);
+    });
 
     $("#print-alert-confirm").click(function () {
         var operation = $("#print-alert-title").text();

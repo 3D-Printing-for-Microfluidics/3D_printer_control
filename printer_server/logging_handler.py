@@ -4,7 +4,7 @@ import traceback
 from functools import wraps
 from flask.logging import default_handler
 
-from printer_server.extensions import db
+from printer_server.extensions import db, socketio
 from printer_server.models import ServerLog
 
 
@@ -59,12 +59,21 @@ class SQLAlchemyHandler(logging.Handler):
             log.save()
 
 
-class LoggingNameFilter(logging.Filter):
-    """Strip out only the last part of a name to use with a logger."""
+class SocketIOHandler(logging.Handler):
+    """A logging handler that emits records with SocketIO."""
 
-    def filter(self, record):
-        record.name_last = record.name.rsplit(".", 1)[-1]
-        return True
+    def __init__(self):
+        super().__init__()
+
+    # A very basic logger that commits a log to the SQL Db
+    def emit(self, record):
+        asctime = record.__dict__["asctime"]
+        msecs = record.__dict__["msecs"]
+        levelname = record.__dict__["levelname"]
+        module = record.__dict__["module"]
+        message = record.__dict__["message"]
+        msg = f"{asctime}.{round(msecs):03} [{levelname:<5.5s}]  {module:<18s}  {message}"
+        socketio.emit("update_message_box", msg, namespace="/printing", broadcast=True)
 
 
 def configure_loggers(app):
@@ -86,8 +95,12 @@ def configure_loggers(app):
 
     # logger to print to console
     console_handler = logging.StreamHandler(sys.stdout)
-    fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(name_last)-18s  %(message)s"
+    fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(module)-18s  %(message)s"
     console_handler.setFormatter(logging.Formatter(fmt, "%Y-%m-%d %H:%M:%S"))
-    console_handler.addFilter(LoggingNameFilter())
     root_logger.addHandler(console_handler)
     app.logger.addHandler(console_handler)
+
+    # logger to trigger SocetIO events
+    sio_handler = SocketIOHandler()
+    root_logger.addHandler(sio_handler)
+    app.logger.addHandler(sio_handler)
