@@ -6,10 +6,10 @@ var PENDING_FILES = [];
 
 
 $("#create-job").on("click", function () {
-    if ($(this).text() == "Create a job") {
-        $(this).text("Hide");
+    if ($("#collapseUpload").hasClass("show")) {
+        $(this).text("Upload a job");
     } else {
-        $(this).text("Create a job");
+        $(this).text("Hide");
     }
 });
 
