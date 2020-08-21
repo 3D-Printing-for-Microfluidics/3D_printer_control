@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Server Logs ({{ hostname }}){% endblock %}
+
+{% block printer3d_state %}
+<h2>Server Logs</h2>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<!-- <link href="{{ url_for('static', filename='server_logs.css') }}" rel="stylesheet"> -->
+{% endblock %}
+
+{% block page_content %}
+
+
+
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
+<!-- <script src="{{ url_for('static', filename='server_logs.js') }}"></script> -->
+{% endblock %}
