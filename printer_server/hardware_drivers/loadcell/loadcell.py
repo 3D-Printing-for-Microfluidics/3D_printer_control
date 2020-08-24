@@ -98,22 +98,25 @@ class LoadCell:
         self.running = False
         self.thread = threading.Thread(target=self.loop)
         self.raws = []
-        self.cell = LoadCellDeviceControl(v)
         
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
+        
+        self.cell = LoadCellDeviceControl()
+        self.cell.log = self.log
 
     def start(self, filename):
-        self.log_file = filename
-        
-        self.cell.connect()
-        self.cell.set_sample_period(1000)
-        self.cell.set_gain(100)
-        self.cell.set_filter_corner(1000)
-        
-        self.running = True
-        self.raws = []
         if not self.thread.is_alive():
+            self.log_file = filename
+            
+            self.cell.connect()
+            self.cell.set_sample_period(1000)
+            self.cell.set_gain(100)
+            self.cell.set_filter_corner(1000)
+            
+            self.running = True
+            self.raws = []
+        
             self.thread.start()
 
     def stop(self):
@@ -123,7 +126,15 @@ class LoadCell:
             pass
             
         self.running = False
+        self.thread.join()
         self.process_data()
+        
+    def loop(self):
+        if(self.running):
+            self.cell.flushInput()
+            self.cell.sample()
+            while(self.running):
+                self.getData()
 
     def getData(self):
         raw = ""
@@ -141,13 +152,6 @@ class LoadCell:
         grams = (x - intercept)/slope
         n = grams/1000*9.8
         return n
-
-    def loop(self):
-        if(self.running):
-            self.cell.flushInput()
-            self.cell.sample()
-            while(self.running):
-                self.getData()
                 
     def process_data(self):
         """
