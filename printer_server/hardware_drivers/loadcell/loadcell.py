@@ -3,7 +3,6 @@ import serial
 import serial.tools.list_ports
 import serial.serialutil
 import threading
-import os
 
 import logging
 
@@ -63,13 +62,13 @@ class LoadCellDeviceControl(serial.Serial):
 
     def sample(self):
         """
-        Sample the specified channel (0,1) for num_samples at a period of period_us (in microseconds)
+        Sample at a period of period_us (in microseconds)
         """
         return self.send('b')
 
     def stop(self, channel=0):
         """
-        Sample the specified channel (0,1) for num_samples at a period of period_us (in microseconds)
+        Stop sampling
         """
         return self.send('e')
 
@@ -87,12 +86,12 @@ class LoadCellDeviceControl(serial.Serial):
         response += self.readline()         # wait for the first line to fill in the rx buffer
         return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
         
-    def receiveAll(self):
-        response = b''
-        response += self.readline()         # wait for the first line to fill in the rx buffer
-        while self.in_waiting:              # while there is more data in the rx buffer
-            response += self.readline()     # read next line from rx buffer
-        return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
+#    def receiveAll(self):
+#        response = b''
+#        response += self.readline()         # wait for the first line to fill in the rx buffer
+#        while self.in_waiting:              # while there is more data in the rx buffer
+#            response += self.readline()     # read next line from rx buffer
+#        return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
 
 class LoadCell:
     def __init__(self):
@@ -122,15 +121,12 @@ class LoadCell:
             self.cell.stop()
         except serial.SerialException:
             pass
+            
         self.running = False
+        self.process_data()
 
     def getData(self):
-        from pathlib import Path
-        from datetime import datetime
-        import os
-
         raw = ""
-
         try:
             raw = self.cell.receive()
         except serial.SerialException:
@@ -147,60 +143,53 @@ class LoadCell:
         return n
 
     def loop(self):
-        from pathlib import Path
-        from datetime import datetime
-        import os
-
-        #create our load cell object
-        #c = LoadCell()
-
-        #connect to it and set our gain
-        
         if(self.running):
-
-            #print header
-            with open(self.log_file, "a") as f:
-                f.write("Index\tMicroseconds\tRaw\tNewtons\tAvg\n")
-
-            #sample until running is set to false
             self.cell.flushInput()
             self.cell.sample()
             while(self.running):
                 self.getData()
                 
-            with open(self.log_file, "a") as f:
-                length = len(self.raws)
-                windowSize = 10
-                windowData = []
-                for i in range(length - 2):
-                    splitData = self.raws[i].split(",")
-                    if(len(splitData) > 2):
-                        index = splitData[0]
-                        microseconds = splitData[1]
-                        data = splitData[2]
+    def process_data(self):
+        """
+        Parses the loadcell data and save it to self.log_file
+        """
+        with open(self.log_file, "a") as f:
+            f.write("Index\tMicroseconds\tRaw\tNewtons\tAvg\n")
+            
+            length = len(self.raws)
+            windowSize = 10
+            windowData = []
+            for i in range(length - 2):
+                splitData = self.raws[i].split(",")
+                if(len(splitData) > 2):
+                    index = splitData[0]
+                    microseconds = splitData[1]
+                    data = splitData[2]
 
-                        try:
-                            index = int(index)
-                            microseconds = float(microseconds)
-                            data = float(data)
-                            force = self.adcToForce(data)
-                        except ValueError:
-                            self.log.warning("Unable to parse loadcell data: {}", self.raws[i])
-                            print(self.raws[i])
-                            continue
-                            
-                        if len(windowData) >= windowSize:
-                            windowData.pop(0)
-                        windowData.append(force)
+                    try:
+                        index = int(index)
+                        microseconds = float(microseconds)
+                        data = float(data)
+                        force = self.adcToForce(data)
+                    except ValueError:
+                        self.log.warning("Unable to parse loadcell data: {}", self.raws[i])
+                        print(self.raws[i])
+                        continue
                         
-                        if len(windowData) == windowSize:
-                            avg = 0
-                            for i in windowData:
-                                avg += i
-                            avg = avg / windowSize
-                            f.write("{}\t{}\t{}\t{}\t{}\n".format(index, microseconds, data, force, avg))
-                        else:
-                            f.write("{}\t{}\t{}\t{}\t\n".format(index, microseconds, data, force))
+                    if len(windowData) >= windowSize:
+                        windowData.pop(0)
+                    windowData.append(force)
+                    
+                    if len(windowData) == windowSize:
+                        avg = 0
+                        for i in windowData:
+                            avg += i
+                        avg = avg / windowSize
+                        f.write("{}\t{}\t{}\t{}\t{}\n".format(index, microseconds, data, force, avg))
+                    else:
+                        f.write("{}\t{}\t{}\t{}\t\n".format(index, microseconds, data, force))
+                else:
+                    self.log.warning("Unable to parse loadcell data: {}", self.raws[i])
 
     
 
