@@ -7,7 +7,13 @@ import threading
 import logging
 
 class LoadCellDeviceControl(serial.Serial):
+    """
+    Class handling direct communication with loadcell
+    """
     def __init__(self, hwid='PID=16C0:0483 SER=6256240', log_level=logging.DEBUG):
+        """
+        Initializes the loadcell controller
+        """
         super().__init__(baudrate=115200, timeout=1)
         self.log_level = log_level
         self.hwid = hwid
@@ -15,6 +21,12 @@ class LoadCellDeviceControl(serial.Serial):
         self.status = None              # status to be updated after every send
         
     def findUsbPort(self, hwid):
+        """
+        Finds serial port with given hwid
+        
+        Parameters:
+            hwid - device identifier
+        """
         ports = list(serial.tools.list_ports.comports())
         for p in ports:
             if hwid.upper() in p.hwid:
@@ -23,6 +35,9 @@ class LoadCellDeviceControl(serial.Serial):
         return None             # not found
 
     def connect(self):
+        """
+        Opens a serial handle to the loadcell device
+        """
         self.port = self.findUsbPort(self.hwid)
         if self.port is None:
             raise ValueError('Load cell not found')
@@ -73,6 +88,9 @@ class LoadCellDeviceControl(serial.Serial):
         return self.send('e')
 
     def send(self, cmd):
+        """
+        Sends serial command to the loadcell device
+        """
         self.log.debug("Sent: {}", cmd)
         #if self.verbose: print('Sent: ' + cmd)
         self.write(bytes(cmd + '\n', encoding='ascii')) # write to serial tx buffer
@@ -82,6 +100,9 @@ class LoadCellDeviceControl(serial.Serial):
         return response                                 # return the response to the command
 
     def receive(self):
+        """
+        Sends serial response from the loadcell device
+        """
         response = b''
         response += self.readline()         # wait for the first line to fill in the rx buffer
         return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
@@ -94,7 +115,13 @@ class LoadCellDeviceControl(serial.Serial):
 #        return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
 
 class LoadCell:
+    """
+    Class providing high level control of loadcell
+    """
     def __init__(self):
+        """
+        Initializes the loadcell
+        """
         self.running = False
         self.thread = threading.Thread(target=self.loop)
         self.raws = []
@@ -105,21 +132,34 @@ class LoadCell:
         self.cell = LoadCellDeviceControl()
         self.cell.log = self.log
 
-    def start(self, filename):
+    def start(self, filename, period=1000, filter_corner=1000):
+        """
+        Starts the loadcell collecting data
+        
+        Parameters:
+            filename    - local path and filename (current_job/loadcell_data.txt)
+            period      - sample period of loadcell (in milliseconds)
+            corner      - corner frequency of loadcell highpass filter (in Hz)
+        """
         if not self.thread.is_alive():
             self.log_file = filename
+            
+            self.running = True
+            self.raws = []
             
             self.cell.connect()
             self.cell.set_sample_period(1000)
             self.cell.set_gain(100)
             self.cell.set_filter_corner(1000)
             
-            self.running = True
-            self.raws = []
-        
+            self.cell.flushInput()
+            self.cell.sample()
             self.thread.start()
 
     def stop(self):
+        """
+        Stops the loadcell and loadcell thread. Saves data to file
+        """
         try:
             self.cell.stop()
         except serial.SerialException:
@@ -130,13 +170,16 @@ class LoadCell:
         self.process_data()
         
     def loop(self):
-        if(self.running):
-            self.cell.flushInput()
-            self.cell.sample()
-            while(self.running):
-                self.getData()
+        """
+        Threading loop
+        """
+        while(self.running):
+            self.getData()
 
     def getData(self):
+        """
+        Reads raw loadcell data from serial handle
+        """
         raw = ""
         try:
             raw = self.cell.receive()
@@ -146,6 +189,9 @@ class LoadCell:
             self.raws.append(raw)
 
     def adcToForce(self, x):
+        """
+        Converts the adc counts to newtons using precalculated constants
+        """
         slope = -1.46
         intercept = 33845.0
 
