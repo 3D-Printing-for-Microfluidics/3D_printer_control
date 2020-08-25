@@ -444,6 +444,14 @@ class PrintControl:
         with ZipFile(zipped_job_file, "r") as f:
             f.extractall(self.current_job)
 
+        # create logs and overwrite any pre-existing data
+        position_log = str(self.current_job / "position_data.txt")
+        exposure_log = str(self.current_job / "exposure_data.txt")
+        with open(position_log, "w") as f:
+            f.write("")
+        with open(exposure_log, "w") as f:
+            f.write("")
+
         # move file from queue folder to print_history folder
         os.rename(zipped_job_file, self.print_history / Path(job_in_queue.zip_filename))
 
@@ -505,14 +513,6 @@ class PrintControl:
         self.printing_stopped.clear()
         self.printing_paused.clear()
         self.layer_map = self.generate_layer_map()
-
-        # create logs and overwrite any pre-existing data
-        position_log = str(self.current_job / "position_data.txt")
-        exposure_log = str(self.current_job / "exposure_data.txt")
-        with open(position_log, "w") as f:
-            f.write("")
-        with open(exposure_log, "w") as f:
-            f.write("")
 
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
