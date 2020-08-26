@@ -514,6 +514,9 @@ class PrintControl:
         self.printing_paused.clear()
         self.layer_map = self.generate_layer_map()
 
+        position_log = str(self.current_job / "position_data.txt")
+        exposure_log = str(self.current_job / "exposure_data.txt")
+
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
             self.galil.goToZmin()
