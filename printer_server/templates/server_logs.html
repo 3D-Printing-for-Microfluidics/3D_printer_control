@@ -8,18 +8,40 @@
 
 {% block styles %}
 {{ super() }}
-<!-- <link href="{{ url_for('static', filename='server_logs.css') }}" rel="stylesheet"> -->
+<link href="{{ url_for('static', filename='server_logs.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block page_content %}
 
-
-
+<table class="table table-sm table-bordered">
+    <thead>
+        <tr>
+            <th scope="col" class="align-middle justify-center">File Name</th>
+            <th scope="col" class="align-middle justify-center">File Size (Bytes)</th>
+            <th scope="col" class="align-middle justify-center">Date Modified</th>
+            <th scope="col" class="align-middle justify-center">Download</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for f in files %}
+        <tr>
+            <td class="align-middle justify-center">
+                <a href="{{ '/server_logs/' + f['name'] }}">{{ f['name'] }}</a>
+            </td>
+            <td class="align-middle justify-center">{{ f['size'] }}</td>
+            <td class="align-middle justify-center">{{ f['modified'] }}</td>
+            <td class="align-middle justify-center">
+                <a type="button" class="btn btn-outline-info btn-sm"
+                    href="{{ '/server_logs/download/' + f['name'] }}">Download</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
-<!-- <script src="{{ url_for('static', filename='server_logs.js') }}"></script> -->
 {% endblock %}
