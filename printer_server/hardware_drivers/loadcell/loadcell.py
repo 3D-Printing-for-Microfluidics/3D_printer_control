@@ -46,7 +46,7 @@ class LoadCellDeviceControl(serial.Serial):
         self.open()
         self.flushInput()
         self.flushOutput()
-        self.log.info("Connected to {}", self.port)
+        self.log.debug("Connected to {}", self.port)
         #print("Connected to", self.port)
         
         atexit.register(self.close)
@@ -55,7 +55,7 @@ class LoadCellDeviceControl(serial.Serial):
         """
         Set the gain
         """
-        self.log.info("Gain set to {}", value)
+        self.log.debug("Gain set to {}", value)
         #print("gain set to {}", value)
         return self.send('g {}'.format(value)), value
 
@@ -63,7 +63,7 @@ class LoadCellDeviceControl(serial.Serial):
         """
         Set the filter 3d corner
         """
-        self.log.info("Corner set to {}", value)
+        self.log.debug("Corner set to {}", value)
         #print("corner set to {}", value)
         return self.send('f {}'.format(value)), value
 
@@ -71,7 +71,7 @@ class LoadCellDeviceControl(serial.Serial):
         """
         Set the sampling period to period_us (in microseconds)
         """
-        self.log.info("Period set to {}", period_us)
+        self.log.debug("Period set to {}", period_us)
         #print("period set to {}", period_us)
         return self.send('p {}'.format(period_us)), period_us
 
@@ -118,21 +118,32 @@ class LoadCell:
     """
     Class providing high level control of loadcell
     """
-    def __init__(self):
+    def __init__(self, period=1000, filter_corner=1000):
         """
         Initializes the loadcell
         """
         self.running = False
-        self.thread = threading.Thread(target=self.loop)
         self.raws = []
+        self.period = period
+        self.filter_corner = filter_corner
+        self.thread = threading.Thread(target=self.loop)
         
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         
         self.cell = LoadCellDeviceControl()
         self.cell.log = self.log
+        
+    def connect(self):
+        """
+        Connects to the loadcell and sets parameters.
+        """
+        self.cell.connect()
+        self.cell.set_sample_period(int(self.period))
+        self.cell.set_gain(100)
+        self.cell.set_filter_corner(int(self.filter_corner))
 
-    def start(self, filename, period=1000, filter_corner=1000):
+    def start(self, filename):
         """
         Starts the loadcell collecting data
         
@@ -145,16 +156,24 @@ class LoadCell:
             self.log_file = filename
             
             self.running = True
-            self.raws = []
-            
-            self.cell.connect()
-            self.cell.set_sample_period(1000)
-            self.cell.set_gain(100)
-            self.cell.set_filter_corner(1000)
             
             self.cell.flushInput()
             self.cell.sample()
             self.thread.start()
+            self.log.info("Loadcell started")
+            
+    def pause(self):
+        """
+        Pauses the loadcell and loadcell thread.
+        """
+        try:
+            self.cell.stop()
+        except serial.SerialException:
+            pass
+            
+        self.running = False
+        self.thread.join()
+        self.log.info("Loadcell paused")
 
     def stop(self):
         """
@@ -167,7 +186,9 @@ class LoadCell:
             
         self.running = False
         self.thread.join()
+        self.log.info("Loadcell stopped")
         self.process_data()
+        self.raws = []
         
     def loop(self):
         """
@@ -203,7 +224,7 @@ class LoadCell:
         """
         Parses the loadcell data and save it to self.log_file
         """
-        with open(self.log_file, "a") as f:
+        with open(self.log_file, "w") as f:
             f.write("Index\tMicroseconds\tRaw\tNewtons\tAvg\n")
             
             length = len(self.raws)
