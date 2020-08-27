@@ -10,12 +10,11 @@ class LoadCellDeviceControl(serial.Serial):
     """
     Class handling direct communication with loadcell
     """
-    def __init__(self, hwid='PID=16C0:0483 SER=6256240', log_level=logging.DEBUG):
+    def __init__(self, hwid='PID=16C0:0483 SER=6256240'):
         """
         Initializes the loadcell controller
         """
         super().__init__(baudrate=115200, timeout=1)
-        self.log_level = log_level
         self.hwid = hwid
         self.port = None                # start with no port
         self.status = None              # status to be updated after every send
@@ -118,7 +117,7 @@ class LoadCell:
     """
     Class providing high level control of loadcell
     """
-    def __init__(self, period=1000, filter_corner=1000):
+    def __init__(self, period=1000, filter_corner=1000, log_level=logging.DEBUG):
         """
         Initializes the loadcell
         """
@@ -195,9 +194,9 @@ class LoadCell:
         Threading loop
         """
         while(self.running):
-            self.getData()
+            self.get_data()
 
-    def getData(self):
+    def get_data(self):
         """
         Reads raw loadcell data from serial handle
         """
@@ -209,7 +208,7 @@ class LoadCell:
         else:
             self.raws.append(raw)
 
-    def adcToForce(self, x):
+    def adc_to_force(self, x):
         """
         Converts the adc counts to newtons using precalculated constants
         """
@@ -241,7 +240,7 @@ class LoadCell:
                         index = int(index)
                         microseconds = float(microseconds)
                         data = float(data)
-                        force = self.adcToForce(data)
+                        force = self.adc_to_force(data)
                     except ValueError:
                         self.log.warning("Unable to parse loadcell data: {}", self.raws[i])
                         print(self.raws[i])
