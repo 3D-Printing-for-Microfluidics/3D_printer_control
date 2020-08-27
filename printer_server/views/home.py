@@ -159,6 +159,7 @@ class PrintControl:
         self.projector = hardware_driver_handles.projector
         self.kdc = hardware_driver_handles.kdc
         self.tiptilt = hardware_driver_handles.tiptilt
+        self.loadcell = hardware_driver_handles.loadcell
 
         # folders relevant to printing
         self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
@@ -324,6 +325,7 @@ class PrintControl:
             self.state = "busy"
             self.focused_position = get_last_focused_position()
             self.tiptilt.connect()
+            self.loadcell.connect()
 
             kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
             galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
@@ -509,10 +511,13 @@ class PrintControl:
         # create logs and overwrite any pre-existing data
         position_log = str(self.current_job / "position_data.txt")
         exposure_log = str(self.current_job / "exposure_data.txt")
+        loadcell_log = str(self.current_job / "exposure_data.txt")
         with open(position_log, "w") as f:
             f.write("")
         with open(exposure_log, "w") as f:
             f.write("")
+            
+        self.loadcell.start(loadcell_log)
 
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
@@ -522,7 +527,11 @@ class PrintControl:
         for i, layer in enumerate(self.layer_map):
             if i < self.next_layer:
                 continue  # skip previous layers if print was paused
-            if self.printing_stopped.is_set() or self.printing_paused.is_set():
+            if self.printing_paused.is_set():
+                self.loadcell.pause()
+                break  # pause, don't do anything else
+            if self.printing_stopped.is_set():
+                self.loadcell.stop()
                 break  # pause, don't do anything else
             self.next_layer = i + 1
 
@@ -563,6 +572,7 @@ class PrintControl:
 
         # if print is finished, move build platform back to top
         if not self.printing_paused.is_set():
+            self.loadcell.stop()
             self.galil.goToZmax()
 
             # update fontend, zip logs into archive in print_history, and update db entrty
