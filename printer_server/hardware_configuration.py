@@ -23,7 +23,7 @@ class Printer3D:
             self.projector = Projector(log_level=default_log_level)
             self.kdc = KDC101(log_level=default_log_level)
             self.tiptilt = TipTilt(log_level=default_log_level)
-            self.loadcell = LoadCell(log_level=default_log_level, period=2000)
+            self.loadcell = LoadCell(log_level=default_log_level)
 
 
 hardware_driver_handles = Printer3D()
