@@ -141,6 +141,7 @@ class LoadCell:
         self.cell.set_sample_period(int(self.period))
         self.cell.set_gain(100)
         self.cell.set_filter_corner(int(self.filter_corner))
+        self.log.info("Connected to loadcell")
 
     def start(self, filename):
         """
@@ -172,19 +173,21 @@ class LoadCell:
             
         self.running = False
         self.thread.join()
+        self.thread = threading.Thread(target=self.loop)
         self.log.info("Loadcell paused")
 
     def stop(self):
         """
         Stops the loadcell and loadcell thread. Saves data to file
         """
-        try:
-            self.cell.stop()
-        except serial.SerialException:
-            pass
-            
-        self.running = False
-        self.thread.join()
+        if self.running:
+            try:
+                self.cell.stop()
+            except serial.SerialException:
+                pass
+                
+            self.running = False
+            self.thread.join()
         self.log.info("Loadcell stopped")
         self.process_data()
         self.raws = []

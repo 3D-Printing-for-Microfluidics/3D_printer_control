@@ -511,7 +511,7 @@ class PrintControl:
         # create logs and overwrite any pre-existing data
         position_log = str(self.current_job / "position_data.txt")
         exposure_log = str(self.current_job / "exposure_data.txt")
-        loadcell_log = str(self.current_job / "exposure_data.txt")
+        loadcell_log = str(self.current_job / "loadcell_data.txt")
         with open(position_log, "w") as f:
             f.write("")
         with open(exposure_log, "w") as f:
@@ -527,11 +527,8 @@ class PrintControl:
         for i, layer in enumerate(self.layer_map):
             if i < self.next_layer:
                 continue  # skip previous layers if print was paused
-            if self.printing_paused.is_set():
+            if self.printing_paused.is_set() or self.printing_stopped.is_set():
                 self.loadcell.pause()
-                break  # pause, don't do anything else
-            if self.printing_stopped.is_set():
-                self.loadcell.stop()
                 break  # pause, don't do anything else
             self.next_layer = i + 1
 
