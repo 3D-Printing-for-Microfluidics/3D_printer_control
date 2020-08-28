@@ -134,6 +134,8 @@ class LoadCell:
         self.raws = []
         self.frontend_data = []
         self.period = period
+        self.windowSize = 10
+        self.windowData = []
         self.filter_corner = filter_corner
         self.thread = threading.Thread(target=self.loop)
         
@@ -265,8 +267,6 @@ class LoadCell:
         output_array = []
         
         length = len(raw_data)
-        windowSize = 10
-        windowData = []
         last_index = 0
         for i in range(length - 2):
             splitData = raw_data[i].split(",")
@@ -288,14 +288,14 @@ class LoadCell:
 #                        self.log.warning("Unable to parse loadcell data: {}", raw_data[i])
                     continue
                     
-                if len(windowData) >= windowSize:
-                    windowData.pop(0)
-                windowData.append(force)
+                if len(self.windowData) >= self.windowSize:
+                    self.windowData.pop(0)
+                self.windowData.append(force)
                 
                 avg = 0
-                for i in windowData:
+                for i in self.windowData:
                     avg += i
-                avg = avg / len(windowData)
+                avg = avg / len(self.windowData)
                 
                 array = []
                 array.append(time.strftime("%Y-%m-%d %H:%M:%S.%f'")[:-4])
