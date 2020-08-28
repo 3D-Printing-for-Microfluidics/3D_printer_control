@@ -386,6 +386,7 @@ class PrintControl:
         """Resume a paused print."""
         if self.state != "paused":
             return
+        log.info("Resuming print...")
         self.galil.absMove(cnts=self.paused_position)
         self.paused_position = None
         # update fontend
@@ -395,7 +396,7 @@ class PrintControl:
             "text": "Resume Printing",
         }
         self.state = "printing"
-        log.info(msg["text"])
+        log.info("Print resumed.")
         socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
         # resume printing in a new thread
         app = db.get_app()
