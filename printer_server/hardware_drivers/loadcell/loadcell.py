@@ -208,6 +208,9 @@ class LoadCell:
         self.frontend_data = []
        
     def get_data(self):
+        """
+        Processes and returns all data since last call
+        """
         data = self.process_data(self.frontend_data)
         self.frontend_data = []
         return data
@@ -248,15 +251,30 @@ class LoadCell:
                 f.write("{}\t{}\t{}\t{}\t{}\n".format(row[0], row[1], row[2], row[3], row[4]))
 
     def process_data(self, raw_data):
+        """
+        Processes raw data to add averaging, force conversion, and timestamps
+        
+        Returns:
+        - 2D array
+            [x][0] Timestamp
+            [x][1] Datapoint index
+            [x][2] Raw Data
+            [x][3] Force (in N)
+            [x][4] Running Average
+        """
         output_array = []
         
         length = len(raw_data)
         windowSize = 10
         windowData = []
+        last_index = 0
         for i in range(length - 2):
             splitData = raw_data[i].split(",")
             if(len(splitData) > 2):
                 index = splitData[0]
+                if index != last_index + 1:
+                    last_index = index
+                    continue
                 microseconds = splitData[1]
                 data = splitData[2]
 
