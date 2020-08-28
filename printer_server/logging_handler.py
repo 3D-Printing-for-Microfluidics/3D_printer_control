@@ -84,20 +84,30 @@ class SocketIOHandler(logging.Handler):
         socketio.emit("update_message_box", msg, namespace="/printing", broadcast=True)
 
 
+class LoggingNameFilter(logging.Filter):
+    """Strip out only the last part of a name to use with a logger."""
+
+    def filter(self, record):
+        record.shortname = record.name.rsplit(".", 1)[-1]
+        return True
+
+
 def configure_loggers(app):
     """Configure the loggers that will be shared for the app."""
     host = Config.HOSTNAME
-    fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(module)-18s  %(message)s"
+    fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(shortname)-18s  %(message)s"
 
     app.logger.removeHandler(default_handler)
     root_logger = logging.getLogger()
     # root_logger.setLevel(logging.NOTSET)  # uncomment to see all mesasges everywhere
 
     console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.addFilter(LoggingNameFilter())
     console_handler.setFormatter(logging.Formatter(fmt, "%Y-%m-%d %H:%M:%S"))
     root_logger.addHandler(console_handler)
 
     log_file_handler = TimedRotatingFileHandler(f"logs/{host}_log.txt", when="midnight")
+    log_file_handler.addFilter(LoggingNameFilter())
     log_file_handler.setFormatter(logging.Formatter(fmt, "%Y-%m-%d %H:%M:%S"))
     log_file_handler.namer = log_namer
     root_logger.addHandler(log_file_handler)
