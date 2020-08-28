@@ -51,3 +51,9 @@ pre {
     outline-style: solid;
     outline-color: rgb(0, 188, 140);
 }
+
+.log-message{
+    font-family: monospace;
+    white-space: pre;
+    font-size: 120%;
+}

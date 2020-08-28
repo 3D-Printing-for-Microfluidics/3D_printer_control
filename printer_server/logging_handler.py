@@ -10,6 +10,9 @@ from printer_server.extensions import socketio
 from printer_server.models import ServerLog
 from printer_server.settings import Config
 
+host = Config.HOSTNAME
+fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(shortname)-18s  %(message)s  "
+
 
 def dummy_log(f):
     """Decorate function f with a printout of all parameters with their
@@ -69,19 +72,34 @@ class SQLAlchemyHandler(logging.Handler):
 
 
 class SocketIOHandler(logging.Handler):
-    """A logging handler that emits records with SocketIO."""
+    """A logging handler that emits records with SocketIO.
+
+    Every record gets emitted and written to a message pane on the front
+    end. If a record is warning level or higher, it also gets flashed
+    into a red warning box.
+    """
 
     def __init__(self):
         super().__init__()
 
     def emit(self, record):
-        asctime = record.__dict__["asctime"]
-        msecs = record.__dict__["msecs"]
-        levelname = record.__dict__["levelname"]
-        module = record.__dict__["module"]
-        message = record.__dict__["message"]
-        msg = f"{asctime}.{round(msecs):03} [{levelname:<5.5s}]  {module:<18s}  {message}"
+        msg = fmt % {
+            "asctime": record.asctime.split(" ")[1],
+            "msecs": record.msecs,
+            "levelname": record.levelname,
+            "shortname": record.shortname,
+            "message": record.message,
+        }
         socketio.emit("update_message_box", msg, namespace="/printing", broadcast=True)
+        msg = "%(asctime)s.%(msecs)03d   %(message)s  " % {
+            "asctime": record.asctime.split(" ")[1],
+            "msecs": record.msecs,
+            "message": record.message,
+        }
+        if record.levelno >= logging.WARNING:
+            socketio.emit(
+                "flash error", {"text": msg, "category": "danger"}, namespace="/printing"
+            )
 
 
 class LoggingNameFilter(logging.Filter):
@@ -94,8 +112,6 @@ class LoggingNameFilter(logging.Filter):
 
 def configure_loggers(app):
     """Configure the loggers that will be shared for the app."""
-    host = Config.HOSTNAME
-    fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(shortname)-18s  %(message)s"
 
     app.logger.removeHandler(default_handler)
     root_logger = logging.getLogger()
@@ -114,3 +130,4 @@ def configure_loggers(app):
 
     flask_socketIO_handler = SocketIOHandler()
     root_logger.addHandler(flask_socketIO_handler)
+    app.logger.addHandler(flask_socketIO_handler)
