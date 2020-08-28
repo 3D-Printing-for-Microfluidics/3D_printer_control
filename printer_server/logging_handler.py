@@ -1,11 +1,14 @@
 import sys
-import logging
 import traceback
+import logging
+from logging.handlers import TimedRotatingFileHandler
 from functools import wraps
 from flask.logging import default_handler
 
-from printer_server.extensions import db, socketio
+
+from printer_server.extensions import socketio
 from printer_server.models import ServerLog
+from printer_server.settings import Config
 
 
 def dummy_log(f):
@@ -33,6 +36,12 @@ def dummy_log(f):
         return result
 
     return wrapper
+
+
+def log_namer(default_filename):
+    """Define how log files will be named. Keep extension at end."""
+    parts = default_filename.split(".")
+    return f"{parts[0]}_{parts[2]}.{parts[1]}"
 
 
 class SQLAlchemyHandler(logging.Handler):
@@ -65,7 +74,6 @@ class SocketIOHandler(logging.Handler):
     def __init__(self):
         super().__init__()
 
-    # A very basic logger that commits a log to the SQL Db
     def emit(self, record):
         asctime = record.__dict__["asctime"]
         msecs = record.__dict__["msecs"]
@@ -77,30 +85,22 @@ class SocketIOHandler(logging.Handler):
 
 
 def configure_loggers(app):
-    """Configure the loggers that will be shared for the app.
-
-    The first logger sends errors to the database. The second one
-    formats all logged messages and prints them to the sys.stdout.
-    """
+    """Configure the loggers that will be shared for the app."""
+    host = Config.HOSTNAME
+    fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(module)-18s  %(message)s"
 
     app.logger.removeHandler(default_handler)
     root_logger = logging.getLogger()
-    # root_logger.setLevel(logging.NOTSET) # uncomment to see all mesasges everywhere
+    # root_logger.setLevel(logging.NOTSET)  # uncomment to see all mesasges everywhere
 
-    # logger that puts records in database
-    sh = SQLAlchemyHandler(app)
-    sh.setLevel(logging.WARNING)
-    root_logger.addHandler(sh)
-    app.logger.addHandler(sh)
-
-    # logger to print to console
     console_handler = logging.StreamHandler(sys.stdout)
-    fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(module)-18s  %(message)s"
     console_handler.setFormatter(logging.Formatter(fmt, "%Y-%m-%d %H:%M:%S"))
     root_logger.addHandler(console_handler)
-    app.logger.addHandler(console_handler)
 
-    # logger to trigger SocetIO events
-    sio_handler = SocketIOHandler()
-    root_logger.addHandler(sio_handler)
-    app.logger.addHandler(sio_handler)
+    log_file_handler = TimedRotatingFileHandler(f"logs/{host}_log.txt", when="midnight")
+    log_file_handler.setFormatter(logging.Formatter(fmt, "%Y-%m-%d %H:%M:%S"))
+    log_file_handler.namer = log_namer
+    root_logger.addHandler(log_file_handler)
+
+    flask_socketIO_handler = SocketIOHandler()
+    root_logger.addHandler(flask_socketIO_handler)

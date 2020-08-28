@@ -16,13 +16,6 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-def flash_errors(form, category="warning"):
-    """Flash all errors for a form."""
-    for field, errors in form.errors.items():
-        for error in errors:
-            flash("{0} - {1}".format(getattr(form, field).label.text, error), category)
-
-
 def calculate_page_range(current_page, total_pages):
     """Calculate the page range to be displayed on the navbar.
 
