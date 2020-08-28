@@ -79,6 +79,12 @@ class LoadCellDeviceControl(serial.Serial):
         Sample at a period of period_us (in microseconds)
         """
         return self.send('b')
+        
+    def pause(self, channel=0):
+        """
+        Pause sampling
+        """
+        return self.send('p')
 
     def stop(self, channel=0):
         """
@@ -167,7 +173,7 @@ class LoadCell:
         Pauses the loadcell and loadcell thread.
         """
         try:
-            self.cell.stop()
+            self.cell.pause()
         except serial.SerialException:
             pass
             
@@ -188,6 +194,7 @@ class LoadCell:
                 
             self.running = False
             self.thread.join()
+            self.thread = threading.Thread(target=self.loop)
         self.log.info("Loadcell stopped")
         self.process_data()
         self.raws = []
@@ -245,8 +252,7 @@ class LoadCell:
                         data = float(data)
                         force = self.adc_to_force(data)
                     except ValueError:
-                        self.log.warning("Unable to parse loadcell data: {}", self.raws[i])
-                        print(self.raws[i])
+#                        self.log.warning("Unable to parse loadcell data: {}", self.raws[i])
                         continue
                         
                     if len(windowData) >= windowSize:
@@ -262,7 +268,8 @@ class LoadCell:
                     else:
                         f.write("{}\t{}\t{}\t{}\t\n".format(index, microseconds, data, force))
                 else:
-                    self.log.warning("Unable to parse loadcell data: {}", self.raws[i])
+                    pass
+#                    self.log.warning("Unable to parse loadcell data: {}", self.raws[i])
 
     
 
