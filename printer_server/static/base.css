@@ -17,3 +17,27 @@
 .jumbotron h2 {
   margin-bottom: 0;
 }
+
+/* scrollbar width */
+::-webkit-scrollbar {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 3px;
+}
+
+/* scrollbar track */
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* scrollbar handle */
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+/* scrollbar handle hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+    border-radius: 3px;
+}
