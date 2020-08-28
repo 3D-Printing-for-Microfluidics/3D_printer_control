@@ -1,5 +1,6 @@
 import atexit
 import serial
+import datetime
 import serial.tools.list_ports
 import serial.serialutil
 import threading
@@ -39,6 +40,7 @@ class LoadCellDeviceControl(serial.Serial):
         """
         self.port = self.findUsbPort(self.hwid)
         if self.port is None:
+            self.log.critical("Load cell not found")
             raise ValueError('Load cell not found')
         if self.is_open:
             self.close()
@@ -127,8 +129,10 @@ class LoadCell:
         """
         Initializes the loadcell
         """
+        self.start_time = 0
         self.running = False
         self.raws = []
+        self.frontend_data = []
         self.period = period
         self.filter_corner = filter_corner
         self.thread = threading.Thread(target=self.loop)
@@ -160,13 +164,14 @@ class LoadCell:
         """
         if not self.thread.is_alive():
             self.log_file = filename
-            
             self.running = True
             
             self.cell.flushInput()
+            
+            self.log.info("Loadcell started")
+            self.start_time = datetime.datetime.now()
             self.cell.sample()
             self.thread.start()
-            self.log.info("Loadcell started")
             
     def pause(self):
         """
@@ -192,31 +197,34 @@ class LoadCell:
             except serial.SerialException:
                 pass
                 
+            self.log.info("Loadcell stopped")
+                
             self.running = False
             self.thread.join()
             self.thread = threading.Thread(target=self.loop)
-        self.log.info("Loadcell stopped")
-        self.process_data()
+        
+        self.write_to_file()
         self.raws = []
+        self.frontend_data = []
+       
+    def get_data(self):
+        data = self.process_data(self.frontend_data)
+        self.frontend_data = []
+        return data
         
     def loop(self):
         """
         Threading loop
         """
         while(self.running):
-            self.get_data()
-
-    def get_data(self):
-        """
-        Reads raw loadcell data from serial handle
-        """
-        raw = ""
-        try:
-            raw = self.cell.receive()
-        except serial.SerialException:
-            self.running = False
-        else:
-            self.raws.append(raw)
+            raw = ""
+            try:
+                raw = self.cell.receive()
+            except serial.SerialException:
+                self.running = False
+            else:
+                self.raws.append(raw)
+                self.frontend_data.append(raw)
 
     def adc_to_force(self, x):
         """
@@ -229,47 +237,60 @@ class LoadCell:
         n = grams/1000*9.8
         return n
                 
-    def process_data(self):
+    def write_to_file(self):
         """
         Parses the loadcell data and save it to self.log_file
         """
         with open(self.log_file, "w") as f:
-            f.write("Index\tMicroseconds\tRaw\tNewtons\tAvg\n")
-            
-            length = len(self.raws)
-            windowSize = 10
-            windowData = []
-            for i in range(length - 2):
-                splitData = self.raws[i].split(",")
-                if(len(splitData) > 2):
-                    index = splitData[0]
-                    microseconds = splitData[1]
-                    data = splitData[2]
+            f.write("Timestamp\Index\tRaw\tNewtons\tAvg\n")
+            rows = self.process_data(self.raws)
+            for row in rows:
+                f.write("{}\t{}\t{}\t{}\t{}\n".format(row[0], row[1], row[2], row[3], row[4]))
 
-                    try:
-                        index = int(index)
-                        microseconds = float(microseconds)
-                        data = float(data)
-                        force = self.adc_to_force(data)
-                    except ValueError:
-#                        self.log.warning("Unable to parse loadcell data: {}", self.raws[i])
-                        continue
-                        
-                    if len(windowData) >= windowSize:
-                        windowData.pop(0)
-                    windowData.append(force)
+    def process_data(self, raw_data):
+        output_array = []
+        
+        length = len(raw_data)
+        windowSize = 10
+        windowData = []
+        for i in range(length - 2):
+            splitData = raw_data[i].split(",")
+            if(len(splitData) > 2):
+                index = splitData[0]
+                microseconds = splitData[1]
+                data = splitData[2]
+
+                try:
+                    index = int(index)
+                    microseconds = float(microseconds)
+                    time = self.start_time + datetime.timedelta(microseconds=microseconds)
+                    data = float(data)
+                    force = self.adc_to_force(data)
+                except ValueError:
+#                        self.log.warning("Unable to parse loadcell data: {}", raw_data[i])
+                    continue
                     
-                    if len(windowData) == windowSize:
-                        avg = 0
-                        for i in windowData:
-                            avg += i
-                        avg = avg / windowSize
-                        f.write("{}\t{}\t{}\t{}\t{}\n".format(index, microseconds, data, force, avg))
-                    else:
-                        f.write("{}\t{}\t{}\t{}\t\n".format(index, microseconds, data, force))
-                else:
-                    pass
-#                    self.log.warning("Unable to parse loadcell data: {}", self.raws[i])
+                if len(windowData) >= windowSize:
+                    windowData.pop(0)
+                windowData.append(force)
+                
+                avg = 0
+                for i in windowData:
+                    avg += i
+                avg = avg / len(windowData)
+                
+                array = []
+                array.append(time.strftime("%Y-%m-%d %H:%M:%S.%f'")[:-4])
+                array.append(index)
+#                array.append(microseconds)
+                array.append(data)
+                array.append(force)
+                array.append(avg)
+                output_array.append(array)
+            else:
+                pass
+#                    self.log.warning("Unable to parse loadcell data: {}", raw_data[i])
+        return output_array
 
     
 
