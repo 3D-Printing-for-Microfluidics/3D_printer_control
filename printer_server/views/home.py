@@ -518,6 +518,9 @@ class PrintControl:
 
         position_log = str(self.current_job / "position_data.txt")
         exposure_log = str(self.current_job / "exposure_data.txt")
+        loadcell_log = str(self.current_job / "loadcell_data.txt")
+        
+        self.loadcell.start(loadcell_log)
 
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
