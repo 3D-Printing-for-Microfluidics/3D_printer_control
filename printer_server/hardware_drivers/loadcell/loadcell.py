@@ -250,7 +250,7 @@ class LoadCell:
             f.write("Timestamp\Index\tRaw\tNewtons\tAvg\n")
             rows = self.process_data(self.raws)
             for row in rows:
-                f.write("{}\t{}\t{}\t{}\t{}\n".format(row[0], row[1], row[2], row[3], row[4]))
+                f.write("{}\t{}\t{}\t{}\t{}\n".format(row["time_str"], row["index"], row["raw_data"], row["force"], row["avg"]))
 
     def process_data(self, raw_data):
         """
@@ -297,14 +297,15 @@ class LoadCell:
                     avg += i
                 avg = avg / len(self.windowData)
                 
-                array = []
-                array.append(time.strftime("%Y-%m-%d %H:%M:%S.%f'")[:-4])
-                array.append(index)
-#                array.append(microseconds)
-                array.append(data)
-                array.append(force)
-                array.append(avg)
-                output_array.append(array)
+                dict = {
+                  "timestamp": time.timestamp()*1000,
+                  "time_str": time.strftime("%Y-%m-%d %H:%M:%S.%f'")[:-4],
+                  "index": index,
+                  "raw_data": data,
+                  "force": force,
+                  "avg": avg
+                }
+                output_array.append(dict)
             else:
                 pass
 #                    self.log.warning("Unable to parse loadcell data: {}", raw_data[i])
