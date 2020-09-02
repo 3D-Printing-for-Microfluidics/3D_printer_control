@@ -74,7 +74,6 @@ function update_loop(message) {
         let raw_data = element.raw_data;
         let force = element.force;
         let avg = element.avg;
-        console.log(avg)
 
         var olderTime = time.setSeconds(time.getSeconds() - 10);
         var futureTime = time.setSeconds(time.getSeconds() + 10);
