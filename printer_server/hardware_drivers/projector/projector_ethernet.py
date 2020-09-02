@@ -599,7 +599,10 @@ class Projector:
         Return type +OK and one line per error triggered since last
         reading
         """
-        return self.send("GET STICKY ERRORS")
+        errors = self.send("GET STICKY ERRORS")
+        if errors:
+            self.log.warning(errors.capitalize())
+        return errors
 
     def get_logs(self):
         """

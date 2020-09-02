@@ -34,24 +34,11 @@ var show_btn = function (btn) {
     $(btn).prop("disabled", false).removeClass("d-none");
 };
 
-var update_print_message = function (message) {
+var write_to_message_box = function (message) {
     if (!$.isEmptyObject(message)) {
-        var new_text = `
-        <div class="row">
-            <div class="col-4">${message.time}</div>
-            <div class="col-8">${message.text}</div>
-        </div>
-        `;
+        var new_text = `<div class='log-message'>${message}</div>`;
         $("#print-message").append(new_text);
     }
-}
-
-
-var write_to_message_box = function (message) {
-    // if (!$.isEmptyObject(message)) {
-    //     var new_text = `<div class="row">${message}</div>`;
-    //     $("#print-message").append(new_text);
-    // }
 }
 
 
@@ -222,7 +209,6 @@ $(document).ready(function () {
         show_btn();
         start_job_id = "";
         $(".clickable-row").removeClass("table-success");
-        update_print_message(message);
     });
 
     socket.on("uninitialized", function (message) {
@@ -253,14 +239,12 @@ $(document).ready(function () {
             .attr({ "aria-valuenow": message.percent })
             .text(message.percent + "%");
         $("#print-progress").removeClass("d-none");
-        update_print_message(message);
     });
 
     socket.on("print progress", function (message) {
         $("#print-progress-bar").css({ "width": message.percent + "%" })
             .attr({ "aria-valuenow": message.percent })
             .text(message.percent + "%");
-        update_print_message(message);
     });
 
     socket.on("paused", function (message) {
@@ -278,12 +262,10 @@ $(document).ready(function () {
         $("#printer-state").text("Completed");
         show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
         $("#print-progress").addClass("d-none");
-        update_print_message(message);
     });
 
     socket.on("shutting down", function (message) {
         $("#printer-state").text("Shutting down");
-        update_print_message(message);
     });
 
     socket.on("shutdown completed", function (message) {
@@ -292,7 +274,6 @@ $(document).ready(function () {
 
     socket.on("shutdown failed", function (message) {
         // TODO: add a warning window
-        update_print_message(message);
     });
 
     socket.on("update_message_box", function (message) {
@@ -373,7 +354,6 @@ $(document).ready(function () {
         `;
         $("#job-table > tbody").append(new_row);
         var new_msg = { time: message.upload_time, text: "Print Job (" + message.name + ") Uploaded" };
-        update_print_message(new_msg);
         $("#create-job").trigger('click');  // collapse the upload menu when done
     });
 
@@ -385,7 +365,6 @@ $(document).ready(function () {
 
     socket.on("job deleted", function (message) {
         $("#row-" + message.job).remove();
-        update_print_message(message);
     });
 
     socket.on("flash error", function (message) {

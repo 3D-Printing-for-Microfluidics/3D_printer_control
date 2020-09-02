@@ -23,15 +23,6 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-def flash_warning(text):
-    """Push a warning to the log and a flash box on the front end."""
-    text = text.capitalize()
-    log.warning(text)
-    socketio.emit(
-        "flash error", {"text": text, "category": "danger"}, namespace="/printing",
-    )
-
-
 def door_is_open(visitech_sticky_errors):
     """Return true if the door is open, else return false."""
     if "open" in visitech_sticky_errors.capitalize():
@@ -218,6 +209,8 @@ class PrintControl:
                 merged = defaults.copy()
                 merged.update(settings)
                 final_settings.append(merged)
+        if not final_settings:
+            final_settings.append(defaults.copy())
         return final_settings
 
     def get_num_duplications(self, layer):
@@ -288,8 +281,6 @@ class PrintControl:
             defocus_um = settings["Relative focus position (um)"]
             start_position = self.kdc.getCurrentPos()
             pre_exposure_status = self.projector.read_all_status()
-            if pre_exposure_status["led_sticky_errors"] != "":
-                flash_warning(pre_exposure_status["led_sticky_errors"])
             if defocus_um != 0:
                 self.kdc.move(self.focused_position + defocus_um, relative=False)
                 image = shift_image(image, x=um_to_px(defocus_um))
@@ -297,8 +288,6 @@ class PrintControl:
             defocus_position = self.kdc.getCurrentPos()
             self.projector.project(image, exposure_time_ms, power)
             post_exposure_status = self.projector.read_all_status()
-            if post_exposure_status["led_sticky_errors"] != "":
-                flash_warning(post_exposure_status["led_sticky_errors"])
             time.sleep(settings["Wait after exposure (ms)"] / 1000)
             if defocus_um != 0:
                 self.kdc.move(self.focused_position, relative=False)
@@ -388,6 +377,7 @@ class PrintControl:
         """Resume a paused print."""
         if self.state != "paused":
             return
+        log.info("Resuming print...")
         self.galil.absMove(cnts=self.paused_position)
         self.paused_position = None
         # update fontend
@@ -397,7 +387,7 @@ class PrintControl:
             "text": "Resume Printing",
         }
         self.state = "printing"
-        log.info(msg["text"])
+        log.info("Print resumed.")
         socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
         # resume printing in a new thread
         app = db.get_app()

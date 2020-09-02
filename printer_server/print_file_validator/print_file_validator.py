@@ -79,7 +79,8 @@ def check_image_format(image_file):
 
 def check_referenced_images_exist(print_settings, temp_dir):
     """Ensure that all images referenced in the print settings are
-    included in the print file.
+    included in the print file. Uses the default image if no override is
+    provided.
     """
     slices_folder = Path(print_settings["Header"]["Image directory"])
     slices = list(temp_dir.glob(f"{slices_folder}/*.png"))
@@ -90,13 +91,15 @@ def check_referenced_images_exist(print_settings, temp_dir):
         msg += "  Check 'Default layer settings' -> 'Image settings' -> 'Image file'"
         raise ValueError(msg)
     for layer in print_settings["Layers"]:
-        for image_setting in layer["Image settings list"]:
-            img = image_setting["Image file"]
-            img_path = temp_dir / slices_folder / Path(image_setting["Image file"])
-            if img_path not in slices:
-                msg = f"Missing image: '{img}' could not be found."
-                raise ValueError(msg)
-            check_image_format(img_path)
+        if "Image settings list" in layer:
+            for image_setting in layer["Image settings list"]:
+                if "Image file" in image_setting:
+                    img = image_setting["Image file"]
+                    img_path = temp_dir / slices_folder / Path(img)
+                    if img_path not in slices:
+                        msg = f"Missing image: '{img}' could not be found."
+                        raise ValueError(msg)
+                    check_image_format(img_path)
 
 
 if __name__ == "__main__":

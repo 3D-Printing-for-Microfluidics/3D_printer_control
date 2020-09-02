@@ -10,6 +10,9 @@ from printer_server.extensions import socketio
 from printer_server.models import ServerLog
 from printer_server.settings import Config
 
+host = Config.HOSTNAME
+fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(shortname)-18s  %(message)s  "
+
 
 def dummy_log(f):
     """Decorate function f with a printout of all parameters with their
@@ -69,38 +72,69 @@ class SQLAlchemyHandler(logging.Handler):
 
 
 class SocketIOHandler(logging.Handler):
-    """A logging handler that emits records with SocketIO."""
+    """A logging handler that emits records with SocketIO.
+
+    Every record gets emitted and written to a message pane on the front
+    end. If a record is warning level or higher, it also gets flashed
+    into a red warning box.
+    """
 
     def __init__(self):
         super().__init__()
 
     def emit(self, record):
-        asctime = record.__dict__["asctime"]
-        msecs = record.__dict__["msecs"]
-        levelname = record.__dict__["levelname"]
-        module = record.__dict__["module"]
-        message = record.__dict__["message"]
-        msg = f"{asctime}.{round(msecs):03} [{levelname:<5.5s}]  {module:<18s}  {message}"
-        socketio.emit("update_message_box", msg, namespace="/printing", broadcast=True)
+        try:
+            msg = fmt % {
+                "asctime": record.asctime.split(" ")[1],
+                "msecs": record.msecs,
+                "levelname": record.levelname,
+                "shortname": record.shortname,
+                "message": record.message,
+            }
+            socketio.emit(
+                "update_message_box", msg, namespace="/printing", broadcast=True
+            )
+            msg = "%(asctime)s.%(msecs)03d   %(message)s  " % {
+                "asctime": record.asctime.split(" ")[1],
+                "msecs": record.msecs,
+                "message": record.message,
+            }
+            if record.levelno >= logging.WARNING:
+                socketio.emit(
+                    "flash error",
+                    {"text": msg, "category": "danger"},
+                    namespace="/printing",
+                )
+        except AttributeError:
+            pass
+
+
+class LoggingNameFilter(logging.Filter):
+    """Strip out only the last part of a name to use with a logger."""
+
+    def filter(self, record):
+        record.shortname = record.name.rsplit(".", 1)[-1]
+        return True
 
 
 def configure_loggers(app):
     """Configure the loggers that will be shared for the app."""
-    host = Config.HOSTNAME
-    fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(module)-18s  %(message)s"
 
     app.logger.removeHandler(default_handler)
     root_logger = logging.getLogger()
     # root_logger.setLevel(logging.NOTSET)  # uncomment to see all mesasges everywhere
 
     console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.addFilter(LoggingNameFilter())
     console_handler.setFormatter(logging.Formatter(fmt, "%Y-%m-%d %H:%M:%S"))
     root_logger.addHandler(console_handler)
 
     log_file_handler = TimedRotatingFileHandler(f"logs/{host}_log.txt", when="midnight")
+    log_file_handler.addFilter(LoggingNameFilter())
     log_file_handler.setFormatter(logging.Formatter(fmt, "%Y-%m-%d %H:%M:%S"))
     log_file_handler.namer = log_namer
     root_logger.addHandler(log_file_handler)
 
     flask_socketIO_handler = SocketIOHandler()
     root_logger.addHandler(flask_socketIO_handler)
+    app.logger.addHandler(flask_socketIO_handler)
