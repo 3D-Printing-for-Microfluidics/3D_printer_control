@@ -83,23 +83,30 @@ class SocketIOHandler(logging.Handler):
         super().__init__()
 
     def emit(self, record):
-        msg = fmt % {
-            "asctime": record.asctime.split(" ")[1],
-            "msecs": record.msecs,
-            "levelname": record.levelname,
-            "shortname": record.shortname,
-            "message": record.message,
-        }
-        socketio.emit("update_message_box", msg, namespace="/printing", broadcast=True)
-        msg = "%(asctime)s.%(msecs)03d   %(message)s  " % {
-            "asctime": record.asctime.split(" ")[1],
-            "msecs": record.msecs,
-            "message": record.message,
-        }
-        if record.levelno >= logging.WARNING:
+        try:
+            msg = fmt % {
+                "asctime": record.asctime.split(" ")[1],
+                "msecs": record.msecs,
+                "levelname": record.levelname,
+                "shortname": record.shortname,
+                "message": record.message,
+            }
             socketio.emit(
-                "flash error", {"text": msg, "category": "danger"}, namespace="/printing"
+                "update_message_box", msg, namespace="/printing", broadcast=True
             )
+            msg = "%(asctime)s.%(msecs)03d   %(message)s  " % {
+                "asctime": record.asctime.split(" ")[1],
+                "msecs": record.msecs,
+                "message": record.message,
+            }
+            if record.levelno >= logging.WARNING:
+                socketio.emit(
+                    "flash error",
+                    {"text": msg, "category": "danger"},
+                    namespace="/printing",
+                )
+        except AttributeError:
+            pass
 
 
 class LoggingNameFilter(logging.Filter):
