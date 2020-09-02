@@ -272,9 +272,6 @@ class LoadCell:
             splitData = raw_data[i].split(",")
             if(len(splitData) > 2):
                 index = splitData[0]
-                if index != last_index + 1:
-                    last_index = index
-                    continue
                 microseconds = splitData[1]
                 data = splitData[2]
 
@@ -287,6 +284,11 @@ class LoadCell:
                 except ValueError:
 #                        self.log.warning("Unable to parse loadcell data: {}", raw_data[i])
                     continue
+                    
+#                if index != last_index + 1:
+#                    last_index = index
+#                    continue
+#                last_index = index
                     
                 if len(self.windowData) >= self.windowSize:
                     self.windowData.pop(0)
