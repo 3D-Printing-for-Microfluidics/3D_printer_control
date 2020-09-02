@@ -208,6 +208,8 @@ class PrintControl:
                 merged = defaults.copy()
                 merged.update(settings)
                 final_settings.append(merged)
+        if not final_settings:
+            final_settings.append(defaults.copy())
         return final_settings
 
     def get_num_duplications(self, layer):
