@@ -60,7 +60,6 @@ function draw_loadcell_graph() {
     Plotly.plot('loadcell-data',
         traces,
         layout, defaultPlotlyConfiguration);
-    // update_loop();
 
 }
 
@@ -94,39 +93,6 @@ function update_loop(message) {
         },
         [0])
     }
-    
-    /*let time = new Date();
-    let index = 0;
-    let raw_data = 0;
-    let force = 0;
-    let avg = 0;
-    array.forEach(function (element) {
-        let time = new Date(element.timestamp);
-        let index = element.index;
-        let raw_data = element.raw_data;
-        let force = element.force;
-        let avg = element.avg;
-        console.log(avg)
-        
-        var olderTime = time.setSeconds(time.getSeconds() - 5);
-        var futureTime = time.setSeconds(time.getSeconds() + 5);
-        var minuteView = {
-            xaxis: {
-                linecolor: 'black',
-                linewidth: 2,
-                mirror: true,
-                type: 'date',
-                range: [olderTime, futureTime]
-            }
-        };
-        Plotly.relayout('loadcell-data', minuteView);
-        Plotly.extendTraces('loadcell-data',
-        {
-            y: [[avg]],
-            x: [[time]]
-        },
-        [0])
-    });*/
 }
 
 
@@ -136,7 +102,6 @@ $(document).ready(function () {
 
     console.log("doc ready")
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/loadcell");
-    // socket.emit("start_graph", {});
     draw_loadcell_graph();
 
     socket.emit('graph_ready')

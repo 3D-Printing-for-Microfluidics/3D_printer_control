@@ -20,6 +20,3 @@ def test():
     
     msg = {"data": data}
     socketio.emit("graph_data", msg, namespace="/loadcell")
-    #time = datetime.datetime.now()
-    #msg = {"x1": random.randint(0, 30), "time": int(time.timestamp()*1000)}
-    #socketio.emit("graph_data", msg, namespace="/loadcell")
