@@ -134,7 +134,7 @@ class Projector:
         self.screenThread.start()
 
         # set default state for light engine and clear previous errors
-        self.get_sticky_errors()
+        self.get_sticky_errors(warn=False)
         self.set_video_source("HDMI")
         self.set_led_driver_regulation_mode("LIGHT")
         self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
@@ -576,7 +576,7 @@ class Projector:
         """
         return self.send(f"SET PIXEL MODE {mode}")
 
-    def get_sticky_errors(self):
+    def get_sticky_errors(self, warn=True):
         """
         Sticky errors are used to indicate that a runtime protection
         were triggered since last reading the errors. Such as the LED
@@ -601,7 +601,10 @@ class Projector:
         """
         errors = self.send("GET STICKY ERRORS")
         if errors:
-            self.log.warning(errors.capitalize())
+            if warn:
+                self.log.warning(errors.capitalize())
+            else:
+                self.log.info(errors.capitalize())
         return errors
 
     def get_logs(self):
