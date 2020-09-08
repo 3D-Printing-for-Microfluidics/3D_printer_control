@@ -101,10 +101,10 @@ $(document).ready(function () {
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/loadcell");
     draw_loadcell_graph();
 
-    socket.emit('graph_ready')
+    socket.emit('graph_start')
     socket.on("graph_data", function (message) {
         update_loop(message)
-        socket.emit('graph_ready')
+//        socket.emit('graph_ready')
     })
 
 
