@@ -69,9 +69,6 @@ function update_loop(message) {
     if(array.length > 0){
         element = array.pop()
         let time = new Date(element.timestamp);
-        let index = element.index;
-        let raw_data = element.raw_data;
-        let force = element.force;
         let avg = element.avg;
 
         var olderTime = time.setSeconds(time.getSeconds() - 10);

@@ -213,7 +213,7 @@ class LoadCell:
         """
         Processes and returns all data since last call
         """
-        data = self.process_data(self.frontend_data)
+        data = self.process_data(self.frontend_data, False)
         self.frontend_data = []
         return data
         
@@ -229,6 +229,7 @@ class LoadCell:
                 self.running = False
             else:
                 self.raws.append(raw)
+                self.frontend_data = []
                 self.frontend_data.append(raw)
 
     def adc_to_force(self, x):
@@ -247,12 +248,16 @@ class LoadCell:
         Parses the loadcell data and save it to self.log_file
         """
         with open(self.log_file, "w") as f:
-            f.write("Timestamp\Index\tRaw\tNewtons\tAvg\n")
-            rows = self.process_data(self.raws)
+            f.write("Timestamp\tIndex\tRaw\tNewtons\tAvg\n")
+            rows = self.process_data(self.raws, True)
             for row in rows:
                 f.write("{}\t{}\t{}\t{}\t{}\n".format(row["time_str"], row["index"], row["raw_data"], row["force"], row["avg"]))
+#        with open(self.log_file, "w") as f:
+#            for row in self.raws:
+#                f.write("{}\n".format(row))
 
-    def process_data(self, raw_data):
+        
+    def process_data(self, raw_data, write_to_file):
         """
         Processes raw data to add averaging, force conversion, and timestamps
         
@@ -267,22 +272,23 @@ class LoadCell:
         output_array = []
         
         length = len(raw_data)
-        last_index = 0
-        for i in range(length - 2):
+#        last_index = 0
+        #for i in range(length - 2):
+        for i in range(length):
             splitData = raw_data[i].split(",")
-            if(len(splitData) > 2):
+            if(len(splitData) == 3):
                 index = splitData[0]
-                microseconds = splitData[1]
+                milliseconds = splitData[1]
                 data = splitData[2]
 
                 try:
                     index = int(index)
-                    microseconds = float(microseconds)
-                    time = self.start_time + datetime.timedelta(microseconds=microseconds)
+                    milliseconds = float(milliseconds)
+                    time = self.start_time + datetime.timedelta(milliseconds=milliseconds)
                     data = float(data)
                     force = self.adc_to_force(data)
                 except ValueError:
-#                        self.log.warning("Unable to parse loadcell data: {}", raw_data[i])
+                    self.log.warning("Unable to parse loadcell data - cast error")
                     continue
                     
 #                if index != last_index + 1:
@@ -299,18 +305,24 @@ class LoadCell:
                     avg += i
                 avg = avg / len(self.windowData)
                 
-                dict = {
-                  "timestamp": time.timestamp()*1000,
-                  "time_str": time.strftime("%Y-%m-%d %H:%M:%S.%f'")[:-4],
-                  "index": index,
-                  "raw_data": data,
-                  "force": force,
-                  "avg": avg
-                }
-                output_array.append(dict)
+                try:
+                    dict = {
+                      "timestamp": time.timestamp()*1000,
+                      "avg": avg
+                    }
+                    if write_to_file:
+                        dict["time_str"] = time.strftime("%Y-%m-%d %H:%M:%S.%f'")[:-4]
+                        dict["index"] = index
+                        dict["raw_data"] = data
+                        dict["force"] = force
+                        
+                    output_array.append(dict)
+                except OverflowError:
+                    self.log.warning("Unable to parse loadcell data - time overflow")
+                    pass
             else:
+                self.log.debug("Unable to parse loadcell data - corrupt data")
                 pass
-#                    self.log.warning("Unable to parse loadcell data: {}", raw_data[i])
         return output_array
 
     
