@@ -152,7 +152,7 @@ class Projector_dummy:
     def set_pixel_mode(self, mode):
         return self.send("SET PIXEL MODE {}".format(mode))
 
-    def get_sticky_errors(self):
+    def get_sticky_errors(self, warn=True):
         self.send("GET STICKY ERRORS")
         return ""
 

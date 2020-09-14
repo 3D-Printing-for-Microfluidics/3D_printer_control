@@ -504,6 +504,7 @@ class PrintControl:
         # clear old flags
         self.printing_stopped.clear()
         self.printing_paused.clear()
+        self.projector.get_sticky_errors(warn=False)
         self.layer_map = self.generate_layer_map()
 
         position_log = str(self.current_job / "position_data.txt")
