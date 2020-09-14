@@ -16,11 +16,12 @@ def index():
 
 @socketio.on("graph_start", namespace="/loadcell")
 def test():
+    global running
     if not running:
         running = True
-        for _ in range(60):
+        while running:
             data = hardware_driver_handles.loadcell.get_data()
             
             msg = {"data": data}
             socketio.emit("graph_data", msg, namespace="/loadcell")
-            time.msleep(.02)
+            time.sleep(.05)
