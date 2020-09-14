@@ -125,7 +125,7 @@ class LoadCell:
     """
     Class providing high level control of loadcell
     """
-    def __init__(self, period=1000, filter_corner=1000, log_level=logging.DEBUG):
+    def __init__(self, period=10000, filter_corner=1000, log_level=logging.DEBUG):
         """
         Initializes the loadcell
         """
