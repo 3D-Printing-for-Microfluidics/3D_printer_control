@@ -47,6 +47,7 @@ class LoadCellDeviceControl(serial.Serial):
         self.open()
         self.flushInput()
         self.flushOutput()
+        self.receiveAll()
         self.log.debug("Connected to {}", self.port)
         #print("Connected to", self.port)
         
@@ -114,12 +115,12 @@ class LoadCellDeviceControl(serial.Serial):
         response += self.readline()         # wait for the first line to fill in the rx buffer
         return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
         
-#    def receiveAll(self):
-#        response = b''
-#        response += self.readline()         # wait for the first line to fill in the rx buffer
-#        while self.in_waiting:              # while there is more data in the rx buffer
-#            response += self.readline()     # read next line from rx buffer
-#        return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
+    def receiveAll(self):
+        response = b''
+        response += self.readline()         # wait for the first line to fill in the rx buffer
+        while self.in_waiting:              # while there is more data in the rx buffer
+            response += self.readline()     # read next line from rx buffer
+        return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
 
 class LoadCell:
     """
@@ -150,9 +151,9 @@ class LoadCell:
         Connects to the loadcell and sets parameters.
         """
         self.cell.connect()
-        self.cell.set_sample_period(int(self.period))
-        self.cell.set_gain(100)
-        self.cell.set_filter_corner(int(self.filter_corner))
+        self.log.debug("%s", self.cell.set_sample_period(int(self.period)))
+        self.log.debug("%s", self.cell.set_gain(100))
+        self.log.debug("%s", self.cell.set_filter_corner(int(self.filter_corner)))
         self.log.info("Connected to loadcell")
 
     def start(self, filename):
