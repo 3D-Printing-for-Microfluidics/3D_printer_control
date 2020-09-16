@@ -25,7 +25,7 @@ function draw_loadcell_graph() {
         },
         yaxis: {
             ticksuffix: "",
-            range: [-30, 30],
+            range: [-50, 50],
             autorange: false,
             linecolor: 'black',
             linewidth: 2,

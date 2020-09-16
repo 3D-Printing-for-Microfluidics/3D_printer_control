@@ -355,7 +355,32 @@ class PrintControl:
         """Raise the build platform to begin printing."""
         if self.state == "planarizing":
             log.info("Loadcell force: %s",self.loadcell.get_current_force())
+            self.loadcellPlanarization()
             pass
+            
+    def loadcellPlanarization(self):
+        # get initial force and position
+        start_force = self.loadcell.get_current_force()
+        
+        count = 0
+        fail_count = 0
+        while start_force > 5:
+            self.galil.relMove(
+                mm=-0.05,
+                speed=25,
+                acceleration=50,
+            )
+            time.sleep(.5)
+            end_force = self.loadcell.get_current_force()
+            count = count + 1
+            log.info("Loadcell force: %s",end_force)
+            if abs(start_force - end_force) < .25:
+                if fail_count >= 3:
+                    log.error("Loadcell planarization failed. (Check battery)")
+                    return
+                fail_count = fail_count + 1
+            start_force = self.loadcell.get_current_force()
+        log.info("Loadcell planarized %s steps", count)
 
     @run_in_thread("paused", "Pause Printing")
     def pause(self):
