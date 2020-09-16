@@ -347,12 +347,14 @@ class PrintControl:
         """Lower build platform to lower position for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
+            self.loadcell.start()
             self.galil.goToZmin()
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarizationStep2(self):
         """Raise the build platform to begin printing."""
         if self.state == "planarizing":
+            self.loadcell.get_current_force()
             pass
 
     @run_in_thread("paused", "Pause Printing")
@@ -511,8 +513,8 @@ class PrintControl:
         exposure_log = str(self.current_job / "exposure_data.txt")
         loadcell_log = str(self.current_job / "loadcell_data.txt")
         
-        self.loadcell.start(loadcell_log)
-
+        self.loadcell.set_log_file(loadcell_log)
+        
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
             self.galil.goToZmin()

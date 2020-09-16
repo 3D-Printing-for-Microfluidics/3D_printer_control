@@ -134,6 +134,7 @@ class LoadCell:
         self.running = False
         self.raws = []
         self.frontend_data = []
+        self.last_ten = []
         self.period = period
         self.windowSize = 10
         self.windowData = []
@@ -156,7 +157,7 @@ class LoadCell:
         self.log.debug("%s", self.cell.set_filter_corner(int(self.filter_corner)))
         self.log.info("Connected to loadcell")
 
-    def start(self, filename):
+    def start(self):
         """
         Starts the loadcell collecting data
         
@@ -166,7 +167,6 @@ class LoadCell:
             corner      - corner frequency of loadcell highpass filter (in Hz)
         """
         if not self.thread.is_alive():
-            self.log_file = filename
             self.running = True
             
             self.cell.flushInput()
@@ -175,6 +175,12 @@ class LoadCell:
             self.start_time = datetime.datetime.now()
             self.cell.sample()
             self.thread.start()
+            
+    def set_log_file(self, filename):
+        """
+        Sets the filepath to save the log to
+        """
+        self.log_file = filename
             
     def pause(self):
         """
@@ -218,6 +224,15 @@ class LoadCell:
         self.frontend_data = []
         return data
         
+    def get_current_force(self):
+        """
+        Processes and returns all data since last call
+        """
+        data = self.process_data(self.last_ten, False)
+        data.reverse()
+        self.log.info("Loadcell force: %s", data[0]["avg"])
+        return data[0]["avg"]
+        
     def loop(self):
         """
         Threading loop
@@ -232,6 +247,10 @@ class LoadCell:
                 self.raws.append(raw)
                 self.frontend_data = []
                 self.frontend_data.append(raw)
+                
+                if len(self.last_ten) >= 10:
+                    self.last_ten.pop(0)
+                self.last_ten.append(raw)
 
     def adc_to_force(self, x):
         """
