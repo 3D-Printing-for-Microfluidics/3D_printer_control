@@ -20,7 +20,7 @@ def test():
     if not running:
         running = True
         while running:
-            data = hardware_driver_handles.loadcell.get_data()
+            data = hardware_driver_handles.loadcell.get_current_data()
             
             msg = {"data": data}
             socketio.emit("graph_data", msg, namespace="/loadcell")

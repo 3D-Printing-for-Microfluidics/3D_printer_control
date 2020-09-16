@@ -354,7 +354,7 @@ class PrintControl:
     def planarizationStep2(self):
         """Raise the build platform to begin printing."""
         if self.state == "planarizing":
-            self.loadcell.get_current_force()
+            log.info("Loadcell force: %s",self.loadcell.get_current_force())
             pass
 
     @run_in_thread("paused", "Pause Printing")

@@ -64,12 +64,10 @@ function draw_loadcell_graph() {
 }
 
 function update_loop(message) {
-    let array = message.data;
-    
-    if(array.length > 0){
-        element = array.pop()
-        let time = new Date(element.timestamp);
-        let avg = element.avg;
+    let data = message.data;
+    if (data != 0){
+        let time = new Date(data.timestamp);
+        let avg = data.avg;
 
         var olderTime = time.setSeconds(time.getSeconds() - 10);
         var futureTime = time.setSeconds(time.getSeconds() + 10);

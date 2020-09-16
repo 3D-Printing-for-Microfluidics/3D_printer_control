@@ -11,7 +11,7 @@ class LoadCell(serial.Serial):
     """
     Class providing high level control of loadcell
     """
-    def __init__(self, hwid='PID=16C0:0483 SER=6256240', period=5000, filter_corner=1000, log_level=logging.DEBUG):
+    def __init__(self, log_level=logging.DEBUG):
         """
         Initializes the loadcell
         """
@@ -19,23 +19,16 @@ class LoadCell(serial.Serial):
         self.port = None                # start with no port
         #self.status = None              # status to be updated after every send
         
-        self.filter_corner = filter_corner
-        self.period = period
-        self.hwid = hwid
-        self.log_level = log_level
-        
         self.raws = []
-        self.frontend_data = []
-        self.last_ten = []
+        #self.frontend_data = []
+        #self.last_ten = []
         self.windowSize = 10
         self.windowData = []
-        
         self.start_time = 0
         self.running = False
         
         self.log = logging.getLogger(__name__)
-        self.log.setLevel(self.log_level)
-        
+        self.log.setLevel(log_level)
         self.thread = threading.Thread(target=self.loop)
         
     def findUsbPort(self, hwid):
@@ -52,10 +45,25 @@ class LoadCell(serial.Serial):
                 return p.device
         return None             # not found
         
-    def connect(self):
+    def adc_to_force(self, x):
+        """
+        Converts the adc counts to newtons using precalculated constants
+        """
+        slope = -1.46
+        intercept = 33845.0
+
+        grams = (x - intercept)/slope
+        n = grams/1000*9.8
+        return n
+        
+    def connect(self, hwid='PID=16C0:0483 SER=6256240', period=2000, filter_corner=1000):
         """
         Connects to the loadcell and sets parameters.
         """
+        self.filter_corner = filter_corner
+        self.period = period
+        self.hwid = hwid
+        
         self.port = self.findUsbPort(self.hwid)
         if self.port is None:
             self.log.critical("Load cell not found")
@@ -134,25 +142,25 @@ class LoadCell(serial.Serial):
         if save:
             self.write_to_file()
         self.raws = []
-        self.frontend_data = []
+        self.windowData = []
         
        
-    def get_data(self):
+    def get_current_data(self):
         """
-        Processes and returns all data since last call
+        Get current loadcell force
         """
-        data = self.process_data(self.frontend_data, False)
-        self.frontend_data = []
-        return data
+        data = self.process_data(self.windowData, False)
+        if len(data) == 0:
+            return 0
+        else:
+            data.reverse()
+            return data[0]
         
     def get_current_force(self):
         """
-        Processes and returns all data since last call
+        Get all current loadcell data
         """
-        data = self.process_data(self.last_ten, False)
-        data.reverse()
-        self.log.info("Loadcell force: %s", data[0]["avg"])
-        return data[0]["avg"]
+        return self.get_current_data()["avg"]
         
     def loop(self):
         """
@@ -166,23 +174,10 @@ class LoadCell(serial.Serial):
                 self.running = False
             else:
                 self.raws.append(raw)
-                self.frontend_data = []
-                self.frontend_data.append(raw)
                 
-                if len(self.last_ten) >= 10:
-                    self.last_ten.pop(0)
-                self.last_ten.append(raw)
-
-    def adc_to_force(self, x):
-        """
-        Converts the adc counts to newtons using precalculated constants
-        """
-        slope = -1.46
-        intercept = 33845.0
-
-        grams = (x - intercept)/slope
-        n = grams/1000*9.8
-        return n
+                if len(self.windowData) >= 10:
+                    self.windowData.pop(0)
+                self.windowData.append(raw)
                 
     def write_to_file(self):
         """
@@ -193,9 +188,6 @@ class LoadCell(serial.Serial):
             rows = self.process_data(self.raws, True)
             for row in rows:
                 f.write("{}\t{}\t{}\t{}\t{}\n".format(row["time_str"], row["index"], row["raw_data"], row["force"], row["avg"]))
-#        with open(self.log_file, "w") as f:
-#            for row in self.raws:
-#                f.write("{}\n".format(row))
 
         
     def process_data(self, raw_data, write_to_file):
@@ -211,6 +203,8 @@ class LoadCell(serial.Serial):
             [x][4] Running Average
         """
         output_array = []
+        avg_array = []
+        avg_length = 10
         
         length = len(raw_data)
 #        last_index = 0
@@ -237,14 +231,14 @@ class LoadCell(serial.Serial):
 #                    continue
 #                last_index = index
                     
-                if len(self.windowData) >= self.windowSize:
-                    self.windowData.pop(0)
-                self.windowData.append(force)
+                if len(avg_array) >= avg_length:
+                    avg_array.pop(0)
+                avg_array.append(force)
                 
                 avg = 0
-                for i in self.windowData:
+                for i in avg_array:
                     avg += i
-                avg = avg / len(self.windowData)
+                avg = avg / len(avg_array)
                 
                 try:
                     dict = {
