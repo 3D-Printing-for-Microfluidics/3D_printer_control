@@ -59,6 +59,11 @@ class LoadCell(serial.Serial):
     def connect(self, hwid='PID=16C0:0483 SER=6256240', period=2000, filter_corner=1000):
         """
         Connects to the loadcell and sets parameters.
+        
+        Parameters:
+            hwid        - device identifier
+            period      - sample period of loadcell (in milliseconds)
+            corner      - corner frequency of loadcell highpass filter (in Hz)
         """
         self.filter_corner = filter_corner
         self.period = period
@@ -87,11 +92,6 @@ class LoadCell(serial.Serial):
     def start(self):
         """
         Starts the loadcell collecting data
-        
-        Parameters:
-            filename    - local path and filename (current_job/loadcell_data.txt)
-            period      - sample period of loadcell (in milliseconds)
-            corner      - corner frequency of loadcell highpass filter (in Hz)
         """
         if not self.thread.is_alive():
             self.running = True
@@ -106,6 +106,9 @@ class LoadCell(serial.Serial):
     def set_log_file(self, filename):
         """
         Sets the filepath to save the log to
+        
+        Parameters:
+            filename    - local path and filename (current_job/loadcell_data.txt)
         """
         self.log_file = filename
             
@@ -140,7 +143,9 @@ class LoadCell(serial.Serial):
             self.thread = threading.Thread(target=self.loop)
         
         if save:
+            self.log.info("Processing loadcell data")
             self.write_to_file()
+            self.log.info("Processing finished")
         self.raws = []
         self.windowData = []
         
