@@ -6,19 +6,37 @@ import serial.serialutil
 import threading
 
 import logging
-
-class LoadCellDeviceControl(serial.Serial):
+    
+class LoadCell(serial.Serial):
     """
-    Class handling direct communication with loadcell
+    Class providing high level control of loadcell
     """
-    def __init__(self, hwid='PID=16C0:0483 SER=6256240'):
+    def __init__(self, hwid='PID=16C0:0483 SER=6256240', period=5000, filter_corner=1000, log_level=logging.DEBUG):
         """
-        Initializes the loadcell controller
+        Initializes the loadcell
         """
         super().__init__(baudrate=115200, timeout=1)
-        self.hwid = hwid
         self.port = None                # start with no port
-        self.status = None              # status to be updated after every send
+        #self.status = None              # status to be updated after every send
+        
+        self.filter_corner = filter_corner
+        self.period = period
+        self.hwid = hwid
+        self.log_level = log_level
+        
+        self.raws = []
+        self.frontend_data = []
+        self.last_ten = []
+        self.windowSize = 10
+        self.windowData = []
+        
+        self.start_time = 0
+        self.running = False
+        
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(self.log_level)
+        
+        self.thread = threading.Thread(target=self.loop)
         
     def findUsbPort(self, hwid):
         """
@@ -33,10 +51,10 @@ class LoadCellDeviceControl(serial.Serial):
                 self.log.debug("Found '%s' at '%s'", p.hwid, p.device)
                 return p.device
         return None             # not found
-
+        
     def connect(self):
         """
-        Opens a serial handle to the loadcell device
+        Connects to the loadcell and sets parameters.
         """
         self.port = self.findUsbPort(self.hwid)
         if self.port is None:
@@ -51,111 +69,12 @@ class LoadCellDeviceControl(serial.Serial):
         self.log.debug("Connected to {}", self.port)
         #print("Connected to", self.port)
         
-        atexit.register(self.close)
-
-    def set_gain(self, value):
-        """
-        Set the gain
-        """
-        self.log.debug("Gain set to {}", value)
-        #print("gain set to {}", value)
-        return self.send('g {}'.format(value)), value
-
-    def set_filter_corner(self, value):
-        """
-        Set the filter 3d corner
-        """
-        self.log.debug("Corner set to {}", value)
-        #print("corner set to {}", value)
-        return self.send('f {}'.format(value)), value
-
-    def set_sample_period(self, period_us):
-        """
-        Set the sampling period to period_us (in microseconds)
-        """
-        self.log.debug("Period set to {}", period_us)
-        #print("period set to {}", period_us)
-        return self.send('p {}'.format(period_us)), period_us
-
-    def sample(self):
-        """
-        Sample at a period of period_us (in microseconds)
-        """
-        return self.send('b')
-        
-    def pause(self, channel=0):
-        """
-        Pause sampling
-        """
-        return self.send('p')
-
-    def stop(self, channel=0):
-        """
-        Stop sampling
-        """
-        return self.send('e')
-
-    def send(self, cmd):
-        """
-        Sends serial command to the loadcell device
-        """
-        self.log.debug("Sent: {}", cmd)
-        #if self.verbose: print('Sent: ' + cmd)
-        self.write(bytes(cmd + '\n', encoding='ascii')) # write to serial tx buffer
-        response = self.receive()
-        self.log.debug("Response: {}", response)
-       # if self.verbose: print("Response: ", response)
-        return response                                 # return the response to the command
-
-    def receive(self):
-        """
-        Sends serial response from the loadcell device
-        """
-        response = b''
-        response += self.readline()         # wait for the first line to fill in the rx buffer
-        return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
-        
-    def receiveAll(self):
-        response = b''
-        response += self.readline()         # wait for the first line to fill in the rx buffer
-        while self.in_waiting:              # while there is more data in the rx buffer
-            response += self.readline()     # read next line from rx buffer
-        return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
-
-class LoadCell:
-    """
-    Class providing high level control of loadcell
-    """
-    def __init__(self, period=5000, filter_corner=1000, log_level=logging.DEBUG):
-        """
-        Initializes the loadcell
-        """
-        self.start_time = 0
-        self.running = False
-        self.raws = []
-        self.frontend_data = []
-        self.last_ten = []
-        self.period = period
-        self.windowSize = 10
-        self.windowData = []
-        self.filter_corner = filter_corner
-        self.thread = threading.Thread(target=self.loop)
-        
-        self.log = logging.getLogger(__name__)
-        self.log.setLevel(log_level)
-        
-        self.cell = LoadCellDeviceControl()
-        self.cell.log = self.log
-        
-    def connect(self):
-        """
-        Connects to the loadcell and sets parameters.
-        """
-        self.cell.connect()
-        self.log.debug("%s", self.cell.set_sample_period(int(self.period)))
-        self.log.debug("%s", self.cell.set_gain(100))
-        self.log.debug("%s", self.cell.set_filter_corner(int(self.filter_corner)))
+        self.log.debug("%s", self.set_sample_period(int(self.period)))
+        self.log.debug("%s", self.set_gain(100))
+        self.log.debug("%s", self.set_filter_corner(int(self.filter_corner)))
         self.log.info("Connected to loadcell")
+        
+        atexit.register(self.close)
 
     def start(self):
         """
@@ -169,11 +88,11 @@ class LoadCell:
         if not self.thread.is_alive():
             self.running = True
             
-            self.cell.flushInput()
+            self.flushInput()
             
             self.log.info("Loadcell started")
             self.start_time = datetime.datetime.now()
-            self.cell.sample()
+            self.loadcell_start()
             self.thread.start()
             
     def set_log_file(self, filename):
@@ -187,7 +106,7 @@ class LoadCell:
         Pauses the loadcell and loadcell thread.
         """
         try:
-            self.cell.pause()
+            self.loadcell_pause()
         except serial.SerialException:
             pass
             
@@ -196,13 +115,13 @@ class LoadCell:
         self.thread = threading.Thread(target=self.loop)
         self.log.info("Loadcell paused")
 
-    def stop(self):
+    def stop(self, save=True):
         """
         Stops the loadcell and loadcell thread. Saves data to file
         """
         if self.running:
             try:
-                self.cell.stop()
+                self.loadcell_stop()
             except serial.SerialException:
                 pass
                 
@@ -212,9 +131,11 @@ class LoadCell:
             self.thread.join()
             self.thread = threading.Thread(target=self.loop)
         
-        self.write_to_file()
+        if save:
+            self.write_to_file()
         self.raws = []
         self.frontend_data = []
+        
        
     def get_data(self):
         """
@@ -240,7 +161,7 @@ class LoadCell:
         while(self.running):
             raw = ""
             try:
-                raw = self.cell.receive()
+                raw = self.receive()
             except serial.SerialException:
                 self.running = False
             else:
@@ -308,7 +229,7 @@ class LoadCell:
                     data = float(data)
                     force = self.adc_to_force(data)
                 except ValueError:
-                    self.log.warning("Unable to parse loadcell data - cast error")
+                    self.log.debug("Unable to parse loadcell data - cast error")
                     continue
                     
 #                if index != last_index + 1:
@@ -338,12 +259,82 @@ class LoadCell:
                         
                     output_array.append(dict)
                 except OverflowError:
-                    self.log.warning("Unable to parse loadcell data - time overflow")
+                    self.log.debug("Unable to parse loadcell data - time overflow")
                     pass
             else:
                 self.log.debug("Unable to parse loadcell data - corrupt data")
                 pass
         return output_array
-
+        
+    ########################
+    # Teensy serial wrappers
+    ########################
     
+    def loadcell_start(self):
+        """
+        Sample at a period of period_us (in microseconds)
+        """
+        return self.send('b')
+        
+    def loadcell_pause(self):
+        """
+        Pause sampling
+        """
+        return self.send('p')
 
+    def loadcell_stop(self):
+        """
+        Stop sampling
+        """
+        return self.send('e')
+
+    def set_gain(self, value):
+        """
+        Set the gain
+        """
+        self.log.debug("Gain set to {}", value)
+        #print("gain set to {}", value)
+        return self.send('g {}'.format(value)), value
+
+    def set_filter_corner(self, value):
+        """
+        Set the filter 3d corner
+        """
+        self.log.debug("Corner set to {}", value)
+        #print("corner set to {}", value)
+        return self.send('f {}'.format(value)), value
+
+    def set_sample_period(self, period_us):
+        """
+        Set the sampling period to period_us (in microseconds)
+        """
+        self.log.debug("Period set to {}", period_us)
+        #print("period set to {}", period_us)
+        return self.send('p {}'.format(period_us)), period_us
+
+    def send(self, cmd):
+        """
+        Sends serial command to the loadcell device
+        """
+        self.log.debug("Sent: {}", cmd)
+        #if self.verbose: print('Sent: ' + cmd)
+        self.write(bytes(cmd + '\n', encoding='ascii')) # write to serial tx buffer
+        response = self.receive()
+        self.log.debug("Response: {}", response)
+       # if self.verbose: print("Response: ", response)
+        return response                                 # return the response to the command
+
+    def receive(self):
+        """
+        Sends serial response from the loadcell device
+        """
+        response = b''
+        response += self.readline()         # wait for the first line to fill in the rx buffer
+        return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
+        
+    def receiveAll(self):
+        response = b''
+        response += self.readline()         # wait for the first line to fill in the rx buffer
+        while self.in_waiting:              # while there is more data in the rx buffer
+            response += self.readline()     # read next line from rx buffer
+        return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
