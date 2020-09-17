@@ -348,13 +348,15 @@ class PrintControl:
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
             self.loadcell.start()
+            time.sleep(.5)
+            log.info("Staring loadcell force: %s",self.loadcell.get_current_force())
             self.galil.goToZmin()
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarizationStep2(self):
         """Raise the build platform to begin printing."""
         if self.state == "planarizing":
-            log.info("Loadcell force: %s",self.loadcell.get_current_force())
+            log.info("Planarizing loadcell force: %s",self.loadcell.get_current_force())
             self.loadcellPlanarization()
             pass
             
@@ -381,6 +383,7 @@ class PrintControl:
                 fail_count = fail_count + 1
             start_force = self.loadcell.get_current_force()
         log.info("Loadcell planarized %s steps", count)
+        log.info("Final loadcell force: %s",self.loadcell.get_current_force())
 
     @run_in_thread("paused", "Pause Printing")
     def pause(self):
