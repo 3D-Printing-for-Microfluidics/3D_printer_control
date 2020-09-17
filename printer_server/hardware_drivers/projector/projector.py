@@ -5,6 +5,7 @@ Projector
 """
 import sys
 import time
+import json
 import atexit
 import socket
 import logging
@@ -322,7 +323,7 @@ class Projector:
 
         Return type +OK and feedback value.
         """
-        return self.send("GET LIGHT FEEDBACK")
+        return float(self.send("GET LIGHT FEEDBACK"))
 
     def get_led_temp(self):
         """
@@ -330,7 +331,7 @@ class Projector:
 
         Return type +OK and temperature value.
         """
-        return self.send("GET LED TEMP")
+        return float(self.send("GET LED TEMP"))
 
     def get_led_driver_board_temp(self):
         """
@@ -338,7 +339,7 @@ class Projector:
 
         Return type +OK and temperature value.
         """
-        return self.send("GET BOARD TEMP")
+        return float(self.send("GET BOARD TEMP"))
 
     def set_led_driver_board_temp_limit(self, temperature):
         """
@@ -350,7 +351,7 @@ class Projector:
 
         Return type +OK
         """
-        return self.send(f"SET BOARD TEMP LIMIT {temperature}")
+        return float(self.send(f"SET BOARD TEMP LIMIT {temperature}"))
 
     def get_led_driver_board_temp_limit(self):
         """
@@ -358,7 +359,7 @@ class Projector:
 
         Return type +OK and board temperature limit in Celsius
         """
-        return self.send("GET BOARD TEMP LIMIT")
+        return float(self.send("GET BOARD TEMP LIMIT"))
 
     def set_led_temp_limit(self, temperature):
         """
@@ -407,9 +408,9 @@ class Projector:
     def get_dmd_status(self):
         """
         Get overview of DMD states. Such as sequencer running state.
-        The result is returned as JSON.
+        The result is returned as a JSON dictionary.
 
-        Return type +OK and JSON string
+        Return type +OK and JSON dictionary
 
         Example:
         GET DMD STATUS
@@ -429,7 +430,7 @@ class Projector:
             "video_frozen": false
         }
         """
-        return self.send("GET DMD STATUS")
+        return json.loads(self.send("GET DMD STATUS").replace("\n    ", ""))
 
     def set_dmd_operation_mode(self, mode):
         """

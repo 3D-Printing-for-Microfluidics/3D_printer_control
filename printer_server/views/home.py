@@ -291,6 +291,7 @@ class PrintControl:
             if defocus_um != 0:
                 self.kdc.move(self.focused_position, relative=False)
             data[i] = {
+                "image": image.name,
                 "pre exposure position": start_position,
                 "defocused position": defocus_position,
                 "post exposure position": self.kdc.getCurrentPos(),
@@ -537,7 +538,9 @@ class PrintControl:
             # do exposures and log data
             exposure_data = self.perform_exposures(image_settings_list)
             with open(exposure_log, "a") as f:
-                f.write(f"layer {layer} data: {exposure_data}\n")
+                f.write(f"layer {layer}:\n")
+                for x in exposure_data:
+                    f.write(f"{json.dumps({x: exposure_data[x]}, indent=2)}\n")
 
             # update frontend message pane and progress bar
             socketio.emit(
