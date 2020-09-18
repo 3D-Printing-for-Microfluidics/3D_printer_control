@@ -90,11 +90,7 @@ function update_loop(message) {
     }
 }
 
-
-
-
 $(document).ready(function () {
-
     console.log("doc ready")
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/loadcell");
     draw_loadcell_graph();
@@ -102,9 +98,5 @@ $(document).ready(function () {
     socket.emit('graph_start')
     socket.on("graph_data", function (message) {
         update_loop(message)
-//        socket.emit('graph_ready')
     })
-
-
-
 })

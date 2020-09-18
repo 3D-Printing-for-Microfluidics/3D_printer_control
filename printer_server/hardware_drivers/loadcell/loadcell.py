@@ -20,10 +20,8 @@ class LoadCell(serial.Serial):
         #self.status = None              # status to be updated after every send
         
         self.raws = []
-        #self.frontend_data = []
-        #self.last_ten = []
-        self.windowSize = 10
         self.windowData = []
+        self.windowSize = 10
         self.start_time = 0
         self.running = False
         
@@ -80,7 +78,6 @@ class LoadCell(serial.Serial):
         self.flushOutput()
         self.receiveAll()
         self.log.debug("Connected to {}", self.port)
-        #print("Connected to", self.port)
         
         self.log.debug("%s", self.set_sample_period(int(self.period)))
         self.log.debug("%s", self.set_gain(100))
@@ -165,7 +162,10 @@ class LoadCell(serial.Serial):
         """
         Get all current loadcell data
         """
-        return self.get_current_data()["avg"]
+        data = self.get_current_data()
+        if data == 0:
+            return 0
+        return data["avg"]
         
     def loop(self):
         """
@@ -223,8 +223,7 @@ class LoadCell(serial.Serial):
 
                 try:
                     index = int(index)
-                    milliseconds = float(milliseconds)
-                    time = self.start_time + datetime.timedelta(milliseconds=milliseconds)
+                    time = self.start_time + datetime.timedelta(milliseconds=float(milliseconds))
                     data = float(data)
                     force = self.adc_to_force(data)
                 except ValueError:
@@ -292,7 +291,6 @@ class LoadCell(serial.Serial):
         Set the gain
         """
         self.log.debug("Gain set to {}", value)
-        #print("gain set to {}", value)
         return self.send('g {}'.format(value)), value
 
     def set_filter_corner(self, value):
@@ -300,7 +298,6 @@ class LoadCell(serial.Serial):
         Set the filter 3d corner
         """
         self.log.debug("Corner set to {}", value)
-        #print("corner set to {}", value)
         return self.send('f {}'.format(value)), value
 
     def set_sample_period(self, period_us):
@@ -308,7 +305,6 @@ class LoadCell(serial.Serial):
         Set the sampling period to period_us (in microseconds)
         """
         self.log.debug("Period set to {}", period_us)
-        #print("period set to {}", period_us)
         return self.send('p {}'.format(period_us)), period_us
 
     def send(self, cmd):
@@ -316,11 +312,9 @@ class LoadCell(serial.Serial):
         Sends serial command to the loadcell device
         """
         self.log.debug("Sent: {}", cmd)
-        #if self.verbose: print('Sent: ' + cmd)
         self.write(bytes(cmd + '\n', encoding='ascii')) # write to serial tx buffer
         response = self.receive()
         self.log.debug("Response: {}", response)
-       # if self.verbose: print("Response: ", response)
         return response                                 # return the response to the command
 
     def receive(self):
