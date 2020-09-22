@@ -101,9 +101,9 @@ def add_to_queue(job_id):
         validate_v02(new_filename)
         msg = f"{job.original_filename} added to print queue."
         log.info(msg)
-        socketio.emit(
-            "flash", {"text": msg, "category": "success"}, namespace="/print_history"
-        )
+        # socketio.emit(
+        #     "flash", {"text": msg, "category": "success"}, namespace="/print_history"
+        # )
         PrintQueue(
             original_filename=job.original_filename,
             upload_time=upload_time,
