@@ -69,9 +69,6 @@ class Galil:
         self.g = gclib.py()
         atexit.register(self.disconnect)
 
-        # a log to track all communications for debugging, gets created on connect
-        self.log_file = Path.cwd() / "logs"
-
     def initialize(self):
         self.motorOn()
 
@@ -103,13 +100,6 @@ class Galil:
                 self.g.GOpen("{} --direct".format(self.address))
                 self.log.debug("GInfo returned: %s", self.g.GInfo())
                 self.connected = True
-
-                # Create log
-                date_and_time = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
-                self.log_file = str(
-                    self.log_file
-                    / "galil_controller_command_dump_{}.txt".format(date_and_time)
-                )
                 return
         msg = "{} not found.".format(self.controller_name)
         self.log.critical(msg)
@@ -127,23 +117,20 @@ class Galil:
 
     # send a command to the controller, interpret errors if any are thrown
     def send(self, command, notify=True):
-        with open(self.log_file, "a") as f:
-            if notify:
-                self.log.debug("Sent : '%s'", command)
-                f.write("Sent : '{}'\n".format(command))
-            try:
-                response = self.g.GCommand(command)
-                response = "".join(response)
-                if notify and response != "":
-                    self.log.debug("Reply: '%s'", response)
-                    f.write("Reply: '{}'\n".format(response))
-                return response
-            except self.gclib_error as error:
-                error_code = self.g.GCommand("TC 1")
-                if error_code not in ("", "0"):
-                    error = error_code
-                self.log.error("Last command '%s' returned error '%s'", command, error)
-                return error
+        if notify:
+            self.log.debug("Sent : '%s'", command)
+        try:
+            response = self.g.GCommand(command)
+            response = "".join(response)
+            if notify and response != "":
+                self.log.debug("Reply: '%s'", response)
+            return response
+        except self.gclib_error as error:
+            error_code = self.g.GCommand("TC 1")
+            if error_code not in ("", "0"):
+                error = error_code
+            self.log.error("Last command '%s' returned error '%s'", command, error)
+            return error
 
     # check both limit switches, return a tuple with their trip values
     def checkLimits(self, axis="A"):
@@ -321,12 +308,6 @@ class Galil:
                     last_position,
                     cnts,
                 )
-                with open(self.log_file, "a") as f:
-                    f.write(
-                        "Warning - possible position error got to {} needed {}".format(
-                            last_position, cnts
-                        )
-                    )
                 break
         self.data[self.move_num].append({"time": time.time(), "position": last_position})
         self.data[self.move_num].append({"duration": time.time() - start_time})

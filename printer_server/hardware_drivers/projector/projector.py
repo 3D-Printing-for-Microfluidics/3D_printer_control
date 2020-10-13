@@ -5,6 +5,7 @@ Projector
 """
 import sys
 import time
+import json
 import atexit
 import socket
 import logging
@@ -94,9 +95,6 @@ class Projector:
         self.socket = (
             None  # start as None so we can tell if a connection has been attempted
         )
-        self.tcp_log = (
-            Path.cwd() / "logs"
-        )  # a log to track all TCP communications for debugging, gets created on connect
 
         # setup screen thread
         self.screenThread = ScreenThread(self.resolution, self.fullscreen)
@@ -126,10 +124,6 @@ class Projector:
             self.log.critical(msg)
             sys.exit(msg)
 
-        # Create log
-        date_and_time = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
-        self.tcp_log = str(self.tcp_log / f"light_engine_TCP_dump_{date_and_time}.txt")
-
         # start screen thread
         self.screenThread.start()
 
@@ -155,14 +149,11 @@ class Projector:
         RuntimeError is raised if an error is detected in the response.
         """
         reply = None
-        with open(self.tcp_log, "a") as f:
-            data += "\r\n\r\n"
-            data = data.encode()
-            f.write(f"Sent {data}\n")
-            self.log.debug("Sent:  '%s'", data.decode().rstrip())
-            self.socket.sendall(data)
-            reply = self.socket.recv(1024)
-            f.write(f"Reply {reply}\n")
+        data += "\r\n\r\n"
+        data = data.encode()
+        self.log.debug("Sent:  '%s'", data.decode().rstrip())
+        self.socket.sendall(data)
+        reply = self.socket.recv(1024)
         reply = reply.decode().split("\r\n")
         if "OK" not in reply[0]:
             raise RuntimeError(f"Error returned by light engine ({reply[1]}) {reply[2]}")
@@ -322,7 +313,7 @@ class Projector:
 
         Return type +OK and feedback value.
         """
-        return self.send("GET LIGHT FEEDBACK")
+        return float(self.send("GET LIGHT FEEDBACK"))
 
     def get_led_temp(self):
         """
@@ -330,7 +321,7 @@ class Projector:
 
         Return type +OK and temperature value.
         """
-        return self.send("GET LED TEMP")
+        return float(self.send("GET LED TEMP"))
 
     def get_led_driver_board_temp(self):
         """
@@ -338,7 +329,7 @@ class Projector:
 
         Return type +OK and temperature value.
         """
-        return self.send("GET BOARD TEMP")
+        return float(self.send("GET BOARD TEMP"))
 
     def set_led_driver_board_temp_limit(self, temperature):
         """
@@ -350,7 +341,7 @@ class Projector:
 
         Return type +OK
         """
-        return self.send(f"SET BOARD TEMP LIMIT {temperature}")
+        return float(self.send(f"SET BOARD TEMP LIMIT {temperature}"))
 
     def get_led_driver_board_temp_limit(self):
         """
@@ -358,7 +349,7 @@ class Projector:
 
         Return type +OK and board temperature limit in Celsius
         """
-        return self.send("GET BOARD TEMP LIMIT")
+        return float(self.send("GET BOARD TEMP LIMIT"))
 
     def set_led_temp_limit(self, temperature):
         """
@@ -407,9 +398,9 @@ class Projector:
     def get_dmd_status(self):
         """
         Get overview of DMD states. Such as sequencer running state.
-        The result is returned as JSON.
+        The result is returned as a JSON dictionary.
 
-        Return type +OK and JSON string
+        Return type +OK and JSON dictionary
 
         Example:
         GET DMD STATUS
@@ -429,7 +420,7 @@ class Projector:
             "video_frozen": false
         }
         """
-        return self.send("GET DMD STATUS")
+        return json.loads(self.send("GET DMD STATUS").replace("\n    ", ""))
 
     def set_dmd_operation_mode(self, mode):
         """
