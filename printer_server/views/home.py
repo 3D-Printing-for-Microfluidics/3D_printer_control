@@ -150,6 +150,7 @@ class PrintControl:
         self.projector = hardware_driver_handles.projector
         self.kdc = hardware_driver_handles.kdc
         self.tiptilt = hardware_driver_handles.tiptilt
+        self.loadcell = hardware_driver_handles.loadcell
 
         # folders relevant to printing
         self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
@@ -316,6 +317,7 @@ class PrintControl:
             self.state = "busy"
             self.focused_position = get_last_focused_position()
             self.tiptilt.connect()
+            self.loadcell.connect()
 
             kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
             galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
@@ -348,13 +350,45 @@ class PrintControl:
         """Lower build platform to lower position for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
+            self.loadcell.start()
+            time.sleep(.5)
+            log.info("Loadcell force (pre-step 1): %s",self.loadcell.get_current_force())
             self.galil.goToZmin()
+            time.sleep(.5)
+            log.info("Loadcell force (post-step 1): %s",self.loadcell.get_current_force())
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarizationStep2(self):
         """Raise the build platform to begin printing."""
         if self.state == "planarizing":
+            log.info("Loadcell force (pre-step 2): %s",self.loadcell.get_current_force())
+            self.loadcellPlanarization()
             pass
+            
+    def loadcellPlanarization(self):
+        # get initial force and position
+        start_force = self.loadcell.get_current_force()
+        
+        count = 0
+        fail_count = 0
+        while start_force > 5:
+            self.galil.relMove(
+                mm=-0.05,
+                speed=25,
+                acceleration=50,
+            )
+            time.sleep(.5)
+            end_force = self.loadcell.get_current_force()
+            count = count + 1
+            log.info("Loadcell force: %s",end_force)
+            if abs(start_force - end_force) < .25:
+                if fail_count >= 3:
+                    log.error("Loadcell planarization failed. (Check battery or build platform screw)")
+                    return
+                fail_count = fail_count + 1
+            start_force = self.loadcell.get_current_force()
+        log.info("Loadcell planarized %s steps", count)
+        log.info("Loadcell force (post-step 2): %s",self.loadcell.get_current_force())
 
     @run_in_thread("paused", "Pause Printing")
     def pause(self):
@@ -510,7 +544,10 @@ class PrintControl:
 
         position_log = str(self.current_job / "position_data.txt")
         exposure_log = str(self.current_job / "exposure_data.txt")
-
+        loadcell_log = str(self.current_job / "loadcell_data.txt")
+        
+        self.loadcell.set_log_file(loadcell_log)
+        
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
             self.galil.goToZmin()
@@ -519,7 +556,8 @@ class PrintControl:
         for i, layer in enumerate(self.layer_map):
             if i < self.next_layer:
                 continue  # skip previous layers if print was paused
-            if self.printing_stopped.is_set() or self.printing_paused.is_set():
+            if self.printing_paused.is_set() or self.printing_stopped.is_set():
+                self.loadcell.pause()
                 break  # pause, don't do anything else
             self.next_layer = i + 1
 
@@ -562,6 +600,7 @@ class PrintControl:
 
         # if print is finished, move build platform back to top
         if not self.printing_paused.is_set():
+            self.loadcell.stop()
             self.galil.goToZmax()
 
             # update fontend, zip logs into archive in print_history, and update db entrty
