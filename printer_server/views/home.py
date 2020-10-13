@@ -292,6 +292,8 @@ class PrintControl:
                 self.kdc.move(self.focused_position, relative=False)
             data[i] = {
                 "image": image.name,
+                "power setting": power,
+                "exposure time (ms)": exposure_time_ms,
                 "pre exposure position": start_position,
                 "defocused position": defocus_position,
                 "post exposure position": self.kdc.getCurrentPos(),
