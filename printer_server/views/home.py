@@ -371,22 +371,20 @@ class PrintControl:
 
         count = 0
         fail_count = 0
-        while start_force > 5:
-            self.galil.relMove(
-                mm=-0.05,
-                speed=25,
-                acceleration=50,
-            )
-            time.sleep(.5)
+        self.galil.startJog(speed=-0.25) # jog up at speed of 250 um per second
+        while start_force > 7: # jog until force is less than 7 newtons
+            time.sleep(.1)
             end_force = self.loadcell.get_current_force()
             count = count + 1
             log.info("Loadcell force: %s",end_force)
             if abs(start_force - end_force) < .25:
                 if fail_count >= 3:
                     log.error("Loadcell planarization failed. (Check battery or build platform screw)")
+                    self.galil.stopJog()
                     return
                 fail_count = fail_count + 1
             start_force = self.loadcell.get_current_force()
+        self.galil.stopJog()
         log.info("Loadcell planarized %s steps", count)
         log.info("Loadcell force (post-step 2): %s",self.loadcell.get_current_force())
 
@@ -549,8 +547,8 @@ class PrintControl:
         self.loadcell.set_log_file(loadcell_log)
 
         # move build platform to the starting position if this is the first layer
-        if self.next_layer == 0:
-            self.galil.goToZmin()
+        #if self.next_layer == 0:
+        #    self.galil.goToZmin()
 
         # iterate over layers
         for i, layer in enumerate(self.layer_map):
@@ -600,8 +598,8 @@ class PrintControl:
 
         # if print is finished, move build platform back to top
         if not self.printing_paused.is_set():
-            self.loadcell.stop()
             self.galil.goToZmax()
+            self.loadcell.stop()
 
             # update fontend, zip logs into archive in print_history, and update db entrty
             with app.app_context():

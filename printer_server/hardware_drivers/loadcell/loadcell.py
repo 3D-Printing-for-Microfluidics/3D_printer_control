@@ -49,6 +49,8 @@ class LoadCell(serial.Serial):
         """
         slope = -1.46
         intercept = 33845.0
+        #slope = -1.44
+        #intercept = 34010.0
 
         grams = (x - intercept)/slope
         n = grams/1000*9.8
