@@ -364,11 +364,11 @@ class PrintControl:
             log.info("Loadcell force (pre-step 2): %s",self.loadcell.get_current_force())
             self.loadcellPlanarization()
             pass
-            
+
     def loadcellPlanarization(self):
         # get initial force and position
         start_force = self.loadcell.get_current_force()
-        
+
         count = 0
         fail_count = 0
         while start_force > 5:
@@ -545,9 +545,9 @@ class PrintControl:
         position_log = str(self.current_job / "position_data.txt")
         exposure_log = str(self.current_job / "exposure_data.txt")
         loadcell_log = str(self.current_job / "loadcell_data.txt")
-        
+
         self.loadcell.set_log_file(loadcell_log)
-        
+
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
             self.galil.goToZmin()
