@@ -95,9 +95,6 @@ class Projector:
         self.socket = (
             None  # start as None so we can tell if a connection has been attempted
         )
-        self.tcp_log = (
-            Path.cwd() / "logs"
-        )  # a log to track all TCP communications for debugging, gets created on connect
 
         # setup screen thread
         self.screenThread = ScreenThread(self.resolution, self.fullscreen)
@@ -127,10 +124,6 @@ class Projector:
             self.log.critical(msg)
             sys.exit(msg)
 
-        # Create log
-        date_and_time = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
-        self.tcp_log = str(self.tcp_log / f"light_engine_TCP_dump_{date_and_time}.txt")
-
         # start screen thread
         self.screenThread.start()
 
@@ -156,14 +149,11 @@ class Projector:
         RuntimeError is raised if an error is detected in the response.
         """
         reply = None
-        with open(self.tcp_log, "a") as f:
-            data += "\r\n\r\n"
-            data = data.encode()
-            f.write(f"Sent {data}\n")
-            self.log.debug("Sent:  '%s'", data.decode().rstrip())
-            self.socket.sendall(data)
-            reply = self.socket.recv(1024)
-            f.write(f"Reply {reply}\n")
+        data += "\r\n\r\n"
+        data = data.encode()
+        self.log.debug("Sent:  '%s'", data.decode().rstrip())
+        self.socket.sendall(data)
+        reply = self.socket.recv(1024)
         reply = reply.decode().split("\r\n")
         if "OK" not in reply[0]:
             raise RuntimeError(f"Error returned by light engine ({reply[1]}) {reply[2]}")
