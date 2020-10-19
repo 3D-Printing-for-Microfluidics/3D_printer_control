@@ -158,6 +158,7 @@ class PrintControl:
         self.print_history = Path(Config.UPLOAD_FOLDER) / Path("print_history")
 
         # values used during printing
+        self.planarized_position = None
         self.focused_position = None
         self.print_settings = None
         self.layer_map = []
@@ -354,6 +355,7 @@ class PrintControl:
             time.sleep(.5)
             log.info("Loadcell force (pre-step 1): %s",self.loadcell.get_current_force())
             self.galil.goToZmin()
+            self.planarized_position = self.galil.bottom_position
             time.sleep(.5)
             log.info("Loadcell force (post-step 1): %s",self.loadcell.get_current_force())
 
@@ -385,6 +387,7 @@ class PrintControl:
                 fail_count = fail_count + 1
             start_force = self.loadcell.get_current_force()
         self.galil.stopJog()
+        self.planarized_position = self.galil.getPosition()
         log.info("Loadcell planarized %s steps", count)
         log.info("Loadcell force (post-step 2): %s",self.loadcell.get_current_force())
 
@@ -547,8 +550,8 @@ class PrintControl:
         self.loadcell.set_log_file(loadcell_log)
 
         # move build platform to the starting position if this is the first layer
-        #if self.next_layer == 0:
-        #    self.galil.goToZmin()
+        if self.next_layer == 0:
+            self.galil.absMove(cnts=self.planarized_position)
 
         # iterate over layers
         for i, layer in enumerate(self.layer_map):
