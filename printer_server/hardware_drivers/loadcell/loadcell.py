@@ -115,14 +115,14 @@ class LoadCell(serial.Serial):
         """
         Pauses the loadcell and loadcell thread.
         """
+        self.running = False
+        self.thread.join()
+        self.thread = threading.Thread(target=self.loop)
+        
         try:
             self.loadcell_pause()
         except serial.SerialException:
             pass
-            
-        self.running = False
-        self.thread.join()
-        self.thread = threading.Thread(target=self.loop)
         self.log.info("Loadcell paused")
 
     def stop(self, save=True):
@@ -130,16 +130,15 @@ class LoadCell(serial.Serial):
         Stops the loadcell and loadcell thread. Saves data to file
         """
         if self.running:
-            try:
-                self.loadcell_stop()
-            except serial.SerialException:
-                pass
-                
-            self.log.info("Loadcell stopped")
-                
             self.running = False
             self.thread.join()
             self.thread = threading.Thread(target=self.loop)
+            
+        try:
+            self.loadcell_stop()
+        except serial.SerialException:
+            pass
+        self.log.info("Loadcell stopped")
         
         if save:
             self.log.info("Processing loadcell data")
