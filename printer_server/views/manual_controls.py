@@ -64,6 +64,7 @@ blueprint = Blueprint(
 
 # Specify location of uploaded image and give default name
 imagePath = os.path.join(Config.UPLOAD_FOLDER, "calibration_images", "temp.png")
+strobeImagePath = os.path.join(Config.UPLOAD_FOLDER, "calibration_images", "strobe.bmp")
 
 # Decorator to handle navigation to calibration page
 @blueprint.route("/manual")
@@ -220,4 +221,53 @@ def handleUpload():
             except (OSError, FileNotFoundError):  # File has big issues
                 pass
     socketio.emit("calibration_image_bad", namespace="/manual", broadcast=True)
+    return ""
+    
+@socketio.on("light_engine_enable_strobe", namespace="/manual")
+def enableStrobe():
+        projector.enable_strobe()
+    socketio.emit(
+        "strobe_enabled",
+        namespace="/manual",
+        broadcast=True,
+    )
+
+@socketio.on("light_engine_disable_strobe", namespace="/manual")
+def disableStrobe():
+    projector.disable_strobe()
+    socketio.emit(
+        "strobe_disabled",
+        namespace="/manual",
+        broadcast=True,
+    )
+    
+@socketio.on("light_engine_strobe", namespace="/manual")
+def lightEngineProjectStrobe(message):
+    """Project the image with the given settings."""
+    ledPower = int(message["ledPower"])
+    exposure = int(message["exposure"])
+    projector.project_strobe(imagePath, exposure, ledPower)
+    socketio.emit("light_engine_start_complete", namespace="/manual", broadcast=True)
+    
+@blueprint.route("handle-calibration-upload-strobe", methods=["POST"])
+def handleUploadStrobe():
+    if "file" in request.files:  # Check if the post request has the file part
+        file = request.files["file"]  # Get the file
+        if file.filename != "" and file:  # File part of request actually has a file
+            try:
+                with Image.open(file) as img:  # Open file as PIL object
+                    # Check imagePath format and mode
+                    if img.format == "BMP" and img.mode == "RGB":
+                        # Seek to the beginning of file (fixes bug in Werkzeug file I\O)
+                        file.stream.seek(0)
+                        file.save(strobeImagePath)  # save it to the server
+                        socketio.emit(
+                            "calibration_image_uploaded_strobe",
+                            namespace="/manual",
+                            broadcast=True,
+                        )
+                        return ""
+            except (OSError, FileNotFoundError):  # File has big issues
+                pass
+    socketio.emit("calibration_image_bad_strobe", namespace="/manual", broadcast=True)
     return ""

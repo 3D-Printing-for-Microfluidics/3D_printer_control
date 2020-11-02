@@ -673,6 +673,41 @@ class Projector:
                 time.sleep(0.1 + t * 1e-3)
                 self.stop_sequencer()
                 self.clear_image()
+                
+    def enable_strobe():
+        """
+        Switches the projector to a mode that sync signals are supported in.
+        Images are uploaded via usb to projector flash memory.
+        """
+        self.set_dmd_operation_mode("PATTERN_ON_THE_FLY_MODE")
+        
+    def disable_strobe():
+        """
+        Switches the projector back to normal HDMI mode.
+        """
+        self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
+                
+    def project_strobe(self, image, exposure, power):
+        """
+        Call all of the necessary methods to project an image, and block
+        until projection is complete. This strobes the projector and should
+        only be used for calibration!!!
+        """
+        self.log.info(
+            "Exposing %s for %sms at power setting %s. Strobing projector and repeating",
+            image,
+            exposure,
+            power,
+        )
+        self.set_led_amplitude(power)
+        
+        # this provides the minimum blanking of 233 us of the full 33333 us cycle
+        # (at 30Hz on HDMI)
+#        self.set_sequencer_lut_definition(4000, 47199, 0, 7, 0, 0, 0)
+        self.set_sequencer_lut_definition(4000, 116000, 0, 7, 0, 0, 0)
+        self.set_sequencer_lut_config(repeats=0)  # 0 means repeat forever
+        self.screenThread.screen.draw(image)
+        self.start_sequencer()  # sequencer will be stopped on program exit)
 
 
 if __name__ == "__main__":
