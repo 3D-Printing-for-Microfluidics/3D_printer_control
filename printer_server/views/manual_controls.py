@@ -69,7 +69,6 @@ blueprint = Blueprint(
 
 # Specify location of uploaded image and give default name
 imagePath = os.path.join(Config.UPLOAD_FOLDER, "calibration_images", "temp.png")
-strobeImagePath = os.path.join(Config.UPLOAD_FOLDER, "calibration_images", "strobe.bmp")
 
 # Decorator to handle navigation to calibration page
 @blueprint.route("/manual")
