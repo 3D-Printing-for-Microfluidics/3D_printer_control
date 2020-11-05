@@ -694,7 +694,8 @@ class Projector:
         only be used for calibration!!!
         """
         self.log.info(
-            "Exposing %s for %sms at power setting %s. Strobing projector and repeating",
+            "Exposing index %d for %sms at power setting %s. Strobing projector and repeating",
+            index,
             exposure,
             power,
         )
