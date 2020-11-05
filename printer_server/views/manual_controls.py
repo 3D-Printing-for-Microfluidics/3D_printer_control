@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """Control view."""
 import os
+import sys
+import glob
 import threading
+import numpy as np
 from pathlib import Path
 from datetime import datetime
 from PIL import Image
@@ -10,6 +13,8 @@ from flask import Blueprint, request, render_template
 from printer_server.extensions import socketio
 from printer_server.settings import Config
 from printer_server.hardware_configuration import hardware_driver_handles
+from printer_server.views.home import has_bad_metadata
+from printer_server.views.home import clean_uploaded_file
 
 
 class External_Control:
@@ -225,7 +230,7 @@ def handleUpload():
     
 @socketio.on("light_engine_enable_strobe", namespace="/manual")
 def enableStrobe():
-        projector.enable_strobe()
+    projector.enable_strobe()
     socketio.emit(
         "strobe_enabled",
         namespace="/manual",
@@ -246,28 +251,110 @@ def lightEngineProjectStrobe(message):
     """Project the image with the given settings."""
     ledPower = int(message["ledPower"])
     exposure = int(message["exposure"])
-    projector.project_strobe(imagePath, exposure, ledPower)
-    socketio.emit("light_engine_start_complete", namespace="/manual", broadcast=True)
+    index = int(message["index"])
+    projector.project_strobe(exposure, ledPower, index = index)
+    socketio.emit("light_engine_strobe_complete", namespace="/manual", broadcast=True)
+
+def strobe_pack_images(is_calibration, strobe_folder):
+    resolution = (3, 2560, 1600)
+    index = 0
+    image = 0
+    channel = 0
+    bit = 0
+
+    # get all pngs in folder
+    files = sorted(glob.glob(strobe_folder + "/*.png"))
+    num_images = len(files)//24 + 1
+
+    # create blank bmps
+    bmp_imgs = []
+    for i in range(num_images):
+        bmp_imgs.append(np.zeros(resolution[::-1], dtype="uint8"))
+
+    # pack pngs in bmps
+    for filepath in files:
+        try:
+            with Image.open(filepath) as input_img:
+                if input_img.format == "PNG" and input_img.mode == "L":
+                    masked_input_array = np.bitwise_and(np.array(input_img), 1<<bit)
+                    bmp_imgs[image][:, :, channel] = np.bitwise_or(bmp_imgs[image][:, :, channel], masked_input_array)
+                    
+                    index = index + 1
+                    image = index//24
+                    channel = (index%24)//8
+                    bit = index%8
+        except (OSError, FileNotFoundError):
+            Pass
+        
+    # save bmps
+    for i in range(num_images):
+        log.info("Packing image {}".format(i))
+        file_name = strobe_folder + "/{}.bmp".format(i)
+        Image.fromarray(bmp_imgs[i], "RGB").save(file_name)
+
+def strobe_upload_images(is_calibration, strobe_folder):
+    """Uploads all BMPs in given folder to projector.
+    If is_calibration, only one BMP is uploaded to index 0
+    Otherwise, the images are uploaded starting at index 1."""
+
+    files = sorted(glob.glob(strobe_folder + "/*.bmp"))
+    num_images = len(files)
+
+    if is_calibration and num_images > 1:
+        log.warning("Too many calibration images to pack in single BMP!")
+
+    # save bmps
+    count = 1
+    for file_name in files:
+        with open(file_name, mode='rb') as file:
+            file_content = file.read()
+            file_size = len(file_content)
+            if (is_calibration == 'True'):
+                projector.upload_image(0, file_size, file_content)
+                return
+            else:
+                projector.upload_image(i, file_size, file_content)
+                count = count + 1
+
     
 @blueprint.route("handle-calibration-upload-strobe", methods=["POST"])
-def handleUploadStrobe():
-    if "file" in request.files:  # Check if the post request has the file part
-        file = request.files["file"]  # Get the file
-        if file.filename != "" and file:  # File part of request actually has a file
-            try:
-                with Image.open(file) as img:  # Open file as PIL object
-                    # Check imagePath format and mode
-                    if img.format == "BMP" and img.mode == "RGB":
-                        # Seek to the beginning of file (fixes bug in Werkzeug file I\O)
-                        file.stream.seek(0)
-                        file.save(strobeImagePath)  # save it to the server
-                        socketio.emit(
-                            "calibration_image_uploaded_strobe",
-                            namespace="/manual",
-                            broadcast=True,
-                        )
-                        return ""
-            except (OSError, FileNotFoundError):  # File has big issues
-                pass
+def handleUploadStrobe(message):
+    is_calibration = message["is_calibration"]
+    for _, f in enumerate(request.files.getlist("file")):
+        strobe_folder = None
+        if (is_calibration == 'True'):
+            strobe_folder = Path(Config.UPLOAD_FOLDER) / Path("calibration_images/defaults")
+        else:
+            strobe_folder = Path(Config.UPLOAD_FOLDER) / Path("calibration_images/uploads")
+        zip_file = os.path.join(
+            Config.UPLOAD_FOLDER,
+            "calibration_images",
+            "temp.zip",
+        )
+        f.save(zip_file)
+        if has_bad_metadata(zip_file):
+            log.debug("Removing hiden '__MACOSX' folder from %s ...", f.filename)
+            clean_uploaded_file(zip_file)
+        # clear any old contents from the calibration_images folder
+        try:
+            shutil.rmtree(strobe_folder)
+        except FileNotFoundError:
+            pass
+
+        # extract to current_job
+        with ZipFile(zip_file, "r") as f:
+            f.extractall(strobe_folder)
+        os.remove(zip_file)
+
+        # pack and upload to visitech
+        strobe_pack_images(is_calibration, strobe_folder)
+        strobe_upload_images(is_calibration, strobe_folder)
+
+        log.info("Strobe set %s uploaded successfully.", f.filename)
+        socketio.emit(
+            "calibration_image_uploaded_strobe",
+            namespace="/manual",
+            broadcast=True,
+        )
     socketio.emit("calibration_image_bad_strobe", namespace="/manual", broadcast=True)
     return ""
