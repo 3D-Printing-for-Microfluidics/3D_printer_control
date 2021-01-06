@@ -198,6 +198,10 @@ def lightEngineProject(message):
     projector.project(imagePath, exposure, ledPower, repeat)
     socketio.emit("light_engine_start_complete", namespace="/manual", broadcast=True)
 
+@socketio.on("light_engine_get_status", namespace="/manual")
+def lightEngineStatus():
+    socketio.emit("light_engine_status", projector.read_all_status(), namespace="/manual", broadcast=True)
+
 
 @blueprint.route("handle-calibration-upload", methods=["POST"])
 def handleUpload():
