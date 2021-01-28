@@ -24,10 +24,17 @@ class LoadCell(serial.Serial):
         self.windowSize = 10
         self.start_time = 0
         self.running = False
+        self.source_is_battery = False
         
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         self.thread = threading.Thread(target=self.loop)
+
+    def set_loadcell_source(self, source):
+        self.source_is_battery = source
+        
+    def get_loadcell_source(self):
+        return self.source_is_battery
         
     def findUsbPort(self, hwid):
         """
@@ -47,10 +54,13 @@ class LoadCell(serial.Serial):
         """
         Converts the adc counts to newtons using precalculated constants
         """
-        slope = -1.46
-        intercept = 33845.0
-        #slope = -1.44
-        #intercept = 34010.0
+        #ifi brick
+        slope = -1.14
+        intercept = 33536.46
+        #battery
+        if self.source_is_battery:
+            slope = -1.46
+            intercept = 33845.0
 
         grams = (x - intercept)/slope
         n = grams/1000*9.8

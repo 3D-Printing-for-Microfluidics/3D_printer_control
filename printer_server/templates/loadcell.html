@@ -13,6 +13,25 @@
 
 {% block page_content %}
 
+<!-- Loadcell source -->
+<div class="container">
+    <div class="container">
+        <div class="row top-buffer">
+            <div class="col-6">
+                <h3>Loadcell Source</h3>
+            </div>
+            <div class="col-6">
+                <div id="loadcell_source" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                    <label class="btn btn-outline-info btn-fixed-width shadow-none">Battery<input type="radio"
+                            id="loadcell_battery"></label>
+                    <label class="btn btn-outline-info btn-fixed-width shadow-none active">Wall<input type="radio"
+                            id="loadcell_wall"></label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <container>
     <div class="loadcell-row loadcell-data" id="loadcell-data"></div>
 </container>

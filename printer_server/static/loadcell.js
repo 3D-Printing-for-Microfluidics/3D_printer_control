@@ -90,9 +90,34 @@ function update_loop(message) {
     }
 }
 
+function update_source(message) {
+    console.log("update source")
+    if(message == 1){
+        console.log("1")
+        document.getElementById('loadcell_source').getElementById
+        $("#loadcell_battery").prop("checked", true).trigger("click");
+    }
+    else{
+        console.log("0")
+        $("#loadcell_wall").prop("checked", true).trigger("click");
+    }
+}
+
 $(document).ready(function () {
     console.log("doc ready")
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/loadcell");
+
+    socket.emit("get_loadcell_source");
+    
+    // Read value of loadcell source select button
+    $("#loadcell_source :input").change(function () {
+        socket.emit("set_loadcell_source", $(this).parent().text());
+    });
+
+    socket.on("loadcell_source", function (message) {
+        update_source(message);
+    });
+
     draw_loadcell_graph();
 
     socket.emit('graph_start')
