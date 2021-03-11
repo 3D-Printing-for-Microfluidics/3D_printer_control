@@ -118,7 +118,7 @@
                     "type": "object",
                     "properties": {
                         "Layer thickness (um)": {
-                            "type": "integer",
+                            "type": "number",
                             "minimum": 0,
                             "default": 10,
                             "description": "Custom layer thickness"
@@ -129,43 +129,43 @@
                             "description": "Distance to move the build up after completing a layer."
                         },
                         "Initial wait (ms)": {
-                            "type": "integer",
+                            "type": "number",
                             "minimum": 0,
                             "default": 0,
                             "description": "Time to wait between exposures."
                         },
                         "BP up speed (mm/sec)": {
-                            "type": "integer",
+                            "type": "number",
                             "minimum": 0,
                             "default": 20,
                             "description": "Specify the velocity of the build platform when moving up"
                         },
                         "BP up acceleration (mm/sec^2)": {
-                            "type": "integer",
+                            "type": "number",
                             "minimum": 0,
                             "default": 20,
                             "description": "Specify the acceleration of the build platform when moving up"
                         },
                         "Up wait (ms)": {
-                            "type": "integer",
+                            "type": "number",
                             "minimum": 0,
                             "default": 0,
                             "description": "How long to wait after the build platform has been moved up to start moving back down."
                         },
                         "BP down speed (mm/sec)": {
-                            "type": "integer",
+                            "type": "number",
                             "minimum": 0,
                             "default": 20,
                             "description": "Specify the velocity of the build platform when moving down"
                         },
                         "BP down acceleration (mm/sec^2)": {
-                            "type": "integer",
+                            "type": "number",
                             "minimum": 0,
                             "default": 20,
                             "description": "Specify the acceleration of the build platform when moving down"
                         },
                         "Final wait (ms)": {
-                            "type": "integer",
+                            "type": "number",
                             "minimum": 0,
                             "default": 0,
                             "description": "Time to wait after final exposure on a layer"
@@ -192,7 +192,7 @@
                             "description": "Default image file"
                         },
                         "Layer exposure time (ms)": {
-                            "type": "integer",
+                            "type": "number",
                             "minimum": 0,
                             "description": "Default time to expose a single image layer for."
                         },
@@ -204,16 +204,16 @@
                             "description": "Default power to expose an image at."
                         },
                         "Relative focus position (um)": {
-                            "type": "integer",
+                            "type": "number",
                             "description": "Default realtive focus position for this layer."
                         },
                         "Wait before exposure (ms)": {
-                            "type": "integer",
+                            "type": "number",
                             "minimum": 0,
                             "description": "Wait time before exposure"
                         },
                         "Wait after exposure (ms)": {
-                            "type": "integer",
+                            "type": "number",
                             "minimum": 0,
                             "description": "Wait time after exposure"
                         }
@@ -256,7 +256,7 @@
                         "type": "object",
                         "properties": {
                             "Layer thickness (um)": {
-                                "type": "integer",
+                                "type": "number",
                                 "minimum": 0,
                                 "default": 10,
                                 "description": "Custom layer thickness"
@@ -267,43 +267,43 @@
                                 "description": "Distance to move the build up after completing a layer."
                             },
                             "Initial wait (ms)": {
-                                "type": "integer",
+                                "type": "number",
                                 "minimum": 0,
                                 "default": 0,
                                 "description": "Time to wait between exposures."
                             },
                             "BP up speed (mm/sec)": {
-                                "type": "integer",
+                                "type": "number",
                                 "minimum": 0,
                                 "default": 20,
                                 "description": "Specify the velocity of the build platform when moving up"
                             },
                             "BP up acceleration (mm/sec^2)": {
-                                "type": "integer",
+                                "type": "number",
                                 "minimum": 0,
                                 "default": 20,
                                 "description": "Specify the acceleration of the build platform when moving up"
                             },
                             "Up wait (ms)": {
-                                "type": "integer",
+                                "type": "number",
                                 "minimum": 0,
                                 "default": 0,
                                 "description": "How long to wait after the build platform has been moved up to start moving back down."
                             },
                             "BP down speed (mm/sec)": {
-                                "type": "integer",
+                                "type": "number",
                                 "minimum": 0,
                                 "default": 20,
                                 "description": "Specify the velocity of the build platform when moving down"
                             },
                             "BP down acceleration (mm/sec^2)": {
-                                "type": "integer",
+                                "type": "number",
                                 "minimum": 0,
                                 "default": 20,
                                 "description": "Specify the acceleration of the build platform when moving down"
                             },
                             "Final wait (ms)": {
-                                "type": "integer",
+                                "type": "number",
                                 "minimum": 0,
                                 "default": 0,
                                 "description": "Time to wait after final exposure on a layer"
@@ -322,7 +322,7 @@
                                     "description": "Default image file"
                                 },
                                 "Layer exposure time (ms)": {
-                                    "type": "integer",
+                                    "type": "number",
                                     "minimum": 0,
                                     "description": "Default time to expose a single image layer for."
                                 },
@@ -334,16 +334,16 @@
                                     "description": "Default power to expose an image at."
                                 },
                                 "Relative focus position (um)": {
-                                    "type": "integer",
+                                    "type": "number",
                                     "description": "Default realtive focus position for this layer."
                                 },
                                 "Wait before exposure (ms)": {
-                                    "type": "integer",
+                                    "type": "number",
                                     "minimum": 0,
                                     "description": "Wait time before exposure"
                                 },
                                 "Wait after exposure (ms)": {
-                                    "type": "integer",
+                                    "type": "number",
                                     "minimum": 0,
                                     "description": "Wait time after exposure"
                                 }
