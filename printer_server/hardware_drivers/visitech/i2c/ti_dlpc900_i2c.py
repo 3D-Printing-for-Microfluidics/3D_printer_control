@@ -93,7 +93,7 @@ class TI_DLPC900_I2C:
                 time.sleep(1)  # wait 1 second to retry
         self.log(
             logging.ERROR,
-            "I2C read error in projector! {} sequential reads failed".format(retry),
+            "I2C read error in Visitech! {} sequential reads failed".format(retry),
         )
         raise caught_exception
 
@@ -113,7 +113,7 @@ class TI_DLPC900_I2C:
                 time.sleep(1)  # wait 1 second to retry
         self.log(
             logging.ERROR,
-            "I2C write error in projector! {} sequential writes failed".format(retry),
+            "I2C write error in Visitech! {} sequential writes failed".format(retry),
         )
         raise caught_exception
 

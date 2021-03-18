@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Projector
+Visitech
 =========
 """
 import sys
@@ -15,7 +15,7 @@ from datetime import datetime
 from .screen import ScreenThread
 
 # pylint:disable=too-many-public-methods
-class Projector:
+class Visitech:
     """
     This driver is based on the Visitech Ethernet interface and API.
     Commands are sent over a TCP connection.
@@ -143,7 +143,7 @@ class Projector:
     def send(self, data):
         """
         Send the data through the open TCP connection and return the
-        reply from the Projector.
+        reply from the Visitech.
 
         A string is always returned, with a default value of ''. A
         RuntimeError is raised if an error is detected in the response.
@@ -623,7 +623,7 @@ class Projector:
     def clear_image(self):
         """
         Blank the virtual screen that provides the image to the
-        projector.
+        Visitech.
 
         Sets full image to black.
         """
@@ -676,6 +676,6 @@ class Projector:
 
 
 if __name__ == "__main__":
-    projectorResolution = (2560, 1600)
-    p = Projector(projectorResolution)
+    visitechResolution = (2560, 1600)
+    p = Visitech(visitechResolution)
     # p.project("images/calibrate.png", exposure=1000, power=100)

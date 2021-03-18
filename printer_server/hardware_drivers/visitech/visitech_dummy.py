@@ -6,7 +6,7 @@ from .screen import ScreenThread
 
 
 # pylint:disable=too-many-public-methods
-class Projector_dummy:
+class Visitech_dummy:
     @dummy_log
     def __init__(self, resolution=(2560, 1600), fullscreen=True):
         self.resolution = resolution

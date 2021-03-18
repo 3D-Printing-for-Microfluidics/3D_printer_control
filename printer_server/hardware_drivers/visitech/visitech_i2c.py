@@ -7,7 +7,7 @@ from .ti_dlpc900_i2c import TI_DLPC900_I2C
 from .visitech_led_i2c import Visitech_LED_I2C
 
 
-class Projector:
+class Visitech:
     def __init__(self, resolution, fullscreen=True, verbosity=logging.INFO):
         self.resolution = resolution
         self.fullscreen = fullscreen
@@ -44,7 +44,7 @@ class Projector:
         self.screenThread.stop()  # stop screen thread on exit
 
     def clear_image(self):
-        """Blank the virtual screen that provides the image to the projector.
+        """Blank the virtual screen that provides the image to the Visitech.
         Sets full image to black.
         """
         self.screenThread.screen.clear()

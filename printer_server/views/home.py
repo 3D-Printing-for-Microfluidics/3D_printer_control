@@ -147,7 +147,7 @@ class PrintControl:
 
         # hardware handles
         self.galil = hardware_driver_handles.galil
-        self.projector = hardware_driver_handles.projector
+        self.visitech = hardware_driver_handles.visitech
         self.kdc = hardware_driver_handles.kdc
         self.tiptilt = hardware_driver_handles.tiptilt
         self.loadcell = hardware_driver_handles.loadcell
@@ -281,14 +281,14 @@ class PrintControl:
             power = settings["Light engine power setting"]
             defocus_um = settings["Relative focus position (um)"]
             start_position = self.kdc.getCurrentPos()
-            pre_exposure_status = self.projector.read_all_status()
+            pre_exposure_status = self.visitech.read_all_status()
             if defocus_um != 0:
                 self.kdc.move(self.focused_position + defocus_um, relative=False)
                 image = shift_image(image, x=um_to_px(defocus_um))
             time.sleep(settings["Wait before exposure (ms)"] / 1000)
             defocus_position = self.kdc.getCurrentPos()
-            self.projector.project(image, exposure_time_ms, power)
-            post_exposure_status = self.projector.read_all_status()
+            self.visitech.project(image, exposure_time_ms, power)
+            post_exposure_status = self.visitech.read_all_status()
             time.sleep(settings["Wait after exposure (ms)"] / 1000)
             if defocus_um != 0:
                 self.kdc.move(self.focused_position, relative=False)
@@ -322,13 +322,13 @@ class PrintControl:
 
             kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
             galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
-            projector_thread = threading.Thread(target=self.projector.connect, args=[])
+            visitech_thread = threading.Thread(target=self.visitech.connect, args=[])
             kdc_thread.start()
             galil_thread.start()
-            projector_thread.start()
+            visitech_thread.start()
             kdc_thread.join()
             galil_thread.join()
-            projector_thread.join()
+            visitech_thread.join()
 
             log.info("Printer initialized, all hardware ready.")
 
@@ -540,7 +540,7 @@ class PrintControl:
         # clear old flags
         self.printing_stopped.clear()
         self.printing_paused.clear()
-        self.projector.get_sticky_errors(warn=False)
+        self.visitech.get_sticky_errors(warn=False)
         self.layer_map = self.generate_layer_map()
 
         position_log = str(self.current_job / "position_data.txt")
@@ -595,9 +595,9 @@ class PrintControl:
                 broadcase=True,
             )
 
-        # always turn off the projector
-        self.projector.stop_sequencer()
-        self.projector.clear_image()
+        # always turn off the Visitech
+        self.visitech.stop_sequencer()
+        self.visitech.clear_image()
 
         # if print is finished, move build platform back to top
         if not self.printing_paused.is_set():

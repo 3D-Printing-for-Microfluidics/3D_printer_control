@@ -24,7 +24,7 @@ class External_Control:
 
 
 galil = hardware_driver_handles.galil
-projector = hardware_driver_handles.projector
+visitech = hardware_driver_handles.visitech
 tiptilt = hardware_driver_handles.tiptilt
 kdc = hardware_driver_handles.kdc
 external_control_enable = External_Control()
@@ -185,7 +185,7 @@ def homeCalibrationMotor(message):
 @socketio.on("light_engine_stop", namespace="/manual")
 def lightEngineStop():
     """Turn off the LED in the light engin."""
-    projector.stop_sequencer()
+    visitech.stop_sequencer()
     socketio.emit("light_engine_stop_complete", namespace="/manual", broadcast=True)
 
 
@@ -195,12 +195,12 @@ def lightEngineProject(message):
     ledPower = int(message["ledPower"])
     repeat = int(message["repeat"])
     exposure = int(message["exposure"])
-    projector.project(imagePath, exposure, ledPower, repeat)
+    visitech.project(imagePath, exposure, ledPower, repeat)
     socketio.emit("light_engine_start_complete", namespace="/manual", broadcast=True)
 
 @socketio.on("light_engine_get_status", namespace="/manual")
 def lightEngineStatus():
-    socketio.emit("light_engine_status", projector.read_all_status(), namespace="/manual", broadcast=True)
+    socketio.emit("light_engine_status", visitech.read_all_status(), namespace="/manual", broadcast=True)
 
 
 @blueprint.route("handle-calibration-upload", methods=["POST"])

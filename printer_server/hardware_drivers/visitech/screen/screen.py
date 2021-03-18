@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Projector screen module
+Visitech screen module
 =======================
 """
 # `mttkinter` stands for multi-threading tkinter.
