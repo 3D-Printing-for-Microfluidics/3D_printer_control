@@ -351,8 +351,9 @@ class PrintControl:
         """Lower build platform to lower position for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
+            self.loadcell.stop(save=false)
             self.loadcell.start()
-            time.sleep(.5)
+            time.sleep(1.0)
             log.info("Loadcell force (pre-step 1): %s",self.loadcell.get_current_force())
             self.galil.goToZmin()
             self.planarized_position = self.galil.bottom_position
@@ -602,6 +603,7 @@ class PrintControl:
         # if print is finished, move build platform back to top
         if not self.printing_paused.is_set():
             self.galil.goToZmax()
+            time.sleep(1.0)
             self.loadcell.stop()
 
             # update fontend, zip logs into archive in print_history, and update db entrty
