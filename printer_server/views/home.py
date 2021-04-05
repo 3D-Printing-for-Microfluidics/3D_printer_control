@@ -351,7 +351,7 @@ class PrintControl:
         """Lower build platform to lower position for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
-            self.loadcell.stop(save=false)
+            self.loadcell.stop(save=False)
             self.loadcell.start()
             time.sleep(1.0)
             log.info("Loadcell force (pre-step 1): %s",self.loadcell.get_current_force())
