@@ -6,17 +6,6 @@
 	cursor: pointer;
 }
 
-/* fixed width toggle buttons */
-.btn-fixed-width {
-    width: 70px;
-    padding: 5px;
-}
-
-.btn-fixed-width:not(:disabled):not(.disabled).active {
-    background-color: #3498DB;
-    border-color: #3498DB;
-}
-
 /* extra margin for rows with large headings */
 .top-buffer {
      margin-top:20px;
