@@ -114,7 +114,7 @@ class Visitech_dummy:
         exposure,
         darktime=0,
         clear=1,
-        bitdepth=7,
+        bitdepth=8,
         wait_for_trigger=1,
         pattern_index=0,
         bit_index=0,

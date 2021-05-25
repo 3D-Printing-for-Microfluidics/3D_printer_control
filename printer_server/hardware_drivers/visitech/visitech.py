@@ -452,7 +452,7 @@ class Visitech:
         exposure,
         darktime=0,
         clear=1,
-        bitdepth=7,
+        bitdepth=8,
         wait_for_trigger=1,
         pattern_index=0,
         bit_index=0,
@@ -658,7 +658,7 @@ class Visitech:
         if repeats == 0:  # if continuous display is desired
             # this provides the minimum blanking of 233 us of the full 33333 us cycle
             # (at 30Hz on HDMI)
-            self.set_sequencer_lut_definition(33100, 0, 0, 7, 0, 0, 0)
+            self.set_sequencer_lut_definition(33100, 0, 0, 8, 0, 0, 0)
             self.set_sequencer_lut_config(repeats=repeats)  # 0 means repeat forever
             self.screenThread.screen.draw(image)
             self.start_sequencer()  # sequencer will be stopped on program exit)
