@@ -54,19 +54,14 @@ class LoadCell(serial.Serial):
         """
         Converts the adc counts to newtons using precalculated constants
         """
-        #ifi brick
-        slope = -1.14
-        intercept = 33536.46
-        #battery
-        if self.source_is_battery:
-            slope = -1.46
-            intercept = 33845.0
+        slope = -1.79
+        intercept = 32160
 
         grams = (x - intercept)/slope
-        n = grams/1000*9.8
+        n = -grams/1000*9.8
         return n
         
-    def connect(self, hwid='PID=16C0:0483 SER=6256240', period=2000, filter_corner=1000):
+    def connect(self, hwid='PID=16C0:0483 SER=5712360', period=1000, filter_corner=240):
         """
         Connects to the loadcell and sets parameters.
         
