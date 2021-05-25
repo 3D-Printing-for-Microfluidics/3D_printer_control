@@ -25,4 +25,4 @@ def test():
             
             msg = {"data": data}
             socketio.emit("graph_data", msg, namespace="/loadcell")
-            time.sleep(.05)
+            time.sleep(.025)

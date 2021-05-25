@@ -1,14 +1,16 @@
+let s_trace = {
+    x: [new Date()],
+    y: [0],
+    mode: 'lines',
+    name: "1",
+    line: {
+        shape: 'spline'
+    }
+};
+var traces = [s_trace];
+var count = 0;
+
 function draw_loadcell_graph() {
-    let s_trace = {
-        x: [new Date()],
-        y: [0],
-        mode: 'lines',
-        name: "1",
-        line: {
-            shape: 'spline'
-        }
-    };
-    var traces = [s_trace];
 
     var defaultPlotlyConfiguration = {
         displayModeBar: false,
@@ -42,15 +44,10 @@ function draw_loadcell_graph() {
             x: 0,
             y: 1,
             traceorder: 'normal',
-            // bgcolor: '#E2E2E2',
-            // bordercolor: '#FFFFFF',
             borderwidth: 2
         },
         autosize: true,
         height: 500,
-        // width: 350,
-        // paper_bgcolor: "whitesmoke",
-        // plot_bgcolor: "whitemsoke"
         paper_bgcolor: '#222',
         plot_bgcolor: '#222"',
         font: {
@@ -69,8 +66,8 @@ function update_loop(message) {
         let time = new Date(data.timestamp);
         let avg = data.avg;
 
-        var olderTime = time.setSeconds(time.getSeconds() - 10);
-        var futureTime = time.setSeconds(time.getSeconds() + 10);
+        var olderTime = time.setSeconds(time.getSeconds() - 5);
+        var futureTime = time.setSeconds(time.getSeconds() + 5);
         var minuteView = {
             xaxis: {
                 linecolor: 'black',
@@ -80,26 +77,18 @@ function update_loop(message) {
                 range: [olderTime, futureTime]
             }
         };
-        Plotly.relayout('loadcell-data', minuteView);
         Plotly.extendTraces('loadcell-data',
         {
             y: [[avg]],
             x: [[time]]
         },
-        [0])
-    }
-}
-
-function update_source(message) {
-    console.log("update source")
-    if(message == 1){
-        console.log("1")
-        document.getElementById('loadcell_source').getElementById
-        $("#loadcell_battery").prop("checked", true).trigger("click");
-    }
-    else{
-        console.log("0")
-        $("#loadcell_wall").prop("checked", true).trigger("click");
+        [0], 200)
+        count += 1;
+        if (count >=5){
+            count = 0;
+            Plotly.relayout('loadcell-data', minuteView);
+        }
+     
     }
 }
 

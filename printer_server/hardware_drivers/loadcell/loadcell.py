@@ -144,7 +144,7 @@ class LoadCell(serial.Serial):
             self.log.info("Processing finished")
         self.raws = []
         self.windowData = []
-        
+
        
     def get_current_data(self):
         """
@@ -211,8 +211,6 @@ class LoadCell(serial.Serial):
         avg_length = 10
         
         length = len(raw_data)
-#        last_index = 0
-        #for i in range(length - 2):
         for i in range(length):
             splitData = raw_data[i].split(",")
             if(len(splitData) == 3):
@@ -229,11 +227,6 @@ class LoadCell(serial.Serial):
                     self.log.debug("Unable to parse loadcell data - cast error")
                     continue
                     
-#                if index != last_index + 1:
-#                    last_index = index
-#                    continue
-#                last_index = index
-                    
                 if len(avg_array) >= avg_length:
                     avg_array.pop(0)
                 avg_array.append(force)
@@ -246,13 +239,13 @@ class LoadCell(serial.Serial):
                 try:
                     dict = {
                       "timestamp": time.timestamp()*1000,
-                      "avg": avg
+                      "avg": avg,
+                      "force": force
                     }
                     if write_to_file:
                         dict["time_str"] = time.strftime("%Y-%m-%d %H:%M:%S.%f'")[:-4]
                         dict["index"] = index
                         dict["raw_data"] = data
-                        dict["force"] = force
                         
                     output_array.append(dict)
                 except OverflowError:
