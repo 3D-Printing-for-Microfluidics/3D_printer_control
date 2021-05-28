@@ -66,17 +66,6 @@ function update_loop(message) {
         let time = new Date(data.timestamp);
         let avg = data.avg;
 
-        var olderTime = time.setSeconds(time.getSeconds() - 5);
-        var futureTime = time.setSeconds(time.getSeconds() + 5);
-        var minuteView = {
-            xaxis: {
-                linecolor: 'black',
-                linewidth: 2,
-                mirror: true,
-                type: 'date',
-                range: [olderTime, futureTime]
-            }
-        };
         Plotly.extendTraces('loadcell-data',
         {
             y: [[avg]],
@@ -84,8 +73,17 @@ function update_loop(message) {
         },
         [0], 200)
         count += 1;
-        if (count >=5){
+        if (count >=10){
             count = 0;
+            var temp = new Date()
+            var minuteView = {
+                xaxis: {
+                    linecolor: 'black',
+                    linewidth: 2,
+                    mirror: true,
+                    type: 'date',
+                }
+            };
             Plotly.relayout('loadcell-data', minuteView);
         }
      
