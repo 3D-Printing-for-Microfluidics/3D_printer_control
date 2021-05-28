@@ -48,10 +48,12 @@ class LoadCell(serial.Serial):
         Converts the adc counts to newtons using precalculated constants
         """
         slope = -1.79
-        intercept = 32160
+        # intercept = 32160
+
+        intercept = 34932.0
 
         grams = (x - intercept)/slope
-        n = -grams/1000*9.8
+        n = grams/1000*9.8
         return n
         
     def connect(self, hwid='PID=16C0:0483 SER=5712360', period=1000, filter_corner=240):
