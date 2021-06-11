@@ -245,6 +245,7 @@ class PrintControl:
         time.sleep(position_settings["Initial wait (ms)"] / 1000)
         start_position = self.galil.getPosition()
         start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        start_index = self.loadcell.get_current_loadcell_index()
         self.galil.relMove(
             mm=-position_settings["Distance up (mm)"],
             speed=position_settings["BP up speed (mm/sec)"],
@@ -259,11 +260,14 @@ class PrintControl:
         )
         end_position = self.galil.getPosition()
         end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        end_index = self.loadcell.get_current_loadcell_index()
         time.sleep(position_settings["Final wait (ms)"] / 1000)
         thickness = self.galil.cntsToMm(abs(end_position - start_position) * 1000)
         return {
             "start time": start_time,
             "end time": end_time,
+            "loadcell start index": start_index,
+            "loadcell end index": end_index,
             "start position": start_position,
             "end position": end_position,
             "thickness (um)": thickness,

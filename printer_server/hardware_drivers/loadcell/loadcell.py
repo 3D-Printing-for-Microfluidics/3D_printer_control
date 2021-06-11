@@ -167,6 +167,15 @@ class LoadCell(serial.Serial):
         if data == 0:
             return 0
         return data["force"]
+
+    def get_current_loadcell_index(self):
+        """
+        Get all current loadcell data
+        """
+        data = self.get_current_data()
+        if data == 0:
+            return -1
+        return data["index"]
         
     def loop(self):
         """
