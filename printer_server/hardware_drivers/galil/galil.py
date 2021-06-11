@@ -49,8 +49,7 @@ class Galil:
         self.gclib_error = gclib.GclibError
 
         self.address = address
-        self.bottom_position = 365000
-        # self.bottom_position = 368000
+        self.bottom_position = 368000
         self.top_position = -400000
         self.error_window = 1
         self.jogging = False

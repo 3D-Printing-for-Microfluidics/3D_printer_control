@@ -378,7 +378,8 @@ class PrintControl:
         slow_speed = False
         max_fails = 5
         self.galil.startJog(speed=-0.25) # jog up at speed of 250 um per second
-        while start_force > 0.75: # jog until force is less than 0.75 newtons
+        # while start_force > 0.75: # jog until force is less than 0.75 newtons
+        while start_force > 5: # jog until force is less than 0.75 newtons
             if not slow_speed and start_force < 10:
                 slow_speed = True
                 max_fails = 10
