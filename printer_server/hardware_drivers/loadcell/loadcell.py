@@ -166,7 +166,7 @@ class LoadCell(serial.Serial):
         data = self.get_current_data()
         if data == 0:
             return 0
-        return data["avg"]
+        return data["force"]
         
     def loop(self):
         """
@@ -190,10 +190,10 @@ class LoadCell(serial.Serial):
         Parses the loadcell data and save it to self.log_file
         """
         with open(self.log_file, "w") as f:
-            f.write("Timestamp\tIndex\tRaw\tNewtons\tAvg\n")
+            f.write("Timestamp,Index,Raw,Newtons\n")
             rows = self.process_data(self.raws, True)
             for row in rows:
-                f.write("{}\t{}\t{}\t{}\t{}\n".format(row["time_str"], row["index"], row["raw_data"], row["force"], row["avg"]))
+                f.write("{},{},{},{}\n".format(row["time_str"], row["index"], row["raw_data"], row["force"]))
 
         
     def process_data(self, raw_data, write_to_file):
@@ -209,8 +209,6 @@ class LoadCell(serial.Serial):
             [x][4] Running Average
         """
         output_array = []
-        avg_array = []
-        avg_length = 10
         
         length = len(raw_data)
         for i in range(length):
@@ -228,25 +226,15 @@ class LoadCell(serial.Serial):
                 except ValueError:
                     self.log.debug("Unable to parse loadcell data - cast error")
                     continue
-                    
-                if len(avg_array) >= avg_length:
-                    avg_array.pop(0)
-                avg_array.append(force)
-                
-                avg = 0
-                for i in avg_array:
-                    avg += i
-                avg = avg / len(avg_array)
                 
                 try:
                     dict = {
                       "timestamp": time.timestamp()*1000,
-                      "avg": avg,
+                      "index": index,
                       "force": force
                     }
                     if write_to_file:
                         dict["time_str"] = time.strftime("%Y-%m-%d %H:%M:%S.%f'")[:-4]
-                        dict["index"] = index
                         dict["raw_data"] = data
                         
                     output_array.append(dict)

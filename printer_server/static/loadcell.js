@@ -64,16 +64,16 @@ function update_loop(message) {
     let data = message.data;
     if (data != 0){
         let time = new Date(data.timestamp);
-        let avg = data.avg;
+        let force = data.force;
 
         Plotly.extendTraces('loadcell-data',
         {
-            y: [[avg]],
+            y: [[force]],
             x: [[time]]
         },
         [0], 200)
         count += 1;
-        if (count >=10){
+        if (count >=25){
             count = 0;
             var temp = new Date()
             var minuteView = {
