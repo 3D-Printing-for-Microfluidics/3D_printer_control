@@ -355,13 +355,14 @@ class PrintControl:
         """Lower build platform to lower position for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
-            self.loadcell.stop(save=False)
+            # self.loadcell.stop(save=False)
+            # time.sleep()
             self.loadcell.start()
-            time.sleep(1.0)
+            time.sleep(0.5)
             log.info("Loadcell force (pre-step 1): %s",self.loadcell.get_current_force())
             self.galil.goToZmin()
             self.planarized_position = self.galil.bottom_position
-            time.sleep(.5)
+            time.sleep(0.5)
             log.info("Loadcell force (post-step 1): %s",self.loadcell.get_current_force())
 
     @run_in_thread("planarized", "Planarization Step 2")
@@ -433,6 +434,7 @@ class PrintControl:
         log.info("Resuming print...")
         self.galil.absMove(cnts=self.paused_position)
         self.paused_position = None
+        self.loadcell.start()
         # update fontend
         msg = {
             "percent": int(100 * (self.next_layer - 1) / len(self.layer_map)),
@@ -574,8 +576,10 @@ class PrintControl:
         for i, layer in enumerate(self.layer_map):
             if i < self.next_layer:
                 continue  # skip previous layers if print was paused
-            if self.printing_paused.is_set() or self.printing_stopped.is_set():
+            if self.printing_paused.is_set():
                 self.loadcell.pause()
+                break  # pause, don't do anything else
+            if self.printing_stopped.is_set():
                 break  # pause, don't do anything else
             self.next_layer = i + 1
 

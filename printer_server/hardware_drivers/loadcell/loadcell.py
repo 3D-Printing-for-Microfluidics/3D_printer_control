@@ -98,7 +98,8 @@ class LoadCell(serial.Serial):
             self.flushInput()
             
             self.log.info("Loadcell started")
-            self.start_time = datetime.datetime.now()
+            if self.start_time is 0:
+                self.start_time = datetime.datetime.now()
             self.loadcell_start()
             self.thread.start()
             
@@ -146,6 +147,7 @@ class LoadCell(serial.Serial):
             self.log.info("Processing finished")
         self.raws = []
         self.windowData = []
+        self.start_time = 0
 
        
     def get_current_data(self):
