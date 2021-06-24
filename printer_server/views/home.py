@@ -306,10 +306,6 @@ class PrintControl:
                 "pre exposure status": pre_exposure_status,
                 "post exposure status": post_exposure_status,
             }
-        if door_is_open(pre_exposure_status["led_sticky_errors"]):
-            self.stop()
-        if door_is_open(post_exposure_status["led_sticky_errors"]):
-            self.stop()
         return data
 
     def connect(self):
