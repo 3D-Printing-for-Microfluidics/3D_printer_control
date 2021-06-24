@@ -634,6 +634,7 @@ class Visitech:
         Return commonly queried status.
         """
         return {
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
             "dmd_status": self.get_dmd_status(),
             "led_feedback": self.get_led_intensity(),
             "led_temp": self.get_led_temp(),
