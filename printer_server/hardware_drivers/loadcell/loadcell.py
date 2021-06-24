@@ -20,8 +20,7 @@ class LoadCell(serial.Serial):
         #self.status = None              # status to be updated after every send
         
         self.raws = []
-        self.windowData = []
-        self.windowSize = 10
+        self.currentData = {"index": 0, "force": 0.0}
         self.start_time = 0
         self.running = False
         
@@ -56,17 +55,15 @@ class LoadCell(serial.Serial):
         n = grams/1000*9.8
         return n
         
-    def connect(self, hwid='PID=16C0:0483 SER=5712360', period=1000, filter_corner=240):
+    def connect(self, hwid='PID=16C0:0483 SER=5712360', frequency=1000):
         """
         Connects to the loadcell and sets parameters.
         
         Parameters:
             hwid        - device identifier
-            period      - sample period of loadcell (in milliseconds)
-            corner      - corner frequency of loadcell highpass filter (in Hz)
+            frequency   - sample frequency of loadcell (in milliseconds)
         """
-        self.filter_corner = filter_corner
-        self.period = period
+        self.freq = frequency
         self.hwid = hwid
         
         self.port = self.findUsbPort(self.hwid)
@@ -76,14 +73,12 @@ class LoadCell(serial.Serial):
         if self.is_open:
             self.close()
         self.open()
-        self.flushInput()
-        self.flushOutput()
+
+        self.loadcell_stop()
         self.receiveAll()
+
         self.log.debug("Connected to {}", self.port)
-        
-        self.log.debug("%s", self.set_sample_period(int(self.period)))
-        self.log.debug("%s", self.set_gain(100))
-        self.log.debug("%s", self.set_filter_corner(int(self.filter_corner)))
+        self.log.debug("%s", self.set_sample_frequency(int(self.freq)))
         self.log.info("Connected to loadcell")
         
         atexit.register(self.close)
@@ -98,9 +93,11 @@ class LoadCell(serial.Serial):
             self.flushInput()
             
             self.log.info("Loadcell started")
+            temp = self.loadcell_start()
             if self.start_time is 0:
-                self.start_time = datetime.datetime.now()
-            self.loadcell_start()
+                loadcell_time = temp.split("'")
+                loadcell_time = float(loadcell_time[1])
+                self.start_time = datetime.datetime.now() - datetime.timedelta(milliseconds=loadcell_time)
             self.thread.start()
             
     def set_log_file(self, filename):
@@ -130,15 +127,18 @@ class LoadCell(serial.Serial):
         """
         Stops the loadcell and loadcell thread. Saves data to file
         """
-        if self.running:
-            self.running = False
-            self.thread.join()
-            self.thread = threading.Thread(target=self.loop)
-            
         try:
             self.loadcell_stop()
         except serial.SerialException:
             pass
+
+        if self.running:
+            self.running = False
+            self.thread.join()
+            self.thread = threading.Thread(target=self.loop)
+
+        self.receiveAll()
+
         self.log.info("Loadcell stopped")
         
         if save:
@@ -146,7 +146,6 @@ class LoadCell(serial.Serial):
             self.write_to_file()
             self.log.info("Processing finished")
         self.raws = []
-        self.windowData = []
         self.start_time = 0
 
        
@@ -154,12 +153,7 @@ class LoadCell(serial.Serial):
         """
         Get current loadcell force
         """
-        data = self.process_data(self.windowData, False)
-        if len(data) == 0:
-            return 0
-        else:
-            data.reverse()
-            return data[0]
+        return self.currentData
         
     def get_current_force(self):
         """
@@ -186,15 +180,28 @@ class LoadCell(serial.Serial):
         while(self.running):
             raw = ""
             try:
-                raw = self.receive()
+                index = int.from_bytes(self.receive_bytes(4), byteorder='little', signed=False)
+                milliseconds = int.from_bytes(self.receive_bytes(4), byteorder='little', signed=False)
+                data = int.from_bytes(self.receive_bytes(2), byteorder='little', signed=False)
+                time = self.start_time + datetime.timedelta(milliseconds=float(milliseconds))
+                force = self.adc_to_force(data)
+
+                self.raws.append({
+                    "time_str": time.strftime("%Y-%m-%d %H:%M:%S.%f'")[:-4],
+                    "index": index,
+                    "raw_data": data,
+                    "force": force
+                })
+                    
+                self.currentData = {"timestamp": time.timestamp()*1000, "index": index, "force": force}
             except serial.SerialException:
                 self.running = False
-            else:
-                self.raws.append(raw)
-                
-                if len(self.windowData) >= 10:
-                    self.windowData.pop(0)
-                self.windowData.append(raw)
+            except ValueError:
+                self.log.warning("Unable to parse loadcell data - cast error")
+                continue
+            except OverflowError:
+                self.log.warning("Unable to parse loadcell data - time overflow")
+                pass
                 
     def write_to_file(self):
         """
@@ -202,60 +209,9 @@ class LoadCell(serial.Serial):
         """
         with open(self.log_file, "w") as f:
             f.write("Timestamp,Index,Raw,Newtons\n")
-            rows = self.process_data(self.raws, True)
-            for row in rows:
+            for row in self.raws:
                 f.write("{},{},{},{}\n".format(row["time_str"], row["index"], row["raw_data"], row["force"]))
 
-        
-    def process_data(self, raw_data, write_to_file):
-        """
-        Processes raw data to add averaging, force conversion, and timestamps
-        
-        Returns:
-        - 2D array
-            [x][0] Timestamp
-            [x][1] Datapoint index
-            [x][2] Raw Data
-            [x][3] Force (in N)
-            [x][4] Running Average
-        """
-        output_array = []
-        
-        length = len(raw_data)
-        for i in range(length):
-            splitData = raw_data[i].split(",")
-            if(len(splitData) == 3):
-                index = splitData[0]
-                milliseconds = splitData[1]
-                data = splitData[2]
-
-                try:
-                    index = int(index)
-                    time = self.start_time + datetime.timedelta(milliseconds=float(milliseconds))
-                    data = float(data)
-                    force = self.adc_to_force(data)
-                except ValueError:
-                    self.log.debug("Unable to parse loadcell data - cast error")
-                    continue
-                
-                try:
-                    dict = {
-                      "timestamp": time.timestamp()*1000,
-                      "index": index,
-                      "force": force
-                    }
-                    if write_to_file:
-                        dict["time_str"] = time.strftime("%Y-%m-%d %H:%M:%S.%f'")[:-4]
-                        dict["raw_data"] = data
-                        
-                    output_array.append(dict)
-                except OverflowError:
-                    self.log.debug("Unable to parse loadcell data - time overflow")
-                    pass
-            else:
-                self.log.debug("Unable to parse loadcell data - corrupt data")
-                pass
-        return output_array
         
     ########################
     # Teensy serial wrappers
@@ -263,7 +219,7 @@ class LoadCell(serial.Serial):
     
     def loadcell_start(self):
         """
-        Sample at a period of period_us (in microseconds)
+        Sample at a frequency of freq (in Hz)
         """
         return self.send('b')
         
@@ -277,28 +233,20 @@ class LoadCell(serial.Serial):
         """
         Stop sampling
         """
-        return self.send('e')
+        try:
+            cmd = "e"
+            self.log.debug("Sent: {}", cmd)
+            self.write(bytes(cmd + '\n', encoding='ascii')) # write to serial tx buffer
+        except serial.SerialException:
+            pass
+        return
 
-    def set_gain(self, value):
+    def set_sample_frequency(self, freq_hz):
         """
-        Set the gain
+        Set the sampling frequency to freq_hz (in hz)
         """
-        self.log.debug("Gain set to {}", value)
-        return self.send('g {}'.format(value)), value
-
-    def set_filter_corner(self, value):
-        """
-        Set the filter 3d corner
-        """
-        self.log.debug("Corner set to {}", value)
-        return self.send('f {}'.format(value)), value
-
-    def set_sample_period(self, period_us):
-        """
-        Set the sampling period to period_us (in microseconds)
-        """
-        self.log.debug("Period set to {}", period_us)
-        return self.send('p {}'.format(period_us)), period_us
+        self.log.debug("Frequency set to {}", freq_hz)
+        return self.send('f {}'.format(freq_hz)), freq_hz
 
     def send(self, cmd):
         """
@@ -317,10 +265,16 @@ class LoadCell(serial.Serial):
         response = b''
         response += self.readline()         # wait for the first line to fill in the rx buffer
         return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
+
+    def receive_bytes(self, number_of_bytes):
+        """
+        Sends a number of bytes from the loadcell device
+        """
+        return self.read(number_of_bytes)
         
     def receiveAll(self):
-        response = b''
-        response += self.readline()         # wait for the first line to fill in the rx buffer
-        while self.in_waiting:              # while there is more data in the rx buffer
-            response += self.readline()     # read next line from rx buffer
-        return response.decode().rstrip()   # return decoded byte response (as string) without traililng newline
+        self.read()
+        while self.in_waiting:
+            self.read()
+        return 
+
