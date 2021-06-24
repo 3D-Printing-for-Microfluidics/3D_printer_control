@@ -359,17 +359,19 @@ class PrintControl:
             # time.sleep()
             self.loadcell.start()
             time.sleep(0.5)
-            log.info("Loadcell force (pre-step 1): %s",self.loadcell.get_current_force())
+            log.info("Loadcell force (pre-step 1): %s", self.loadcell.get_current_force())
             self.galil.goToZmin()
             self.planarized_position = self.galil.bottom_position
             time.sleep(0.5)
-            log.info("Loadcell force (post-step 1): %s",self.loadcell.get_current_force())
+            log.info(
+                "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
+            )
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarizationStep2(self):
         """Raise the build platform to begin printing."""
         if self.state == "planarizing":
-            log.info("Loadcell force (pre-step 2): %s",self.loadcell.get_current_force())
+            log.info("Loadcell force (pre-step 2): %s", self.loadcell.get_current_force())
             self.loadcellPlanarization()
             pass
 
@@ -382,20 +384,22 @@ class PrintControl:
         fail_count = 0
         slow_speed = False
         max_fails = 5
-        self.galil.startJog(speed=-0.25) # jog up at speed of 250 um per second
+        self.galil.startJog(speed=-0.25)  # jog up at speed of 250 um per second
         # while start_force > 0.75: # jog until force is less than 0.75 newtons
-        while start_force > 5: # jog until force is less than 0.75 newtons
+        while start_force > 5:  # jog until force is less than 0.75 newtons
             if not slow_speed and start_force < 10:
                 slow_speed = True
                 max_fails = 10
-                self.galil.startJog(speed=-0.05) # jog up at speed of 50 um per second
-            time.sleep(.025)
+                self.galil.startJog(speed=-0.05)  # jog up at speed of 50 um per second
+            time.sleep(0.025)
             end_force = self.loadcell.get_current_force()
             count = count + 1
-            log.debug("Loadcell force: %s",end_force)
-            if abs(last_no_fail_force - end_force) < .25:
+            log.debug("Loadcell force: %s", end_force)
+            if abs(last_no_fail_force - end_force) < 0.25:
                 if fail_count >= 10:
-                    log.error("Loadcell planarization failed. (Check battery or build platform screw)")
+                    log.error(
+                        "Loadcell planarization failed. (Check battery or build platform screw)"
+                    )
                     self.galil.stopJog()
                     return
                 fail_count = fail_count + 1
@@ -406,8 +410,8 @@ class PrintControl:
         self.galil.stopJog()
         self.planarized_position = self.galil.getPosition()
         log.info("Loadcell planarized %s steps", count)
-        log.info("Loadcell force (post-step 2): %s",self.loadcell.get_current_force())
-        log.info("Loadcell position (post-step 2): %s",self.galil.getPosition())
+        log.info("Loadcell force (post-step 2): %s", self.loadcell.get_current_force())
+        log.info("Loadcell position (post-step 2): %s", self.galil.getPosition())
 
     @run_in_thread("paused", "Pause Printing")
     def pause(self):
