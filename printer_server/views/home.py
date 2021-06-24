@@ -119,7 +119,7 @@ def run_in_thread(state, text):
                 socketio.emit(self.state, dict(), namespace="/printing", broadcast=True)
 
             msg = {
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
                 "text": text,
             }
             log.info(msg["text"])
@@ -244,7 +244,7 @@ class PrintControl:
         """
         time.sleep(position_settings["Initial wait (ms)"] / 1000)
         start_position = self.galil.getPosition()
-        start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         start_index = self.loadcell.get_current_loadcell_index()
         self.galil.relMove(
             mm=-position_settings["Distance up (mm)"],
@@ -259,7 +259,7 @@ class PrintControl:
             acceleration=position_settings["BP up acceleration (mm/sec^2)"],
         )
         end_position = self.galil.getPosition()
-        end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         end_index = self.loadcell.get_current_loadcell_index()
         time.sleep(position_settings["Final wait (ms)"] / 1000)
         thickness = self.galil.cntsToMm(abs(end_position - start_position) * 1000)
@@ -442,7 +442,7 @@ class PrintControl:
         # update fontend
         msg = {
             "percent": int(100 * (self.next_layer - 1) / len(self.layer_map)),
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
             "text": "Resume Printing",
         }
         self.state = "printing"
@@ -519,7 +519,7 @@ class PrintControl:
         # tell frontend to remove the job from the table and delete it from the database
         msg = {
             "job": job_id,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
             "text": f"Print Job ({job_in_queue.original_filename}) selected",
         }
         socketio.emit("job deleted", msg, namespace="/printing", broadcast=True)
@@ -534,7 +534,7 @@ class PrintControl:
         self.state = "printing"
         msg = {
             "percent": 0,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
             "text": "Start Printing",
         }
         log.info(msg["text"])
@@ -613,7 +613,7 @@ class PrintControl:
                 "print progress",
                 {
                     "percent": int(100 * i / len(self.layer_map)),
-                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
                     "text": msg,
                 },
                 namespace="/printing",
@@ -638,7 +638,7 @@ class PrintControl:
                     latest_record.completed = True
                     self.state = "completed"
                     msg = {
-                        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
                         "text": "Printing Compeleted",
                     }
                     log.info(msg["text"])
@@ -658,7 +658,7 @@ class PrintControl:
     def shutdown(self):
         if self.state not in ["busy", "printing"]:
             msg = {
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
                 "text": "Shutting down",
             }
             log.info(msg["text"])
@@ -676,7 +676,7 @@ class PrintControl:
 
         else:
             msg = {
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
                 "text": "Don't try to shutdown 3D printer when it's busy",
             }
             log.warning(msg["text"])
@@ -777,7 +777,7 @@ def handleUpload():
                 {
                     "id": new_print_job.id,
                     "name": f.filename,
-                    "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
                     "upload_ip": request.remote_addr,
                 },
                 namespace="/printing",
@@ -804,7 +804,7 @@ def deleteJob(message):
     os.remove(os.path.join(Config.UPLOAD_FOLDER, "queue", job.zip_filename))
     msg = {
         "job": job_id,
-        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
         "text": f"Print Job ({job.original_filename}) deleted",
     }
     job.delete()
