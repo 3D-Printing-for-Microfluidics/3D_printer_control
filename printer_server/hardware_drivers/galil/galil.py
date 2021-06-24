@@ -52,6 +52,7 @@ class Galil:
         self.bottom_position = 368000
         self.top_position = -400000
         self.error_window = 1
+        self.monitoring_window = 80
         self.jogging = False
         self.pre_jog_speed = 0
 
@@ -74,12 +75,10 @@ class Galil:
 
     def goToZmax(self):
         self.absMove(speed=25, cnts=self.top_position)
-        self.waitForMotionComplete(self.top_position)
         return self.getPosition()
 
     def goToZmin(self):
         self.absMove(speed=25, cnts=self.bottom_position)
-        self.waitForMotionComplete(self.bottom_position)
         return self.getPosition()
 
     # find and connect to the Galil controller
@@ -196,6 +195,7 @@ class Galil:
         self.send("BGA")  # start homing
         # block until motion is complete (encoder is set to 0 at end of homing)
         self.waitForMotionComplete(0)
+        self.g.GMotionComplete(axis)
         self.homed = True  # update class homed status
         self.log.info("Homing complete.")
 
@@ -278,9 +278,26 @@ class Galil:
         start_time = time.time()
         last_position = self.getPosition(notify=False)  # save the last position
         self.data[self.move_num] = []
-        self.data[self.move_num].append({"time": time.time(), "position": last_position})
+        self.data[self.move_num].append({"time": time.time(), "position": last_position, "error_window": -1})
         counter = 0
         time_count = 0
+        # wait until we are within 10 um of target
+        while not (
+                int(cnts - self.monitoring_window)
+                <= last_position
+                <= int(cnts + self.monitoring_window)
+            ):
+            time.sleep(0.001)
+            last_position = self.getPosition(notify=False)
+            upper, lower = self.checkLimits()
+            if (lower and cnts < last_position) or (upper and cnts > last_position):
+            # if any(self.checkLimits()):
+                self.log.info("Limit switch triggered")
+                self.g.GMotionComplete(axis)
+                return
+            self.data[self.move_num].append(
+                {"time": time.time(), "position": last_position, "error_window": -1}
+            )
         # only proceed when 10 good consecutive counts have been read
         while counter <= 10:
             time.sleep(0.001)
@@ -290,7 +307,7 @@ class Galil:
                 self.g.GMotionComplete(axis)
                 return
             self.data[self.move_num].append(
-                {"time": time.time(), "position": last_position}
+                {"time": time.time(), "position": last_position, "error_window": self.error_window}
             )
             if (
                 int(cnts - self.error_window)
@@ -302,14 +319,18 @@ class Galil:
                 counter = 0
             time_count += 1
             # timeout for collecting data, motor won't reach position
-            if time_count >= 10000:
+            if time_count == 1000:
+                self.error_window = 2
+            if time_count >= 9000:
                 self.log.warning(
                     "Z motor didn't reach position. Got to %s but needed %s",
                     last_position,
                     cnts,
                 )
+                self.error_window = 1
                 break
-        self.data[self.move_num].append({"time": time.time(), "position": last_position})
+        self.error_window = 1
+        self.data[self.move_num].append({"time": time.time(), "position": last_position, "error_window": -1})
         self.data[self.move_num].append({"duration": time.time() - start_time})
         self.move_num = self.move_num + 1
 
@@ -321,7 +342,7 @@ class Galil:
             response = response.replace(",", "")
             response = response.split()
             self.data["{}C".format(coeff)] = response[
-                2
+                0
             ]  # get C axis which will be at index 2
         if filename is None:
             filename = "galil_data_P={}_I={}_D={}_IL={}.txt".format(
