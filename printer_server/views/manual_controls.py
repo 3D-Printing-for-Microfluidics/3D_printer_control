@@ -49,11 +49,15 @@ def get_calibration_positions():
     return message
 
 
-def emit_calibration_positions():
+def emit_calibration_positions(log=False):
     message = get_calibration_positions()
-    write_to_position_log(message)
+    if log:
+        write_to_position_log(message)
     socketio.emit(
-        "calibration_motor_move_complete", message, namespace="/manual", broadcast=True,
+        "calibration_motor_move_complete",
+        message,
+        namespace="/manual",
+        broadcast=True,
     )
 
 
@@ -164,7 +168,7 @@ def moveCalibrationMotor(message):
         kdc.move(distance_um, relative=mode)
     else:
         tiptilt.move(axis, distance_um, relative=mode, fast=fast)
-    emit_calibration_positions()
+    emit_calibration_positions(log=message["log"])
 
 
 @socketio.on("calibration_motor_home", namespace="/manual")
@@ -176,7 +180,7 @@ def homeCalibrationMotor(message):
             kdc.home()
         else:
             tiptilt.home()
-        emit_calibration_positions()
+        emit_calibration_positions(log=True)
 
     t = threading.Thread(target=func, args=[axis])
     t.start()
