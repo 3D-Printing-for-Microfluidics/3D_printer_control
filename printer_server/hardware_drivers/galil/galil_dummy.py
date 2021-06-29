@@ -35,6 +35,8 @@ class Galil_dummy:
         self.travel = {"A": 100}  # max travel in mm
         self.ctspmm = {"A": 8000}  # counts/mm for each axis
         self.position = 0
+        self.bottom_position = 368000
+        self.top_position = -400000
 
     @dummy_log
     def initialize(self):

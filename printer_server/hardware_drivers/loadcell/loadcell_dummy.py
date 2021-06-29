@@ -1,4 +1,3 @@
-from printer_server.views.home import um_to_px
 from printer_server.logging_handler import dummy_log
 
 
