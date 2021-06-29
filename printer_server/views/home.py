@@ -152,7 +152,6 @@ class PrintControl:
         self.tiptilt = driver_handles.tiptilt
         self.loadcell = driver_handles.loadcell
         self.screen = None
-        print(self.screen, "home")
 
         # folders relevant to printing
         self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
@@ -335,9 +334,7 @@ class PrintControl:
             galil_thread.join()
             screen_thread.join()
             visitech_thread.join()
-
             self.screen = driver_handles.screen.screen
-            print("after init 2", self.screen, driver_handles.screen)
 
             log.info("Printer initialized, all hardware ready.")
 
