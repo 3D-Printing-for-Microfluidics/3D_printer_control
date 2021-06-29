@@ -9,7 +9,7 @@ from flask import Blueprint, request, render_template
 
 from printer_server.extensions import socketio
 from printer_server.settings import Config
-from printer_server.hardware_configuration import hardware_driver_handles
+from printer_server.hardware_configuration import driver_handles
 
 
 class External_Control:
@@ -23,10 +23,10 @@ class External_Control:
         return self.enable_flag
 
 
-galil = hardware_driver_handles.galil
-visitech = hardware_driver_handles.visitech
-tiptilt = hardware_driver_handles.tiptilt
-kdc = hardware_driver_handles.kdc
+galil = driver_handles.galil
+visitech = driver_handles.visitech
+tiptilt = driver_handles.tiptilt
+kdc = driver_handles.kdc
 external_control_enable = External_Control()
 position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
 
@@ -54,10 +54,7 @@ def emit_calibration_positions(log=False):
     if log:
         write_to_position_log(message)
     socketio.emit(
-        "calibration_motor_move_complete",
-        message,
-        namespace="/manual",
-        broadcast=True,
+        "calibration_motor_move_complete", message, namespace="/manual", broadcast=True,
     )
 
 
@@ -202,9 +199,15 @@ def lightEngineProject(message):
     visitech.project(imagePath, exposure, ledPower, repeat)
     socketio.emit("light_engine_start_complete", namespace="/manual", broadcast=True)
 
+
 @socketio.on("light_engine_get_status", namespace="/manual")
 def lightEngineStatus():
-    socketio.emit("light_engine_status", visitech.read_all_status(), namespace="/manual", broadcast=True)
+    socketio.emit(
+        "light_engine_status",
+        visitech.read_all_status(),
+        namespace="/manual",
+        broadcast=True,
+    )
 
 
 @blueprint.route("handle-calibration-upload", methods=["POST"])

@@ -4,9 +4,16 @@ from werkzeug.contrib.fixers import ProxyFix
 from flask import Flask, render_template
 from printer_server.extensions import db, migrate, socketio
 from printer_server import commands, models
-from printer_server.views import home, manual_controls, print_history, chart, server_logs, loadcell
+from printer_server.views import (
+    home,
+    manual_controls,
+    print_history,
+    chart,
+    server_logs,
+    loadcell,
+)
 from printer_server.settings import ProdConfig
-from printer_server.hardware_configuration import hardware_driver_handles
+from printer_server.hardware_configuration import driver_handles
 from printer_server.logging_handler import configure_loggers
 
 
@@ -78,7 +85,7 @@ def register_commands(app):
 
 
 def register_hardware(app):
-    app.hardware_driver_handles = hardware_driver_handles
+    app.driver_handles = driver_handles
 
 
 def register_logger(app):

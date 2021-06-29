@@ -13,7 +13,7 @@ from PIL import Image
 from flask import Blueprint, request, render_template
 
 from printer_server.settings import Config
-from printer_server.hardware_configuration import hardware_driver_handles
+from printer_server.hardware_configuration import driver_handles
 from printer_server.print_file_validator import validate_v02
 from printer_server.models import PrintQueue, PrintRecord
 from printer_server.extensions import db, socketio
@@ -146,11 +146,11 @@ class PrintControl:
         self._state = "uninitialized"
 
         # hardware handles
-        self.galil = hardware_driver_handles.galil
-        self.visitech = hardware_driver_handles.visitech
-        self.kdc = hardware_driver_handles.kdc
-        self.tiptilt = hardware_driver_handles.tiptilt
-        self.loadcell = hardware_driver_handles.loadcell
+        self.galil = driver_handles.galil
+        self.visitech = driver_handles.visitech
+        self.kdc = driver_handles.kdc
+        self.tiptilt = driver_handles.tiptilt
+        self.loadcell = driver_handles.loadcell
 
         # folders relevant to printing
         self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
@@ -369,7 +369,6 @@ class PrintControl:
         if self.state == "planarizing":
             log.info("Loadcell force (pre-step 2): %s", self.loadcell.get_current_force())
             self.loadcellPlanarization()
-            pass
 
     def loadcellPlanarization(self):
         # get initial force and position
@@ -379,13 +378,11 @@ class PrintControl:
         count = 0
         fail_count = 0
         slow_speed = False
-        max_fails = 5
         self.galil.startJog(speed=-0.25)  # jog up at speed of 250 um per second
         # while start_force > 0.75: # jog until force is less than 0.75 newtons
         while start_force > 5:  # jog until force is less than 0.75 newtons
             if not slow_speed and start_force < 10:
                 slow_speed = True
-                max_fails = 10
                 self.galil.startJog(speed=-0.05)  # jog up at speed of 50 um per second
             time.sleep(0.025)
             end_force = self.loadcell.get_current_force()
