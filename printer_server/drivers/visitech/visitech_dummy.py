@@ -2,22 +2,15 @@ import time
 
 from printer_server.logging_handler import dummy_log
 
-from .screen import ScreenThread
-
-
 # pylint:disable=too-many-public-methods
 class Visitech_dummy:
     @dummy_log
-    def __init__(self, resolution=(2560, 1600), fullscreen=True):
-        self.resolution = resolution
-        self.fullscreen = fullscreen
+    def __init__(self):
         self.max_exp_time = 10000  # max single projection time in ms
-        # setup screen thread
-        self.screenThread = ScreenThread(self.resolution, self.fullscreen)
 
     @dummy_log
     def connect(self):
-        self.screenThread.start()
+        pass
 
     @dummy_log
     def disconnect(self):
@@ -170,10 +163,6 @@ class Visitech_dummy:
             exposure = [self.max_exp_time] * n
         return exposure
 
-    @dummy_log
-    def clear_image(self):
-        self.screenThread.screen.clear()
-
     def read_all_status(self):
         return {
             "dmd_status": self.get_dmd_status(),
@@ -185,13 +174,12 @@ class Visitech_dummy:
         }
 
     @dummy_log
-    def project(self, image, exposure, power, repeats=1):
+    def project(self, exposure, power, repeats=1):
         if repeats == 0:  # if continuous display is desired
             self.set_sequencer_lut_definition(
                 33100
             )  # this provides the minimum blanking of 233 us of the full 33333 us cycle (at 30Hz on HDMI)
             self.set_sequencer_lut_config(repeats=0)  # 0 means repeat forever
-            self.screenThread.screen.draw(image)  # draw to virtual screen
             self.start_sequencer()  # start the sequencer and don't stop it (will be stopped on program exit)
         else:  # normal display is desired
             for t in self.split_exposure_time(exposure):
@@ -201,12 +189,10 @@ class Visitech_dummy:
                 self.set_sequencer_lut_config(
                     repeats=repeats
                 )  # set the number of repetitions
-                self.screenThread.screen.draw(image)  # draw to the virtual screen
                 time.sleep(0.1)
                 self.start_sequencer()  # start the sequencer
                 time.sleep(0.1 + t * 1e-3)
                 self.stop_sequencer()  # stop the sequencer
-                self.clear_image()
 
     @dummy_log
     def projectMulti(self, images, exposureTimes, ledPowers):

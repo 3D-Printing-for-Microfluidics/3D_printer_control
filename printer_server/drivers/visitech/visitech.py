@@ -9,10 +9,7 @@ import json
 import atexit
 import socket
 import logging
-from pathlib import Path
 from datetime import datetime
-
-from .screen import ScreenThread
 
 # pylint:disable=too-many-public-methods
 class Visitech:
@@ -82,9 +79,7 @@ class Visitech:
 
     """
 
-    def __init__(self, resolution=(2560, 1600), fullscreen=True, log_level=logging.DEBUG):
-        self.resolution = resolution
-        self.fullscreen = fullscreen
+    def __init__(self, log_level=logging.DEBUG):
         self.max_exp_time = 10000  # max single projection time in ms
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
@@ -95,9 +90,6 @@ class Visitech:
         self.socket = (
             None  # start as None so we can tell if a connection has been attempted
         )
-
-        # setup screen thread
-        self.screenThread = ScreenThread(self.resolution, self.fullscreen)
 
         # register exit handlers
         atexit.register(self.disconnect)  # close the TCP conenction on exit
@@ -123,9 +115,6 @@ class Visitech:
             msg = "Light engine not found. It it plugged in and powered on?"
             self.log.critical(msg)
             sys.exit(msg)
-
-        # start screen thread
-        self.screenThread.start()
 
         # set default state for light engine and clear previous errors
         self.get_sticky_errors(warn=False)
@@ -620,15 +609,6 @@ class Visitech:
             exposure = [self.max_exp_time] * n
         return exposure
 
-    def clear_image(self):
-        """
-        Blank the virtual screen that provides the image to the
-        Visitech.
-
-        Sets full image to black.
-        """
-        self.screenThread.screen.clear()
-
     def read_all_status(self):
         """
         Return commonly queried status.
@@ -642,17 +622,13 @@ class Visitech:
             "led_driver_status": self.get_led_driver_status(),
         }
 
-    def project(self, image, exposure, power, repeats=1):
+    def project(self, exposure, power, repeats=1):
         """
         Call all of the necessary methods to project an image, and block
         until projection is complete.
         """
         self.log.info(
-            "Exposing %s for %sms at power setting %s. Repeat %s",
-            image,
-            exposure,
-            power,
-            repeats,
+            "Exposing for %sms at power setting %s. Repeat %s", exposure, power, repeats,
         )
         self.set_led_amplitude(power)
         if repeats == 0:  # if continuous display is desired
@@ -660,19 +636,16 @@ class Visitech:
             # (at 30Hz on HDMI)
             self.set_sequencer_lut_definition(33100, 0, 0, 8, 0, 0, 0)
             self.set_sequencer_lut_config(repeats=repeats)  # 0 means repeat forever
-            self.screenThread.screen.draw(image)
             self.start_sequencer()  # sequencer will be stopped on program exit)
         else:  # normal display is desired
             for t in self.split_exposure_time(exposure):
                 # the TI board expects exposure in microseconds
                 self.set_sequencer_lut_definition(exposure=t * 1000)
                 self.set_sequencer_lut_config(repeats=repeats)
-                self.screenThread.screen.draw(image)
                 time.sleep(0.1)
                 self.start_sequencer()
                 time.sleep(0.1 + t * 1e-3)
                 self.stop_sequencer()
-                self.clear_image()
 
 
 if __name__ == "__main__":

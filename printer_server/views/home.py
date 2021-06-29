@@ -151,6 +151,8 @@ class PrintControl:
         self.kdc = driver_handles.kdc
         self.tiptilt = driver_handles.tiptilt
         self.loadcell = driver_handles.loadcell
+        self.screen = None
+        print(self.screen, "home")
 
         # folders relevant to printing
         self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
@@ -291,7 +293,8 @@ class PrintControl:
                 image = shift_image(image, x=um_to_px(defocus_um))
             time.sleep(settings["Wait before exposure (ms)"] / 1000)
             defocus_position = self.kdc.getCurrentPos()
-            self.visitech.project(image, exposure_time_ms, power)
+            self.screen.draw(image)
+            self.visitech.project(exposure_time_ms, power)
             post_exposure_status = self.visitech.read_all_status()
             time.sleep(settings["Wait after exposure (ms)"] / 1000)
             if defocus_um != 0:
@@ -319,16 +322,22 @@ class PrintControl:
             self.focused_position = get_last_focused_position()
             self.tiptilt.connect()
             self.loadcell.connect()
-
+            # driver_handles.screen.start()
             kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
             galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
+            screen_thread = threading.Thread(target=driver_handles.screen.start, args=[])
             visitech_thread = threading.Thread(target=self.visitech.connect, args=[])
             kdc_thread.start()
             galil_thread.start()
+            screen_thread.start()
             visitech_thread.start()
             kdc_thread.join()
             galil_thread.join()
+            screen_thread.join()
             visitech_thread.join()
+
+            self.screen = driver_handles.screen.screen
+            print("after init 2", self.screen, driver_handles.screen)
 
             log.info("Printer initialized, all hardware ready.")
 
@@ -615,7 +624,7 @@ class PrintControl:
 
         # always turn off the Visitech
         self.visitech.stop_sequencer()
-        self.visitech.clear_image()
+        self.screen.clear()
 
         # if print is finished, move build platform back to top
         if not self.printing_paused.is_set():

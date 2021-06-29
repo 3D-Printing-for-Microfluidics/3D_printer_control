@@ -1,5 +1,5 @@
 import logging
-
+from printer_server.drivers.screen import ScreenThread
 from printer_server.drivers.galil import Galil, Galil_dummy
 from printer_server.drivers.visitech import Visitech, Visitech_dummy
 from printer_server.drivers.kdc101 import KDC101, KDC101_dummy
@@ -12,6 +12,8 @@ dummy = False
 
 class Printer3D:
     def __init__(self):
+        self.screen = ScreenThread(log_level=default_log_level)
+        print(self.screen)
         if dummy:
             self.galil = Galil_dummy()
             self.visitech = Visitech_dummy()

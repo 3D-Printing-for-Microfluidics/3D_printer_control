@@ -62,6 +62,7 @@ class Screen:
         """
         # open image file as a PIL.Image object. If it is a corrupted image,
         # substitute it with a plain white image.
+        self.log.info("Drawing %s", fn)
         try:
             pilImage = Image.open(fn)
         except (OSError, FileNotFoundError):
@@ -78,6 +79,7 @@ class Screen:
     def clear(self):
         """Clear the Tk window by drawing a black image."""
         # When mode is `1`, it creates a 1-bit image.
+        self.log.info("Clearing virtual screen")
         pilImage = Image.new(mode="L", size=(self.width, self.height), color=0)
         self.tkImage = ImageTk.PhotoImage(pilImage)
         self.canvas.itemconfig(self.canvasImage, image=self.tkImage)
@@ -93,11 +95,12 @@ class ScreenThread(threading.Thread):
         a ``threading.Event`` object to set flag to stop thread
     """
 
-    def __init__(self, resolution, fullscreen):
+    def __init__(self, resolution=(2560, 1600), fullscreen=True, log_level=logging.DEBUG):
         super().__init__(daemon=True)
         self.resolution = resolution
         self.fullscreen = fullscreen
         self.screen = None
+        self.log_level = log_level
 
     def run(self):
         """Create a Tk window and run it. Instead of the normal
@@ -106,7 +109,7 @@ class ScreenThread(threading.Thread):
         arbitrary operation can be added, such as guaranteeing
         the tk window is on top.
         """
-        self.screen = Screen(self.resolution, self.fullscreen)
+        self.screen = Screen(self.resolution, self.fullscreen, self.log_level)
         atexit.register(self.stop)
         self.screen.root.mainloop()
 
