@@ -159,16 +159,6 @@ class Visitech_dummy:
     def get_logs(self):
         return self.send("GET LOGS")
 
-    def read_all_status(self):
-        return {
-            "dmd_status": self.get_dmd_status(),
-            "led_feedback": self.get_led_intensity(),
-            "led_temp": self.get_led_temp(),
-            "led_driver_temp": self.get_led_driver_board_temp(),
-            "led_sticky_errors": self.get_sticky_errors(),
-            "led_driver_status": self.get_led_driver_status(),
-        }
-
     def split_exposure_time(self, exposure):
         """
         Split a long exposure time into an array of smaller exposure times.
@@ -183,6 +173,16 @@ class Visitech_dummy:
     @dummy_log
     def clear_image(self):
         self.screenThread.screen.clear()
+
+    def read_all_status(self):
+        return {
+            "dmd_status": self.get_dmd_status(),
+            "led_feedback": self.get_led_intensity(),
+            "led_temp": self.get_led_temp(),
+            "led_driver_temp": self.get_led_driver_board_temp(),
+            "led_sticky_errors": self.get_sticky_errors(),
+            "led_driver_status": self.get_led_driver_status(),
+        }
 
     @dummy_log
     def project(self, image, exposure, power, repeats=1):

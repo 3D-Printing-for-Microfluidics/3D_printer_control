@@ -49,10 +49,6 @@ class Galil_dummy:
         self.position = 368000
 
     @dummy_log
-    def resume(self, layerThickness):
-        pass
-
-    @dummy_log
     def connect(self):
         pass
 
@@ -120,15 +116,23 @@ class Galil_dummy:
             self.position = cnts
 
     @dummy_log
+    def startJog(self, speed=None, axis="A"):
+        pass
+
+    @dummy_log
+    def stopJog(self, axis="A"):
+        pass
+
+    @dummy_log
     def waitForMotionComplete(self, cnts, axis="A"):
         pass
 
     @dummy_log
-    def disconnect(self):
+    def saveMotionData(self, filename=None):
         pass
 
     @dummy_log
-    def configure(self):
+    def disconnect(self):
         pass
 
     @dummy_log

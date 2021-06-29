@@ -10,6 +10,14 @@ class KDC101_dummy:
             self.homed = True
 
     @dummy_log
+    def find_device(self):
+        pass
+
+    @dummy_log
+    def connect(self, *args, **kwargs):
+        pass
+
+    @dummy_log
     def home(self):
         pass
 
@@ -33,10 +41,6 @@ class KDC101_dummy:
         pass
 
     @dummy_log
-    def connect(self, *args, **kwargs):
-        pass
-
-    @dummy_log
     def sendServerAlive(self, *args, **kwargs):
         pass
 
@@ -46,10 +50,6 @@ class KDC101_dummy:
 
     @dummy_log
     def enableStage(self, *args, **kwargs):
-        pass
-
-    @dummy_log
-    def getUSBDevice(self, *args, **kwargs):
         pass
 
     @dummy_log

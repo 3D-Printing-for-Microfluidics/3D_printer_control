@@ -4,29 +4,18 @@ from printer_server.logging_handler import dummy_log
 class TipTilt_dummy:
     @dummy_log
     def __init__(self, *args, **kwargs):
-        self.position = [0, 0]
+        pass
+
+    @dummy_log
+    def findUsbPort(self, *args, **kwargs):
+        pass
 
     @dummy_log
     def connect(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def home(self, *args, **kwargs):
-        pass
-
-    @dummy_log
-    def move(self, axis, distance_um, *args, **kwargs):
-        if "relative" in kwargs and kwargs["relative"]:
-            self.position[axis == "Tip"] += distance_um
-        else:
-            self.position[axis == "Tip"] = distance_um
-
-    @dummy_log
     def send(self, *args, **kwargs):
-        pass
-
-    @dummy_log
-    def transmit(self, *args, **kwargs):
         pass
 
     @dummy_log
@@ -34,5 +23,53 @@ class TipTilt_dummy:
         pass
 
     @dummy_log
-    def get_position(self, axis, *args, **kwargs):
-        return self.position[axis == "Tip"]
+    def initialize(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def home(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def reset(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def get_position(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def get_min_position(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def get_max_position(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def get_acceleration(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def set_acceleration(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def get_speed(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def set_speed(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def move_relative(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def move_absolute(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def move(self, *args, **kwargs):
+        pass

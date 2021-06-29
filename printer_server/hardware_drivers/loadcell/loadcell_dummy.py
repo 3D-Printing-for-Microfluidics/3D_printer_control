@@ -1,8 +1,18 @@
+from printer_server.views.home import um_to_px
 from printer_server.logging_handler import dummy_log
+
 
 class Loadcell_dummy:
     @dummy_log
     def __init__(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def findUsbPort(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def adc_to_force(self, *args, **kwargs):
         pass
 
     @dummy_log
@@ -12,27 +22,35 @@ class Loadcell_dummy:
     @dummy_log
     def start(self, *args, **kwargs):
         pass
-        
+
     @dummy_log
-    def stop(self, *args, **kwargs):
+    def set_log_file(self, *args, **kwargs):
         pass
-        
+
     @dummy_log
     def pause(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def loop(self, *args, **kwargs):
-        pass
-        
-    @dummy_log
-    def get_data(self, *args, **kwargs):
+    def stop(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def adc_to_force(self, *args, **kwargs):
+    def get_current_data(self, *args, **kwargs):
         pass
-        
+
     @dummy_log
-    def process_data(self, *args, **kwargs):
+    def get_current_force(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def get_current_loadcell_index(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def loop(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def write_to_file(self, *args, **kwargs):
         pass
