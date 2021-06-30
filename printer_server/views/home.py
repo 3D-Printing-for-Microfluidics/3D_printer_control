@@ -495,7 +495,7 @@ class PrintControl:
             f.extractall(self.current_job)
 
         # create logs and overwrite any pre-existing data
-        position_log = str(self.current_job / "position_data.txt")
+        position_log = str(self.current_job / "position_data.csv")
         exposure_log = str(self.current_job / "exposure_data.txt")
         with open(position_log, "w") as f:
             f.write("")
@@ -565,7 +565,7 @@ class PrintControl:
         self.visitech.get_sticky_errors(warn=False)
         self.layer_map = self.generate_layer_map()
 
-        position_log = str(self.current_job / "position_data.txt")
+        position_log = str(self.current_job / "position_data.csv")
         exposure_log = str(self.current_job / "exposure_data.txt")
         loadcell_log = str(self.current_job / "loadcell_data.txt")
 
@@ -574,6 +574,12 @@ class PrintControl:
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
             self.galil.absMove(cnts=self.planarized_position)
+            with open(position_log, "a") as f:
+                f.write(
+                    f"layer,duplicate,start_time,end_time,\
+                        loadcell_start_index,loadcell_end_index,\
+                        start_position,end_position,thickness_um\n"
+                )
 
         # iterate over layers
         for i, layer in enumerate(self.layer_map):
@@ -598,7 +604,15 @@ class PrintControl:
             # do moves and log data
             position_data = self.move_build_platform(position_settings)
             with open(position_log, "a") as f:
-                f.write(f"layer {layer} data: {position_data}\n")
+                f.write(f"{layer[0]},")
+                f.write(f"{layer[1]},")
+                f.write(f"{position_data['start time']},")
+                f.write(f"{position_data['end time']},")
+                f.write(f"{position_data['loadcell start index']},")
+                f.write(f"{position_data['loadcell end index']},")
+                f.write(f"{position_data['start position']},")
+                f.write(f"{position_data['end position']},")
+                f.write(f"{position_data['thickness (um)']}\n")
 
             # do exposures and log data
             exposure_data = self.perform_exposures(image_settings_list)
