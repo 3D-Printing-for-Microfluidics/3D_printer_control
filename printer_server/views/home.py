@@ -567,7 +567,7 @@ class PrintControl:
 
         position_log = str(self.current_job / "position_data.csv")
         exposure_log = str(self.current_job / "exposure_data.txt")
-        loadcell_log = str(self.current_job / "loadcell_data.txt")
+        loadcell_log = str(self.current_job / "loadcell_data.csv")
 
         self.loadcell.set_log_file(loadcell_log)
 
