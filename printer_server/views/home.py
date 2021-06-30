@@ -321,7 +321,7 @@ class PrintControl:
             self.focused_position = get_last_focused_position()
             self.tiptilt.connect()
             self.loadcell.connect()
-            # driver_handles.screen.start()
+
             kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
             galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
             screen_thread = threading.Thread(target=driver_handles.screen.start, args=[])
