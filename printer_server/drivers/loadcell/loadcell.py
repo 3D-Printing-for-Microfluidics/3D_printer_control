@@ -77,7 +77,7 @@ class LoadCell(serial.Serial):
         self.loadcell_stop()
         self.receiveAll()
 
-        self.log.debug("Connected to {}", self.port)
+        self.log.debug("Connected to '%s'", self.port)
         self.log.debug("%s", self.set_sample_frequency(int(self.freq)))
         self.log.info("Connected to loadcell")
         
@@ -235,8 +235,7 @@ class LoadCell(serial.Serial):
         """
         try:
             cmd = "e"
-            self.log.debug("Sent: {}", cmd)
-            self.write(bytes(cmd + '\n', encoding='ascii')) # write to serial tx buffer
+            self.log.debug("Sent: '%s'", cmd)
         except serial.SerialException:
             pass
         return
@@ -245,18 +244,15 @@ class LoadCell(serial.Serial):
         """
         Set the sampling frequency to freq_hz (in hz)
         """
-        self.log.debug("Frequency set to {}", freq_hz)
-        return self.send('f {}'.format(freq_hz)), freq_hz
+        self.log.debug("Frequency set to '%s'", freq_hz)
 
     def send(self, cmd):
         """
         Sends serial command to the loadcell device
         """
-        self.log.debug("Sent: {}", cmd)
-        self.write(bytes(cmd + '\n', encoding='ascii')) # write to serial tx buffer
+        self.log.debug("Sent: '%s'", cmd)
         response = self.receive()
-        self.log.debug("Response: {}", response)
-        return response                                 # return the response to the command
+        self.log.debug("Response: '%s'", response)
 
     def receive(self):
         """
