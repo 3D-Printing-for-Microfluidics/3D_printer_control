@@ -83,6 +83,7 @@ class Visitech:
         self.max_exp_time = 10000  # max single projection time in ms
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
+        self.timestamp = datetime.now()
 
         # setup TCP connection
         self.host = "192.168.0.10"
@@ -140,13 +141,23 @@ class Visitech:
         reply = None
         data += "\r\n\r\n"
         data = data.encode()
-        self.log.debug("Sent:  '%s'", data.decode().rstrip())
+        self.log.debug(
+            "dt:%.3f Sent:  '%s'",
+            (datetime.now() - self.timestamp).total_seconds(),
+            data.decode().rstrip(),
+        )
+        self.timestamp = datetime.now()
         self.socket.sendall(data)
         reply = self.socket.recv(1024)
         reply = reply.decode().split("\r\n")
         if "OK" not in reply[0]:
             raise RuntimeError(f"Error returned by light engine ({reply[1]}) {reply[2]}")
-        self.log.debug("Reply: '%s'", reply[1])
+        self.log.debug(
+            "dt:%.3f Reply: '%s'",
+            (datetime.now() - self.timestamp).total_seconds(),
+            reply[1],
+        )
+        self.timestamp = datetime.now()
         return reply[1]
 
     def load_defaults(self):
