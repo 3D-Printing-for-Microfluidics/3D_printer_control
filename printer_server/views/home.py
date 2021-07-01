@@ -795,7 +795,7 @@ def handleUpload():
                 {
                     "id": new_print_job.id,
                     "name": f.filename,
-                    "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
+                    "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
                     "upload_ip": request.remote_addr,
                 },
                 namespace="/printing",
