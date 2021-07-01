@@ -25,7 +25,6 @@ class External_Control:
 
 galil = driver_handles.galil
 visitech = driver_handles.visitech
-screen = driver_handles.screen.screen
 tiptilt = driver_handles.tiptilt
 kdc = driver_handles.kdc
 external_control_enable = External_Control()
@@ -197,7 +196,7 @@ def lightEngineProject(message):
     ledPower = int(message["ledPower"])
     repeat = int(message["repeat"])
     exposure = int(message["exposure"])
-    screen.draw(imagePath)
+    driver_handles.screen.screen.draw(imagePath)
     visitech.project(exposure, ledPower, repeat)
     socketio.emit("light_engine_start_complete", namespace="/manual", broadcast=True)
 
