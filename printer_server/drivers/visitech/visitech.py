@@ -83,7 +83,6 @@ class Visitech:
         self.max_exp_time = 10000  # max single projection time in ms
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
-        self.timestamp = datetime.now()
 
         # setup TCP connection
         self.host = "192.168.0.10"
@@ -141,23 +140,13 @@ class Visitech:
         reply = None
         data += "\r\n\r\n"
         data = data.encode()
-        self.log.debug(
-            "dt:%.3f Sent:  '%s'",
-            (datetime.now() - self.timestamp).total_seconds(),
-            data.decode().rstrip(),
-        )
-        self.timestamp = datetime.now()
+        self.log.debug("Sent:  '%s'", data.decode().rstrip())
         self.socket.sendall(data)
         reply = self.socket.recv(1024)
         reply = reply.decode().split("\r\n")
         if "OK" not in reply[0]:
             raise RuntimeError(f"Error returned by light engine ({reply[1]}) {reply[2]}")
-        self.log.debug(
-            "dt:%.3f Reply: '%s'",
-            (datetime.now() - self.timestamp).total_seconds(),
-            reply[1],
-        )
-        self.timestamp = datetime.now()
+        self.log.debug("Reply: '%s'", reply[1])
         return reply[1]
 
     def load_defaults(self):
@@ -633,6 +622,29 @@ class Visitech:
             "led_driver_status": self.get_led_driver_status(),
         }
 
+    def setup_exposure(self, e, p, r=1):
+        """
+        Setup an exposure.
+            e - exposure time in milliseconds
+            p - power setting
+            r - number of repeats
+        """
+        self.log.info(
+            "Setting up exposure for %sms at power setting %s. Repeat %s", e, p, r
+        )
+        self.set_led_amplitude(p)
+        self.set_sequencer_lut_definition(exposure=e * 1000)
+        self.set_sequencer_lut_config(repeats=r)
+
+    def perform_exposure(self, t):
+        """
+        Start an exposure.
+            t - exposure time in milliseconds
+        """
+        self.log.info("Exposing for %sms", t)
+        self.start_sequencer()
+        time.sleep(t * 1e-3)
+
     def project(self, exposure, power, repeats=1):
         """
         Call all of the necessary methods to project an image, and block
@@ -653,13 +665,5 @@ class Visitech:
                 # the TI board expects exposure in microseconds
                 self.set_sequencer_lut_definition(exposure=t * 1000)
                 self.set_sequencer_lut_config(repeats=repeats)
-                time.sleep(0.1)
                 self.start_sequencer()
-                time.sleep(0.1 + t * 1e-3)
-                self.stop_sequencer()
-
-
-if __name__ == "__main__":
-    visitechResolution = (2560, 1600)
-    p = Visitech(visitechResolution)
-    # p.project("images/calibrate.png", exposure=1000, power=100)
+                time.sleep(t * 1e-3)

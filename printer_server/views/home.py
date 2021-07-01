@@ -239,7 +239,7 @@ class PrintControl:
                 layers.append((i, j))
         return layers
 
-    def move_build_platform(self, position_settings):
+    def move_build_platform(self, position_settings, layer, position_log):
         """Perform the build platform movements for a layer according to
         the position_settings.
         """
@@ -264,51 +264,9 @@ class PrintControl:
         end_index = self.loadcell.get_current_loadcell_index()
         time.sleep(position_settings["Final wait (ms)"] / 1000)
         thickness = self.galil.cntsToMm(abs(end_position - start_position) * 1000)
-        return {
-            "start time": start_time,
-            "end time": end_time,
-            "loadcell start index": start_index,
-            "loadcell end index": end_index,
-            "start position": start_position,
-            "end position": end_position,
-            "thickness (um)": thickness,
-        }
-
-    def perform_exposures(self, image_settings_list):
-        """Perform all exposures for a layer according to
-        image_settings_list.
-        """
-        slices_folder = Path(self.print_settings["Header"]["Image directory"])
-        data = {}
-        for i, settings in enumerate(image_settings_list):
-            image = self.current_job / slices_folder / Path(settings["Image file"])
-            exposure_time_ms = settings["Layer exposure time (ms)"]
-            power = settings["Light engine power setting"]
-            defocus_um = settings["Relative focus position (um)"]
-            start_position = self.kdc.getCurrentPos()
-            pre_exposure_status = self.visitech.read_all_status()
-            if defocus_um != 0:
-                self.kdc.move(self.focused_position + defocus_um, relative=False)
-                image = shift_image(image, x=um_to_px(defocus_um))
-            time.sleep(settings["Wait before exposure (ms)"] / 1000)
-            defocus_position = self.kdc.getCurrentPos()
-            self.screen.draw(image)
-            self.visitech.project(exposure_time_ms, power)
-            post_exposure_status = self.visitech.read_all_status()
-            time.sleep(settings["Wait after exposure (ms)"] / 1000)
-            if defocus_um != 0:
-                self.kdc.move(self.focused_position, relative=False)
-            data[i] = {
-                "image": image.name,
-                "power setting": power,
-                "exposure time (ms)": exposure_time_ms,
-                "pre exposure position": start_position,
-                "defocused position": defocus_position,
-                "post exposure position": self.kdc.getCurrentPos(),
-                "pre exposure status": pre_exposure_status,
-                "post exposure status": post_exposure_status,
-            }
-        return data
+        with open(position_log, "a") as f:
+            f.write(f"{layer[0]},{layer[1]},{start_time},{end_time},{start_index},")
+            f.write(f"{end_index},{start_position},{end_position},{thickness}\n")
 
     def connect(self):
         socketio.emit(self.state, dict(), namespace="/printing")
@@ -564,6 +522,7 @@ class PrintControl:
         self.printing_paused.clear()
         self.visitech.get_sticky_errors(warn=False)
         self.layer_map = self.generate_layer_map()
+        print_start_time = datetime.now()
 
         position_log = str(self.current_job / "position_data.csv")
         exposure_log = str(self.current_job / "exposure_data.txt")
@@ -575,11 +534,8 @@ class PrintControl:
         if self.next_layer == 0:
             self.galil.absMove(cnts=self.planarized_position)
             with open(position_log, "a") as f:
-                f.write(
-                    f"layer,duplicate,start_time,end_time,\
-                        loadcell_start_index,loadcell_end_index,\
-                        start_position,end_position,thickness_um\n"
-                )
+                f.write("layer,duplicate,start_time,end_time,loadcell_start_index,")
+                f.write("loadcell_end_index,start_position,end_position,thickness_um\n")
 
         # iterate over layers
         for i, layer in enumerate(self.layer_map):
@@ -596,26 +552,73 @@ class PrintControl:
             current_layer_settings = self.print_settings["Layers"][layer[0]]
             position_settings = self.get_position_settings(current_layer_settings)
             image_settings_list = self.get_image_settings(current_layer_settings)
+            slices_folder = Path(self.print_settings["Header"]["Image directory"])
 
             # update log messages
             msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
             log.info(msg)
 
-            # do moves and log data
-            position_data = self.move_build_platform(position_settings)
-            with open(position_log, "a") as f:
-                f.write(f"{layer[0]},")
-                f.write(f"{layer[1]},")
-                f.write(f"{position_data['start time']},")
-                f.write(f"{position_data['end time']},")
-                f.write(f"{position_data['loadcell start index']},")
-                f.write(f"{position_data['loadcell end index']},")
-                f.write(f"{position_data['start position']},")
-                f.write(f"{position_data['end position']},")
-                f.write(f"{position_data['thickness (um)']}\n")
+            galil_thread = threading.Thread(
+                target=self.move_build_platform,
+                args=[position_settings, layer, position_log],
+            )
+            galil_thread.start()
 
             # do exposures and log data
-            exposure_data = self.perform_exposures(image_settings_list)
+            exposure_data = {}
+            for j, settings in enumerate(image_settings_list):
+                image = self.current_job / slices_folder / Path(settings["Image file"])
+                exposure_time_ms = settings["Layer exposure time (ms)"]
+                power = settings["Light engine power setting"]
+                defocus_um = settings["Relative focus position (um)"]
+
+                layer_start_position = self.kdc.getCurrentPos()
+                if defocus_um != 0:
+                    kdc_thread = threading.Thread(
+                        target=self.kdc.move,
+                        args=[self.focused_position + defocus_um, True, False],
+                    )
+                    kdc_thread.start()
+                    image = shift_image(image, x=um_to_px(defocus_um))
+
+                screen_thread = threading.Thread(target=self.screen.draw, args=[image])
+                screen_thread.start()
+
+                visitech_thread = threading.Thread(
+                    target=self.visitech.setup_exposure, args=[exposure_time_ms, power]
+                )
+                visitech_thread.start()
+
+                # wait for all hardware to be ready for exposure
+                if defocus_um != 0:
+                    kdc_thread.join()
+                galil_thread.join()
+                screen_thread.join()
+                visitech_thread.join()
+
+                # do the exposure
+                position_during_exposure = self.kdc.getCurrentPos()
+                pre_exposure_status = self.visitech.read_all_status()
+                time.sleep(settings["Wait before exposure (ms)"] / 1000)
+                self.visitech.perform_exposure(exposure_time_ms)
+                time.sleep(settings["Wait after exposure (ms)"] / 1000)
+                post_exposure_status = self.visitech.read_all_status()
+
+                # fix focus if this exposure was defocused
+                if defocus_um != 0:
+                    self.kdc.move(self.focused_position, relative=False)
+
+                exposure_data[j] = {
+                    "image": image.name,
+                    "power setting": power,
+                    "exposure time (ms)": exposure_time_ms,
+                    "layer starting position": layer_start_position,
+                    "position during exposure": position_during_exposure,
+                    "post exposure position": self.kdc.getCurrentPos(),
+                    "pre exposure status": pre_exposure_status,
+                    "post exposure status": post_exposure_status,
+                }
+
             with open(exposure_log, "a") as f:
                 f.write(f"layer {layer}:\n")
                 for x in exposure_data:
@@ -636,6 +639,7 @@ class PrintControl:
         # always turn off the Visitech
         self.visitech.stop_sequencer()
         self.screen.clear()
+        print_duration = datetime.now() - print_start_time
 
         # if print is finished, move build platform back to top
         if not self.printing_paused.is_set():
@@ -662,6 +666,7 @@ class PrintControl:
                     "zip",
                     self.current_job,
                 )
+        log.info("Print took %s", print_duration)
 
     @property
     def isBusy(self):
