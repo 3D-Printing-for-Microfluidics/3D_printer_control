@@ -622,18 +622,24 @@ class Visitech:
             "led_driver_status": self.get_led_driver_status(),
         }
 
-    def setup_exposure(self, e, p, r=1):
+    def setup_exposure(self, t, p, r=1):
         """
         Setup an exposure.
-            e - exposure time in milliseconds
+            t - exposure time in milliseconds
             p - power setting
             r - number of repeats
         """
+        max_t = 15000
         self.log.info(
-            "Setting up exposure for %sms at power setting %s. Repeat %s", e, p, r
+            "Setting up exposure for %s ms at power setting %s. Repeat %s", t, p, r
         )
+        if t > max_t:
+            msg = f"Exposure time {t} ms is greater than maximum possible exposure time "
+            msg += f"of {max_t} ms. Using exposure time of {max_t} ms instead."
+            self.log.warning(msg)
+            t = max_t
         self.set_led_amplitude(p)
-        self.set_sequencer_lut_definition(exposure=e * 1000)
+        self.set_sequencer_lut_definition(exposure=t * 1000)
         self.set_sequencer_lut_config(repeats=r)
 
     def perform_exposure(self, t):
@@ -641,7 +647,7 @@ class Visitech:
         Start an exposure.
             t - exposure time in milliseconds
         """
-        self.log.info("Exposing for %sms", t)
+        self.log.info("Exposing for %s ms", t)
         self.start_sequencer()
         time.sleep(t * 1e-3)
 
@@ -651,7 +657,7 @@ class Visitech:
         until projection is complete.
         """
         self.log.info(
-            "Exposing for %sms at power setting %s. Repeat %s", exposure, power, repeats,
+            "Exposing for %s ms at power setting %s. Repeat %s", exposure, power, repeats,
         )
         self.set_led_amplitude(power)
         if repeats == 0:  # if continuous display is desired

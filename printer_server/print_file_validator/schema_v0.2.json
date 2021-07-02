@@ -194,6 +194,7 @@
                         "Layer exposure time (ms)": {
                             "type": "number",
                             "minimum": 0,
+                            "maximum": 15000,
                             "description": "Default time to expose a single image layer for."
                         },
                         "Light engine power setting": {
@@ -324,6 +325,7 @@
                                 "Layer exposure time (ms)": {
                                     "type": "number",
                                     "minimum": 0,
+                                    "maximum": 15000,
                                     "description": "Default time to expose a single image layer for."
                                 },
                                 "Light engine power setting": {
