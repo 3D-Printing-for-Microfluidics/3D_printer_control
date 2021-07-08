@@ -629,27 +629,29 @@ class Visitech:
             p - power setting
             r - number of repeats
         """
-        max_t = 15000
-        self.log.info(
-            "Setting up exposure for %s ms at power setting %s. Repeat %s", t, p, r
-        )
-        if t > max_t:
-            msg = f"Exposure time {t} ms is greater than maximum possible exposure time "
-            msg += f"of {max_t} ms. Using exposure time of {max_t} ms instead."
-            self.log.warning(msg)
-            t = max_t
-        self.set_led_amplitude(p)
-        self.set_sequencer_lut_definition(exposure=t * 1000)
-        self.set_sequencer_lut_config(repeats=r)
+        if t is not 0:
+            max_t = 15000
+            self.log.info(
+                "Setting up exposure for %s ms at power setting %s. Repeat %s", t, p, r
+            )
+            if t > max_t:
+                msg = f"Exposure time {t} ms is greater than maximum possible exposure time "
+                msg += f"of {max_t} ms. Using exposure time of {max_t} ms instead."
+                self.log.warning(msg)
+                t = max_t
+            self.set_led_amplitude(p)
+            self.set_sequencer_lut_definition(exposure=t * 1000)
+            self.set_sequencer_lut_config(repeats=r)
 
     def perform_exposure(self, t):
         """
         Start an exposure.
             t - exposure time in milliseconds
         """
-        self.log.info("Exposing for %s ms", t)
-        self.start_sequencer()
-        time.sleep(t * 1e-3)
+        if t is not 0:
+            self.log.info("Exposing for %s ms", t)
+            self.start_sequencer()
+            time.sleep(t * 1e-3)
 
     def project(self, exposure, power, repeats=1):
         """
