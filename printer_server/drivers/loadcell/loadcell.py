@@ -4,6 +4,7 @@ import datetime
 import serial.tools.list_ports
 import serial.serialutil
 import threading
+from printer_server.async_file_handler import async_file_hander
 
 import logging
 
@@ -21,7 +22,6 @@ class LoadCell(serial.Serial):
         self.port = None  # start with no port
         # self.status = None              # status to be updated after every send
 
-        self.raws = []
         self.currentData = {"index": 0, "force": 0.0}
         self.start_time = 0
         self.running = False
@@ -29,6 +29,7 @@ class LoadCell(serial.Serial):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         self.thread = threading.Thread(target=self.loop)
+        self.log_file = None
 
     def findUsbPort(self, hwid):
         """
@@ -144,12 +145,6 @@ class LoadCell(serial.Serial):
         self.receiveAll()
 
         self.log.info("Loadcell stopped")
-
-        if save:
-            self.log.info("Processing loadcell data")
-            self.write_to_file()
-            self.log.info("Processing finished")
-        self.raws = []
         self.start_time = 0
 
     def get_current_data(self):
@@ -197,14 +192,11 @@ class LoadCell(serial.Serial):
                 )
                 force = self.adc_to_force(data)
 
-                self.raws.append(
-                    {
-                        "time_str": time.strftime("%Y-%m-%d %H:%M:%S.%f'")[:-4],
-                        "index": index,
-                        "raw_data": data,
-                        "force": force,
-                    }
-                )
+                if self.log_file is not None:
+                    time_str = f"{time.strftime('%Y-%m-%d %H:%M:%S.%f')[:-4]}"
+                    async_file_hander.write(
+                        self.log_file, f"{time_str},{index},{data},{force}\n"
+                    )
 
                 self.currentData = {
                     "timestamp": time.timestamp() * 1000,
@@ -219,19 +211,6 @@ class LoadCell(serial.Serial):
             except OverflowError:
                 self.log.warning("Unable to parse loadcell data - time overflow")
                 pass
-
-    def write_to_file(self):
-        """
-        Parses the loadcell data and save it to self.log_file
-        """
-        with open(self.log_file, "w") as f:
-            f.write("Timestamp,Index,Raw,Newtons\n")
-            for row in self.raws:
-                f.write(
-                    "{},{},{},{}\n".format(
-                        row["time_str"], row["index"], row["raw_data"], row["force"]
-                    )
-                )
 
     ########################
     # Teensy serial wrappers

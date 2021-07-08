@@ -7,6 +7,7 @@ import atexit
 import logging
 from pathlib import Path
 from datetime import datetime
+from printer_server.async_file_handler import async_file_hander
 
 # remove bad chars from file name
 def cleanFileName(name):
@@ -45,6 +46,7 @@ class Galil:
 
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
+        self.movement_log = None
 
         self.gclib_error = gclib.GclibError
 
@@ -283,10 +285,19 @@ class Galil:
         time_count = 0
         # wait until we are within 10 um of target
         while not (
-                int(cnts - self.monitoring_window)
-                <= last_position
-                <= int(cnts + self.monitoring_window)
-            ):
+            int(cnts - self.monitoring_window)
+            <= last_position
+            <= int(cnts + self.monitoring_window)
+        ):
+            if self.movement_log != None:
+                async_file_hander.write(
+                    self.movement_log,
+                    f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},",
+                )
+                async_file_hander.write(
+                    self.movement_log,
+                    f"{self.cntsToMm(self.getPosition(notify=False))}\n",
+                )
             time.sleep(0.001)
             last_position = self.getPosition(notify=False)
             upper, lower = self.checkLimits()
@@ -300,6 +311,15 @@ class Galil:
             )
         # only proceed when 10 good consecutive counts have been read
         while counter <= 10:
+            if self.movement_log != None:
+                async_file_hander.write(
+                    self.movement_log,
+                    f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},",
+                )
+                async_file_hander.write(
+                    self.movement_log,
+                    f"{self.cntsToMm(self.getPosition(notify=False))}\n",
+                )
             time.sleep(0.001)
             last_position = self.getPosition(notify=False)
             if any(self.checkLimits()):
@@ -381,6 +401,9 @@ class Galil:
                 print(self.send(cmd.upper()))
         except KeyboardInterrupt:
             print("\nExited by KeyboardInterrupt")
+
+    def set_log_file(self, filename):
+        self.movement_log = filename
 
 
 # runs if called from the console

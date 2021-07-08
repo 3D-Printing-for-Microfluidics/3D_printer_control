@@ -17,6 +17,7 @@ from printer_server.hardware_configuration import driver_handles
 from printer_server.print_file_validator import validate_v02
 from printer_server.models import PrintQueue, PrintRecord
 from printer_server.extensions import db, socketio
+from printer_server.async_file_handler import async_file_hander
 
 blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static")
 log = logging.getLogger(__name__)
@@ -158,6 +159,13 @@ class PrintControl:
         self.current_job = Path(Config.UPLOAD_FOLDER) / Path("current_job")
         self.print_history = Path(Config.UPLOAD_FOLDER) / Path("print_history")
 
+        # log files
+        self.position_log = str(self.current_job / "position_data.csv")
+        self.exposure_log = str(self.current_job / "exposure_data.txt")
+        self.loadcell_log = str(self.current_job / "loadcell_data.csv")
+        self.movement_log = str(self.current_job / "movement_data.csv")
+        self.event_log = str(self.current_job / "event_log.csv")
+
         # values used during printing
         self.planarized_position = None
         self.focused_position = None
@@ -239,7 +247,12 @@ class PrintControl:
                 layers.append((i, j))
         return layers
 
-    def move_build_platform(self, position_settings, layer, position_log):
+    def write_to_event_log(self, msg):
+        async_file_hander.write(
+            self.event_log, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},{msg}\n"
+        )
+
+    def move_build_platform(self, position_settings, layer):
         """Perform the build platform movements for a layer according to
         the position_settings.
         """
@@ -247,26 +260,40 @@ class PrintControl:
         start_position = self.galil.getPosition()
         start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         start_index = self.loadcell.get_current_loadcell_index()
+        self.write_to_event_log("Start Up Movement")
         self.galil.relMove(
             mm=-position_settings["Distance up (mm)"],
             speed=position_settings["BP up speed (mm/sec)"],
             acceleration=position_settings["BP up acceleration (mm/sec^2)"],
         )
+        self.write_to_event_log("Finish Up Movement")
         time.sleep(position_settings["Up wait (ms)"] / 1000)
+        self.write_to_event_log("Start Down Movement")
         self.galil.relMove(
             mm=position_settings["Distance up (mm)"]
             - position_settings["Layer thickness (um)"] / 1000,
             speed=position_settings["BP up speed (mm/sec)"],
             acceleration=position_settings["BP up acceleration (mm/sec^2)"],
         )
+        self.write_to_event_log("Finish Down Movement")
         end_position = self.galil.getPosition()
         end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         end_index = self.loadcell.get_current_loadcell_index()
         time.sleep(position_settings["Final wait (ms)"] / 1000)
         thickness = self.galil.cntsToMm(abs(end_position - start_position) * 1000)
-        with open(position_log, "a") as f:
-            f.write(f"{layer[0]},{layer[1]},{start_time},{end_time},{start_index},")
-            f.write(f"{end_index},{start_position},{end_position},{thickness}\n")
+        async_file_hander.write(
+            self.position_log,
+            f"{layer[0]},{layer[1]},{start_time},{end_time},{start_index},",
+        )
+        async_file_hander.write(
+            self.position_log,
+            f"{end_index},{start_position},{end_position},{thickness}\n",
+        )
+
+    def change_focus(self, pos):
+        self.write_to_event_log("Start Distance Movement")
+        self.kdc.move(pos, relative=False)
+        self.write_to_event_log("Finish Distance Movement")
 
     def connect(self):
         socketio.emit(self.state, dict(), namespace="/printing")
@@ -453,12 +480,20 @@ class PrintControl:
             f.extractall(self.current_job)
 
         # create logs and overwrite any pre-existing data
-        position_log = str(self.current_job / "position_data.csv")
-        exposure_log = str(self.current_job / "exposure_data.txt")
-        with open(position_log, "w") as f:
-            f.write("")
-        with open(exposure_log, "w") as f:
-            f.write("")
+        async_file_hander.write(
+            self.position_log, "layer,duplicate,start_time,end_time,loadcell_start_index,"
+        )
+        async_file_hander.write(
+            self.position_log,
+            "loadcell_end_index,start_position,end_position,thickness_um\n",
+        )
+        async_file_hander.write(self.exposure_log, "")
+        async_file_hander.write(self.event_log, "timestamp,event\n")
+        async_file_hander.write(self.movement_log, "timestamp,position_mm\n")
+        async_file_hander.write(self.loadcell_log, "timestamp,index,raw_data,newtons\n")
+        async_file_hander.start()
+        self.galil.set_log_file(self.movement_log)
+        self.loadcell.set_log_file(self.loadcell_log)
 
         # move file from queue folder to print_history folder
         os.rename(zipped_job_file, self.print_history / Path(job_in_queue.zip_filename))
@@ -524,18 +559,9 @@ class PrintControl:
         self.layer_map = self.generate_layer_map()
         print_start_time = datetime.now()
 
-        position_log = str(self.current_job / "position_data.csv")
-        exposure_log = str(self.current_job / "exposure_data.txt")
-        loadcell_log = str(self.current_job / "loadcell_data.csv")
-
-        self.loadcell.set_log_file(loadcell_log)
-
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
             self.galil.absMove(cnts=self.planarized_position)
-            with open(position_log, "a") as f:
-                f.write("layer,duplicate,start_time,end_time,loadcell_start_index,")
-                f.write("loadcell_end_index,start_position,end_position,thickness_um\n")
 
         # iterate over layers
         for i, layer in enumerate(self.layer_map):
@@ -557,10 +583,10 @@ class PrintControl:
             # update log messages
             msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
             log.info(msg)
+            self.write_to_event_log(msg)
 
             galil_thread = threading.Thread(
-                target=self.move_build_platform,
-                args=[position_settings, layer, position_log],
+                target=self.move_build_platform, args=[position_settings, layer],
             )
             galil_thread.start()
 
@@ -575,8 +601,8 @@ class PrintControl:
                 layer_start_position = self.kdc.getCurrentPos()
                 if defocus_um != 0:
                     kdc_thread = threading.Thread(
-                        target=self.kdc.move,
-                        args=[self.focused_position + defocus_um, True, False],
+                        target=self.change_focus,
+                        args=[self.focused_position + defocus_um],
                     )
                     kdc_thread.start()
                     image = shift_image(image, x=um_to_px(defocus_um))
@@ -584,6 +610,7 @@ class PrintControl:
                 screen_thread = threading.Thread(target=self.screen.draw, args=[image])
                 screen_thread.start()
 
+                self.write_to_event_log("Setup Exposure")
                 visitech_thread = threading.Thread(
                     target=self.visitech.setup_exposure, args=[exposure_time_ms, power]
                 )
@@ -600,13 +627,15 @@ class PrintControl:
                 position_during_exposure = self.kdc.getCurrentPos()
                 pre_exposure_status = self.visitech.read_all_status()
                 time.sleep(settings["Wait before exposure (ms)"] / 1000)
+                self.write_to_event_log("Start Exposure")
                 self.visitech.perform_exposure(exposure_time_ms)
+                self.write_to_event_log("Finish Exposure")
                 time.sleep(settings["Wait after exposure (ms)"] / 1000)
                 post_exposure_status = self.visitech.read_all_status()
 
                 # fix focus if this exposure was defocused
                 if defocus_um != 0:
-                    self.kdc.move(self.focused_position, relative=False)
+                    self.change_focus(self.focused_position)
 
                 exposure_data[j] = {
                     "image": image.name,
@@ -619,10 +648,12 @@ class PrintControl:
                     "post exposure status": post_exposure_status,
                 }
 
-            with open(exposure_log, "a") as f:
-                f.write(f"layer {layer}:\n")
+                async_file_hander.write(self.exposure_log, f"layer {layer}:\n")
                 for x in exposure_data:
-                    f.write(f"{json.dumps({x: exposure_data[x]}, indent=2)}\n")
+                    async_file_hander.write(
+                        self.exposure_log,
+                        f"{json.dumps({x: exposure_data[x]}, indent=2)}\n",
+                    )
 
             # update frontend message pane and progress bar
             socketio.emit(
@@ -666,6 +697,11 @@ class PrintControl:
                     "zip",
                     self.current_job,
                 )
+
+        self.galil.set_log_file(None)
+        self.loadcell.set_log_file(None)
+        async_file_hander.finish()
+
         log.info("Print took %s", print_duration)
 
     @property
