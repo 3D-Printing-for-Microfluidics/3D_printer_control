@@ -169,6 +169,7 @@ class PrintControl:
         # values used during printing
         self.planarized_position = None
         self.focused_position = None
+        self.print_position = None
         self.print_settings = None
         self.layer_map = []
         self.next_layer = 0
@@ -261,17 +262,18 @@ class PrintControl:
         start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         start_index = self.loadcell.get_current_loadcell_index()
         self.write_to_event_log("Start Up Movement")
-        self.galil.relMove(
-            mm=-position_settings["Distance up (mm)"],
+        self.galil.absMove(
+            mm=self.print_position - position_settings["Distance up (mm)"],
             speed=position_settings["BP up speed (mm/sec)"],
             acceleration=position_settings["BP up acceleration (mm/sec^2)"],
+            wait_for_settling=False,
         )
         self.write_to_event_log("Finish Up Movement")
         time.sleep(position_settings["Up wait (ms)"] / 1000)
         self.write_to_event_log("Start Down Movement")
-        self.galil.relMove(
-            mm=position_settings["Distance up (mm)"]
-            - position_settings["Layer thickness (um)"] / 1000,
+        self.print_position -= position_settings["Layer thickness (um)"] / 1000
+        self.galil.absMove(
+            mm=self.print_position,
             speed=position_settings["BP up speed (mm/sec)"],
             acceleration=position_settings["BP up acceleration (mm/sec^2)"],
         )
@@ -342,13 +344,13 @@ class PrintControl:
         """Lower build platform to lower position for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
-            # self.loadcell.stop(save=False)
-            # time.sleep()
+
             self.loadcell.start()
             time.sleep(0.5)
             log.info("Loadcell force (pre-step 1): %s", self.loadcell.get_current_force())
             self.galil.goToZmin()
             self.planarized_position = self.galil.bottom_position
+            self.print_position = self.galil.cntsToMm(self.planarized_position)
             time.sleep(0.5)
             log.info(
                 "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
@@ -393,9 +395,10 @@ class PrintControl:
             start_force = self.loadcell.get_current_force()
         self.galil.stopJog()
         self.planarized_position = self.galil.getPosition()
+        self.print_position = self.galil.cntsToMm(self.planarized_position)
         log.info("Loadcell planarized %s steps", count)
         log.info("Loadcell force (post-step 2): %s", self.loadcell.get_current_force())
-        log.info("Loadcell position (post-step 2): %s", self.galil.getPosition())
+        log.info("Loadcell position (post-step 2): %s", self.planarized_position)
 
     @run_in_thread("paused", "Pause Printing")
     def pause(self):
@@ -421,6 +424,7 @@ class PrintControl:
             return
         log.info("Resuming print...")
         self.galil.absMove(cnts=self.paused_position)
+        self.print_position = self.galil.cntsToMm(self.paused_position)
         self.paused_position = None
         self.loadcell.start()
         # update fontend
@@ -562,6 +566,7 @@ class PrintControl:
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
             self.galil.absMove(cnts=self.planarized_position)
+            self.print_position = self.galil.cntsToMm(self.planarized_position)
 
         # iterate over layers
         for i, layer in enumerate(self.layer_map):

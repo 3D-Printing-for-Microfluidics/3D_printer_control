@@ -229,7 +229,15 @@ class Galil:
 
     # blocking call to move specified axis to absolute position at speed (in mm/sec)
     # pylint: disable=too-many-arguments
-    def absMove(self, mm=None, cnts=None, speed=None, acceleration=None, axis="A"):
+    def absMove(
+        self,
+        mm=None,
+        cnts=None,
+        speed=None,
+        acceleration=None,
+        wait_for_settling=True,
+        axis="A",
+    ):
         if not self.homed:
             msg = "Must home before using absolute movements!"
             self.log.critical(msg)
@@ -249,7 +257,7 @@ class Galil:
             self.log.info("Move axis %s to absolute position %s", a, cnts)
             self.send("PA{}={}".format(a, cnts))
             self.send("BG{}".format(a))
-            self.waitForMotionComplete(cnts)
+            self.waitForMotionComplete(cnts, wait_for_settling=wait_for_settling)
         if speed is not None:
             self.setSpeed(old_speed)
         if acceleration is not None:
@@ -276,11 +284,13 @@ class Galil:
 
     # block execution until the encoder reading reaches target.
     # Also notifys all position data
-    def waitForMotionComplete(self, cnts, axis="A"):
+    def waitForMotionComplete(self, cnts, wait_for_settling=True, axis="A"):
         start_time = time.time()
         last_position = self.getPosition(notify=False)  # save the last position
         self.data[self.move_num] = []
-        self.data[self.move_num].append({"time": time.time(), "position": last_position, "error_window": -1})
+        self.data[self.move_num].append(
+            {"time": time.time(), "position": last_position, "error_window": -1}
+        )
         counter = 0
         time_count = 0
         # wait until we are within 10 um of target
@@ -302,55 +312,63 @@ class Galil:
             last_position = self.getPosition(notify=False)
             upper, lower = self.checkLimits()
             if (lower and cnts < last_position) or (upper and cnts > last_position):
-            # if any(self.checkLimits()):
                 self.log.info("Limit switch triggered")
                 self.g.GMotionComplete(axis)
                 return
             self.data[self.move_num].append(
                 {"time": time.time(), "position": last_position, "error_window": -1}
             )
-        # only proceed when 10 good consecutive counts have been read
-        while counter <= 10:
-            if self.movement_log != None:
-                async_file_hander.write(
-                    self.movement_log,
-                    f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},",
+        if wait_for_settling:
+            # only proceed when 10 good consecutive counts have been read
+            while counter <= 5:
+                if self.movement_log != None:
+                    async_file_hander.write(
+                        self.movement_log,
+                        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},",
+                    )
+                    async_file_hander.write(
+                        self.movement_log,
+                        f"{self.cntsToMm(self.getPosition(notify=False))}\n",
+                    )
+                time.sleep(0.001)
+                last_position = self.getPosition(notify=False)
+                if any(self.checkLimits()):
+                    self.log.info("Limit switch triggered")
+                    self.g.GMotionComplete(axis)
+                    return
+                self.data[self.move_num].append(
+                    {
+                        "time": time.time(),
+                        "position": last_position,
+                        "error_window": self.error_window,
+                    }
                 )
-                async_file_hander.write(
-                    self.movement_log,
-                    f"{self.cntsToMm(self.getPosition(notify=False))}\n",
-                )
-            time.sleep(0.001)
-            last_position = self.getPosition(notify=False)
-            if any(self.checkLimits()):
-                self.log.info("Limit switch triggered")
-                self.g.GMotionComplete(axis)
-                return
-            self.data[self.move_num].append(
-                {"time": time.time(), "position": last_position, "error_window": self.error_window}
-            )
-            if (
-                int(cnts - self.error_window)
-                <= last_position
-                <= int(cnts + self.error_window)
-            ):
-                counter += 1
-            else:
-                counter = 0
-            time_count += 1
-            # timeout for collecting data, motor won't reach position
-            if time_count == 1000:
-                self.error_window = 2
-            if time_count >= 9000:
-                self.log.warning(
-                    "Z motor didn't reach position. Got to %s but needed %s",
-                    last_position,
-                    cnts,
-                )
-                self.error_window = 1
-                break
+                if (
+                    int(cnts - self.error_window)
+                    <= last_position
+                    <= int(cnts + self.error_window)
+                ):
+                    counter += 1
+                else:
+                    counter = 0
+                time_count += 1
+                # timeout for collecting data, motor won't reach position
+                if time_count == 100:
+                    self.error_window = 2
+                if time_count >= 5000:
+                    self.log.warning(
+                        "Z motor didn't reach position. Got to %s but needed %s",
+                        last_position,
+                        cnts,
+                    )
+                    self.error_window = 1
+                    break
+        else:
+            self.g.GMotionComplete(axis)
         self.error_window = 1
-        self.data[self.move_num].append({"time": time.time(), "position": last_position, "error_window": -1})
+        self.data[self.move_num].append(
+            {"time": time.time(), "position": last_position, "error_window": -1}
+        )
         self.data[self.move_num].append({"duration": time.time() - start_time})
         self.move_num = self.move_num + 1
 
