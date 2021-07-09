@@ -630,7 +630,7 @@ class Visitech:
             r - number of repeats
         """
         if t is not 0:
-            max_t = 15000
+            max_t = 10000
             self.log.info(
                 "Setting up exposure for %s ms at power setting %s. Repeat %s", t, p, r
             )
