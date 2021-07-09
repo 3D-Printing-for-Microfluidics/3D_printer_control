@@ -188,6 +188,8 @@ class Galil:
     def home(self, axis="A"):
         self.log.info("Start homing...")
         a = convertAxis(axis)
+        # if the server was improperly shutdown, the speed might need resetting
+        self.setSpeed(10)
         self.motorOn()  # turn motor on
         self.startJog(speed=-15)  # move up until the limit switch is triggered
         self.g.GMotionComplete(a)  # block until motion planning is complete
