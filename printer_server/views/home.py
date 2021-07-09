@@ -384,7 +384,7 @@ class PrintControl:
             if abs(last_no_fail_force - end_force) < 0.25:
                 if fail_count >= 10:
                     log.error(
-                        "Loadcell planarization failed. (Check battery or build platform screw)"
+                        "Loadcell planarization failed. (Check build platform screw)"
                     )
                     self.galil.stopJog()
                     return

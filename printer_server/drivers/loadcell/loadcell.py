@@ -71,8 +71,9 @@ class LoadCell(serial.Serial):
 
         self.port = self.findUsbPort(self.hwid)
         if self.port is None:
-            self.log.critical("Load cell not found")
-            raise ValueError("Load cell not found")
+            msg = "Load cell not found"
+            self.log.critical(msg)
+            raise RuntimeError(msg)
         if self.is_open:
             self.close()
         self.open()

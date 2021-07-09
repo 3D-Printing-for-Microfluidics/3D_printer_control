@@ -112,7 +112,7 @@ class Visitech:
                 self.socket = None  # get rid of handle to bad socket
                 time.sleep(timeout)  # wait to try again
         if not connected:  # connection failed every time, notify user
-            msg = "Light engine not found. It it plugged in and powered on?"
+            msg = "Light engine not found. Is it plugged in and powered on?"
             self.log.critical(msg)
             sys.exit(msg)
 
