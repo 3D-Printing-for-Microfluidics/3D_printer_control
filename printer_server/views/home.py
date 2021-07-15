@@ -483,22 +483,6 @@ class PrintControl:
         with ZipFile(zipped_job_file, "r") as f:
             f.extractall(self.current_job)
 
-        # create logs and overwrite any pre-existing data
-        async_file_hander.write(
-            self.position_log, "layer,duplicate,start_time,end_time,loadcell_start_index,"
-        )
-        async_file_hander.write(
-            self.position_log,
-            "loadcell_end_index,start_position,end_position,thickness_um\n",
-        )
-        async_file_hander.write(self.exposure_log, "")
-        async_file_hander.write(self.event_log, "timestamp,event\n")
-        async_file_hander.write(self.movement_log, "timestamp,position_mm\n")
-        async_file_hander.write(self.loadcell_log, "timestamp,index,raw_data,newtons\n")
-        async_file_hander.start()
-        self.galil.set_log_file(self.movement_log)
-        self.loadcell.set_log_file(self.loadcell_log)
-
         # move file from queue folder to print_history folder
         os.rename(zipped_job_file, self.print_history / Path(job_in_queue.zip_filename))
 
@@ -525,6 +509,29 @@ class PrintControl:
         with open(next(self.current_job.rglob("*.json")), "r") as file_handle:
             self.print_settings = json.load(file_handle)
         self.next_layer = 0
+
+        # create logs and overwrite any pre-existing data
+        log_data = True
+        try:
+            log_data = self.print_settings["Header"]["Log data"]
+        except KeyError:
+            pass
+        async_file_hander.set_enabled(log_data)
+        async_file_hander.write(
+            self.position_log,
+            "layer,duplicate,start_time,end_time,loadcell_start_index,",
+        )
+        async_file_hander.write(
+            self.position_log,
+            "loadcell_end_index,start_position,end_position,thickness_um\n",
+        )
+        async_file_hander.write(self.exposure_log, "")
+        async_file_hander.write(self.event_log, "timestamp,event\n")
+        async_file_hander.write(self.movement_log, "timestamp,position_mm\n")
+        async_file_hander.write(self.loadcell_log, "timestamp,index,raw_data,newtons\n")
+        async_file_hander.start()
+        self.galil.set_log_file(self.movement_log)
+        self.loadcell.set_log_file(self.loadcell_log)
 
         # update frontend progress bar
         self.state = "printing"

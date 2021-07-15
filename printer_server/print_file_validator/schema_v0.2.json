@@ -20,6 +20,11 @@
                     "default": "slices",
                     "description": "Directory relative to the json print job file where the images are saved."
                 },
+                "Log data": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Should the printer log data during a print (position,loadcell,etc)"
+                },
                 "Comment": {
                     "type": "string",
                     "default": "",
@@ -194,7 +199,6 @@
                         "Layer exposure time (ms)": {
                             "type": "number",
                             "minimum": 0,
-                            "maximum": 10000,
                             "description": "Default time to expose a single image layer for."
                         },
                         "Light engine power setting": {
@@ -325,7 +329,6 @@
                                 "Layer exposure time (ms)": {
                                     "type": "number",
                                     "minimum": 0,
-                                    "maximum": 10000,
                                     "description": "Default time to expose a single image layer for."
                                 },
                                 "Light engine power setting": {

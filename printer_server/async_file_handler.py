@@ -6,21 +6,26 @@ class AsyncFileHandler:
         self.queues = {}
         self.thread_stopped = threading.Event()
         self.thread = None
+        self.enabled = True
+
+    def set_enabled(self, enabled):
+        self.enabled = enabled
 
     def start(self):
-        if self.thread is None:
+        if self.enabled and self.thread is None:
             self.thread_stopped.clear()
             self.thread = threading.Thread(target=self.loop)
             self.thread.start()
 
     def write(self, filename, msg):
-        if filename not in self.queues:
-            open(filename, "w").close()
-            self.queues[filename] = queue.Queue()
-        self.queues[filename].put(msg)
+        if self.enabled:
+            if filename not in self.queues:
+                open(filename, "w").close()
+                self.queues[filename] = queue.Queue()
+            self.queues[filename].put(msg)
 
     def finish(self):
-        if self.thread is not None:
+        if self.enabled and self.thread is not None:
             for key in self.queues.keys():
                 q = self.queues[key]
                 q.join()
