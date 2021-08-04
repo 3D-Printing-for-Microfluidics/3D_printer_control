@@ -44,7 +44,10 @@ def get_calibration_positions():
         "distance": kdc.getCurrentPos(),
     }
     socketio.emit(
-        "calibration_positions", message, namespace="/manual", broadcast=True,
+        "calibration_positions",
+        message,
+        namespace="/manual",
+        broadcast=True,
     )
     return message
 
@@ -54,7 +57,10 @@ def emit_calibration_positions(log=False):
     if log:
         write_to_position_log(message)
     socketio.emit(
-        "calibration_motor_move_complete", message, namespace="/manual", broadcast=True,
+        "calibration_motor_move_complete",
+        message,
+        namespace="/manual",
+        broadcast=True,
     )
 
 
@@ -95,6 +101,13 @@ def get_external_control_enable():
     )
 
 
+@socketio.on("galil_go_to_calibration", namespace="/manual")
+def galil_go_to_calibration():
+    """Move main Z stage to default position with calibration system."""
+    galil.goToZcalibration()
+    socketio.emit("galil_done", namespace="/manual", broadcast=True)
+
+
 @socketio.on("galil_go_to_top", namespace="/manual")
 def galil_go_to_top():
     """Move main Z stage to max position (up)."""
@@ -104,14 +117,14 @@ def galil_go_to_top():
 
 @socketio.on("galil_go_to_bottom", namespace="/manual")
 def galil_go_to_bottom():
-    """ Move main z stage to min position (down)."""
+    """Move main z stage to min position (down)."""
     galil.goToZmin()
     socketio.emit("galil_done", namespace="/manual", broadcast=True)
 
 
 @socketio.on("galil_home", namespace="/manual")
 def home():
-    """ Home main z stage."""
+    """Home main z stage."""
     galil.home()
     socketio.emit("galil_done", namespace="/manual", broadcast=True)
 

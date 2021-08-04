@@ -39,7 +39,13 @@ def parseResponseString(string, axis="A"):
 
 
 class Galil:
-    def __init__(self, address=None, log_level=logging.DEBUG):
+    def __init__(
+        self,
+        address=None,
+        log_level=logging.DEBUG,
+        bottom_position=None,
+        calibration_position=None,
+    ):
 
         # import here so test system doesn't have to install gclib
         import gclib
@@ -51,7 +57,8 @@ class Galil:
         self.gclib_error = gclib.GclibError
 
         self.address = address
-        self.bottom_position = 368000
+        self.calibration_position = calibration_position
+        self.bottom_position = bottom_position
         self.top_position = -400000
         self.error_window = 1
         self.monitoring_window = 80
@@ -74,6 +81,10 @@ class Galil:
 
     def initialize(self):
         self.motorOn()
+
+    def goToZcalibration(self):
+        self.absMove(speed=25, cnts=self.calibration_position)
+        return self.getPosition()
 
     def goToZmax(self):
         self.absMove(speed=25, cnts=self.top_position)

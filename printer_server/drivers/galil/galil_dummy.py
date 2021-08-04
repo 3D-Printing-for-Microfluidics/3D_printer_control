@@ -43,6 +43,10 @@ class Galil_dummy:
         self.motorOn()
 
     @dummy_log
+    def goToZcalibration(self):
+        self.position = -108800
+
+    @dummy_log
     def goToZmax(self):
         self.position = -400000
 

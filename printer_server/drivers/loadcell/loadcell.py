@@ -14,13 +14,17 @@ class LoadCell(serial.Serial):
     Class providing high level control of loadcell
     """
 
-    def __init__(self, log_level=logging.DEBUG):
+    def __init__(self, hwid=None, log_level=logging.DEBUG, intercept=None, slope=None):
         """
         Initializes the loadcell
         """
         super().__init__(baudrate=115200, timeout=1)
         self.port = None  # start with no port
         # self.status = None              # status to be updated after every send
+
+        self.hwid = hwid
+        self.intercept = intercept
+        self.slope = slope
 
         self.currentData = {"index": 0, "force": 0.0}
         self.start_time = 0
@@ -34,7 +38,7 @@ class LoadCell(serial.Serial):
     def findUsbPort(self, hwid):
         """
         Finds serial port with given hwid
-        
+
         Parameters:
             hwid - device identifier
         """
@@ -49,25 +53,20 @@ class LoadCell(serial.Serial):
         """
         Converts the adc counts to newtons using precalculated constants
         """
-        slope = -1.79
-        # intercept = 32160
 
-        intercept = 34932.0
-
-        grams = (x - intercept) / slope
+        grams = (x - self.intercept) / self.slope
         n = grams / 1000 * 9.8
         return n
 
-    def connect(self, hwid="PID=16C0:0483 SER=5712360", frequency=1000):
+    def connect(self, frequency=1000):
         """
         Connects to the loadcell and sets parameters.
-        
+
         Parameters:
             hwid        - device identifier
             frequency   - sample frequency of loadcell (in milliseconds)
         """
         self.freq = frequency
-        self.hwid = hwid
 
         self.port = self.findUsbPort(self.hwid)
         if self.port is None:
@@ -109,7 +108,7 @@ class LoadCell(serial.Serial):
     def set_log_file(self, filename):
         """
         Sets the filepath to save the log to
-        
+
         Parameters:
             filename    - local path and filename (current_job/loadcell_data.txt)
         """
@@ -279,4 +278,3 @@ class LoadCell(serial.Serial):
         while self.in_waiting:
             self.read()
         return
-

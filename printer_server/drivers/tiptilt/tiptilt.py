@@ -9,11 +9,13 @@ import serial.serialutil
 # helper function for converting axis name into index
 def get_axis_index(axis):
     axis = axis.lower()
-    return {"tip": 1, "tilt": 2,}.get(axis, 0)  # 0 is default if axis is invalid
+    return {"tip": 1, "tilt": 2,}.get(
+        axis, 0
+    )  # 0 is default if axis is invalid
 
 
 class TipTilt(serial.Serial):
-    def __init__(self, hwid="PID=16C0:0483 SER=5800580", log_level=logging.DEBUG):
+    def __init__(self, hwid=None, log_level=logging.DEBUG):
         super().__init__(baudrate=115200, timeout=None)
 
         # self.ser = serial.Serial(baudrate=115200, timeout=None)
