@@ -1,4 +1,4 @@
-let s_trace = {
+let loadcell_trace = {
     x: [new Date()],
     y: [0],
     mode: 'lines',
@@ -7,8 +7,7 @@ let s_trace = {
         shape: 'spline'
     }
 };
-var traces = [s_trace];
-var count = 0;
+var loadcell_traces = [loadcell_trace];
 
 function draw_loadcell_graph() {
 
@@ -55,7 +54,7 @@ function draw_loadcell_graph() {
         }
     }
     Plotly.plot('loadcell-data',
-        traces,
+        loadcell_traces,
         layout, defaultPlotlyConfiguration);
 
 }
@@ -63,6 +62,25 @@ function draw_loadcell_graph() {
 function update_loop(message) {
     let data = message.data;
     if (data != 0){
+        // buffer.push(data);
+        // count +=1;
+
+        // if (count >= 4){
+        //     while(count >=1){
+        //         let data = buffer.shift()
+        //         count -=1;
+        //         let time = new Date(data.timestamp);
+        //         let force = data.force;
+
+        //         Plotly.extendTraces('loadcell-data',
+        //         {
+        //             y: [[force]],
+        //             x: [[time]]
+        //         },
+        //         [0], 200)
+        //     }
+        // }
+        
         let time = new Date(data.timestamp);
         let force = data.force;
 
@@ -72,21 +90,6 @@ function update_loop(message) {
             x: [[time]]
         },
         [0], 200)
-        count += 1;
-        if (count >=25){
-            count = 0;
-            var temp = new Date()
-            var minuteView = {
-                xaxis: {
-                    linecolor: 'black',
-                    linewidth: 2,
-                    mirror: true,
-                    type: 'date',
-                }
-            };
-            Plotly.relayout('loadcell-data', minuteView);
-        }
-     
     }
 }
 
