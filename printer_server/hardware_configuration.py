@@ -10,8 +10,9 @@ default_log_level = logging.INFO
 dummy = False
 
 # hr3v3
-griffin_calibration_position = 108800
+griffin_calibration_position = 34000
 griffin_bottom_position = 368000
+griffin_top_position = -400000
 
 loadcell_hwid = "PID=16C0:0483 SER=5712360"
 loadcell_calibration_intercept = 34932.0
@@ -32,6 +33,7 @@ class Printer3D:
         else:
             self.galil = Galil(
                 log_level=default_log_level,
+                top_position=griffin_top_position,
                 bottom_position=griffin_bottom_position,
                 calibration_position=griffin_calibration_position,
             )

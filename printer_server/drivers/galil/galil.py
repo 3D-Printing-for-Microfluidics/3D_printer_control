@@ -43,6 +43,7 @@ class Galil:
         self,
         address=None,
         log_level=logging.DEBUG,
+        top_position=None,
         bottom_position=None,
         calibration_position=None,
     ):
@@ -59,7 +60,7 @@ class Galil:
         self.address = address
         self.calibration_position = calibration_position
         self.bottom_position = bottom_position
-        self.top_position = -400000
+        self.top_position = top_position
         self.error_window = 1
         self.monitoring_window = 80
         self.jogging = False
