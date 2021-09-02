@@ -27,7 +27,6 @@ function draw_loadcell_graph() {
 
     var layout = {
         xaxis: {
-            // linecolor: 'black',
             linecolor: 'white',
             linewidth: 1,
             mirror: true
@@ -36,7 +35,6 @@ function draw_loadcell_graph() {
             ticksuffix: "",
             range: [-50, 50],
             autorange: false,
-            // linecolor: 'black',
             linecolor: 'white',
             linewidth: 1,
             mirror: true
@@ -484,7 +482,7 @@ $(document).ready(function () {
 
     socket.on("loadcell_graph_clear", function (message) {
         Plotly.deleteTraces('loadcell-data', 0);
-        loadcell_trace["x"] = [new Date()];
+        loadcell_trace["x"] = [new Date() - 750];
         loadcell_trace["y"] = [0];
         Plotly.addTraces('loadcell-data', loadcell_trace);
     });

@@ -367,13 +367,13 @@ class PrintControl:
             self.state = "busy"
 
             self.loadcell.start()
+            time.sleep(0.5)
             if self.loadcell_thread is None:
                 socketio.emit("loadcell_graph_clear", namespace="/printing")
                 self.loadcell_thread = threading.Thread(target=self.loadcell_graph_loop)
                 self.loadcell_thread.start()
-
-            time.sleep(0.5)
             log.info("Loadcell force (pre-step 1): %s", self.loadcell.get_current_force())
+
             self.galil.goToZmin()
             self.planarized_position = self.galil.bottom_position
             self.print_position = self.galil.cntsToMm(self.planarized_position)
