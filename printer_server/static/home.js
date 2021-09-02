@@ -4,6 +4,104 @@ var delete_job_id;
 // List of pending files to handle when the Upload button is finally clicked.
 var PENDING_FILES = [];
 
+let loadcell_trace = {
+    x: [new Date()],
+    y: [0],
+    mode: 'lines',
+    name: "1",
+    line: {
+        shape: 'spline',
+        color: 'rgb(255, 255, 255)'
+    }
+};
+var loadcell_traces = [loadcell_trace];
+
+function draw_loadcell_graph() {
+
+    var defaultPlotlyConfiguration = {
+        displayModeBar: false,
+        displaylogo: false,
+        scrollZoom: true,
+        showTips: false
+    };
+
+    var layout = {
+        xaxis: {
+            // linecolor: 'black',
+            linecolor: 'white',
+            linewidth: 1,
+            mirror: true
+        },
+        yaxis: {
+            ticksuffix: "",
+            range: [-50, 50],
+            autorange: false,
+            // linecolor: 'black',
+            linecolor: 'white',
+            linewidth: 1,
+            mirror: true
+        },
+        margin: {
+            l: 40,
+            r: 20,
+            b: 40,
+            t: 20,
+            pad: 0
+        },
+        legend: {
+            x: 0,
+            y: 1,
+            traceorder: 'normal',
+            borderwidth: 2
+        },
+        autosize: true,
+        height: 250,
+        paper_bgcolor: '#222',
+        plot_bgcolor: '#222',
+        font: {
+            color: '#999'
+        }
+    }
+    Plotly.plot('loadcell-data',
+        loadcell_traces,
+        layout, defaultPlotlyConfiguration);
+
+}
+
+function update_loop(message) {
+    let data = message.data;
+    if (data != 0){
+        // buffer.push(data);
+        // count +=1;
+
+        // if (count >= 4){
+        //     while(count >=1){
+        //         let data = buffer.shift()
+        //         count -=1;
+        //         let time = new Date(data.timestamp);
+        //         let force = data.force;
+
+        //         Plotly.extendTraces('loadcell-data',
+        //         {
+        //             y: [[force]],
+        //             x: [[time]]
+        //         },
+        //         [0], 200)
+        //     }
+        // }
+        
+        let time = new Date(data.timestamp);
+        let force = data.force;
+
+        Plotly.extendTraces('loadcell-data',
+        {
+            y: [[force]],
+            x: [[time]]
+        },
+        [0], 200)
+    }
+}
+
 
 $("#create-job").on("click", function () {
     if ($("#collapseUpload").hasClass("show")) {
@@ -181,6 +279,9 @@ function doUpload() {
 $(document).ready(function () {
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/printing");
     socket.emit("connect");
+
+    // Set up Loadcell graph
+    draw_loadcell_graph();
 
     // Set up the drag/drop zone.
     initDropbox();
@@ -375,5 +476,16 @@ $(document).ready(function () {
        </div>
         `;
         $("#printer-controls").before(flash_msg);
+    });
+
+    socket.on("loadcell_graph_data", function (message) {
+        update_loop(message)
+    });
+
+    socket.on("loadcell_graph_clear", function (message) {
+        Plotly.deleteTraces('loadcell-data', 0);
+        loadcell_trace["x"] = [new Date()];
+        loadcell_trace["y"] = [0];
+        Plotly.addTraces('loadcell-data', loadcell_trace);
     });
 });

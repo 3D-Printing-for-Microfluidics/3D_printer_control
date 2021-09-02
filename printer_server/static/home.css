@@ -15,6 +15,10 @@
   margin-bottom: 1rem;
 }
 
+.loadcell-data {
+    height: 250px;
+  }
+
 #print-message {
   font-size: 0.8rem;
   height: 400px;

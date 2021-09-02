@@ -126,7 +126,14 @@ def run_in_thread(state, text):
             log.info(msg["text"])
             socketio.emit("busy", msg, namespace="/printing", broadcast=True)
             _thread = threading.Thread(
-                target=func, args=(self, *args,), kwargs={**kwargs,}
+                target=func,
+                args=(
+                    self,
+                    *args,
+                ),
+                kwargs={
+                    **kwargs,
+                },
             )
             _thread.start()
 
@@ -153,6 +160,10 @@ class PrintControl:
         self.tiptilt = driver_handles.tiptilt
         self.loadcell = driver_handles.loadcell
         self.screen = None
+
+        # loadcell graph variables
+        self.loadcell_running = False
+        self.loadcell_thread = None
 
         # folders relevant to printing
         self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
@@ -253,6 +264,16 @@ class PrintControl:
             self.event_log, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},{msg}\n"
         )
 
+    def loadcell_graph_loop(self):
+        if not self.loadcell_running:
+            self.loadcell_running = True
+            while self.loadcell_running:
+                data = self.loadcell.get_current_data()
+
+                msg = {"data": data}
+                socketio.emit("loadcell_graph_data", msg, namespace="/printing")
+                time.sleep(0.025)
+
     def move_build_platform(self, position_settings, layer):
         """Perform the build platform movements for a layer according to
         the position_settings.
@@ -346,6 +367,11 @@ class PrintControl:
             self.state = "busy"
 
             self.loadcell.start()
+            if self.loadcell_thread is None:
+                socketio.emit("loadcell_graph_clear", namespace="/printing")
+                self.loadcell_thread = threading.Thread(target=self.loadcell_graph_loop)
+                self.loadcell_thread.start()
+
             time.sleep(0.5)
             log.info("Loadcell force (pre-step 1): %s", self.loadcell.get_current_force())
             self.galil.goToZmin()
@@ -598,7 +624,8 @@ class PrintControl:
             self.write_to_event_log(msg)
 
             galil_thread = threading.Thread(
-                target=self.move_build_platform, args=[position_settings, layer],
+                target=self.move_build_platform,
+                args=[position_settings, layer],
             )
             galil_thread.start()
 
@@ -689,6 +716,9 @@ class PrintControl:
             self.galil.goToZmax()
             time.sleep(1.0)
             self.loadcell.stop()
+            self.loadcell_running = False
+            self.loadcell_thread = None
+            socketio.emit("loadcell_graph_clear", namespace="/printing")
 
             # update fontend, zip logs into archive in print_history, and update db entrty
             with app.app_context():
@@ -854,7 +884,9 @@ def handleUpload():
             msg = f"Job validation failed for {f.filename}:\n {error_string}"
             log.info("Job validation failed for %s: %s", f.filename, error_string)
             socketio.emit(
-                "flash error", {"text": msg, "category": "danger"}, namespace="/printing",
+                "flash error",
+                {"text": msg, "category": "danger"},
+                namespace="/printing",
             )
             os.remove(filename_on_disk)
     return ""

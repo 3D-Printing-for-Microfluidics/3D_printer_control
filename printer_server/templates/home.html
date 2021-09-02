@@ -129,6 +129,12 @@
 
 <hr>
 
+<container>
+    <div class="loadcell-data" id="loadcell-data"></div>
+</container>
+
+<hr>
+
 
 <div class="row mb-2">
     <div class="col-auto mr-auto">
@@ -157,5 +163,6 @@
 {% block scripts %}
 {{super()}}
 <script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/plotly-1.54.6.min.js') }}"></script>
 <script src="{{ url_for('static', filename='home.js') }}"></script>
 {% endblock %}
