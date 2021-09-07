@@ -115,7 +115,15 @@ class Galil_dummy:
 
     # pylint: disable=too-many-arguments
     @dummy_log
-    def absMove(self, mm=None, cnts=None, speed=None, acceleration=None, axis="A"):
+    def absMove(
+        self,
+        mm=None,
+        cnts=None,
+        speed=None,
+        acceleration=None,
+        axis="A",
+        wait_for_settling=True,
+    ):
         if mm is not None:
             self.position = self.mmToCnts(mm)
         elif cnts is not None:

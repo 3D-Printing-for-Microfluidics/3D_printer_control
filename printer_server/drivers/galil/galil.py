@@ -5,7 +5,6 @@ import time
 import json
 import atexit
 import logging
-from pathlib import Path
 from datetime import datetime
 from printer_server.async_file_handler import async_file_hander
 
@@ -313,7 +312,7 @@ class Galil:
             <= last_position
             <= int(cnts + self.monitoring_window)
         ):
-            if self.movement_log != None:
+            if self.movement_log is not None:
                 async_file_hander.write(
                     self.movement_log,
                     f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},",
@@ -335,7 +334,7 @@ class Galil:
         if wait_for_settling:
             # only proceed when 10 good consecutive counts have been read
             while counter <= 5:
-                if self.movement_log != None:
+                if self.movement_log is not None:
                     async_file_hander.write(
                         self.movement_log,
                         f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},",

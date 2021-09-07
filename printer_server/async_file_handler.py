@@ -1,4 +1,6 @@
-import threading, queue, time
+import time
+import queue
+import threading
 
 
 class AsyncFileHandler:
@@ -26,7 +28,7 @@ class AsyncFileHandler:
 
     def finish(self):
         if self.enabled and self.thread is not None:
-            for key in self.queues.keys():
+            for key in self.queues:
                 q = self.queues[key]
                 q.join()
                 del q
@@ -39,7 +41,7 @@ class AsyncFileHandler:
         while True:
             if self.thread_stopped.is_set():
                 break
-            for key in self.queues.keys():
+            for key in self.queues:
                 q = self.queues[key]
                 if not q.empty():
                     with open(key, "a") as f:

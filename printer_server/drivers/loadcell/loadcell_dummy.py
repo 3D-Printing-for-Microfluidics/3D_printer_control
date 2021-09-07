@@ -40,11 +40,11 @@ class Loadcell_dummy:
 
     @dummy_log
     def get_current_force(self, *args, **kwargs):
-        pass
+        return 0
 
     @dummy_log
     def get_current_loadcell_index(self, *args, **kwargs):
-        pass
+        return 0
 
     @dummy_log
     def loop(self, *args, **kwargs):
