@@ -192,9 +192,11 @@ class LoadCell(serial.Serial):
                 force = self.adc_to_force(data)
 
                 if self.log_file is not None:
-                    time_str = time.strftime("%Y-%m-%d %H:%M:%S.%f")
+                    sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                    loadcell_time = time.strftime("%Y-%m-%d %H:%M:%S.%f")
                     async_file_hander.write(
-                        self.log_file, f"{time_str},{index},{data},{force}\n"
+                        self.log_file,
+                        f"{sys_time},{loadcell_time},{index},{data},{force}\n",
                     )
 
                 self.currentData = {

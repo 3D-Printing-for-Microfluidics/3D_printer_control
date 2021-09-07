@@ -126,14 +126,7 @@ def run_in_thread(state, text):
             log.info(msg["text"])
             socketio.emit("busy", msg, namespace="/printing", broadcast=True)
             _thread = threading.Thread(
-                target=func,
-                args=(
-                    self,
-                    *args,
-                ),
-                kwargs={
-                    **kwargs,
-                },
+                target=func, args=(self, *args,), kwargs={**kwargs,},
             )
             _thread.start()
 
@@ -554,7 +547,9 @@ class PrintControl:
         async_file_hander.write(self.exposure_log, "")
         async_file_hander.write(self.event_log, "timestamp,event\n")
         async_file_hander.write(self.movement_log, "timestamp,position_mm\n")
-        async_file_hander.write(self.loadcell_log, "timestamp,index,raw_data,newtons\n")
+        async_file_hander.write(
+            self.loadcell_log, "system_time,loadcell_time,index,raw_data,newtons\n"
+        )
         async_file_hander.start()
         self.galil.set_log_file(self.movement_log)
         self.loadcell.set_log_file(self.loadcell_log)
@@ -624,8 +619,7 @@ class PrintControl:
             self.write_to_event_log(msg)
 
             galil_thread = threading.Thread(
-                target=self.move_build_platform,
-                args=[position_settings, layer],
+                target=self.move_build_platform, args=[position_settings, layer],
             )
             galil_thread.start()
 
@@ -884,9 +878,7 @@ def handleUpload():
             msg = f"Job validation failed for {f.filename}:\n {error_string}"
             log.info("Job validation failed for %s: %s", f.filename, error_string)
             socketio.emit(
-                "flash error",
-                {"text": msg, "category": "danger"},
-                namespace="/printing",
+                "flash error", {"text": msg, "category": "danger"}, namespace="/printing",
             )
             os.remove(filename_on_disk)
     return ""
