@@ -1,12 +1,9 @@
-from math import sin, pi
-import random
 import time
-import datetime
-from flask import Blueprint, render_template
 import threading
+from flask import Blueprint, render_template
 
-from printer_server.extensions import socketio
 from printer_server.settings import Config
+from printer_server.extensions import socketio
 from printer_server.hardware_configuration import driver_handles
 
 blueprint = Blueprint("loadcell", __name__, url_prefix="/", static_folder="../static")
