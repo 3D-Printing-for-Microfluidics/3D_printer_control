@@ -1,12 +1,11 @@
 import atexit
-import serial
+import logging
 import datetime
+import threading
+import serial
 import serial.tools.list_ports
 import serial.serialutil
-import threading
 from printer_server.async_file_handler import async_file_hander
-
-import logging
 
 
 class LoadCell(serial.Serial):
@@ -29,6 +28,7 @@ class LoadCell(serial.Serial):
         self.currentData = {"index": 0, "force": 0.0}
         self.start_time = 0
         self.running = False
+        self.freq = 1000
 
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
@@ -97,7 +97,7 @@ class LoadCell(serial.Serial):
 
             self.log.info("Loadcell started")
             temp = self.loadcell_start()
-            if self.start_time is 0:
+            if self.start_time == 0:
                 loadcell_time = temp.split("'")
                 loadcell_time = float(loadcell_time[1])
                 self.start_time = datetime.datetime.now() - datetime.timedelta(
@@ -128,7 +128,7 @@ class LoadCell(serial.Serial):
             pass
         self.log.info("Loadcell paused")
 
-    def stop(self, save=True):
+    def stop(self):
         """
         Stops the loadcell and loadcell thread. Saves data to file
         """
@@ -176,7 +176,6 @@ class LoadCell(serial.Serial):
         Threading loop
         """
         while self.running:
-            raw = ""
             try:
                 index = int.from_bytes(
                     self.receive_bytes(4), byteorder="little", signed=False
@@ -193,7 +192,7 @@ class LoadCell(serial.Serial):
                 force = self.adc_to_force(data)
 
                 if self.log_file is not None:
-                    time_str = f"{time.strftime('%Y-%m-%d %H:%M:%S.%f')[:-4]}"
+                    time_str = time.strftime("%Y-%m-%d %H:%M:%S.%f")
                     async_file_hander.write(
                         self.log_file, f"{time_str},{index},{data},{force}\n"
                     )
@@ -210,7 +209,6 @@ class LoadCell(serial.Serial):
                 continue
             except OverflowError:
                 self.log.warning("Unable to parse loadcell data - time overflow")
-                pass
 
     ########################
     # Teensy serial wrappers
