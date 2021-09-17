@@ -174,6 +174,14 @@ class Visitech_dummy:
         }
 
     @dummy_log
+    def setup_exposure(self, t, p, r=1):
+        pass
+
+    @dummy_log
+    def perform_exposure(self, t):
+        pass
+
+    @dummy_log
     def project(self, exposure, power, repeats=1):
         if repeats == 0:  # if continuous display is desired
             self.set_sequencer_lut_definition(
@@ -193,8 +201,3 @@ class Visitech_dummy:
                 self.start_sequencer()  # start the sequencer
                 time.sleep(0.1 + t * 1e-3)
                 self.stop_sequencer()  # stop the sequencer
-
-    @dummy_log
-    def projectMulti(self, images, exposureTimes, ledPowers):
-        for image, expTime, power in zip(images, exposureTimes, ledPowers):
-            self.project(image, expTime, power)

@@ -34,9 +34,12 @@ class Loadcell_dummy:
     def stop(self, *args, **kwargs):
         pass
 
-    @dummy_log
     def get_current_data(self, *args, **kwargs):
-        pass
+        return  {
+                    "timestamp": 0,
+                    "index": 0,
+                    "force": 0,
+        }
 
     @dummy_log
     def get_current_force(self, *args, **kwargs):
