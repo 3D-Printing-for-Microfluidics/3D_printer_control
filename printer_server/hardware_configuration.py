@@ -9,16 +9,27 @@ from printer_server.drivers.loadcell import LoadCell, Loadcell_dummy
 default_log_level = logging.INFO
 dummy = False
 
-# hr3v3
-griffin_calibration_position = 34000
-griffin_bottom_position = 368000
+# # hr3v3
+# griffin_calibration_position = 34000
+# griffin_bottom_position = 368000
+# griffin_top_position = -400000
+
+# loadcell_hwid = "PID=16C0:0483 SER=5712360"
+# loadcell_calibration_intercept = 34932.0
+# loadcell_calibration_slope = -1.79
+
+# tiptilt_hwid = "PID=16C0:0483 SER=5800580"
+
+# hr3v3a
+griffin_calibration_position = 75041
+griffin_bottom_position = 375000
 griffin_top_position = -400000
 
-loadcell_hwid = "PID=16C0:0483 SER=5712360"
-loadcell_calibration_intercept = 34932.0
-loadcell_calibration_slope = -1.79
+loadcell_hwid = "PID=16C0:0483 SER=5712570"
+loadcell_calibration_intercept = 34928.0
+loadcell_calibration_slope = -2.1
 
-tiptilt_hwid = "PID=16C0:0483 SER=5800580"
+tiptilt_hwid = "PID=16C0:0483 SER=9881650"
 
 
 class Printer3D:
