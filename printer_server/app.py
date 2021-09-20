@@ -8,7 +8,6 @@ from printer_server.views import (
     home,
     manual_controls,
     print_history,
-    chart,
     server_logs,
     loadcell,
 )
@@ -48,7 +47,6 @@ def register_blueprints(app):
     app.register_blueprint(home.blueprint)
     app.register_blueprint(manual_controls.blueprint)
     app.register_blueprint(print_history.blueprint)
-    app.register_blueprint(chart.blueprint)
     app.register_blueprint(loadcell.blueprint)
     app.register_blueprint(server_logs.blueprint)
 
