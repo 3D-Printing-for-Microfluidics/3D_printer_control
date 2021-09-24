@@ -107,7 +107,7 @@ class Galil_dummy:
         pass
 
     @dummy_log
-    def relMove(self, speed, mm=None, cnts=None, acceleration=None, axis="A"):
+    def relMove(self, mm=None, cnts=None, speed=None, acceleration=None, axis="A"):
         if mm is not None:
             self.position += self.mmToCnts(mm)
         elif cnts is not None:
@@ -121,8 +121,8 @@ class Galil_dummy:
         cnts=None,
         speed=None,
         acceleration=None,
-        axis="A",
         wait_for_settling=True,
+        axis="A",
     ):
         if mm is not None:
             self.position = self.mmToCnts(mm)
@@ -138,7 +138,7 @@ class Galil_dummy:
         pass
 
     @dummy_log
-    def waitForMotionComplete(self, cnts, axis="A"):
+    def waitForMotionComplete(self, cnts, wait_for_settling=True, axis="A"):
         pass
 
     @dummy_log
@@ -155,4 +155,8 @@ class Galil_dummy:
 
     @dummy_log
     def interactiveMode(self):
+        pass
+
+    @dummy_log
+    def set_log_file(self, filename):
         pass

@@ -25,7 +25,7 @@ class KDC101:
     def find_device(self):
         x = serial.tools.list_ports.comports()
         for device in x:
-            if "K-Cube" in device.description:
+            if device.vid == 1027 and device.pid == 64240:
                 self.log.debug("Found %s", device)
                 return device.device
         return None
@@ -134,7 +134,7 @@ class KDC101:
         finished_succeccfully = self.confirmMoveFinished()
         if not finished_succeccfully:
             self.log.warning("Move failed. Going to position 0")
-            self.move(0)
+            self.move(0.0, relative=False)
         return True
 
     def setRelative(self):
