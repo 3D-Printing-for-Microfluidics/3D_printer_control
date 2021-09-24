@@ -72,14 +72,28 @@ blueprint = Blueprint(
 # Specify location of uploaded image and give default name
 imagePath = os.path.join(Config.UPLOAD_FOLDER, "calibration_images", "temp.png")
 
+def get_last_calibration_positions():
+    """Return the last focused position for the distance axis from the
+    position log file.
+    """
+    log_file = Path(Config.PROJECT_ROOT) / "logs" / "calibration_position_log.txt"
+    last_line = None
+    with open(log_file) as f:
+        for line in f:
+            last_line = line.rstrip()
+    for char in ["{", "}", ":", "'", ","]:
+        last_line = last_line.replace(char, "")
+    return [float(last_line.split(" ")[-5]),float(last_line.split(" ")[-3]), float(last_line.split(" ")[-1])]
+
 # Decorator to handle navigation to calibration page
 @blueprint.route("/manual")
 def index():
+    positions = get_last_calibration_positions()
     return render_template(
         "manual_controls.html",
-        tip_position=tiptilt.get_position("Tip"),
-        tilt_position=tiptilt.get_position("Tilt"),
-        dist_position=kdc.getCurrentPos(),
+        tip_position=positions[0],
+        tilt_position=positions[1],
+        dist_position=positions[2],
         hostname=Config.HOSTNAME,
     )
 
