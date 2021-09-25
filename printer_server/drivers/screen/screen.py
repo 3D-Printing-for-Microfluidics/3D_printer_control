@@ -20,18 +20,18 @@ class Screen:
     Most importantly, it works.
     """
 
-    def __init__(self, resolution, fullscreen=True, log_level=logging.DEBUG):
+    def __init__(self, resolution, screen_offset=0, log_level=logging.DEBUG):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
         self.width, self.height = resolution
-        self.root = tkinter.Tk()
+        self.root = tkinter.Toplevel()
         # Uncomment the following line to get a fullscreen window
-        self.root.attributes("-fullscreen", fullscreen)
+        self.root.attributes("-fullscreen", True)
 
         # set the size and position of Tk window
         # format: <width>x<height>+xoffset+yoffset
-        self.root.geometry("{0}x{1}+0+0".format(self.width, self.height))
+        self.root.geometry(f"{self.width}x{self.height}+{screen_offset}+0")
         # hide cursor in the Tk window
         self.root.config(cursor="none")
         self.root.focus_set()
@@ -95,11 +95,13 @@ class ScreenThread(threading.Thread):
         a ``threading.Event`` object to set flag to stop thread
     """
 
-    def __init__(self, resolution=(2560, 1600), fullscreen=True, log_level=logging.DEBUG):
+    def __init__(self, resolutions=((2560, 1600), None), log_level=logging.DEBUG):
         super().__init__(daemon=True)
-        self.resolution = resolution
-        self.fullscreen = fullscreen
-        self.screen = None
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+        self.resolutions = resolutions
+        self.total_offset = 0
+        self.screens = None
         self.log_level = log_level
 
     def run(self):
@@ -109,10 +111,27 @@ class ScreenThread(threading.Thread):
         arbitrary operation can be added, such as guaranteeing
         the tk window is on top.
         """
-        self.screen = Screen(self.resolution, self.fullscreen, self.log_level)
+        self.screens = []
+        for resolution in self.resolutions:
+            if resolution is not None:
+                self.screens.append(Screen(resolution, self.total_offset, self.log_level))
+                self.total_offset += resolution[0]
         atexit.register(self.stop)
-        self.screen.root.mainloop()
+        tkinter.mainloop()
 
     def stop(self):
         """Stop the thread"""
-        self.screen.root.quit()
+        for screen in self.screens:
+            screen.root.quit()
+
+    def draw(self, fn, screen=0):
+        try:
+            self.screens[screen].draw(fn)
+        except IndexError:
+            self.log.error("Screen %s does not exist", screen)
+
+    def clear(self, screen=0):
+        try:
+            self.screens[screen].clear()
+        except IndexError:
+            self.log.error("Screen %s does not exist", screen)
