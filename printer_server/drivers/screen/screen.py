@@ -21,16 +21,16 @@ class Screen:
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         self.width, self.height = resolution
-        self.root = tkinter.Toplevel()
+        self.window = tkinter.Toplevel()
 
-        self.root.attributes("-fullscreen", True)
-        self.root.geometry(f"{self.width}x{self.height}+{screen_offset}+0")
-        self.root.config(cursor="none")
-        self.root.focus_set()
-        self.root.wm_attributes("-topmost", 1)
+        self.window.attributes("-fullscreen", True)
+        self.window.geometry(f"{self.width}x{self.height}+{screen_offset}+0")
+        self.window.config(cursor="none")
+        self.window.focus_set()
+        self.window.wm_attributes("-topmost", 1)
 
         self.canvas = tkinter.Canvas(
-            self.root,
+            self.window,
             width=self.width,
             height=self.height,
             bd=0,
@@ -39,29 +39,28 @@ class Screen:
         )
         self.canvas.pack()
         self.canvas.configure(background="black")
-        self.canvasImage = self.canvas.create_image(0, 0, anchor=tkinter.NW)
-        self.tkImage = None
+        self.canvas_image = self.canvas.create_image(0, 0, anchor=tkinter.NW)
+        self.tk_image = None
 
-    def draw(self, fn):
+    def draw(self, img_path):
         """Draw image in the Tk canvas."""
-
-        self.log.info("Drawing %s", fn)
+        self.log.info("Drawing %s", img_path)
         try:
-            pilImage = Image.open(fn)
+            pil_image = Image.open(img_path)
         except (OSError, FileNotFoundError):
             self.log.warning("Image not found, drawing white")
-            pilImage = Image.new(mode="L", size=(self.width, self.height), color=255)
-        self.tkImage = ImageTk.PhotoImage(pilImage)
-        self.canvas.itemconfig(self.canvasImage, image=self.tkImage)
-        self.root.update()
+            pil_image = Image.new(mode="L", size=(self.width, self.height), color=255)
+        self.tk_image = ImageTk.PhotoImage(pil_image)
+        self.canvas.itemconfig(self.canvas_image, image=self.tk_image)
+        self.window.update()
 
     def clear(self):
         """Clear the Tk window by drawing a black image."""
         self.log.info("Clearing virtual screen")
-        pilImage = Image.new(mode="L", size=(self.width, self.height), color=0)
-        self.tkImage = ImageTk.PhotoImage(pilImage)
-        self.canvas.itemconfig(self.canvasImage, image=self.tkImage)
-        self.root.update()
+        pil_image = Image.new(mode="L", size=(self.width, self.height), color=0)
+        self.tk_image = ImageTk.PhotoImage(pil_image)
+        self.canvas.itemconfig(self.canvas_image, image=self.tk_image)
+        self.window.update()
 
 
 class ScreenThread(threading.Thread):
@@ -78,7 +77,6 @@ class ScreenThread(threading.Thread):
 
     def run(self):
         """Create a Tk window and run it."""
-
         self.screens = []
         for resolution in self.resolutions:
             if resolution is not None:
@@ -90,13 +88,12 @@ class ScreenThread(threading.Thread):
     def stop(self):
         """Stop the thread."""
         for screen in self.screens:
-            screen.root.quit()
+            screen.window.quit()
 
-    def draw(self, fn, screen=0):
+    def draw(self, img_path, screen=0):
         """Draw an image to the specified screen."""
-
         try:
-            self.screens[screen].draw(fn)
+            self.screens[screen].draw(img_path)
         except IndexError:
             self.log.error("Screen %s does not exist", screen)
 
