@@ -5,21 +5,28 @@ Visitech and Wintech optical engine control code
 """
 import time
 import atexit
+import logging
 
 from .usb_driver import WintechUSB
 
 class Wintech:
     """ Control module for the Wintech optical engine
     """
-    def __init__(self, verbose=False):
-        self.dmd_controller = WintechUSB(verbose=verbose)
+    def __init__(self, log_level=logging.DEBUG):
+        self.log_level=log_level
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+
         self.ledPower = 0
-        atexit.register(self.dmd_controller.stopSequence)
-        atexit.register(self.dmd_controller.ledOff)
+        
 
     # start the screen thread and dmd_controller
     def connect(self, quick=False):
+        self.dmd_controller = WintechUSB(log_level=self.log_level)
         self.dmd_controller.connect(quick)
+
+        atexit.register(self.dmd_controller.stopSequence)
+        atexit.register(self.dmd_controller.ledOff)
 
 
     def project(self, exposure, repeat=1, ledPower=100):
