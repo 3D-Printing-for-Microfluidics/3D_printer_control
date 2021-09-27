@@ -1,5 +1,6 @@
 import sys
 import time
+import logging
 import usb.core
 import usb.util
 
@@ -26,9 +27,10 @@ def bitsToBytes(bitString):
 
 # Controller class
 class WintechUSB():
-    def __init__(self, verbose=False, veryVerbose=False):
-        self.verbose = verbose
-        self.veryVerbose = veryVerbose
+    def __init__(self, log_level=logging.DEBUG):
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+
         self.dev = None                         # start with no device connected
         self.ans = []                           # empty response buffer
         self.transactionCounter = 0             # counter for sequence byte
@@ -36,7 +38,7 @@ class WintechUSB():
 
     # finds and connects to the device and sets up optical engine
     def connect(self, quick=False):
-        print("Connecting to DLPC900 via USB...")
+        self.log.info("Connecting to DLPC900 via USB...")
         self.dev = usb.core.find(idVendor=0x0451, idProduct=0xc900)    # find device by VID:PID
         if self.dev is None:
             sys.exit("DLPC900 not found. Is it connected and turned on?")
@@ -52,7 +54,7 @@ class WintechUSB():
 
     # free up the USB driver if it is already in use
     def freeDriver(self, device):
-        if self.verbose: print("Freeing device driver...")
+        self.log.debug("Freeing device driver...")
         # free up usb device
         for cfg in device:
             for intf in cfg:
@@ -72,7 +74,7 @@ class WintechUSB():
         #   3 = Pattern On-The-Fly mode (Images loaded through USB/I2C)
 
         displayModes = ["Video mode", "Pre-stored pattern mode", "Video pattern mode", "Pattern On-The-Fly mode"]
-        if self.verbose: print("Set display mode to:", displayModes[mode])
+        self.log.debug("Set display mode to: %s", displayModes[mode])
         if mode < 0 or mode > 3:            # reject bad display modes
             sys.exit("Bad display mode value passed in to setDisplayMode()")
             return
@@ -88,8 +90,7 @@ class WintechUSB():
 
         IT6535_power_modes = ["Power-down", "HDMI", "DisplayPort"]
 
-        if self.verbose:
-            print("IT6535 power mode set to:", IT6535_power_modes[source])
+        self.log.debug("IT6535 power mode set to: %s", IT6535_power_modes[source])
 
         if source < 0 or source > 2:    # reject invalid values for source
             sys.exit("Bad source value passed in to selectInputSource()")
@@ -160,8 +161,8 @@ class WintechUSB():
         # numBytes: the number of bytes to read. The maximum at once for the DLPC900 is 64
 
         data = self.dev.read(endpoint, numBytes)
-        if self.veryVerbose:
-            print("READ endpoint", hex(endpoint), ":", self.decodeResponse(data))
+        # if self.veryVerbose:
+        self.log.debug("READ endpoint %s:%s", hex(endpoint), self.decodeResponse(data))
         return data
 
     # write the provided data to the specified endpoint. Should only be used directly in send()
@@ -169,40 +170,44 @@ class WintechUSB():
         # data: the data to write
         # endpoint: endpoint to write to. The default OUT endpoint for the DLPC900 is 0x1
 
-        if self.veryVerbose:
-            print("WRITE endpoint", hex(endpoint), ":", self.decodeResponse(data))
+        # if self.veryVerbose:
+        self.log.debug("WRITE endpoint %s:%s", hex(endpoint), self.decodeResponse(data))
         self.dev.write(endpoint, data, timeout=10000)
 
     # read hardware status - See 2.1.1 "Hardware Status" in programmer's guide
     def checkHardwareStatus(self):
-        if self.veryVerbose: print("Checking hardware status...")
+        # if self.veryVerbose:
+        self.log.debug("Checking hardware status...")
         self.send('r', 0x1a0a)
         response = hex(self.ans[4])
-        if self.verbose: print("     Hardware status:\t", response)
+        self.log.debug("     Hardware status:\t%s", response)
         return response
 
     # read system status - See 2.1.2 "System Status" in programmer's guide
     def checkSystemStatus(self):
-        if self.veryVerbose: print("Checking system status...")
+        # if self.veryVerbose:
+        self.log.debug("Checking system status...")
         self.send('r', 0x1a0b)
         response = hex(self.ans[4])
-        if self.verbose: print("     System status:\t", response)
+        self.log.debug("     System status:\t%s", response)
         return response
 
     # read main status - See 2.1.3 "Main Status" in programmer's guide
     def checkMainStatus(self):
-        if self.veryVerbose: print("Checking main status...")
+        # if self.veryVerbose:
+        self.log.debug("Checking main status...")
         self.send('r', 0x1a0c)
         response = hex(self.ans[4])
-        if self.verbose: print("     Main status:\t", response)
+        self.log.debug("     Main status:\t%s", response)
         return response
 
     # read error status - See 2.1.6 "Read Error Code" in programmer's guide
     def checkErrorStatus(self):
-        if self.veryVerbose: print("Checking for errors...")
+        # if self.veryVerbose:
+        self.log.debug("Checking for errors...")
         self.send('r', 0x0100)
         response = hex(self.ans[4])
-        if self.verbose: print("     Error status:\t", response)
+        self.log.debug("     Error status:\t%s", response)
         return response
 
     # convenience function to read all status specified above
@@ -229,8 +234,7 @@ class WintechUSB():
         # Our system shipped with a default value of 0x64 which is 100/256 or 39% max power. To be safe,
         # I am leaving this as the maximum.
 
-        if self.verbose:
-            print("Setting LED power to", power)
+        self.log.info("Setting LED power to %s", power)
 
         if power < 0 or power > 100:
             sys.exit()
@@ -241,19 +245,19 @@ class WintechUSB():
 
     # turn on the LED - See 2.3.5.1 "LED Enable Outputs" in programmer's guide
     def ledOn(self):
-        if self.verbose: print("LED turned on")
+        self.log.info("LED turned on")
         self.send('w', 0x1a07, [0x4])
         self.checkAllStatus()
 
     # turn off the LED - See 2.3.5.1 "LED Enable Outputs" in programmer's guide
     def ledOff(self):
-        if self.verbose: print("LED turned off")
+        self.log.info("LED turned off")
         self.send('w', 0x1a07, [0x0])
         self.checkAllStatus()
 
     # set LED to be controlled by the sequencer - See 2.3.5.1 "LED Enable Outputs" in programmer's guide
     def ledFromSequencer(self):
-        if self.verbose: print("LED set to run from sequencer")
+        self.log.debug("LED set to run from sequencer")
         self.send('w', 0x1a07, [0x8])
         self.checkAllStatus()
 
@@ -278,7 +282,7 @@ class WintechUSB():
         # stopped. To restart the pattern sequence, this mode must be disabled."
 
         if not self.isIdle:     # check to see if the dmd is already in idle mode
-            if self.verbose: print("Idle mode enabled")
+            self.log.debug("Idle mode enabled")
             self.isIdle = True
             self.send('w', 0x0201, [0x1])
             self.checkAllStatus()
@@ -287,7 +291,7 @@ class WintechUSB():
     # Idle mode control - See section 2.4.1.4 "DMD Idle Mode" in programmer's guide
     def idleOff(self):
         if self.isIdle:
-            if self.verbose: print("Idle mode disabled")
+            self.log.debug("Idle mode disabled")
             self.isIdle = False
             self.send('w', 0x0201, [0x0])
             self.checkAllStatus()
@@ -318,21 +322,21 @@ class WintechUSB():
 
     # start the pattern display sequence - See 2.4.4.3.1 "Pattern Display Start/Stop" in the programmer's guide
     def startSequence(self):
-        if self.verbose: print("Starting sequence...")
+        self.log.info("Starting sequence...")
         self.send('w', 0x1a24, [0x2])
         self.checkAllStatus()
 
     # pause the pattern display sequence - See 2.4.4.3.1 "Pattern Display Start/Stop" in the programmer's guide
     def pauseSequence(self):
         # the next Start command will start the pattern sequence by re-displaying the current pattern in the sequence.
-        if self.verbose: print("Pausing sequence...")
+        self.log.info("Pausing sequence...")
         self.send('w', 0x1a24, [0x1])
         self.checkAllStatus()
 
     # stop the pattern display sequence - See 2.4.4.3.1 "Pattern Display Start/Stop" in the programmer's guide
     def stopSequence(self):
         # the next Start command will restart the pattern sequence from the beginning
-        if self.verbose: print("Stopping sequence...")
+        self.log.info("Stopping sequence...")
         self.send('w', 0x1a24, [0x0])
         self.checkAllStatus()
 
@@ -349,7 +353,7 @@ class WintechUSB():
             sys.exit("Bad repeat number provided to configurePatternLut()")
             return
 
-        if self.verbose: print("Configuring Pattern LUT...")
+        self.log.debug("Configuring Pattern LUT...")
 
         # calculate and send the payload
         images = numToBits(images, 11)
@@ -363,7 +367,7 @@ class WintechUSB():
     def definePattern(self, exposure):
         self.stopSequence()             # must stop sequence before sending a pattern
 
-        if self.verbose: print("Defining pattern...")
+        self.log.debug("Defining pattern...")
 
         # See comments below in this function for more explanation
         index = 0               # we are only sending one image at a time, so index is always 0
