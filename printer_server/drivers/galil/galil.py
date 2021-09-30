@@ -108,11 +108,11 @@ class Galil:
                 self.log.info(
                     "Connecting to %s at %s", self.controller_name, self.address
                 )
-                self.g.GOpen("{} --direct".format(self.address))
+                self.g.GOpen(f"{self.address} --direct")
                 self.log.debug("GInfo returned: %s", self.g.GInfo())
                 self.connected = True
                 return
-        msg = "{} not found.".format(self.controller_name)
+        msg = f"{self.controller_name} not found."
         self.log.critical(msg)
         sys.exit(msg)
 
@@ -150,28 +150,26 @@ class Galil:
         specified axis.
         """
         a = convertAxis(axis)
-        lf = self.send("MG _LF{}".format(a), notify=False)
-        lr = self.send("MG _LR{}".format(a), notify=False)
+        lf = self.send(f"MG _LF{a}", notify=False)
+        lr = self.send(f"MG _LR{a}", notify=False)
         return bool(lf == "0.0000"), bool(lr == "0.0000")
 
     def getPosition(self, axis="A", notify=True):
         """Return the position of the specified encoder."""
         if axis is None:
             return self.send("TP", notify=notify)
-        axis = convertAxis(axis)
-        pos = self.send("TP{}".format(axis), notify=notify)
+        pos = self.send(f"TP{convertAxis(axis)}", notify=notify)
         return int(pos)
 
     def motorOn(self, axis="A"):
         """Turn on the specified axis."""
-        axis = convertAxis(axis)
-        self.send("SH{}".format(axis))
+        self.send(f"SH{convertAxis(axis)}")
 
     def motorOff(self, axis="A"):
         """Turn off the specified axis."""
         axis = convertAxis(axis)
         self.log.warning("Axis %s motor turned off. It may sink due to gravity.", axis)
-        self.send("MO{}".format(axis))
+        self.send(f"MO{axis}")
 
     def getAcceleration(self, axis="A"):
         """Return the acceleration of the specified axis (mm/sec^2)."""
@@ -183,8 +181,8 @@ class Galil:
     def setAcceleration(self, acceleration, axis="A"):
         """Set the acceleration for the specified axis (mm/sec^2)."""
         a = convertAxis(axis)
-        self.send("AC{}={}".format(a, acceleration * self.ctspmm[a]))
-        self.send("DC{}={}".format(a, acceleration * self.ctspmm[a]))
+        self.send(f"AC{a}={acceleration * self.ctspmm[a]}")
+        self.send(f"DC{a}={acceleration * self.ctspmm[a]}")
 
     def getSpeed(self, axis="A"):
         """Return the speed for the specified axis (mm/sec)."""
@@ -196,7 +194,7 @@ class Galil:
     def setSpeed(self, speed, axis="A"):
         """Set the speed for the specified axis (mm/sec)."""
         a = convertAxis(axis)
-        self.send("SP{}={}".format(a, speed * self.ctspmm[a]))
+        self.send(f"SP{a}={speed * self.ctspmm[a]}")
 
     def home(self, axis="A"):
         """Run the homing routine.
@@ -241,8 +239,8 @@ class Galil:
         if cnts is not None:
             start_position = self.getPosition()
             self.log.info("Move axis %s to relative position %s", a, cnts)
-            self.send("PR{}={}".format(a, cnts))
-            self.send("BG{}".format(a))
+            self.send(f"PR{a}={cnts}")
+            self.send(f"BG{a}")
             self.waitForMotionComplete(start_position + cnts)
         if speed is not None:
             self.setSpeed(old_speed)
@@ -283,8 +281,8 @@ class Galil:
             cnts = self.mmToCnts(mm)
         if cnts is not None:
             self.log.info("Move axis %s to absolute position %s", a, cnts)
-            self.send("PA{}={}".format(a, cnts))
-            self.send("BG{}".format(a))
+            self.send(f"PA{a}={cnts}")
+            self.send(f"BG{a}")
             self.waitForMotionComplete(cnts, wait_for_settling=wait_for_settling)
         if speed is not None:
             self.setSpeed(old_speed)
@@ -299,14 +297,14 @@ class Galil:
         self.jogging = True
         a = convertAxis(axis)
         self.log.info("Start jog on axis %s at speed %s mm/sec", a, speed)
-        self.send("JG{}={}".format(a, speed * self.ctspmm[a]))
-        self.send("BG{}".format(a))
+        self.send(f"JG{a}={speed * self.ctspmm[a]}")
+        self.send(f"BG{a}")
 
     def stopJog(self, axis="A"):
         """Stop a jog, non-blocking."""
         a = convertAxis(axis)
         self.log.info("Stop jog on axis %s", a)
-        self.send("ST{}".format(a))
+        self.send(f"ST{a}")
         self.jogging = False
         self.setSpeed(self.pre_jog_speed)
 
@@ -405,16 +403,14 @@ class Galil:
         """Dump the motion data to a file."""
         # save the coefficients for this run
         for coeff in ("KP", "KI", "KD", "IL"):
-            response = self.send("{} ?,?,?".format(coeff))
+            response = self.send(f"{coeff} ?,?,?")
             response = response.replace(",", "")
             response = response.split()
-            self.data["{}C".format(coeff)] = response[
-                0
-            ]  # get C axis which will be at index 2
+            self.data[f"{coeff}C"] = response[0]
         if filename is None:
-            filename = "galil_data_P={}_I={}_D={}_IL={}.txt".format(
-                self.data["KPC"], self.data["KIC"], self.data["KDC"], self.data["ILC"]
-            )
+            filename = f"galil_data_P={self.data['KPC']}_"
+            filename += f"I={self.data['KIC']}_D={self.data['KDC']}_"
+            filename += f"IL={self.data['ILC']}.txt"
         filename = cleanFileName(filename)
         with open(filename, "w") as outfile:
             json.dump(self.data, outfile)
