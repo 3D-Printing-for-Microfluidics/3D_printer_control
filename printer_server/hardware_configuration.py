@@ -17,8 +17,7 @@ dummy = False
 # loadcell_hwid = "PID=16C0:0483 SER=5712360"
 # loadcell_calibration_intercept = 34963.0
 # loadcell_calibration_slope = -1.83
-# loadcell_calibration_intercept = 34932.0
-# loadcell_calibration_slope = -1.79
+# do_loadcell_planarization = True
 
 # tiptilt_hwid = "PID=16C0:0483 SER=5800580"
 
@@ -30,6 +29,7 @@ griffin_top_position = -400000
 loadcell_hwid = "PID=16C0:0483 SER=5712570"
 loadcell_calibration_intercept = 34928.0
 loadcell_calibration_slope = -2.1
+do_loadcell_planarization = False
 
 tiptilt_hwid = "PID=16C0:0483 SER=9881650"
 

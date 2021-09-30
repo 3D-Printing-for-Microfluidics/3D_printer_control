@@ -13,6 +13,7 @@ from PIL import Image
 from flask import Blueprint, request, render_template
 
 from printer_server.settings import Config
+from printer_server.hardware_configuration import do_loadcell_planarization
 from printer_server.hardware_configuration import driver_handles
 from printer_server.print_file_validator import validate_v02
 from printer_server.models import PrintQueue, PrintRecord
@@ -378,9 +379,12 @@ class PrintControl:
     @run_in_thread("planarized", "Planarization Step 2")
     def planarizationStep2(self):
         """Raise the build platform to begin printing."""
-        if self.state == "planarizing":
-            log.info("Loadcell force (pre-step 2): %s", self.loadcell.get_current_force())
-            self.loadcellPlanarization()
+        if do_loadcell_planarization:
+            if self.state == "planarizing":
+                log.info("Loadcell force (pre-step 2): %s", self.loadcell.get_current_force())
+                self.loadcellPlanarization()
+        else:
+            pass
 
     def loadcellPlanarization(self):
         # get initial force and position
