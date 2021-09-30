@@ -15,6 +15,8 @@ dummy = False
 # griffin_top_position = -400000
 
 # loadcell_hwid = "PID=16C0:0483 SER=5712360"
+# loadcell_calibration_intercept = 34963.0
+# loadcell_calibration_slope = -1.83
 # loadcell_calibration_intercept = 34932.0
 # loadcell_calibration_slope = -1.79
 
@@ -22,7 +24,7 @@ dummy = False
 
 # hr3v3a
 griffin_calibration_position = 75041
-griffin_bottom_position = 375000
+griffin_bottom_position = 382000
 griffin_top_position = -400000
 
 loadcell_hwid = "PID=16C0:0483 SER=5712570"
