@@ -53,30 +53,24 @@ class Visitech:
     - RUNTIME_ERROR -1002 Unknown runtime error. See message.
     - I2C_BUS_DOWN -1003 Onboard CPU is not connected to any devices.
 
-    These error codes will also appear when using GET LOGS if any is
+    These error codes will also appear when using GET LOGS if any are
     available.
 
     There are two commands not documented in the API but are present on
-    the device that I have implemented:
+    the device that I have implemented. See the appropriate docstring
+    for details:
 
     GET LED TEMP
     GET BOARD TEMP
 
-    There are several commands not documented in the API but are present
-    on the device that I have not implemented. I am not sure what these
-    do and they shouldn't be used:
+    There are several other commands present in Visitech's firmware that
+    aren't documented in their API that I have not implemented because
+    we don't need them/I am not sure what they do. Don't implement them
+    unless we figure out what they do:
 
     PING
     GET LBREG
     SET LBREG
-    FACTORY SET NORMALIZATION VALUE
-
-    There are two commands in the API that are incorrect:
-
-    SET INPUT SOURCE - not implemented at all - replaced with INIT HDMI
-    and INIT DISPLAYPORT
-    GET INPUT SOURCE - actually implemented as GET VIDEO SOURCE
-
     """
 
     def __init__(self, log_level=logging.DEBUG):
@@ -330,7 +324,7 @@ class Visitech:
 
         Return type +OK
         """
-        return float(self.send(f"SET BOARD TEMP LIMIT {temperature}"))
+        return self.send(f"SET BOARD TEMP LIMIT {temperature}")
 
     def get_led_driver_board_temp_limit(self):
         """
@@ -375,6 +369,7 @@ class Visitech:
         """
         if self.socket is not None:
             return self.send("SET SEQ OFF")
+        return ""
 
     def pause_sequencer(self):
         """
@@ -556,6 +551,29 @@ class Visitech:
         """
         return self.send(f"SET PIXEL MODE {mode}")
 
+    def park_dmd_mirrors(self):
+        """
+        Park the DMD mirrors to a flat position.
+
+        This should be handled automatically. The current state of the
+        mirrors is indicated in get_dmd_status()
+
+        Return type +OK
+        """
+        return self.send("SET MIRRORS PARKED")
+
+    def unpark_dmd_mirrors(self):
+        """
+        Unark the DMD mirrors.
+
+        If the mirrors are parked, they will need to be unparked before
+        exposures can happen. The current state of the mirrors is
+        indicated in get_dmd_status()
+
+        Return type +OK
+        """
+        return self.send("SET MIRRORS UNPARKED")
+
     def get_sticky_errors(self, warn=True):
         """
         Sticky errors are used to indicate that a runtime protection
@@ -596,6 +614,32 @@ class Visitech:
         reading
         """
         return self.send("GET LOGS")
+
+    def get_normalization_factor(self):
+        """
+        Return the normalization factor.
+
+        The normalization factor is used by the Visitech firmware when
+        correlating the set power value and the output optical power.
+        This is usually calibrated in factory by Visitech, but we may
+        want to use it ourselves to get consistient output power across
+        multiple printers, i.e. make it so a power setting of 100
+        correlates to the same output optical power in each light engine
+
+        Return type +OK and normalization factor value as a floating
+        point number
+        """
+        return float(self.send("FACTORY GET NORMALIZATION VALUE"))
+
+    def set_normalization_factor(self, normalization_factor):
+        """
+        Set the normalization factor.
+
+        See get_normalization_factor for more details.
+
+        Return type +OK
+        """
+        return self.send(f"FACTORY SET NORMALIZATION VALUE {normalization_factor}")
 
     def split_exposure_time(self, exposure):
         """
@@ -648,7 +692,7 @@ class Visitech:
         Start an exposure.
             t - exposure time in milliseconds
         """
-        if t is not 0:
+        if t != 0:
             self.log.info("Exposing for %s ms", t)
             self.start_sequencer()
             time.sleep(t * 1e-3)
@@ -666,8 +710,8 @@ class Visitech:
             # this provides the minimum blanking of 233 us of the full 33333 us cycle
             # (at 30Hz on HDMI)
             self.set_sequencer_lut_definition(33100, 0, 0, 8, 0, 0, 0)
-            self.set_sequencer_lut_config(repeats=repeats)  # 0 means repeat forever
-            self.start_sequencer()  # sequencer will be stopped on program exit)
+            self.set_sequencer_lut_config(repeats=0)
+            self.start_sequencer()  # sequencer will be stopped on program exit
         else:  # normal display is desired
             for t in self.split_exposure_time(exposure):
                 # the TI board expects exposure in microseconds
