@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """Galil control module."""
 import sys
 import time
-import json
 import atexit
 import logging
 from datetime import datetime
@@ -70,7 +68,6 @@ class Galil:
         self.axes = ["A"]
         self.max_travel_mm = {"A": 100}
         self.ctspmm = {"A": 8000}
-        self.data = {}
         self.move_num = 0
 
         # connection parameters
@@ -115,6 +112,17 @@ class Galil:
         msg = f"{self.controller_name} not found."
         self.log.critical(msg)
         sys.exit(msg)
+
+    def write_to_disk(self, *args):
+        """Write data to disk using the async file handler class.
+
+        Log location must be set for data to be saved.
+        """
+        if self.movement_log is not None:
+            ts = "%Y-%m-%d %H:%M:%S.%f"
+            async_file_hander.write(self.movement_log, datetime.now().strftime(ts) + ",")
+            async_file_hander.write(self.movement_log, ",".join(map(str, args)) + "\n")
+            time.sleep(0.001)
 
     def mmToCnts(self, mm, axis="A"):
         """Convert mm to counts for the specified axis."""
@@ -312,12 +320,8 @@ class Galil:
         """Blocks execution until the encoder reaches the target value
         and saves motion data as it goes.
         """
-        start_time = time.time()
         last_position = self.getPosition(notify=False)  # save the last position
-        self.data[self.move_num] = []
-        self.data[self.move_num].append(
-            {"time": time.time(), "position": last_position, "error_window": -1}
-        )
+        self.write_to_disk(self.cntsToMm(last_position))
         counter = 0
         time_count = 0
         # wait until we are within 10 um of target
@@ -326,50 +330,22 @@ class Galil:
             <= last_position
             <= int(cnts + self.monitoring_window)
         ):
-            if self.movement_log is not None:
-                async_file_hander.write(
-                    self.movement_log,
-                    f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},",
-                )
-                async_file_hander.write(
-                    self.movement_log,
-                    f"{self.cntsToMm(self.getPosition(notify=False))}\n",
-                )
-            time.sleep(0.001)
             last_position = self.getPosition(notify=False)
+            self.write_to_disk(self.cntsToMm(last_position))
             upper, lower = self.checkLimits()
             if (lower and cnts < last_position) or (upper and cnts > last_position):
                 self.log.info("Limit switch triggered")
                 self.g.GMotionComplete(axis)
                 return
-            self.data[self.move_num].append(
-                {"time": time.time(), "position": last_position, "error_window": -1}
-            )
         if wait_for_settling:
             # only proceed when 10 good consecutive counts have been read
             while counter <= 5:
-                if self.movement_log is not None:
-                    async_file_hander.write(
-                        self.movement_log,
-                        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},",
-                    )
-                    async_file_hander.write(
-                        self.movement_log,
-                        f"{self.cntsToMm(self.getPosition(notify=False))}\n",
-                    )
-                time.sleep(0.001)
                 last_position = self.getPosition(notify=False)
+                self.write_to_disk(self.cntsToMm(last_position))
                 if any(self.checkLimits()):
                     self.log.info("Limit switch triggered")
                     self.g.GMotionComplete(axis)
                     return
-                self.data[self.move_num].append(
-                    {
-                        "time": time.time(),
-                        "position": last_position,
-                        "error_window": self.error_window,
-                    }
-                )
                 if (
                     int(cnts - self.error_window)
                     <= last_position
@@ -393,27 +369,8 @@ class Galil:
         else:
             self.g.GMotionComplete(axis)
         self.error_window = 1
-        self.data[self.move_num].append(
-            {"time": time.time(), "position": last_position, "error_window": -1}
-        )
-        self.data[self.move_num].append({"duration": time.time() - start_time})
+        self.write_to_disk(self.cntsToMm(self.getPosition(notify=False)), "move_complete")
         self.move_num = self.move_num + 1
-
-    def saveMotionData(self, filename=None):
-        """Dump the motion data to a file."""
-        # save the coefficients for this run
-        for coeff in ("KP", "KI", "KD", "IL"):
-            response = self.send(f"{coeff} ?,?,?")
-            response = response.replace(",", "")
-            response = response.split()
-            self.data[f"{coeff}C"] = response[0]
-        if filename is None:
-            filename = f"galil_data_P={self.data['KPC']}_"
-            filename += f"I={self.data['KIC']}_D={self.data['KDC']}_"
-            filename += f"IL={self.data['ILC']}.txt"
-        filename = cleanFileName(filename)
-        with open(filename, "w") as outfile:
-            json.dump(self.data, outfile)
 
     def disconnect(self):
         """Disconnect form the Galil controller."""
