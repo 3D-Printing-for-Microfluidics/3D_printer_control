@@ -1,4 +1,7 @@
+import json
 import logging
+from pathlib import Path
+from printer_server.settings import Config
 from printer_server.drivers.screen import ScreenThread
 from printer_server.drivers.galil import Galil, Galil_dummy
 from printer_server.drivers.visitech import Visitech, Visitech_dummy
@@ -9,29 +12,12 @@ from printer_server.drivers.loadcell import LoadCell, Loadcell_dummy
 default_log_level = logging.INFO
 dummy = False
 
-# # hr3v3
-# griffin_calibration_position = 34000
-# griffin_bottom_position = 368000
-# griffin_top_position = -400000
 
-# loadcell_hwid = "PID=16C0:0483 SER=5712360"
-# loadcell_calibration_intercept = 34963.0
-# loadcell_calibration_slope = -1.83
-# do_loadcell_planarization = True
+configuration_path = Path(Config.PRINT_SERVER_FOLDER).rglob("hardware_configuration.json")
+with open(next(configuration_path), "r") as file_handle:
+    config_dict = json.load(file_handle)
+config_dict = config_dict[Config.HOSTNAME]
 
-# tiptilt_hwid = "PID=16C0:0483 SER=5800580"
-
-# hr3v3a
-griffin_calibration_position = 75041
-griffin_bottom_position = 382000
-griffin_top_position = -400000
-
-loadcell_hwid = "PID=16C0:0483 SER=5712570"
-loadcell_calibration_intercept = 34928.0
-loadcell_calibration_slope = -2.1
-do_loadcell_planarization = False
-
-tiptilt_hwid = "PID=16C0:0483 SER=9881650"
 
 
 class Printer3D:
@@ -45,19 +31,18 @@ class Printer3D:
             self.loadcell = Loadcell_dummy()
         else:
             self.galil = Galil(
-                log_level=default_log_level,
-                top_position=griffin_top_position,
-                bottom_position=griffin_bottom_position,
-                calibration_position=griffin_calibration_position,
+                config_dict=config_dict["galil_settings"],
+                log_level=default_log_level
             )
             self.visitech = Visitech(log_level=default_log_level)
             self.kdc = KDC101(log_level=default_log_level)
-            self.tiptilt = TipTilt(hwid=tiptilt_hwid, log_level=default_log_level)
+            self.tiptilt = TipTilt(
+                config_dict=config_dict["tiptilt_settings"],
+                log_level=default_log_level
+            )
             self.loadcell = LoadCell(
-                hwid=loadcell_hwid,
-                log_level=default_log_level,
-                intercept=loadcell_calibration_intercept,
-                slope=loadcell_calibration_slope,
+                config_dict=config_dict["loadcell_settings"],
+                log_level=default_log_level
             )
 
 

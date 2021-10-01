@@ -13,7 +13,7 @@ class LoadCell(serial.Serial):
     Class providing high level control of loadcell
     """
 
-    def __init__(self, hwid=None, log_level=logging.DEBUG, intercept=None, slope=None):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG):
         """
         Initializes the loadcell
         """
@@ -21,9 +21,9 @@ class LoadCell(serial.Serial):
         self.port = None  # start with no port
         # self.status = None              # status to be updated after every send
 
-        self.hwid = hwid
-        self.intercept = intercept
-        self.slope = slope
+        self.hwid = config_dict["hwid"]
+        self.intercept = config_dict["calibration_intercept"]
+        self.slope = config_dict["calibration_slope"]
 
         self.currentData = {"index": 0, "force": 0.0}
         self.start_time = 0

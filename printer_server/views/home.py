@@ -13,7 +13,7 @@ from PIL import Image
 from flask import Blueprint, request, render_template
 
 from printer_server.settings import Config
-from printer_server.hardware_configuration import do_loadcell_planarization
+from printer_server.hardware_configuration import config_dict
 from printer_server.hardware_configuration import driver_handles
 from printer_server.print_file_validator import validate_v02
 from printer_server.models import PrintQueue, PrintRecord
@@ -379,7 +379,7 @@ class PrintControl:
     @run_in_thread("planarized", "Planarization Step 2")
     def planarizationStep2(self):
         """Raise the build platform to begin printing."""
-        if do_loadcell_planarization:
+        if config_dict["loadcell_settings"]["loadcell_planarization_enabled"]:
             if self.state == "planarizing":
                 log.info(
                     "Loadcell force (pre-step 2): %s", self.loadcell.get_current_force()
@@ -398,8 +398,9 @@ class PrintControl:
         slow_speed = False
         self.galil.startJog(speed=-0.25)  # jog up at speed of 250 um per second
         # while start_force > 0.75: # jog until force is less than 0.75 newtons
-        while start_force > 5:  # jog until force is less than 0.75 newtons
-            if not slow_speed and start_force < 10:
+        planarization_force = config_dict["loadcell_settings"]["loadcell_planarization_force"]
+        while start_force > planarization_force:  # jog until force is less than 0.75 newtons
+            if not slow_speed and start_force < planarization_force + 5:
                 slow_speed = True
                 self.galil.startJog(speed=-0.05)  # jog up at speed of 50 um per second
             time.sleep(0.025)

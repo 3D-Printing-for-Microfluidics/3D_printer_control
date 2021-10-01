@@ -15,14 +15,14 @@ def get_axis_index(axis):
 
 
 class TipTilt(serial.Serial):
-    def __init__(self, hwid=None, log_level=logging.DEBUG):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG):
         super().__init__(baudrate=115200, timeout=None)
 
         # self.ser = serial.Serial(baudrate=115200, timeout=None)
         # self.ser.port = None
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
-        self.hwid = hwid
+        self.hwid = config_dict["hwid"]
         self.port = None  # start with no port
         self.r = re.compile(r"\d*\.?\d*$")  # regex for getter functions
         atexit.register(self.close)
