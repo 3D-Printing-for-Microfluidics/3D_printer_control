@@ -381,7 +381,9 @@ class PrintControl:
         """Raise the build platform to begin printing."""
         if do_loadcell_planarization:
             if self.state == "planarizing":
-                log.info("Loadcell force (pre-step 2): %s", self.loadcell.get_current_force())
+                log.info(
+                    "Loadcell force (pre-step 2): %s", self.loadcell.get_current_force()
+                )
                 self.loadcellPlanarization()
         else:
             pass
@@ -550,7 +552,7 @@ class PrintControl:
         )
         async_file_hander.write(self.exposure_log, "")
         async_file_hander.write(self.event_log, "timestamp,event\n")
-        async_file_hander.write(self.movement_log, "timestamp,position_mm\n")
+        async_file_hander.write(self.movement_log, "timestamp,position_mm,tag\n")
         async_file_hander.write(
             self.loadcell_log, "system_time,loadcell_time,index,raw_data,newtons\n"
         )
