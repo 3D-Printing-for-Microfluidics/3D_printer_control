@@ -112,7 +112,6 @@ class Galil:
             ts = "%Y-%m-%d %H:%M:%S.%f"
             async_file_hander.write(self.movement_log, datetime.now().strftime(ts) + ",")
             async_file_hander.write(self.movement_log, ",".join(map(str, args)) + "\n")
-            time.sleep(0.001)
 
     def mmToCnts(self, mm, axis=None):
         """Convert mm to counts for the specified axis."""
@@ -319,6 +318,7 @@ class Galil:
             <= last_position
             <= int(cnts + self.monitoring_window[a])
         ):
+            time.sleep(0.001)
             last_position = self.getPosition(notify=False)
             self.write_to_disk(self.cntsToMm(last_position))
             upper, lower = self.checkLimits()
@@ -330,6 +330,7 @@ class Galil:
             # only proceed when 10 good consecutive counts have been read
             error = self.error_window[a]
             while counter <= 5:
+                time.sleep(0.001)
                 last_position = self.getPosition(notify=False)
                 self.write_to_disk(self.cntsToMm(last_position))
                 if any(self.checkLimits()):
