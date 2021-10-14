@@ -70,5 +70,29 @@
         "tiptilt_settings":{
             "hwid": "PID=16C0:0483 SER=3794660"
         }
+    },
+    "HR4" : {
+        "galil_settings":{
+            "controller_name":"DMC4040",
+	        "default_axis":"D",
+	        "axes": ["A", "B", "C", "D"],
+            "axes_common_names": ["X", "Y", "Z", "BP"],
+	        "axes_travel": {"A": 100, "B": 100, "C": 12.5, "D": 100},
+	        "axes_ctspmm": {"A": 10000, "B": 10000, "C": 10000, "D": 51200},
+            "axes_tolerance": {"A": 0.125, "B": 0.125, "C": 0.125, "D": 0.125},
+            "calibration_position": 2315000,
+            "bottom_position": 2508800,
+            "top_position": -2600000
+        },
+        "loadcell_settings":{
+            "hwid": "PID=16C0:0483 SER=9881500",
+            "calibration_intercept": 34932.0,
+            "calibration_slope": -1.79,
+            "loadcell_planarization_enabled": false,
+            "loadcell_planarization_force": 5.0
+        },
+        "tiptilt_settings":{
+            "hwid": "PID=16C0:0483 SER=9881850"
+        }
     }
 }
