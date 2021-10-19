@@ -19,8 +19,9 @@ with open(next(configuration_path), "r") as file_handle:
 config_dict = config_dict[Config.HOSTNAME]
 
 
-
 class Printer3D:
+    """Provides hardware handles to the Flask print control."""
+
     def __init__(self):
         self.screen = ScreenThread(log_level=default_log_level)
         if dummy:
@@ -31,18 +32,15 @@ class Printer3D:
             self.loadcell = Loadcell_dummy()
         else:
             self.galil = Galil(
-                config_dict=config_dict["galil_settings"],
-                log_level=default_log_level
+                config_dict=config_dict["galil_settings"], log_level=default_log_level
             )
             self.visitech = Visitech(log_level=default_log_level)
             self.kdc = KDC101(log_level=default_log_level)
             self.tiptilt = TipTilt(
-                config_dict=config_dict["tiptilt_settings"],
-                log_level=default_log_level
+                config_dict=config_dict["tiptilt_settings"], log_level=default_log_level
             )
             self.loadcell = LoadCell(
-                config_dict=config_dict["loadcell_settings"],
-                log_level=default_log_level
+                config_dict=config_dict["loadcell_settings"], log_level=default_log_level
             )
 
 
