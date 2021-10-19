@@ -54,6 +54,12 @@ def get_calibration_positions():
 
 def emit_calibration_positions(log=False):
     message = get_calibration_positions()
+
+    if message["tip"] is "undef":
+        last_positions = get_last_calibration_positions()
+        message["tip"] = last_positions[0]
+        message["tilt"] = last_positions[1]
+
     if log:
         write_to_position_log(message)
     socketio.emit(
