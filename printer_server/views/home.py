@@ -126,9 +126,7 @@ def run_in_thread(state, text):
             }
             log.info(msg["text"])
             socketio.emit("busy", msg, namespace="/printing", broadcast=True)
-            _thread = threading.Thread(
-                target=func, args=(self, *args,), kwargs={**kwargs,},
-            )
+            _thread = threading.Thread(target=func, args=(self, *args), kwargs={**kwargs})
             _thread.start()
 
         return decorated_function
@@ -370,11 +368,11 @@ class PrintControl:
 
             self.galil.goToZmin()
             time.sleep(0.1)
-            planarization_force = config_dict["loadcell_settings"]["loadcell_planarization_force"]
-            if(self.moveGalilToForce(planarization_force, 5) == -1):
-                log.error(
-                    "Loadcell movement failed. "
-                )
+            target_force = config_dict["loadcell_settings"][
+                "loadcell_planarization_force"
+            ]
+            if self.moveGalilToForce(target_force, 5) == -1:
+                log.error("Loadcell movement failed.")
                 return
             self.planarized_position = self.galil.bottom_position
             self.print_position = self.galil.cntsToMm(self.planarized_position)
@@ -403,7 +401,8 @@ class PrintControl:
         count = 0
         fail_count = 0
         self.galil.startJog(speed=speed)  # jog up at speed of 250 um per second
-        while (speed < 0 and start_force > force) or (speed > 0 and start_force < force):  # jog until force is less than 0.75 newtons
+        # jog until force is less than 0.75 newtons
+        while (speed < 0 and start_force > force) or (speed > 0 and start_force < force):
             time.sleep(0.025)
             end_force = self.loadcell.get_current_force()
             count = count + 1
@@ -423,21 +422,17 @@ class PrintControl:
         return count
 
     def loadcellPlanarization(self):
-        planarization_force = config_dict["loadcell_settings"]["loadcell_print_start_force"]
-        first_count = self.moveGalilToForce(planarization_force + 5, -0.25)
-        if(first_count == -1):
-            log.error(
-                "Loadcell planarization failed. (Check build platform screw)"
-            )
+        target_force = config_dict["loadcell_settings"]["loadcell_print_start_force"]
+        first_count = self.moveGalilToForce(target_force + 5, -0.25)
+        if first_count == -1:
+            log.error("Loadcell planarization failed. (Check build platform screw)")
             return
         time.sleep(0.010)
-        second_count = self.moveGalilToForce(planarization_force, -0.05)
-        if(second_count == -1):
-            log.error(
-                "Loadcell planarization failed. (Check build platform screw)"
-            )
+        second_count = self.moveGalilToForce(target_force, -0.05)
+        if second_count == -1:
+            log.error("Loadcell planarization failed. (Check build platform screw)")
             return
-        count = first_count+second_count
+        count = first_count + second_count
         self.planarized_position = self.galil.getPosition()
         self.print_position = self.galil.cntsToMm(self.planarized_position)
         log.info("Loadcell planarized %s steps", count)
@@ -644,7 +639,7 @@ class PrintControl:
             self.write_to_event_log(msg)
 
             galil_thread = threading.Thread(
-                target=self.move_build_platform, args=[position_settings, layer],
+                target=self.move_build_platform, args=[position_settings, layer]
             )
             galil_thread.start()
 
@@ -748,9 +743,10 @@ class PrintControl:
                     self.state = "completed"
                     msg = {
                         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-                        "text": "Printing Compeleted",
+                        "text": f"Printing completed. Print took {print_duration}",
                     }
                     log.info(msg["text"])
+                    self.write_to_event_log(msg["text"])
                     socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
                 latest_record.save()
                 shutil.make_archive(
@@ -762,8 +758,6 @@ class PrintControl:
         self.galil.set_log_file(None)
         self.loadcell.set_log_file(None)
         async_file_hander.finish()
-
-        log.info("Print took %s", print_duration)
 
     @property
     def isBusy(self):
@@ -903,7 +897,9 @@ def handleUpload():
             msg = f"Job validation failed for {f.filename}:\n {error_string}"
             log.info("Job validation failed for %s: %s", f.filename, error_string)
             socketio.emit(
-                "flash error", {"text": msg, "category": "danger"}, namespace="/printing",
+                "flash error",
+                {"text": msg, "category": "danger"},
+                namespace="/printing",
             )
             os.remove(filename_on_disk)
     return ""
