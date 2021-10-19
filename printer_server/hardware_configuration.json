@@ -9,7 +9,7 @@
 	        "axes_ctspmm": {"A": 8000},
             "axes_tolerance": {"A": 0.125},
             "calibration_position": 34000,
-            "bottom_position": 368000,
+            "bottom_position": 350000,
             "top_position": -400000
         },
         "loadcell_settings":{
@@ -17,7 +17,8 @@
             "calibration_intercept": 34963.0,
             "calibration_slope": -1.83,
             "loadcell_planarization_enabled": true,
-            "loadcell_planarization_force": 5.0
+            "loadcell_planarization_force": 35.0,
+            "loadcell_print_start_force": 5.0
         },
         "tiptilt_settings":{
             "hwid": "PID=16C0:0483 SER=5800580"
@@ -33,7 +34,7 @@
 	        "axes_ctspmm": {"A": 8000},
             "axes_tolerance": {"A": 0.125},
             "calibration_position": 75041,
-            "bottom_position": 390000,
+            "bottom_position": 365000,
             "top_position": -400000
         },
         "loadcell_settings":{
@@ -41,7 +42,8 @@
             "calibration_intercept": 34990.0,
             "calibration_slope": -2.1,
             "loadcell_planarization_enabled": true,
-            "loadcell_planarization_force": 5.0
+            "loadcell_planarization_force": 35.0,
+            "loadcell_print_start_force": 5.0
         },
         "tiptilt_settings":{
             "hwid": "PID=16C0:0483 SER=9881650"
@@ -65,7 +67,8 @@
             "calibration_intercept": 34932.0,
             "calibration_slope": -1.79,
             "loadcell_planarization_enabled": false,
-            "loadcell_planarization_force": 5.0
+            "loadcell_planarization_force": 35.0,
+            "loadcell_print_start_force": 5.0
         },
         "tiptilt_settings":{
             "hwid": "PID=16C0:0483 SER=3794660"
@@ -89,7 +92,8 @@
             "calibration_intercept": 34932.0,
             "calibration_slope": -1.79,
             "loadcell_planarization_enabled": false,
-            "loadcell_planarization_force": 5.0
+            "loadcell_planarization_force": 35.0,
+            "loadcell_print_start_force": 5.0
         },
         "tiptilt_settings":{
             "hwid": "PID=16C0:0483 SER=9881850"
