@@ -348,7 +348,7 @@ class PrintControl:
     def galil_setup_thread(self):
         """Initialize and home Galil controller"""
         self.galil.connect()
-        self.galil.motorOn()
+        self.galil.initialize()
         self.galil.home()
         self.galil.goToZmax()
 

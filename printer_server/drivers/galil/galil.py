@@ -8,18 +8,6 @@ import gclib
 from printer_server.async_file_handler import async_file_hander
 
 
-def parseResponseString(string, axis):
-    """Return an integer representing the value for the specified axis.
-
-    i.g. "12, 15, 20" would return "12" for axis A, "15" for B, etc.
-    """
-    string = string.replace(",", "")
-    array = string.split()
-    axis_index = ord(axis.lower()) - 97  # converts A B C to 0 1 2
-    value = array[axis_index]
-    return int(value)
-
-
 class Galil:
     def __init__(
         self,
@@ -43,19 +31,34 @@ class Galil:
         self.top_position = config_dict["top_position"]
         self.tolerence = config_dict["axes_tolerance"]
 
+        self.homed = {}
+        self.jogging = {}
+        self.pre_jog_speed = {}
         self.error_window = {}
         self.monitoring_window = {}
         for a in self.axes:
-            self.error_window[a] = self.tolerence[a]*self.ctspmm[a]/1000
-            self.monitoring_window[a] = self.error_window[a]*100
+            self.homed[a] = False
+            self.jogging[a] = False
+            self.pre_jog_speed[a] = 0
+            self.error_window[a] = self.tolerence[a] * self.ctspmm[a] / 1000
+            self.monitoring_window[a] = self.error_window[a] * 100
 
         self.connected = False
-        self.homed = False
-        self.jogging = False
-        self.pre_jog_speed = 0
 
         self.g = gclib.py()
         atexit.register(self.disconnect)
+
+    def parseResponseString(self, string, axis):
+        """Return an integer representing the value for the specified axis.
+
+        i.g. "12, 15, 20" would return "12" for axis A, "15" for B, etc.
+        """
+        string = string.replace(",", "")
+        array = string.split()
+        a = self.convertAxis(axis)
+        axis_index = ord(a.lower()) - 97  # converts A B C to 0 1 2
+        value = array[axis_index]
+        return int(value)
 
     def convertAxis(self, axis):
         """Return converted axis name (eg. maps X,Y,Z to A,B,C)"""
@@ -68,7 +71,8 @@ class Galil:
         raise ValueError("Invalid axis supplied")
 
     def initialize(self):
-        self.motorOn()
+        for axis in self.axes:
+            self.motorOn(axis)
 
     def goToZcalibration(self):
         self.absMove(speed=25, cnts=self.calibration_position)
@@ -162,15 +166,15 @@ class Galil:
 
     def motorOff(self, axis=None):
         """Turn off the specified axis."""
-        axis = self.convertAxis(axis)
-        self.log.warning("Axis %s motor turned off. It may sink due to gravity.", axis)
-        self.send(f"MO{axis}")
+        a = self.convertAxis(axis)
+        self.log.warning("Axis %s motor turned off. It may sink due to gravity.", a)
+        self.send(f"MO{a}")
 
     def getAcceleration(self, axis=None):
         """Return the acceleration of the specified axis (mm/sec^2)."""
         a = self.convertAxis(axis)
-        response = self.send("AC ?", notify=False)
-        acc = parseResponseString(response, a)
+        response = self.send("AC ?,?,?,?", notify=False)
+        acc = self.parseResponseString(response, a)
         return int(acc) / self.ctspmm[a]
 
     def setAcceleration(self, acceleration, axis=None):
@@ -182,8 +186,8 @@ class Galil:
     def getSpeed(self, axis=None):
         """Return the speed for the specified axis (mm/sec)."""
         a = self.convertAxis(axis)
-        response = self.send("SP ?", notify=False)
-        speed = parseResponseString(response, a)
+        response = self.send("SP ?,?,?,?", notify=False)
+        speed = self.parseResponseString(response, a)
         return int(speed) / self.ctspmm[a]
 
     def setSpeed(self, speed, axis=None):
@@ -198,20 +202,35 @@ class Galil:
         is triggered, then runs the built in "HM" routine and waits for
         motion to complete.
         """
-        self.log.info("Start homing...")
-        a = self.convertAxis(axis)
-        self.setSpeed(10)
-        self.motorOn()
-        self.startJog(speed=-15)
-        self.g.GMotionComplete(a)
-        self.stopJog()
-        self.motorOn()
-        self.send("HM")
-        self.send("BGA")
-        self.waitForMotionComplete(0)
-        self.g.GMotionComplete(a)
-        self.homed = True
-        self.log.info("Homing complete.")
+        if "DMC31010" in self.controller_name:
+            self.log.info("Start homing...")
+            a = self.convertAxis(axis)
+            self.setSpeed(10)
+            self.motorOn()
+            self.startJog(speed=-15)
+            self.g.GMotionComplete(a)
+            self.stopJog()
+            self.motorOn()
+            self.send("HM")
+            self.send("BGA")
+            self.waitForMotionComplete(0)
+            self.g.GMotionComplete(a)
+            self.homed[a] = True
+            self.log.info("Homing complete.")
+
+        elif "DMC4040" in self.controller_name:
+            self.log.info("Start homing...")
+            self.send("XQ #HMA,0")
+            self.send("XQ #HMB,1")
+            self.send("XQ #HMC,2")
+            self.send("XQ #HMD,3")
+
+            time.sleep(10)
+
+            for a in self.axes:
+                self.g.GMotionComplete(a)
+                self.homed[a] = True  # update class homed status
+            self.log.info("Homing complete.")
 
     # pylint: disable=too-many-arguments
     def relMove(self, mm=None, cnts=None, speed=None, acceleration=None, axis=None):
@@ -224,24 +243,24 @@ class Galil:
         old_speed = None
         old_acceleration = None
         if speed is not None:
-            old_speed = self.getSpeed()
-            self.setSpeed(speed)
+            old_speed = self.getSpeed(axis=a)
+            self.setSpeed(speed, axis=a)
         if acceleration is not None:
-            old_acceleration = self.getAcceleration()
-            self.setAcceleration(acceleration)
+            old_acceleration = self.getAcceleration(axis=a)
+            self.setAcceleration(acceleration, axis=a)
         if mm is not None:
-            cnts = self.mmToCnts(mm)
+            cnts = self.mmToCnts(mm, axis=a)
         if cnts is not None:
-            start_position = self.getPosition()
+            start_position = self.getPosition(axis=a)
             self.log.info("Move axis %s to relative position %s", a, cnts)
             self.send(f"PR{a}={cnts}")
             self.send(f"BG{a}")
-            self.waitForMotionComplete(start_position + cnts)
+            self.waitForMotionComplete(start_position + cnts, axis=a)
         if speed is not None:
-            self.setSpeed(old_speed)
+            self.setSpeed(old_speed, axis=a)
         if acceleration is not None:
-            self.setAcceleration(old_acceleration)
-        return self.getPosition()
+            self.setAcceleration(old_acceleration, axis=a)
+        return self.getPosition(axis=a)
 
     # pylint: disable=too-many-arguments
     def absMove(
@@ -259,38 +278,41 @@ class Galil:
         and mm/sec(^2). wait_for_settling determines how precise
         the movement has to be.
         """
-        if not self.homed:
+        a = self.convertAxis(axis)
+        if not self.homed[a]:
             msg = "Must home before using absolute movements!"
             self.log.critical(msg)
             sys.exit(msg)
-        a = self.convertAxis(axis)
         old_speed = None
         old_acceleration = None
         if speed is not None:
-            old_speed = self.getSpeed()
-            self.setSpeed(speed)
+            old_speed = self.getSpeed(axis=a)
+            self.setSpeed(speed, axis=a)
         if acceleration is not None:
-            old_acceleration = self.getAcceleration()
-            self.setAcceleration(acceleration)
+            old_acceleration = self.getAcceleration(axis=a)
+            self.setAcceleration(acceleration, axis=a)
         if mm is not None:
-            cnts = self.mmToCnts(mm)
+            cnts = self.mmToCnts(mm, axis=a)
         if cnts is not None:
             self.log.info("Move axis %s to absolute position %s", a, cnts)
             self.send(f"PA{a}={cnts}")
             self.send(f"BG{a}")
-            self.waitForMotionComplete(cnts, wait_for_settling=wait_for_settling)
+            self.waitForMotionComplete(cnts, wait_for_settling=wait_for_settling, axis=a)
         if speed is not None:
-            self.setSpeed(old_speed)
+            self.setSpeed(old_speed, axis=a)
         if acceleration is not None:
-            self.setAcceleration(old_acceleration)
-        return self.getPosition()
+            self.setAcceleration(old_acceleration, axis=a)
+        return self.getPosition(axis=a)
 
     def startJog(self, speed=None, axis=None):
         """Start a jog, non-blocking."""
-        if not self.jogging:
-            self.pre_jog_speed = self.getSpeed()  # save the speed before jogging begins
-        self.jogging = True
         a = self.convertAxis(axis)
+        if not self.jogging[a]:
+            self.pre_jog_speed[a] = self.getSpeed(
+                axis=a
+            )  # save the speed before jogging begins
+        self.jogging[a] = True
+
         self.log.info("Start jog on axis %s at speed %s mm/sec", a, speed)
         self.send(f"JG{a}={speed * self.ctspmm[a]}")
         self.send(f"BG{a}")
@@ -300,16 +322,16 @@ class Galil:
         a = self.convertAxis(axis)
         self.log.info("Stop jog on axis %s", a)
         self.send(f"ST{a}")
-        self.jogging = False
-        self.setSpeed(self.pre_jog_speed)
+        self.jogging[a] = False
+        self.setSpeed(self.pre_jog_speed[a])
 
     def waitForMotionComplete(self, cnts, wait_for_settling=True, axis=None):
         """Blocks execution until the encoder reaches the target value
         and saves motion data as it goes.
         """
         a = self.convertAxis(axis)
-        last_position = self.getPosition(notify=False)  # save the last position
-        self.write_to_disk(self.cntsToMm(last_position))
+        last_position = self.getPosition(notify=False, axis=a)  # save the last position
+        self.write_to_disk(self.cntsToMm(last_position, axis=a))
         counter = 0
         time_count = 0
         # wait until we are within 10 um of target
@@ -319,9 +341,9 @@ class Galil:
             <= int(cnts + self.monitoring_window[a])
         ):
             time.sleep(0.001)
-            last_position = self.getPosition(notify=False)
-            self.write_to_disk(self.cntsToMm(last_position))
-            upper, lower = self.checkLimits()
+            last_position = self.getPosition(notify=False, axis=a)
+            self.write_to_disk(self.cntsToMm(last_position, axis=a))
+            upper, lower = self.checkLimits(axis=a)
             if (lower and cnts < last_position) or (upper and cnts > last_position):
                 self.log.info("Limit switch triggered")
                 self.g.GMotionComplete(a)
@@ -331,24 +353,20 @@ class Galil:
             error = self.error_window[a]
             while counter <= 5:
                 time.sleep(0.001)
-                last_position = self.getPosition(notify=False)
-                self.write_to_disk(self.cntsToMm(last_position))
-                if any(self.checkLimits()):
+                last_position = self.getPosition(notify=False, axis=a)
+                self.write_to_disk(self.cntsToMm(last_position, axis=a))
+                if any(self.checkLimits(axis=a)):
                     self.log.info("Limit switch triggered")
                     self.g.GMotionComplete(a)
                     return
-                if (
-                    int(cnts - error)
-                    <= last_position
-                    <= int(cnts + error)
-                ):
+                if int(cnts - error) <= last_position <= int(cnts + error):
                     counter += 1
                 else:
                     counter = 0
                 time_count += 1
                 # timeout for collecting data, motor won't reach position
                 if time_count == 100:
-                    error = error*2
+                    error = error * 2
                 if time_count >= 5000:
                     self.log.warning(
                         "Z motor didn't reach position. Got to %s but needed %s",
@@ -358,7 +376,9 @@ class Galil:
                     break
         else:
             self.g.GMotionComplete(a)
-        self.write_to_disk(self.cntsToMm(self.getPosition(notify=False)), "move_complete")
+        self.write_to_disk(
+            self.cntsToMm(self.getPosition(notify=False, axis=a), axis=a), "move_complete"
+        )
 
     def disconnect(self):
         """Disconnect form the Galil controller."""
