@@ -511,10 +511,11 @@ class PrintControl:
         """
         if self.state != "planarized" or not job_id:
             return
-        job_in_queue = PrintQueue.query.get(job_id)
-        if not job_in_queue:
+        job = PrintQueue.query.get(job_id)
+        if not job:
+            log.warning("The print job with ID '%s' could not be found.", job_id)
             return
-        zipped_job_file = self.queue / Path(job_in_queue.zip_filename)
+        zipped_job_file = self.queue / Path(job.zip_filename)
 
         # clear any old contents from the current_job folder
         try:
@@ -522,31 +523,29 @@ class PrintControl:
         except FileNotFoundError:
             pass
 
-        # extract to current_job
-        with ZipFile(zipped_job_file, "r") as f:
-            f.extractall(self.current_job)
+        # extract zip from self.queue to self.current_job
+        try:
+            with ZipFile(zipped_job_file, "r") as f:
+                f.extractall(self.current_job)
+        except FileNotFoundError:
+            deleteJob({"job": job_id})
+            return
 
-        # move file from queue folder to print_history folder
-        os.rename(zipped_job_file, self.print_history / Path(job_in_queue.zip_filename))
+        # move zip file from self.queue to self.print_history
+        os.rename(zipped_job_file, self.print_history / Path(job.zip_filename))
 
         # save job to Print History table in database
         print_history_entry = PrintRecord(
-            original_filename=job_in_queue.original_filename,
-            upload_time=job_in_queue.upload_time,
-            upload_ip=job_in_queue.upload_ip,
+            original_filename=job.original_filename,
+            upload_time=job.upload_time,
+            upload_ip=job.upload_ip,
             start_time=datetime.now(),
             start_ip=request.remote_addr,
         )
         print_history_entry.save(commit=False)
 
         # tell frontend to remove the job from the table and delete it from the database
-        msg = {
-            "job": job_id,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-            "text": f"Print Job ({job_in_queue.original_filename}) selected",
-        }
-        socketio.emit("job deleted", msg, namespace="/printing", broadcast=True)
-        job_in_queue.delete()  # delete job from Print Queue table in database
+        deleteJob({"job": job_id}, delete_on_disk=False)
 
         # parse and save print_settings
         with open(next(self.current_job.rglob("*.json")), "r") as file_handle:
@@ -909,18 +908,27 @@ def handleUpload():
 
 
 @socketio.on("delete job", namespace="/printing")
-def deleteJob(message):
+def deleteJob(message, delete_on_disk=True):
     """Delete a print job form the queue by removing it from the
-    Print Queue table in the database.
+    Print Queue table in the database and optionally deleting the print
+    file stored on disk.
+
+    If quiet flag is specified, don't try removing the print file from
+    disk and don't notify the user via logging.
     """
     job_id = message["job"]
     job = PrintQueue.query.get_or_404(job_id)
-    os.remove(os.path.join(Config.UPLOAD_FOLDER, "queue", job.zip_filename))
+    if delete_on_disk:
+        try:
+            os.remove(os.path.join(Config.UPLOAD_FOLDER, "queue", job.zip_filename))
+        except FileNotFoundError:
+            log.warning("The print file '%s' could not be found.", job.original_filename)
     msg = {
         "job": job_id,
         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-        "text": f"Print Job ({job.original_filename}) deleted",
+        "text": f"Print job '{job.original_filename}' deleted",
     }
     job.delete()
-    log.info(msg["text"])
+    if delete_on_disk:
+        log.info(msg["text"])
     socketio.emit("job deleted", msg, namespace="/printing", broadcast=True)
