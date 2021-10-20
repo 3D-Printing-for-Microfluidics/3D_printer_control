@@ -99,9 +99,15 @@ class SocketIOHandler(logging.Handler):
                 "msecs": record.msecs,
                 "message": record.message,
             }
-            if record.levelno >= logging.WARNING:
+            if record.levelno > logging.INFO and record.levelno <= logging.WARNING:
                 socketio.emit(
-                    "flash error",
+                    "bootstrap alert",
+                    {"text": msg, "category": "warning"},
+                    namespace="/printing",
+                )
+            elif record.levelno > logging.WARNING:
+                socketio.emit(
+                    "bootstrap alert",
                     {"text": msg, "category": "danger"},
                     namespace="/printing",
                 )

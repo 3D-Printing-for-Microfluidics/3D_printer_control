@@ -897,12 +897,11 @@ def handleUpload():
                 broadcast=True,
             )
         except ValueError as e:
-            error_string = str(e).strip()
-            msg = f"Job validation failed for {f.filename}:\n {error_string}"
-            log.info("Job validation failed for %s: %s", f.filename, error_string)
+            log.info("Job validation failed for %s", f.filename)
+            msg = f"Job validation failed for {f.filename}:\n {str(e).strip()}"
             socketio.emit(
-                "flash error",
-                {"text": msg, "category": "danger"},
+                "bootstrap alert",
+                {"text": msg, "category": "warning"},
                 namespace="/printing",
             )
             os.remove(filename_on_disk)

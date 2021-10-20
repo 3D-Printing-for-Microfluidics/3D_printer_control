@@ -68,35 +68,17 @@ function draw_loadcell_graph() {
 
 function update_loop(message) {
     let data = message.data;
-    if (data != 0){
-        // buffer.push(data);
-        // count +=1;
+    if (data != 0) {
 
-        // if (count >= 4){
-        //     while(count >=1){
-        //         let data = buffer.shift()
-        //         count -=1;
-        //         let time = new Date(data.timestamp);
-        //         let force = data.force;
-
-        //         Plotly.extendTraces('loadcell-data',
-        //         {
-        //             y: [[force]],
-        //             x: [[time]]
-        //         },
-        //         [0], 200)
-        //     }
-        // }
-        
         let time = new Date(data.timestamp);
         let force = data.force;
 
         Plotly.extendTraces('loadcell-data',
-        {
-            y: [[force]],
-            x: [[time]]
-        },
-        [0], 200)
+            {
+                y: [[force]],
+                x: [[time]]
+            },
+            [0], 200)
     }
 }
 
@@ -466,7 +448,7 @@ $(document).ready(function () {
         $("#row-" + message.job).remove();
     });
 
-    socket.on("flash error", function (message) {
+    socket.on("bootstrap alert", function (message) {
         var flash_msg = `
        <div class="alert alert-${message.category}">
          <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
