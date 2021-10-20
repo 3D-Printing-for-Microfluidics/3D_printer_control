@@ -101,11 +101,22 @@ def add_to_queue(job_id):
         validate_v02(new_filename)
         msg = f"{job.original_filename} added to print queue."
         log.info(msg)
-        PrintQueue(
+        print_job = PrintQueue(
             original_filename=job.original_filename,
             upload_time=upload_time,
             upload_ip=job.upload_ip,
         ).save()
+        socketio.emit(
+            "job uploaded",
+            {
+                "id": print_job.id,
+                "name": job.original_filename,
+                "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "upload_ip": request.remote_addr,
+            },
+            namespace="/printing",
+            broadcast=True,
+        )
     except ValueError as e:
         msg = f"Job validation failed for {job.original_filename}:\n {str(e).strip()}"
         socketio.emit(

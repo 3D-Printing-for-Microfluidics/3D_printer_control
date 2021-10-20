@@ -435,7 +435,9 @@ $(document).ready(function () {
         `;
         $("#job-table > tbody").append(new_row);
         var new_msg = { time: message.upload_time, text: "Print Job (" + message.name + ") Uploaded" };
-        $("#create-job").trigger('click');  // collapse the upload menu when done
+        $("#create-job").text("Upload a job");
+        $("#collapseUpload").removeClass('show');
+
     });
 
     $(document).on("click", ".delete-job", function () {
