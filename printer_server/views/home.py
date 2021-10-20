@@ -353,11 +353,10 @@ class PrintControl:
         self.galil.goToZmax()
 
     @run_in_thread("planarizing", "Planarization Step 1")
-    def planarizationStep1(self):
-        """Lower build platform to lower position for planarization."""
+    def planarization_step_1(self):
+        """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
-
             self.loadcell.start()
             time.sleep(0.5)
             if self.loadcell_thread is None:
@@ -365,16 +364,15 @@ class PrintControl:
                 self.loadcell_thread = threading.Thread(target=self.loadcell_graph_loop)
                 self.loadcell_thread.start()
             log.info("Loadcell force (pre-step 1): %s", self.loadcell.get_current_force())
-
             self.galil.goToZmin()
             time.sleep(0.1)
+            self.planarized_position = self.galil.bottom_position
             target_force = config_dict["loadcell_settings"][
                 "loadcell_planarization_force"
             ]
-            if self.moveGalilToForce(target_force, 5) == -1:
-                log.error("Loadcell movement failed.")
+            if self.move_bp_to_force(target_force, 5) is None:
+                log.error("Could not move to target force.")
                 return
-            self.planarized_position = self.galil.bottom_position
             self.print_position = self.galil.cntsToMm(self.planarized_position)
             time.sleep(0.5)
             log.info(
@@ -382,36 +380,36 @@ class PrintControl:
             )
 
     @run_in_thread("planarized", "Planarization Step 2")
-    def planarizationStep2(self):
+    def planarization_step_2(self):
         """Raise the build platform to begin printing."""
         if config_dict["loadcell_settings"]["loadcell_planarization_enabled"]:
             if self.state == "planarizing":
                 log.info(
                     "Loadcell force (pre-step 2): %s", self.loadcell.get_current_force()
                 )
-                self.loadcellPlanarization()
-        else:
-            pass
+                self.planarization_step_3()
 
-    def moveGalilToForce(self, force, speed):
-        # get initial force and position
+    def move_bp_to_force(self, force, speed):
+        """Move the build platform until the target force is achieved.
+
+        force - Target force.
+        speed - Speed in mm/sec. Negative speed means move up.
+        """
         start_force = self.loadcell.get_current_force()
         last_no_fail_force = self.loadcell.get_current_force()
-
         count = 0
         fail_count = 0
-        self.galil.startJog(speed=speed)  # jog up at speed of 250 um per second
-        # jog until force is less than 0.75 newtons
+        self.galil.startJog(speed=speed)
         while (speed < 0 and start_force > force) or (speed > 0 and start_force < force):
             time.sleep(0.025)
-            end_force = self.loadcell.get_current_force()
-            count = count + 1
-            log.debug("Loadcell force: %s", end_force)
-            if abs(last_no_fail_force - end_force) < 0.20:
+            curr_force = self.loadcell.get_current_force()
+            count += 1
+            log.debug("Loadcell force: %s", curr_force)
+            if abs(last_no_fail_force - curr_force) < 0.20:
                 if fail_count >= 25:
                     self.galil.stopJog()
-                    return -1
-                fail_count = fail_count + 1
+                    return None
+                fail_count += 1
             else:
                 fail_count = 0
                 last_no_fail_force = self.loadcell.get_current_force()
@@ -421,15 +419,22 @@ class PrintControl:
         log.debug("Loadcell position: %s", self.planarized_position)
         return count
 
-    def loadcellPlanarization(self):
+    def planarization_step_3(self):
+        """Raise the build platform to its starting postion.
+
+        This is accomplished by first moving up quickly until the
+        measured force is within 5 newtons of the target force, then
+        moving up more slowly until the measured force reaches the
+        target force.
+        """
         target_force = config_dict["loadcell_settings"]["loadcell_print_start_force"]
-        first_count = self.moveGalilToForce(target_force + 5, -0.25)
-        if first_count == -1:
+        first_count = self.move_bp_to_force(target_force + 5, -0.25)
+        if first_count is None:
             log.error("Loadcell planarization failed. (Check build platform screw)")
             return
         time.sleep(0.010)
-        second_count = self.moveGalilToForce(target_force, -0.05)
-        if second_count == -1:
+        second_count = self.move_bp_to_force(target_force, -0.05)
+        if second_count is None:
             log.error("Loadcell planarization failed. (Check build platform screw)")
             return
         count = first_count + second_count
@@ -456,7 +461,6 @@ class PrintControl:
             self.paused_position = self.galil.getPosition()
             self.galil.goToZmax()
 
-    # @run_in_thread("printing", "Resume Printing")
     def resume(self):
         """Resume a paused print."""
         if self.state != "paused":
@@ -814,14 +818,14 @@ def initialize(message):
 
 @socketio.on("planarization step 1", namespace="/printing")
 # pylint: disable=unused-argument
-def planarizationStep1(message):
-    print_control.planarizationStep1()
+def planarization_step_1(message):
+    print_control.planarization_step_1()
 
 
 @socketio.on("planarization step 2", namespace="/printing")
 # pylint: disable=unused-argument
-def planarizationStep2(message):
-    print_control.planarizationStep2()
+def planarization_step_2(message):
+    print_control.planarization_step_2()
 
 
 @socketio.on("start", namespace="/printing")
