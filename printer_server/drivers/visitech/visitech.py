@@ -603,7 +603,7 @@ class Visitech:
                 self.log.warning(errors.capitalize())
             else:
                 self.log.info(errors.capitalize())
-        return errors
+        return errors.split("\n")
 
     def get_logs(self):
         """
@@ -703,7 +703,10 @@ class Visitech:
         until projection is complete.
         """
         self.log.info(
-            "Exposing for %s ms at power setting %s. Repeat %s", exposure, power, repeats,
+            "Exposing for %s ms at power setting %s. Repeat %s",
+            exposure,
+            power,
+            repeats,
         )
         self.set_led_amplitude(power)
         if repeats == 0:  # if continuous display is desired

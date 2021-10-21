@@ -613,6 +613,7 @@ class PrintControl:
         self.printing_stopped.clear()
         self.printing_paused.clear()
         self.visitech.get_sticky_errors(warn=False)
+        suppress_visitech_ocp_error = True
         self.layer_map = self.generate_layer_map()
         print_start_time = datetime.now()
 
@@ -689,6 +690,15 @@ class PrintControl:
                 self.visitech.perform_exposure(exposure_time_ms)
                 self.write_to_event_log("Finish Exposure")
                 time.sleep(settings["Wait after exposure (ms)"] / 1000)
+
+                # Suppress the first Visitech OCP error. This appears to always be
+                # triggered on the first exposure of each print job. It would be better
+                # to figure out why this happens in the hardware and fix it there.
+                if suppress_visitech_ocp_error:
+                    suppress_visitech_ocp_error = False  # only do this once per print
+                    for e in self.visitech.get_sticky_errors(warn=False):
+                        if e.lower() != "led over current protection triggered":
+                            log.warning("Visitech error: %s", e)  # report other errors
                 post_exposure_status = self.visitech.read_all_status()
 
                 # fix focus if this exposure was defocused
