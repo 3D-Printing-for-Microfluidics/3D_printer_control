@@ -363,7 +363,9 @@ class PrintControl:
                 socketio.emit("loadcell_graph_clear", namespace="/printing")
                 self.loadcell_thread = threading.Thread(target=self.loadcell_graph_loop)
                 self.loadcell_thread.start()
-            log.info("Loadcell force (pre-step 1): %s", self.loadcell.get_current_force())
+            log.debug(
+                "Loadcell force (pre-step 1): %s", self.loadcell.get_current_force()
+            )
             self.galil.goToZmin()
             time.sleep(0.1)
             self.planarized_position = self.galil.bottom_position
@@ -371,21 +373,19 @@ class PrintControl:
                 "loadcell_planarization_force"
             ]
             if self.move_bp_to_force(target_force, 5) is None:
-                log.error("Could not move to target force.")
+                log.error("Did not reach target planarization force.")
                 return
             self.print_position = self.galil.cntsToMm(self.planarized_position)
             time.sleep(0.5)
-            log.info(
-                "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
-            )
+            log.info("Loadcell force after step 1: %s", self.loadcell.get_current_force())
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
         """Raise the build platform to begin printing."""
         if config_dict["loadcell_settings"]["loadcell_planarization_enabled"]:
             if self.state == "planarizing":
-                log.info(
-                    "Loadcell force (pre-step 2): %s", self.loadcell.get_current_force()
+                log.debug(
+                    "Loadcell force after step 2: %s", self.loadcell.get_current_force()
                 )
                 self.planarization_step_3()
 
@@ -415,7 +415,9 @@ class PrintControl:
                 last_no_fail_force = self.loadcell.get_current_force()
             start_force = self.loadcell.get_current_force()
         self.galil.stopJog()
-        log.debug("Loadcell force: %s", self.loadcell.get_current_force())
+        log.info(
+            "Loadcell force post planarization: %s", self.loadcell.get_current_force()
+        )
         log.debug("Loadcell position: %s", self.planarized_position)
         return count
 
@@ -430,12 +432,12 @@ class PrintControl:
         target_force = config_dict["loadcell_settings"]["loadcell_print_start_force"]
         first_count = self.move_bp_to_force(target_force + 5, -0.25)
         if first_count is None:
-            log.error("Loadcell planarization failed. (Check build platform screw)")
+            log.error("Loadcell planarization failed. Check build platform screw.")
             return
         time.sleep(0.010)
         second_count = self.move_bp_to_force(target_force, -0.05)
         if second_count is None:
-            log.error("Loadcell planarization failed. (Check build platform screw)")
+            log.error("Loadcell planarization failed. Check build platform screw.")
             return
         count = first_count + second_count
         self.planarized_position = self.galil.getPosition()
