@@ -383,9 +383,10 @@ class PrintControl:
     @run_in_thread("planarized", "Planarization Step 2")
     def planarizationStep2(self):
         """Raise the build platform to begin printing."""
-        if self.state == "planarizing":
-            log.info("Loadcell force (pre-step 2): %s", self.loadcell.get_current_force())
-            self.loadcellPlanarization()
+        pass
+        # if self.state == "planarizing":
+        #     log.info("Loadcell force (pre-step 2): %s", self.loadcell.get_current_force())
+        #     self.loadcellPlanarization()
 
     def loadcellPlanarization(self):
         # get initial force and position
