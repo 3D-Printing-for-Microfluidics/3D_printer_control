@@ -344,9 +344,19 @@ class PrintControl:
     def galil_setup_thread(self):
         """Initialize and home Galil controller"""
         self.galil.connect()
-        self.galil.motorOn()
+
+        self.galil.motorOn(axis="X")
+        self.galil.motorOn(axis="Y")
+        self.galil.motorOn(axis="Z")
+        self.galil.motorOn(axis="BP")
+
         self.galil.home()
-        self.galil.goToZmax()
+
+        self.galil.absMove(cnts=-4800000, speed=100, axis="X")
+        self.galil.absMove(cnts=-1350000, speed=100, axis="Y")
+        self.galil.absMove(mm=self.focused_position / 1000, speed=100, axis="Z")
+        self.galil.goToZmax(axis="BP")
+        # self.galil.absMove(cnts=7232000, speed=100, axis="X")
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarizationStep1(self):
