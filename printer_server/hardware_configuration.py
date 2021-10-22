@@ -2,7 +2,6 @@ import logging
 from printer_server.drivers.screen import ScreenThread
 from printer_server.drivers.galil import Galil, Galil_dummy
 from printer_server.drivers.visitech import Visitech, Visitech_dummy
-from printer_server.drivers.kdc101 import KDC101, KDC101_dummy
 from printer_server.drivers.tiptilt import TipTilt, TipTilt_dummy
 from printer_server.drivers.loadcell import LoadCell, Loadcell_dummy
 
@@ -38,7 +37,6 @@ class Printer3D:
         if dummy:
             self.galil = Galil_dummy()
             self.visitech = Visitech_dummy()
-            self.kdc = KDC101_dummy()
             self.tiptilt = TipTilt_dummy(verbose=True)
             self.loadcell = Loadcell_dummy()
         else:
@@ -49,7 +47,6 @@ class Printer3D:
                 calibration_position=griffin_calibration_position,
             )
             self.visitech = Visitech(log_level=default_log_level)
-            self.kdc = KDC101(log_level=default_log_level)
             self.tiptilt = TipTilt(hwid=tiptilt_hwid, log_level=default_log_level)
             self.loadcell = LoadCell(
                 hwid=loadcell_hwid,

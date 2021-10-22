@@ -149,7 +149,6 @@ class PrintControl:
         # hardware handles
         self.galil = driver_handles.galil
         self.visitech = driver_handles.visitech
-        self.kdc = driver_handles.kdc
         self.tiptilt = driver_handles.tiptilt
         self.loadcell = driver_handles.loadcell
         self.screen = None
@@ -308,7 +307,7 @@ class PrintControl:
 
     def change_focus(self, pos):
         self.write_to_event_log("Start Distance Movement")
-        self.kdc.move(pos, relative=False)
+        self.galil.absMove(mm=pos / 1000, speed=25, axis="Z")
         self.write_to_event_log("Finish Distance Movement")
 
     def connect(self):
@@ -323,28 +322,17 @@ class PrintControl:
             self.tiptilt.connect()
             self.loadcell.connect()
 
-            kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
             galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
             screen_thread = threading.Thread(target=driver_handles.screen.start, args=[])
             visitech_thread = threading.Thread(target=self.visitech.connect, args=[])
-            kdc_thread.start()
             galil_thread.start()
             screen_thread.start()
             visitech_thread.start()
-            kdc_thread.join()
             galil_thread.join()
             screen_thread.join()
             visitech_thread.join()
-            self.screen = driver_handles.screen.screen
 
             log.info("Printer initialized, all hardware ready.")
-
-    def kdc_setup_thread(self):
-        """Initialize and home ThorLabs stage"""
-        self.kdc.connect()
-        if not self.kdc.homed:
-            self.kdc.home()
-            self.kdc.move(self.focused_position, relative=False)
 
     def galil_setup_thread(self):
         """Initialize and home Galil controller"""
@@ -631,7 +619,7 @@ class PrintControl:
                 power = settings["Light engine power setting"]
                 defocus_um = settings["Relative focus position (um)"]
 
-                layer_start_position = self.kdc.getCurrentPos()
+                layer_start_position = int(self.galil.cntsToMm(self.galil.getPosition(axis="Z")) * 1000)
                 if defocus_um != 0:
                     kdc_thread = threading.Thread(
                         target=self.change_focus,
@@ -657,7 +645,7 @@ class PrintControl:
                 visitech_thread.join()
 
                 # do the exposure
-                position_during_exposure = self.kdc.getCurrentPos()
+                position_during_exposure = int(self.galil.cntsToMm(self.galil.getPosition(axis="Z")) * 1000)
                 pre_exposure_status = self.visitech.read_all_status()
                 time.sleep(settings["Wait before exposure (ms)"] / 1000)
                 self.write_to_event_log("Start Exposure")
@@ -676,7 +664,7 @@ class PrintControl:
                     "exposure time (ms)": exposure_time_ms,
                     "layer starting position": layer_start_position,
                     "position during exposure": position_during_exposure,
-                    "post exposure position": self.kdc.getCurrentPos(),
+                    "post exposure position": int(self.galil.cntsToMm(self.galil.getPosition(axis="Z")) * 1000),
                     "pre exposure status": pre_exposure_status,
                     "post exposure status": post_exposure_status,
                 }

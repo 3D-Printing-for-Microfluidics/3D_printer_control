@@ -26,7 +26,6 @@ class External_Control:
 galil = driver_handles.galil
 visitech = driver_handles.visitech
 tiptilt = driver_handles.tiptilt
-kdc = driver_handles.kdc
 external_control_enable = External_Control()
 position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
 
@@ -41,7 +40,7 @@ def get_calibration_positions():
     message = {
         "tip": tiptilt.get_position("Tip"),
         "tilt": tiptilt.get_position("Tilt"),
-        "distance": kdc.getCurrentPos(),
+        "distance": int(galil.cntsToMm(galil.getPosition(axis="Z")) * 1000),
     }
     socketio.emit(
         "calibration_positions",
@@ -189,7 +188,10 @@ def moveCalibrationMotor(message):
         mode != "absolute"
     )  # convert mode to True/False, absolute is true, all else is false
     if axis == "Distance":
-        kdc.move(distance_um, relative=mode)
+        if not mode:
+            galil.absMove(mm=distance_um / 1000, speed=25, axis="Z")
+        else:
+            galil.relMove(mm=distance_um / 1000, speed=25, axis="Z")
     else:
         tiptilt.move(axis, distance_um, relative=mode, fast=fast)
     emit_calibration_positions(log=message["log"])
@@ -201,7 +203,7 @@ def homeCalibrationMotor(message):
 
     def func(axis):
         if axis == "Distance":
-            kdc.home()
+            pass
         else:
             tiptilt.home()
         emit_calibration_positions(log=True)
