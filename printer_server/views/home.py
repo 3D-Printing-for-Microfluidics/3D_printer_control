@@ -156,9 +156,10 @@ class PrintControl:
         # hardware handles
         self.galil = driver_handles.galil
         self.visitech = driver_handles.visitech
+        self.wintech = driver_handles.wintech
         self.tiptilt = driver_handles.tiptilt
         self.loadcell = driver_handles.loadcell
-        self.screen = None
+        self.screen = driver_handles.screen
 
         # loadcell graph variables
         self.loadcell_running = False
@@ -332,12 +333,15 @@ class PrintControl:
             galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
             screen_thread = threading.Thread(target=driver_handles.screen.start, args=[])
             visitech_thread = threading.Thread(target=self.visitech.connect, args=[])
+            wintech_thread = threading.Thread(target=self.wintech.connect, args=[])
             galil_thread.start()
             screen_thread.start()
             visitech_thread.start()
+            wintech_thread.start()
             galil_thread.join()
             screen_thread.join()
             visitech_thread.join()
+            wintech_thread.join()
 
             log.info("Printer initialized, all hardware ready.")
 
@@ -638,7 +642,9 @@ class PrintControl:
                 power = settings["Light engine power setting"]
                 defocus_um = settings["Relative focus position (um)"]
 
-                layer_start_position = int(self.galil.cntsToMm(self.galil.getPosition(axis="Z")) * 1000)
+                layer_start_position = int(
+                    self.galil.cntsToMm(self.galil.getPosition(axis="Z")) * 1000
+                )
                 if defocus_um != 0:
                     kdc_thread = threading.Thread(
                         target=self.change_focus,
@@ -664,7 +670,9 @@ class PrintControl:
                 visitech_thread.join()
 
                 # do the exposure
-                position_during_exposure = int(self.galil.cntsToMm(self.galil.getPosition(axis="Z")) * 1000)
+                position_during_exposure = int(
+                    self.galil.cntsToMm(self.galil.getPosition(axis="Z")) * 1000
+                )
                 pre_exposure_status = self.visitech.read_all_status()
                 time.sleep(settings["Wait before exposure (ms)"] / 1000)
                 self.write_to_event_log("Start Exposure")
@@ -683,7 +691,9 @@ class PrintControl:
                     "exposure time (ms)": exposure_time_ms,
                     "layer starting position": layer_start_position,
                     "position during exposure": position_during_exposure,
-                    "post exposure position": int(self.galil.cntsToMm(self.galil.getPosition(axis="Z")) * 1000),
+                    "post exposure position": int(
+                        self.galil.cntsToMm(self.galil.getPosition(axis="Z")) * 1000
+                    ),
                     "pre exposure status": pre_exposure_status,
                     "post exposure status": post_exposure_status,
                 }
