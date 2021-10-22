@@ -2,6 +2,7 @@ import logging
 from printer_server.drivers.screen import ScreenThread
 from printer_server.drivers.galil import Galil, Galil_dummy
 from printer_server.drivers.visitech import Visitech, Visitech_dummy
+from printer_server.drivers.wintech import Wintech
 from printer_server.drivers.tiptilt import TipTilt, TipTilt_dummy
 from printer_server.drivers.loadcell import LoadCell, Loadcell_dummy
 
@@ -44,7 +45,10 @@ tiptilt_hwid = "PID=16C0:0483 SER=3794660"
 
 class Printer3D:
     def __init__(self):
-        self.screen = ScreenThread(log_level=default_log_level)
+        self.screen = ScreenThread(
+            resolutions=((2560, 1600), (1920, 1080)), log_level=default_log_level
+        )
+        # self.screen = ScreenThread(log_level=default_log_level)
         if dummy:
             self.galil = Galil_dummy()
             self.visitech = Visitech_dummy()
@@ -58,6 +62,7 @@ class Printer3D:
                 calibration_position=griffin_calibration_position,
             )
             self.visitech = Visitech(log_level=default_log_level)
+            self.wintech = Wintech(log_level=default_log_level)
             self.tiptilt = TipTilt(hwid=tiptilt_hwid, log_level=default_log_level)
             self.loadcell = LoadCell(
                 hwid=loadcell_hwid,

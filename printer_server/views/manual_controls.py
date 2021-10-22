@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Control view."""
 import os
+from printer_server.drivers import wintech
 import threading
 from pathlib import Path
 from datetime import datetime
@@ -25,6 +26,7 @@ class External_Control:
 
 galil = driver_handles.galil
 visitech = driver_handles.visitech
+wintech = driver_handles.wintech
 tiptilt = driver_handles.tiptilt
 external_control_enable = External_Control()
 position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
@@ -70,6 +72,10 @@ blueprint = Blueprint(
 
 # Specify location of uploaded image and give default name
 imagePath = os.path.join(Config.UPLOAD_FOLDER, "calibration_images", "temp.png")
+imagePathWintech = os.path.join(
+    Config.UPLOAD_FOLDER, "calibration_images", "tempWintech.png"
+)
+
 
 def get_last_calibration_positions():
     """Return the last focused position for the distance axis from the
@@ -225,7 +231,7 @@ def lightEngineProject(message):
     ledPower = int(message["ledPower"])
     repeat = int(message["repeat"])
     exposure = int(message["exposure"])
-    driver_handles.screen.screen.draw(imagePath)
+    driver_handles.screen.draw(imagePath)
     visitech.project(exposure, ledPower, repeat)
     socketio.emit("light_engine_start_complete", namespace="/manual", broadcast=True)
 
@@ -261,4 +267,53 @@ def handleUpload():
             except (OSError, FileNotFoundError):  # File has big issues
                 pass
     socketio.emit("calibration_image_bad", namespace="/manual", broadcast=True)
+    return ""
+
+
+@socketio.on("light_engine_stop_wintech", namespace="/manual")
+def lightEngineStopWintech():
+    """Turn off the LED in the light engin."""
+    print("stop wintech")
+    wintech.stop()
+    socketio.emit(
+        "light_engine_stop_complete_wintech", namespace="/manual", broadcast=True
+    )
+
+
+@socketio.on("light_engine_start_wintech", namespace="/manual")
+def lightEngineProjectWintech(message):
+    """Project the image with the given settings."""
+    print("start wintech")
+    ledPower = int(message["ledPower"])
+    repeat = int(message["repeat"])
+    exposure = int(message["exposure"])
+    driver_handles.screen.draw(imagePathWintech, 1)
+    wintech.project(exposure, repeat, ledPower)
+    socketio.emit(
+        "light_engine_start_complete_wintech", namespace="/manual", broadcast=True
+    )
+
+
+@blueprint.route("handle-calibration-upload-wintech", methods=["POST"])
+def handleUploadWintech():
+    print("upload wintech")
+    if "file" in request.files:  # Check if the post request has the file part
+        file = request.files["file"]  # Get the file
+        if file.filename != "" and file:  # File part of request actually has a file
+            try:
+                with Image.open(file) as img:  # Open file as PIL object
+                    # Check imagePath format and mode
+                    if img.format == "PNG" and img.mode == "L":
+                        # Seek to the beginning of file (fixes bug in Werkzeug file I\O)
+                        file.stream.seek(0)
+                        file.save(imagePathWintech)  # save it to the server
+                        socketio.emit(
+                            "calibration_image_uploaded_wintech",
+                            namespace="/manual",
+                            broadcast=True,
+                        )
+                        return ""
+            except (OSError, FileNotFoundError):  # File has big issues
+                pass
+    socketio.emit("calibration_image_bad_wintech", namespace="/manual", broadcast=True)
     return ""
