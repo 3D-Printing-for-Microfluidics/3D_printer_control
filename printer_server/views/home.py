@@ -388,6 +388,9 @@ class PrintControl:
                     "Loadcell force after step 2: %s", self.loadcell.get_current_force()
                 )
                 self.planarization_step_3()
+        else:
+            self.planarized_position = self.galil.getPosition()
+            self.print_position = self.galil.cntsToMm(self.planarized_position)
 
     def move_bp_to_force(self, force, speed):
         """Move the build platform until the target force is achieved.
