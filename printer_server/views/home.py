@@ -5,7 +5,7 @@ import shutil
 import logging
 import threading
 from pathlib import Path
-from zipfile import ZipFile
+from zipfile import ZipFile, BadZipFile
 from datetime import datetime
 from functools import wraps
 import numpy as np
@@ -50,11 +50,14 @@ def get_last_focused_position():
 
 def has_bad_metadata(filename):
     """Check to see if the zip file has a hidden __MACOSX folder."""
-    with ZipFile(filename, "r") as input_file:
-        for item in input_file.namelist():
-            if item.startswith("__MACOSX/"):
-                return True
-    return False
+    try:
+        with ZipFile(filename, "r") as input_file:
+            for item in input_file.namelist():
+                if item.startswith("__MACOSX/"):
+                    return True
+        return False
+    except BadZipFile:
+        return False
 
 
 def clean_uploaded_file(filename):

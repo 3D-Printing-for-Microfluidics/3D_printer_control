@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from zipfile import ZipFile
+from zipfile import ZipFile, BadZipFile
 from tempfile import TemporaryDirectory
 from jsonschema import Draft7Validator
 from jsonschema.exceptions import ValidationError
@@ -12,15 +12,21 @@ def validate_v02(print_file):
     as JSON. If an error is detected, a ValueError is raised with
     appropriate information.
     """
-    with ZipFile(print_file, "r") as zip_file_handle, TemporaryDirectory() as temp_dir:
-        temp_dir = Path(temp_dir)
-        zip_file_handle.extractall(temp_dir)
-        print_settings = check_for_unique_print_settings(temp_dir)
-        check_version(print_settings)
-        validate_against_schema(print_settings, "schema_v0.2.json")
-        check_slices_folder_exists(zip_file_handle, print_settings)
-        check_referenced_images_exist(print_settings, temp_dir)
-        return print_settings
+    try:
+        with ZipFile(
+            print_file, "r"
+        ) as zip_file_handle, TemporaryDirectory() as temp_dir:
+            temp_dir = Path(temp_dir)
+            zip_file_handle.extractall(temp_dir)
+            print_settings = check_for_unique_print_settings(temp_dir)
+            check_version(print_settings)
+            validate_against_schema(print_settings, "schema_v0.2.json")
+            check_slices_folder_exists(zip_file_handle, print_settings)
+            check_referenced_images_exist(print_settings, temp_dir)
+            return print_settings
+    except BadZipFile:
+        msg = "File is not a .zip file."
+        raise ValueError(msg)
 
 
 def read_json(path_to_file):
