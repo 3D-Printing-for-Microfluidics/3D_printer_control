@@ -400,24 +400,32 @@ class PrintControl:
         force - Target force.
         speed - Speed in mm/sec. Negative speed means move up.
         """
+        force_over_speed_target = 2.0
+        down_modifier = 1.0
+        if speed > 0:
+            # set because on down movements screw is loose
+            # and the change in force/time is lower
+            down_modifier = 50.0
+
         start_force = self.loadcell.get_current_force()
-        last_no_fail_force = self.loadcell.get_current_force()
+        forces = []
         count = 0
-        fail_count = 0
         self.galil.startJog(speed=speed)
         while (speed < 0 and start_force > force) or (speed > 0 and start_force < force):
             time.sleep(0.025)
             curr_force = self.loadcell.get_current_force()
             count += 1
             log.debug("Loadcell force: %s", curr_force)
-            if abs(last_no_fail_force - curr_force) < 0.20:
-                if fail_count >= 25:
-                    self.galil.stopJog()
-                    return None
-                fail_count += 1
-            else:
-                fail_count = 0
-                last_no_fail_force = self.loadcell.get_current_force()
+            forces.append(curr_force)
+            if len(forces) <= 4:
+                continue
+            forces.pop(0)
+
+            if (abs(forces[0] - forces[-1]) / abs(speed)) < (
+                force_over_speed_target / down_modifier
+            ):
+                self.galil.stopJog()
+                return None
             start_force = self.loadcell.get_current_force()
         self.galil.stopJog()
         log.info(
