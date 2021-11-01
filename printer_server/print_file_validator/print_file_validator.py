@@ -58,6 +58,13 @@ def check_slices_folder_exists(zip_file_handle, print_settings):
 
 def check_version(print_settings):
     """Check the version of print settings file. Should be '0.2'."""
+    if "Header" not in print_settings:
+        msg = "'Header' missing from json file."
+        raise ValueError(msg)
+    if "Schema version" not in print_settings["Header"]:
+        msg = f"Missing schema version.\n"
+        msg += "  Check 'Header' -> 'Schema Version'"
+        raise ValueError(msg)
     if print_settings["Header"]["Schema version"] != "0.2":
         msg = "File is not version 0.2. Use converter to convert to version 0.2"
         raise ValueError(msg)
