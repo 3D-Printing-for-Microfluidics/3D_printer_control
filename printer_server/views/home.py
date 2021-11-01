@@ -315,8 +315,10 @@ class PrintControl:
         self.kdc.move(pos, relative=False)
         self.write_to_event_log("Finish Distance Movement")
 
-    def connect(self):
-        socketio.emit(self.state, dict(), namespace="/printing")
+    def connect(self, room):
+        socketio.emit(
+            self.state, dict(), namespace="/printing", broadcast=False, room=room
+        )
 
     @run_in_thread("initialized", "Initialize")
     def initialize(self):
@@ -858,7 +860,7 @@ def index():
 
 @socketio.on("connect", namespace="/printing")
 def connect():
-    print_control.connect()
+    print_control.connect(request.sid)
 
 
 @socketio.on("initialize", namespace="/printing")
