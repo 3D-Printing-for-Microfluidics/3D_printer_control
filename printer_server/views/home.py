@@ -477,6 +477,14 @@ class PrintControl:
             self.printing_paused.set()
             self.print_thread.join()
             self.paused_position = self.galil.getPosition()
+            defaults_layer_settings = self.print_settings.get("Default layer settings")
+            default_position_settings = defaults_layer_settings.get("Position settings")
+            self.galil.absMove(
+                mm=self.print_position - default_position_settings["Distance up (mm)"],
+                speed=default_position_settings["BP up speed (mm/sec)"],
+                acceleration=default_position_settings["BP up acceleration (mm/sec^2)"],
+                wait_for_settling=False,
+            )
             self.galil.goToZmax()
 
     def resume(self):
@@ -766,6 +774,14 @@ class PrintControl:
 
         # if print is finished, move build platform back to top
         if not self.printing_paused.is_set():
+            defaults_layer_settings = self.print_settings.get("Default layer settings")
+            default_position_settings = defaults_layer_settings.get("Position settings")
+            self.galil.absMove(
+                mm=self.print_position - default_position_settings["Distance up (mm)"],
+                speed=default_position_settings["BP up speed (mm/sec)"],
+                acceleration=default_position_settings["BP up acceleration (mm/sec^2)"],
+                wait_for_settling=False,
+            )
             self.galil.goToZmax()
             time.sleep(1.0)
             self.loadcell.stop()
