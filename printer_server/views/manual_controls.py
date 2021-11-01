@@ -36,13 +36,24 @@ def write_to_position_log(message):
         f.write("{} {}\n".format(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), message))
 
 
-@socketio.on("get_calibration_positions", namespace="/manual")
 def get_calibration_positions():
     message = {
         "tip": tiptilt.get_position("Tip"),
         "tilt": tiptilt.get_position("Tilt"),
         "distance": kdc.getCurrentPos(),
     }
+
+    if message["tip"] is "undef":
+        last_positions = get_last_calibration_positions()
+        message["tip"] = last_positions[0]
+        message["tilt"] = last_positions[1]
+
+    return message
+
+
+@socketio.on("get_calibration_positions", namespace="/manual")
+def get_calibration_positions_socket():
+    message = get_calibration_positions()
     socketio.emit(
         "calibration_positions",
         message,
@@ -54,11 +65,6 @@ def get_calibration_positions():
 
 def emit_calibration_positions(log=False):
     message = get_calibration_positions()
-
-    if message["tip"] is "undef":
-        last_positions = get_last_calibration_positions()
-        message["tip"] = last_positions[0]
-        message["tilt"] = last_positions[1]
 
     if log:
         write_to_position_log(message)
@@ -78,6 +84,7 @@ blueprint = Blueprint(
 # Specify location of uploaded image and give default name
 imagePath = os.path.join(Config.UPLOAD_FOLDER, "calibration_images", "temp.png")
 
+
 def get_last_calibration_positions():
     """Return the last focused position for the distance axis from the
     position log file.
@@ -89,7 +96,12 @@ def get_last_calibration_positions():
             last_line = line.rstrip()
     for char in ["{", "}", ":", "'", ","]:
         last_line = last_line.replace(char, "")
-    return [float(last_line.split(" ")[-5]),float(last_line.split(" ")[-3]), float(last_line.split(" ")[-1])]
+    return [
+        float(last_line.split(" ")[-5]),
+        float(last_line.split(" ")[-3]),
+        float(last_line.split(" ")[-1]),
+    ]
+
 
 # Decorator to handle navigation to calibration page
 @blueprint.route("/manual")

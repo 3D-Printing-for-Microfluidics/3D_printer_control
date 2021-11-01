@@ -12,6 +12,8 @@ import numpy as np
 from PIL import Image
 from flask import Blueprint, request, render_template
 
+from printer_server.views.manual_controls import get_calibration_positions
+
 from printer_server.settings import Config
 from printer_server.hardware_configuration import config_dict
 from printer_server.hardware_configuration import driver_handles
@@ -581,6 +583,14 @@ class PrintControl:
         async_file_hander.start()
         self.galil.set_log_file(self.movement_log)
         self.loadcell.set_log_file(self.loadcell_log)
+
+        position = get_calibration_positions()
+        dist = position["distance"]
+        self.write_to_event_log(f"Distance: {dist}")
+        tip = position["tip"]
+        self.write_to_event_log(f"Tip: {tip}")
+        tilt = position["tilt"]
+        self.write_to_event_log(f"Tilt: {tilt}")
 
         # update frontend progress bar
         self.state = "printing"
