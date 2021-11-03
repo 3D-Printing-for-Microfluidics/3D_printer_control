@@ -478,16 +478,6 @@ class PrintControl:
         if self.state == "printing":
             self.printing_paused.set()
             self.print_thread.join()
-            self.paused_position = self.galil.getPosition()
-            defaults_layer_settings = self.print_settings.get("Default layer settings")
-            default_position_settings = defaults_layer_settings.get("Position settings")
-            self.galil.absMove(
-                mm=self.print_position - default_position_settings["Distance up (mm)"],
-                speed=default_position_settings["BP up speed (mm/sec)"],
-                acceleration=default_position_settings["BP up acceleration (mm/sec^2)"],
-                wait_for_settling=False,
-            )
-            self.galil.goToZmax()
 
     def resume(self):
         """Resume a paused print."""
@@ -508,8 +498,8 @@ class PrintControl:
         log.info("Print resumed.")
         socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
         # resume printing in a new thread
-        app = db.get_app()
-        self.print_thread = threading.Thread(target=self.print_worker, args=[app])
+        self.app = db.get_app()
+        self.print_thread = threading.Thread(target=self.print_worker)
         self.print_thread.start()
 
     @run_in_thread("stopped", "Stop Printing")
@@ -520,9 +510,12 @@ class PrintControl:
         cannot resume and finish the previous print job.
         """
         if self.state in ["printing", "paused"]:
-            log.info("Print stopped.")
             self.printing_stopped.set()
-            self.print_thread.join()
+            if self.printing_paused.is_set():
+                self.finish_print()
+            else:
+                self.print_thread.join()
+            log.info("Print stopped.")
 
     def start(self, job_id):
         """Do all preparatory work for a print, then start the printing
@@ -623,23 +616,50 @@ class PrintControl:
         log.info(msg["text"])
         socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
 
+        self.print_start_time = datetime.now()
+
         # start printing process in a new thread
-        app = db.get_app()
-        self.print_thread = threading.Thread(target=self.print_worker, args=[app])
+        self.app = db.get_app()
+        self.print_thread = threading.Thread(target=self.print_worker)
         self.print_thread.start()
 
-    def print_worker(self, app):
+    def finish_print(self):
+        self.loadcell.stop()
+        self.loadcell_running = False
+        self.loadcell_thread = None
+        socketio.emit("loadcell_graph_clear", namespace="/printing")
+
+        # update fontend, zip logs into archive in print_history, and update db entrty
+        with self.app.app_context():
+            latest_record = PrintRecord.query.order_by(PrintRecord.id.desc()).first()
+            latest_record.end_time = datetime.now()
+            if not self.printing_stopped.is_set():
+                latest_record.completed = True
+                self.state = "completed"
+                msg = {
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                    "text": f"Printing completed. Print took {self.print_duration}",
+                }
+                log.info(msg["text"])
+                self.write_to_event_log(msg["text"])
+                socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
+            latest_record.save()
+            shutil.make_archive(
+                self.print_history / Path(latest_record.zip_filename[:-4]),
+                "zip",
+                self.current_job,
+            )
+
+        self.galil.set_log_file(None)
+        self.loadcell.set_log_file(None)
+        async_file_hander.finish()
+
+    def print_worker(self):
         """Do a 3D print.
 
         This method should not be called from the main thread since
         it will block the main thread until it is done and cannot be
         interrupted.
-
-        :param app: The current flask app object. We have to get app in
-                    the main thread, and pass it to the working thread
-                    so we can use app_context to interact with the
-                    database.
-                    See http://flask-sqlalchemy.pocoo.org/contexts/.
         """
         if self.state != "printing":
             return
@@ -649,7 +669,6 @@ class PrintControl:
         self.visitech.get_sticky_errors(warn=False)
         suppress_visitech_ocp_error = True
         self.layer_map = self.generate_layer_map()
-        print_start_time = datetime.now()
 
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
@@ -772,49 +791,24 @@ class PrintControl:
         # always turn off the Visitech
         self.visitech.stop_sequencer()
         self.screen.clear()
-        print_duration = datetime.now() - print_start_time
+        self.print_duration = datetime.now() - self.print_start_time
 
-        # if print is finished, move build platform back to top
+        if self.printing_paused.is_set():
+            self.paused_position = self.galil.getPosition()
+
+        defaults_layer_settings = self.print_settings.get("Default layer settings")
+        default_position_settings = defaults_layer_settings.get("Position settings")
+        self.galil.absMove(
+            mm=self.print_position - default_position_settings["Distance up (mm)"],
+            speed=default_position_settings["BP up speed (mm/sec)"],
+            acceleration=default_position_settings["BP up acceleration (mm/sec^2)"],
+            wait_for_settling=False,
+        )
+        self.galil.goToZmax()
+        time.sleep(1.0)
+
         if not self.printing_paused.is_set():
-            defaults_layer_settings = self.print_settings.get("Default layer settings")
-            default_position_settings = defaults_layer_settings.get("Position settings")
-            self.galil.absMove(
-                mm=self.print_position - default_position_settings["Distance up (mm)"],
-                speed=default_position_settings["BP up speed (mm/sec)"],
-                acceleration=default_position_settings["BP up acceleration (mm/sec^2)"],
-                wait_for_settling=False,
-            )
-            self.galil.goToZmax()
-            time.sleep(1.0)
-            self.loadcell.stop()
-            self.loadcell_running = False
-            self.loadcell_thread = None
-            socketio.emit("loadcell_graph_clear", namespace="/printing")
-
-            # update fontend, zip logs into archive in print_history, and update db entrty
-            with app.app_context():
-                latest_record = PrintRecord.query.order_by(PrintRecord.id.desc()).first()
-                latest_record.end_time = datetime.now()
-                if not self.printing_stopped.is_set():
-                    latest_record.completed = True
-                    self.state = "completed"
-                    msg = {
-                        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-                        "text": f"Printing completed. Print took {print_duration}",
-                    }
-                    log.info(msg["text"])
-                    self.write_to_event_log(msg["text"])
-                    socketio.emit(self.state, msg, namespace="/printing", broadcast=True)
-                latest_record.save()
-                shutil.make_archive(
-                    self.print_history / Path(latest_record.zip_filename[:-4]),
-                    "zip",
-                    self.current_job,
-                )
-
-        self.galil.set_log_file(None)
-        self.loadcell.set_log_file(None)
-        async_file_hander.finish()
+            self.finish_print()
 
     @property
     def isBusy(self):
