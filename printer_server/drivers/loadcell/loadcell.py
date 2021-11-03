@@ -118,14 +118,18 @@ class LoadCell(serial.Serial):
         """
         Pauses the loadcell and loadcell thread.
         """
-        self.running = False
-        self.thread.join()
-        self.thread = threading.Thread(target=self.loop)
-
         try:
             self.loadcell_pause()
         except serial.SerialException:
             pass
+
+        if self.running:
+            self.running = False
+            self.thread.join()
+            self.thread = threading.Thread(target=self.loop)
+
+        self.receiveAll()
+
         self.log.info("Loadcell paused")
 
     def stop(self):
@@ -226,16 +230,18 @@ class LoadCell(serial.Serial):
         """
         Pause sampling
         """
-        return self.send("p")
+        try:
+            self.send("p", recieve=False)
+        except serial.SerialException:
+            pass
+        return
 
     def loadcell_stop(self):
         """
         Stop sampling
         """
         try:
-            cmd = "e"
-            self.log.debug("Sent: '%s'", cmd)
-            self.write(bytes(cmd + "\n", encoding="ascii"))  # write to serial tx buffer
+            self.send("e", recieve=False)
         except serial.SerialException:
             pass
         return
@@ -247,15 +253,17 @@ class LoadCell(serial.Serial):
         self.log.debug("Frequency set to '%s'", freq_hz)
         return self.send("f {}".format(freq_hz)), freq_hz
 
-    def send(self, cmd):
+    def send(self, cmd, recieve=True):
         """
         Sends serial command to the loadcell device
         """
         self.log.debug("Sent: '%s'", cmd)
         self.write(bytes(cmd + "\n", encoding="ascii"))  # write to serial tx buffer
-        response = self.receive()
-        self.log.debug("Response: '%s'", response)
-        return response  # return the response to the command
+        if recieve:
+            response = self.receive()
+            self.log.debug("Response: '%s'", response)
+            return response  # return the response to the command
+        return
 
     def receive(self):
         """
