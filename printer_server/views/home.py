@@ -750,7 +750,7 @@ class PrintControl:
                 if suppress_visitech_ocp_error:
                     suppress_visitech_ocp_error = False  # only do this once per print
                     for e in self.visitech.get_sticky_errors(warn=False):
-                        if e.lower() != "led over current protection triggered":
+                        if e and e.lower() != "led over current protection triggered":
                             log.warning("Visitech error: %s", e)  # report other errors
                 post_exposure_status = self.visitech.read_all_status()
 
