@@ -84,7 +84,7 @@ class SocketIOHandler(logging.Handler):
         super().__init__()
 
     def emit(self, record):
-        if record.shortname == "engineio":
+        if record.shortname == "engineio" or record.shortname == "werkzeug":
             return  # skip alert flashing for anything from engineio
         try:
             msg = fmt % {
