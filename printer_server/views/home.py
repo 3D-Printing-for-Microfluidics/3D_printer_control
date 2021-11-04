@@ -269,7 +269,7 @@ class PrintControl:
 
                 msg = {"data": data}
                 socketio.emit("loadcell_graph_data", msg, namespace="/printing")
-                time.sleep(0.025)
+                time.sleep(0.05)
 
     def move_build_platform(self, position_settings, layer):
         """Perform the build platform movements for a layer according to

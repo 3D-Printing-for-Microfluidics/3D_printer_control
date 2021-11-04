@@ -25,7 +25,9 @@ class LoadCell(serial.Serial):
         self.intercept = config_dict["calibration_intercept"]
         self.slope = config_dict["calibration_slope"]
 
-        self.currentData = {"index": 0, "force": 0.0}
+        self.currentData = []
+        self.currentIndex = -1
+        self.currentForce = 0
         self.start_time = 0
         self.running = False
         self.freq = 1000
@@ -161,24 +163,19 @@ class LoadCell(serial.Serial):
         """
         Get all current loadcell data
         """
-        data = self.get_current_data()
-        if data == 0:
-            return 0
-        return data["force"]
+        return self.currentForce
 
     def get_current_loadcell_index(self):
         """
         Get all current loadcell data
         """
-        data = self.get_current_data()
-        if data == 0:
-            return -1
-        return data["index"]
+        return self.currentIndex
 
     def loop(self):
         """
         Threading loop
         """
+        front_end_counter = 0
         while self.running:
             try:
                 index = int.from_bytes(
@@ -203,11 +200,21 @@ class LoadCell(serial.Serial):
                         f"{sys_time},{loadcell_time},{index},{data},{force}\n",
                     )
 
-                self.currentData = {
-                    "timestamp": time.timestamp() * 1000,
-                    "index": index,
-                    "force": force,
-                }
+                front_end_counter += 1
+                if front_end_counter >= 10:
+                    front_end_counter = 0
+
+                    if len(self.currentData) >= 5:
+                        self.currentData.pop(0)
+                    self.currentData.append(
+                        {
+                            "timestamp": time.timestamp() * 1000,
+                            "force": force,
+                        }
+                    )
+
+                self.currentForce = force
+                self.currentIndex = index
             except serial.SerialException:
                 self.running = False
             except ValueError:
