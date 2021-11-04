@@ -29,7 +29,8 @@ function draw_loadcell_graph() {
         xaxis: {
             linecolor: 'white',
             linewidth: 1,
-            mirror: true
+            mirror: true,
+            showticklabels: false
         },
         yaxis: {
             ticksuffix: "",
@@ -69,19 +70,21 @@ function draw_loadcell_graph() {
 function update_loop(message) {
     let data = message.data;
     if (data != 0) {
+        data.forEach(
+            element => {
+                let time = new Date(element.timestamp);
+                let force = element.force;
 
-        let time = new Date(data.timestamp);
-        let force = data.force;
-
-        Plotly.extendTraces('loadcell-data',
-            {
-                y: [[force]],
-                x: [[time]]
-            },
-            [0], 200)
+                Plotly.extendTraces('loadcell-data',
+                    {
+                        y: [[force]],
+                        x: [[time]]
+                    },
+                    [0], 400)
+            }
+        )
     }
 }
-
 
 $("#create-job").on("click", function () {
     if ($("#collapseUpload").hasClass("show")) {
@@ -272,6 +275,26 @@ $(document).ready(function () {
         this.value = null
     });
 
+    var show_loadcell = function (btn) {
+        $("#toggle-loadcell").text("Hide loadcell data");
+        $("#collapseLoadcell").addClass('show');
+        socket.emit("request_loadcell_data");
+    };
+    
+    var hide_loadcell = function (btn) {
+        $("#toggle-loadcell").text("Show loadcell data");
+        $("#collapseLoadcell").removeClass('show');
+        socket.emit("unrequest_loadcell_data");
+    };
+
+    $("#toggle-loadcell").on("click", function () {
+        if ($("#collapseLoadcell").hasClass("show")) {
+            hide_loadcell();
+        } else {
+            show_loadcell();
+        }
+    });
+
     // Handle the submit button.
     $("#upload-btn").on("click", function (e) {
         // If the user has JS disabled, none of this code is running but the
@@ -336,12 +359,14 @@ $(document).ready(function () {
     socket.on("stopped", function (message) {
         $("#printer-state").text("Stopped");
         show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
+        hide_loadcell();
         $("#print-progress").addClass("d-none");
     });
 
     socket.on("completed", function (message) {
         $("#printer-state").text("Completed");
         show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
+        hide_loadcell();
         $("#print-progress").addClass("d-none");
     });
 
@@ -364,6 +389,10 @@ $(document).ready(function () {
     $("#print-alert-confirm").click(function () {
         var operation = $("#print-alert-title").text();
         var msg;
+
+        if (operation === "Start" || operation === "Planarization Step 1" || operation === "Planarization Step 2" || operation === "Resume") {
+            show_loadcell();
+        }
 
         if (operation === "Start") {
             msg = { job: start_job_id };

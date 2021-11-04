@@ -11,6 +11,7 @@ from functools import wraps
 import numpy as np
 from PIL import Image
 from flask import Blueprint, request, render_template
+from flask_socketio import join_room, leave_room
 
 from printer_server.views.manual_controls import get_calibration_positions
 
@@ -268,7 +269,9 @@ class PrintControl:
                 data = self.loadcell.get_current_data()
 
                 msg = {"data": data}
-                socketio.emit("loadcell_graph_data", msg, namespace="/printing")
+                socketio.emit(
+                    "loadcell_graph_data", msg, namespace="/printing", room="loadcell"
+                )
                 time.sleep(0.05)
 
     def move_build_platform(self, position_settings, layer):
@@ -903,6 +906,16 @@ def stop(message):
 # pylint: disable=unused-argument
 def shutdown(message):
     print_control.shutdown()
+
+
+@socketio.on("request_loadcell_data", namespace="/printing")
+def join_loadcell_room():
+    join_room("loadcell")
+
+
+@socketio.on("unrequest_loadcell_data", namespace="/printing")
+def leave_loadcell_room():
+    leave_room("loadcell")
 
 
 @blueprint.route("handle-upload", methods=["POST"])

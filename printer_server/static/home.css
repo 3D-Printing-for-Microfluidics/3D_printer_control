@@ -17,6 +17,7 @@
 
 .loadcell-data {
     height: 250px;
+    width: 650px;
   }
 
 #print-message {
@@ -25,6 +26,11 @@
   overflow-y: auto;
   /* white-space: pre;
   font-family: "Lucida Console", Monaco, monospace; */
+}
+
+#collapseLoadcell {
+  margin-left: 0;
+  margin-right: 0;
 }
 
 pre {
