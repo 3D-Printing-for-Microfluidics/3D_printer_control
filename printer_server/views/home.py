@@ -860,6 +860,11 @@ def connect():
     print_control.connect(request.sid)
 
 
+@socketio.on("disconnect", namespace="/printing")
+def disconnect():
+    log.debug("Socket disconnected %s", request.sid)
+
+
 @socketio.on("initialize", namespace="/printing")
 # pylint: disable=unused-argument
 def initialize(message):

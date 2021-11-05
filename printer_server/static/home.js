@@ -269,6 +269,13 @@ $(document).ready(function () {
     // Set up the drag/drop zone.
     initDropbox();
 
+    // Make sure the socket is immediately disconnected on window reload or close
+    // This appears to work on Chrome and Edge but only partially on on Safari.
+    // On Safari, if the window is closed it works, but if it is reloaded you need to wait for the timeout
+    window.addEventListener('beforeunload', function (e) {
+        socket.disconnect();
+    });
+
     // Set up the handler for the file input box.
     $("#file-picker").on("change", function () {
         addFiles(this.files);
