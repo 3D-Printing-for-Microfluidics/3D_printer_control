@@ -157,7 +157,7 @@ class PrintControl:
         self.kdc = driver_handles.kdc
         self.tiptilt = driver_handles.tiptilt
         self.loadcell = driver_handles.loadcell
-        self.screen = None
+        self.screen = driver_handles.screen
 
         # loadcell graph variables
         self.loadcell_running = False
@@ -344,7 +344,6 @@ class PrintControl:
             galil_thread.join()
             screen_thread.join()
             visitech_thread.join()
-            self.screen = driver_handles.screen.screen
 
             log.info("Printer initialized, all hardware ready.")
 

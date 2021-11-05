@@ -241,7 +241,7 @@ def lightEngineProject(message):
     ledPower = int(message["ledPower"])
     repeat = int(message["repeat"])
     exposure = int(message["exposure"])
-    driver_handles.screen.screen.draw(imagePath)
+    driver_handles.screen.draw(imagePath)
     visitech.project(exposure, ledPower, repeat)
     socketio.emit("light_engine_start_complete", namespace="/manual", broadcast=True)
 
