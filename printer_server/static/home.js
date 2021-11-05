@@ -269,6 +269,24 @@ $(document).ready(function () {
     // Set up the drag/drop zone.
     initDropbox();
 
+    // After 60 minutes of inactivity, close socket and timeout web page
+    var event = 'click',
+        timer,
+        delay = 10000,
+        logout = function () {
+            document.removeEventListener(event, reset, false);
+            var content = 'This page has timed out. Please reload the page.';
+            document.getElementById('base-body').innerHTML = content; 
+            socket.disconnect();
+        },
+        reset = function () {
+            clearTimeout(timer);
+            timer = setTimeout(logout, 3600000);
+        };
+
+    document.addEventListener(event, reset, false);
+    reset();
+
     // Make sure the socket is immediately disconnected on window reload or close
     // This appears to work on Chrome and Edge but only partially on on Safari.
     // On Safari, if the window is closed it works, but if it is reloaded you need to wait for the timeout
