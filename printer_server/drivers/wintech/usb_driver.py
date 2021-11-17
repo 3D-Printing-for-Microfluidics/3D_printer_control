@@ -2,6 +2,7 @@
 
 import sys
 import time
+import atexit
 import usb.core
 import usb.util
 
@@ -48,6 +49,98 @@ def decodeResponse(buffer):
     return s
 
 
+def is_set(x, n):
+    """Returns True if bit n in x is set."""
+    return x & 2 ** n != 0
+
+
+def parse_hardware_status(hw_status):
+    """Print human readable codes as parsed form the hardware status."""
+    hw_status = int(hw_status)
+    if not is_set(hw_status, 0):
+        print("\tInternal initialization failed.")
+    if is_set(hw_status, 1):
+        print("\tIncompatible controller or DMD.")
+    if is_set(hw_status, 2):
+        print(
+            "\tMultiple overlapping bias or reset operations are accessing the same DMD block."
+        )
+    if is_set(hw_status, 3):
+        print("\tForced Swap Error occurred.")
+    if is_set(hw_status, 4):
+        print("\tSlave controller present and ready.")
+    if is_set(hw_status, 6):
+        print("\tSequencer has detected an error condition that caused an abort.")
+    if is_set(hw_status, 7):
+        print("\tSequencer detected an error.")
+
+
+def parse_system_status(sys_status):
+    """Print human readable codes as parsed form the system status."""
+    sys_status = int(sys_status)
+    if not is_set(sys_status, 0):
+        print("\t= Internal Memory Test failed.")
+
+
+def parse_main_status(main_status):
+    """Print human readable codes as parsed form the main status."""
+    main_status = int(main_status)
+    if is_set(main_status, 0):
+        print("\tDMD micromirrors are parked.")
+    # else:
+    #     print("\tDMD micromirrors are not parked.")
+    # if not is_set(main_status, 1):
+    #     print("\tSequencer is stopped.")
+    # else:
+    #     print("\tSequencer is running normally.")
+    if is_set(main_status, 2):
+        print("\tVideo is frozen (Displaying single frame).")
+    # else:
+    #     print("\tVideo is running (Normal frame change).")
+    if not is_set(main_status, 3):
+        print("\tExternal video source not locked.")
+    # else:
+    #     print("\tExternal video source locked.")
+    if not is_set(main_status, 4):
+        print("\tPort 1 video syncs not valid.")
+    # else:
+    #     print("\tPort 1 video syncs valid.")
+    # if is_set(main_status, 5):
+    #     print("\tPort 2 video syncs valid.")
+    # else:
+    #     print("\tPort 2 video syncs not valid.")
+
+
+def parse_error_code(code):
+    """Print a human readable error code. Prints 'Not defined.' if the
+    code is undefined.
+    """
+    code = int(code)
+    if code:
+        code = {
+            0: "No error.",
+            1: "Batch file checksum error.",
+            2: "Device failure.",
+            3: "Invalid command number.",
+            4: "Incompatible controller / DMD.",
+            5: "Command not allowed in current mode.",
+            6: "Invalid command parameter.",
+            7: "Item referred by the parameter is not present.",
+            8: "Out of resource (RAM / Flash).",
+            9: "Invalid BMP compression type.",
+            10: "Pattern bit number out of range.",
+            11: "Pattern BMP not present in flash.",
+            12: "Pattern dark time is out of range.",
+            13: "Signal delay parameter is out of range.",
+            14: "Pattern exposure time is out of range.",
+            15: "Pattern number is out of range.",
+            16: "Invalid pattern definition (errors other than 9-15).",
+            17: "Pattern image memory address is out of range.",
+            255: "Internal Error.",
+        }.get(code, "Not defined.")
+        print("\t{}".format(code))
+
+
 class WintechUSB:
     """USB interface for Wintech optical engine utilizing the TI DLPC900
     controller.
@@ -85,11 +178,17 @@ class WintechUSB:
             return
         self.freeDriver(self.dev)
         self.dev.set_configuration()
+        atexit.register(self.stopSequence)
+        atexit.register(self.ledOff)
 
         if not quick:
-            self.stopSequence()
-            self.setDisplayMode(2)
-            self.selectInputSource(1)
+            # self.stopSequence()
+            self.ledOff()
+            self.set_input_source_configuration("24-bit parallel")
+            self.set_IT6535_power_mode(1)
+            self.set_display_mode(2)
+            self.ledFromSequencer()
+            print("Init complete.")
 
     def freeDriver(self, device):
         """Free the USB driver if it is already in use."""
@@ -104,7 +203,21 @@ class WintechUSB:
                     except usb.core.USBError as e:
                         sys.exit(f"Couldn't detach kernel driver from interface {n}: {e}")
 
-    def setDisplayMode(self, mode):
+    def set_input_source_configuration(self, source="24-bit parallel"):
+        """Select the input source to be displayed by the DLPC900.
+
+        Only the 24-bit parallel option is implemented. Other options
+        supported by the board are are 16, 20, 24, or 30-bit parallel
+        port, Internal Test Pattern, and flash memory.
+        """
+        if self.verbose:
+            print("Set input source configuration to:", source)
+        if source == "24-bit parallel":
+            self.send("w", 0x1A00, [0x8])
+            time.sleep(2)
+            self.checkAllStatus()
+
+    def set_display_mode(self, mode):
         """Set the display mode. This takes about 5 seconds.
 
         mode:
@@ -122,13 +235,13 @@ class WintechUSB:
         if self.verbose:
             print("Set display mode to:", displayModes[mode])
         if mode < 0 or mode > 3:
-            sys.exit("Bad display mode value passed in to setDisplayMode()")
+            sys.exit("Bad display mode value passed in to set_display_mode()")
             return
         self.send("w", 0x1A1B, [mode])
         time.sleep(5)
         self.checkAllStatus()
 
-    def selectInputSource(self, source):
+    def set_IT6535_power_mode(self, source):
         """Select an input source. See IT6535 Power Mode Command for
         more details. It takes about 6 seconds to power up the IT6535
         receiver.
@@ -142,7 +255,7 @@ class WintechUSB:
         if self.verbose:
             print("IT6535 power mode set to:", IT6535_power_modes[source])
         if source < 0 or source > 2:
-            sys.exit("Bad source value passed in to selectInputSource()")
+            sys.exit("Bad source value passed in to set_IT6535_power_mode()")
         self.send("w", 0x1A01, [source])
         time.sleep(6)
         self.checkAllStatus()
@@ -244,9 +357,10 @@ class WintechUSB:
         if self.veryVerbose:
             print("Checking hardware status...")
         self.send("r", 0x1A0A)
-        response = hex(self.ans[4])
-        if self.verbose:
-            print("     Hardware status:\t", response)
+        response = hex(self.ans[4]) + "\t(" + bin(self.ans[4]) + ")"
+        # if self.verbose:
+        #     print("     Hardware status:\t", response)
+        parse_hardware_status(self.ans[4])
         return response
 
     def checkSystemStatus(self):
@@ -256,9 +370,10 @@ class WintechUSB:
         if self.veryVerbose:
             print("Checking system status...")
         self.send("r", 0x1A0B)
-        response = hex(self.ans[4])
-        if self.verbose:
-            print("     System status:\t", response)
+        response = hex(self.ans[4]) + "\t(" + bin(self.ans[4]) + ")"
+        # if self.verbose:
+        #     print("     System status:\t", response)
+        parse_system_status(self.ans[4])
         return response
 
     def checkMainStatus(self):
@@ -268,9 +383,10 @@ class WintechUSB:
         if self.veryVerbose:
             print("Checking main status...")
         self.send("r", 0x1A0C)
-        response = hex(self.ans[4])
-        if self.verbose:
-            print("     Main status:\t", response)
+        response = hex(self.ans[4]) + "\t(" + bin(self.ans[4]) + ")"
+        # if self.verbose:
+        #     print("     Main status:\t", response)
+        parse_main_status(self.ans[4])
         return response
 
     def checkErrorStatus(self):
@@ -280,9 +396,10 @@ class WintechUSB:
         if self.veryVerbose:
             print("Checking for errors...")
         self.send("r", 0x0100)
-        response = hex(self.ans[4])
-        if self.verbose:
-            print("     Error status:\t", response)
+        response = hex(self.ans[4]) + "\t(" + bin(self.ans[4]) + ")"
+        # if self.verbose:
+        #     print("     Error status:\t", response)
+        parse_error_code(self.ans[4])
         return response
 
     def checkAllStatus(self):
@@ -291,7 +408,7 @@ class WintechUSB:
         sysStat = self.checkSystemStatus()
         mainStat = self.checkMainStatus()
         errorStat = self.checkErrorStatus()
-        print("     Status: ", hwStat, sysStat, mainStat, errorStat)
+        # print("     Status: ", hwStat, sysStat, mainStat, errorStat)
 
     def setLedPower(self, power):
         """Set the current supplied to the LED driver. See 2.3.5.2 "LED
@@ -346,7 +463,7 @@ class WintechUSB:
         """
         if self.verbose:
             print("LED set to run from sequencer")
-        self.send("w", 0x1A07, [0x8])
+        self.send("w", 0x1A07, [0xC])
         self.checkAllStatus()
 
     def idleOn(self):
@@ -505,7 +622,7 @@ class WintechUSB:
         """
         if self.verbose:
             print("Defining pattern...")
-        self.stopSequence()
+        # self.stopSequence()
         index = 0
         bitDepth = 8
         color = "100"  # blue channel
