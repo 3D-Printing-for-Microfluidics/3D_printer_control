@@ -10,7 +10,7 @@ class Screen:
     """Create and manage a new Tk window."""
 
     def __init__(self, resolution, screen_offset=0, log_level=logging.DEBUG):
-        """ Initialize a new screen object.
+        """Initialize a new screen object.
 
         resolution: The (width, height) resolution of the screen
         screen_offset: How far to the right to offset this screen by.
