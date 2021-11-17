@@ -17,8 +17,7 @@ class Wintech:
 
     def connect(self, quick=False):
         """Start the screen thread and connect to the DMD controller."""
-        # self.dmd_controller = WintechUSB(log_level=self.log_level)
-        self.dmd_controller = WintechUSB(verbose=True)
+        self.dmd_controller = WintechUSB(log_level=self.log_level)
         self.dmd_controller.connect(quick)
 
     def project(self, exposure_time_ms, repeat=1, led_power=100):
@@ -31,7 +30,6 @@ class Wintech:
             forever.
         led_power: LED power setting (0-100).
         """
-
         if 0 > exposure_time_ms > 10000:
             self.log.warning("Exposure time is too high. Using maximum of 10 seconds.")
             exposure_time_ms = 10000
