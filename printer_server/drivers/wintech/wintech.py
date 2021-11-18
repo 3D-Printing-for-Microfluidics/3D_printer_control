@@ -34,10 +34,10 @@ class Wintech:
             self.log.warning("Exposure time is too high. Using maximum of 10 seconds.")
             exposure_time_ms = 10000
         if led_power != self.led_power:
-            self.dmd_controller.setLedPower(led_power)
+            self.dmd_controller.set_led_power(led_power)
             self.led_power = led_power
-        self.dmd_controller.definePattern(exposure_time_ms)
-        self.dmd_controller.configurePatternLut(repeat=repeat)
+        self.dmd_controller.define_pattern(exposure_time_ms)
+        self.dmd_controller.configure_pattern_LUT(repeat=repeat)
         # time.sleep(0.1)
-        self.dmd_controller.startSequence()
+        self.dmd_controller.start_sequence()
         time.sleep(exposure_time_ms * 0.001 + 0.1)
