@@ -167,33 +167,6 @@ class WintechUSB:
         self.transaction_counter = 0
         self.is_idle = False
 
-    def connect(self, quick=False):
-        """Finds and connect to the device and perform other setup.
-
-        First looks for the VID and PID combination representing the
-        DLPC900 controller. Next frees the USB driver and sets the
-        configuration. If quick is False, also sets up the sequencer,
-        video mode, and input source.
-        """
-        self.log.info("Connecting to DLPC900 via USB")
-        self.dev = usb.core.find(idVendor=0x0451, idProduct=0xC900)
-        if self.dev is None:
-            sys.exit("DLPC900 not found. Is it connected and turned on?")
-            return
-        self._free_USB_driver(self.dev)
-        self.dev.set_configuration()
-        atexit.register(self.stop_sequence)
-        atexit.register(self.led_off)
-
-        if not quick:
-            # self.stop_sequence()
-            self.led_off()
-            self.set_input_source_configuration("24-bit parallel")
-            self.set_IT6535_power_mode(1)
-            self.set_display_mode(2)
-            self.led_from_sequencer()
-            self.log.info("Setup complete.")
-
     def _free_USB_driver(self, device):
         """Free the USB driver if it is already in use."""
         self.log.info("Freeing device driver")
@@ -206,59 +179,23 @@ class WintechUSB:
                     except usb.core.USBError as e:
                         sys.exit(f"Couldn't detach kernel driver from interface {n}: {e}")
 
-    def set_input_source_configuration(self, source="24-bit parallel"):
-        """Select the input source to be displayed by the DLPC900.
+    def _HID_read(self, num_bytes=64):
+        """Wrapper function for USB HID read. The default IN endpoint
+        for the DLPC900 is 0x81 so it is hard-coded here.
 
-        Only the 24-bit parallel option is implemented. Other options
-        supported by the board are are 16, 20, 24, or 30-bit parallel
-        port, Internal Test Pattern, and flash memory.
+        num_bytes: the number of bytes to read. The maximum at for one
+        transaction on the DLPC900 is 64.
         """
-        self.log.info("Set input source configuration to: %s", source)
-        if source == "24-bit parallel":
-            self._HID_transaction_sequence("w", 0x1A00, [0x8])
-            time.sleep(2)
-            self.check_all_status()
+        data = self.dev.read(0x81, num_bytes)
+        # self.log.debug("READ endpoint %s: %s", hex(endpoint), decode_response(data))
+        return data
 
-    def set_display_mode(self, mode):
-        """Set the display mode. This takes about 5 seconds.
-
-        mode:
-            0 = Video mode
-            1 = Pre-stored pattern mode (Images from flash)
-            2 = Video pattern mode
-            3 = Pattern On-The-Fly mode (Images loaded through USB/I2C)
+    def _HID_write(self, data=None):
+        """Wrapper function for USB HID write. The default OUT endpoint
+        for the DLPC900 is 0x1 so it is hard-coded here.
         """
-        displayModes = [
-            "Video mode",
-            "Pre-stored pattern mode",
-            "Video pattern mode",
-            "Pattern On-The-Fly mode",
-        ]
-        self.log.info("Set display mode to: %s", displayModes[mode])
-        if mode < 0 or mode > 3:
-            sys.exit("Bad display mode value passed in to set_display_mode()")
-            return
-        self._HID_transaction_sequence("w", 0x1A1B, [mode])
-        time.sleep(5)
-        self.check_all_status()
-
-    def set_IT6535_power_mode(self, source):
-        """Select an input source. See IT6535 Power Mode Command for
-        more details. It takes about 6 seconds to power up the IT6535
-        receiver.
-
-        source:
-            0 = Power-Down (Outputs will be tri-stated).
-            1 = Power-Up for HDMI input.
-            2 = Power-Up for DisplayPort input.
-        """
-        IT6535_power_modes = ["Power-down", "HDMI", "DisplayPort"]
-        self.log.info("IT6535 power mode set to: %s", IT6535_power_modes[source])
-        if source < 0 or source > 2:
-            sys.exit("Bad source value passed in to set_IT6535_power_mode()")
-        self._HID_transaction_sequence("w", 0x1A01, [source])
-        time.sleep(6)
-        self.check_all_status()
+        # self.log.debug("USB HID WRITE %s", decode_response(data))
+        self.dev.write(0x1, data, timeout=10000)
 
     def _HID_transaction_sequence(self, mode, command, data=None, sequence_byte=0x0):
         """Communicate with the DLPC900 controller over USB through a
@@ -324,23 +261,86 @@ class WintechUSB:
         self.transaction_counter += 1
         return self._HID_read()
 
-    def _HID_read(self, num_bytes=64):
-        """Wrapper function for USB HID read. The default IN endpoint
-        for the DLPC900 is 0x81 so it is hard-coded here.
+    def connect(self, quick=False):
+        """Finds and connect to the device and perform other setup.
 
-        num_bytes: the number of bytes to read. The maximum at for one
-        transaction on the DLPC900 is 64.
+        First looks for the VID and PID combination representing the
+        DLPC900 controller. Next frees the USB driver and sets the
+        configuration. If quick is False, also sets up the sequencer,
+        video mode, and input source.
         """
-        data = self.dev.read(0x81, num_bytes)
-        # self.log.debug("READ endpoint %s: %s", hex(endpoint), decode_response(data))
-        return data
+        self.log.info("Connecting to DLPC900 via USB")
+        self.dev = usb.core.find(idVendor=0x0451, idProduct=0xC900)
+        if self.dev is None:
+            sys.exit("DLPC900 not found. Is it connected and turned on?")
+            return
+        self._free_USB_driver(self.dev)
+        self.dev.set_configuration()
+        atexit.register(self.stop_sequence)
+        atexit.register(self.led_off)
 
-    def _HID_write(self, data=None):
-        """Wrapper function for USB HID write. The default OUT endpoint
-        for the DLPC900 is 0x1 so it is hard-coded here.
+        if not quick:
+            # self.stop_sequence()
+            self.led_off()
+            self.set_input_source_configuration("24-bit parallel")
+            self.set_IT6535_power_mode(1)
+            self.set_display_mode(2)
+            self.led_from_sequencer()
+            self.log.info("Setup complete.")
+
+    def set_input_source_configuration(self, source="24-bit parallel"):
+        """Select the input source to be displayed by the DLPC900.
+
+        Only the 24-bit parallel option is implemented. Other options
+        supported by the board are are 16, 20, 24, or 30-bit parallel
+        port, Internal Test Pattern, and flash memory.
         """
-        # self.log.debug("USB HID WRITE %s", decode_response(data))
-        self.dev.write(0x1, data, timeout=10000)
+        self.log.info("Set input source configuration to: %s", source)
+        if source == "24-bit parallel":
+            self._HID_transaction_sequence("w", 0x1A00, [0x8])
+            time.sleep(2)
+            self.check_all_status()
+
+    def set_display_mode(self, mode):
+        """Set the display mode. This takes about 5 seconds.
+
+        mode:
+            0 = Video mode
+            1 = Pre-stored pattern mode (Images from flash)
+            2 = Video pattern mode
+            3 = Pattern On-The-Fly mode (Images loaded through USB/I2C)
+        """
+        displayModes = [
+            "Video mode",
+            "Pre-stored pattern mode",
+            "Video pattern mode",
+            "Pattern On-The-Fly mode",
+        ]
+        self.log.info("Set display mode to: %s", displayModes[mode])
+        if mode < 0 or mode > 3:
+            sys.exit("Bad display mode value passed in to set_display_mode()")
+            return
+        self._HID_transaction_sequence("w", 0x1A1B, [mode])
+        time.sleep(5)
+        self.check_all_status()
+
+    def set_IT6535_power_mode(self, source):
+        """Select an input source. See IT6535 Power Mode Command for
+        more details. It takes about 6 seconds to power up the IT6535
+        receiver.
+
+        source:
+            0 = Power-Down (Outputs will be tri-stated).
+            1 = Power-Up for HDMI input.
+            2 = Power-Up for DisplayPort input.
+        """
+        IT6535_power_modes = ["Power-down", "HDMI", "DisplayPort"]
+        self.log.info("IT6535 power mode set to: %s", IT6535_power_modes[source])
+        if source < 0 or source > 2:
+            sys.exit("Bad source value passed in to set_IT6535_power_mode()")
+        self._HID_transaction_sequence("w", 0x1A01, [source])
+        time.sleep(6)
+        self.check_all_status()
 
     def check_hardware_status(self):
         """Read hardware status. See 2.1.1 "Hardware Status" in the
