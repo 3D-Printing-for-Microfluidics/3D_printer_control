@@ -8,7 +8,7 @@ import usb.core
 import usb.util
 
 
-def numToBits(number, length):
+def num_to_bits(number, length):
     """Convert a number into a bit string of given length.
     number - number to convert
     length - length of resultant bit string
@@ -19,19 +19,19 @@ def numToBits(number, length):
     return b
 
 
-def bitsToBytes(bitString):
+def bits_to_bytes(bit_string):
     """Convert a bit string into a list of full bytes."""
     bytelist = []
-    if len(bitString) % 8 != 0:  # add 0 padding to fill last byte
-        padding = 8 - len(bitString) % 8
-        bitString = "0" * padding + bitString
-    for i in range(len(bitString) // 8):  # pack bytes
-        bytelist.append(int(bitString[8 * i : 8 * (i + 1)], 2))
+    if len(bit_string) % 8 != 0:  # add 0 padding to fill last byte
+        padding = 8 - len(bit_string) % 8
+        bit_string = "0" * padding + bit_string
+    for i in range(len(bit_string) // 8):  # pack bytes
+        bytelist.append(int(bit_string[8 * i : 8 * (i + 1)], 2))
     bytelist.reverse()
     return bytelist
 
 
-def decodeResponse(buffer):
+def decode_response(buffer):
     """Decode a byte list according to the payload length. See 1.2.1
     "USB Transaction Sequence" in the programmer's guide.
 
@@ -158,16 +158,16 @@ class WintechUSB:
 
         dev - handle to kernel driver
         ans - response buffer
-        transactionCounter - a counter used for the sequence byte
-        isIdle - track the idle state of the DMD
+        transaction_counter - a counter used for the sequence byte
+        is_idle - track the idle state of the DMD
         """
         self.log_level = log_level
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         self.dev = None
         self.ans = []
-        self.transactionCounter = 0
-        self.isIdle = False
+        self.transaction_counter = 0
+        self.is_idle = False
 
     def connect(self, quick=False):
         """Finds and connect to the device and perform other setup.
@@ -182,21 +182,21 @@ class WintechUSB:
         if self.dev is None:
             sys.exit("DLPC900 not found. Is it connected and turned on?")
             return
-        self.freeDriver(self.dev)
+        self.free_driver(self.dev)
         self.dev.set_configuration()
-        atexit.register(self.stopSequence)
-        atexit.register(self.ledOff)
+        atexit.register(self.stop_sequence)
+        atexit.register(self.led_off)
 
         if not quick:
-            # self.stopSequence()
-            self.ledOff()
+            # self.stop_sequence()
+            self.led_off()
             self.set_input_source_configuration("24-bit parallel")
             self.set_IT6535_power_mode(1)
             self.set_display_mode(2)
-            self.ledFromSequencer()
+            self.led_from_sequencer()
             self.log.info("Setup complete.")
 
-    def freeDriver(self, device):
+    def free_driver(self, device):
         """Free the USB driver if it is already in use."""
         self.log.info("Freeing device driver")
         for cfg in device:
@@ -219,7 +219,7 @@ class WintechUSB:
         if source == "24-bit parallel":
             self.send("w", 0x1A00, [0x8])
             time.sleep(2)
-            self.checkAllStatus()
+            self.check_all_status()
 
     def set_display_mode(self, mode):
         """Set the display mode. This takes about 5 seconds.
@@ -242,7 +242,7 @@ class WintechUSB:
             return
         self.send("w", 0x1A1B, [mode])
         time.sleep(5)
-        self.checkAllStatus()
+        self.check_all_status()
 
     def set_IT6535_power_mode(self, source):
         """Select an input source. See IT6535 Power Mode Command for
@@ -260,15 +260,15 @@ class WintechUSB:
             sys.exit("Bad source value passed in to set_IT6535_power_mode()")
         self.send("w", 0x1A01, [source])
         time.sleep(6)
-        self.checkAllStatus()
+        self.check_all_status()
 
-    def send(self, mode, command, data=None, sequenceByte=0x0):
+    def send(self, mode, command, data=None, sequence_byte=0x0):
         """Send a command to the DLPC900 controller over USB.
 
         See 1.2.1 "USB Transaction Sequence" in the DLPC900 programmer's
         guide for more information.
         mode: 'r' or 'w'
-        sequenceByte: The sequence byte is used primarily when the host
+        sequence_byte: The sequence byte is used primarily when the host
             wants a response from the DLPC900. The DLPC900 will respond
             with the same sequence byte that the host sent. The host can
             then match the sequence byte from the command it sent with
@@ -284,16 +284,16 @@ class WintechUSB:
 
         # format header
         buffer = []
-        flagByte = "11000000" if mode == "r" else "01000000"
-        buffer.append(bitsToBytes(flagByte)[0])
-        if sequenceByte == 0x0:
-            sequenceByte = self.transactionCounter & 0xFF
-        buffer.append(sequenceByte)
+        flag_byte = "11000000" if mode == "r" else "01000000"
+        buffer.append(bits_to_bytes(flag_byte)[0])
+        if sequence_byte == 0x0:
+            sequence_byte = self.transaction_counter & 0xFF
+        buffer.append(sequence_byte)
 
         # calculate the payload length (data +2 bytes for USB command)
-        pLength = bitsToBytes(numToBits(len(data) + 2, 16))
-        buffer.append(pLength[0])  # add LSB then MSB
-        buffer.append(pLength[1])
+        p_length = bits_to_bytes(num_to_bits(len(data) + 2, 16))
+        buffer.append(p_length[0])  # add LSB then MSB
+        buffer.append(p_length[1])
 
         # format USB command - LSB first, then MSB
         buffer.append(command & 0xFF)
@@ -324,19 +324,19 @@ class WintechUSB:
                     j = j + 1
                 self.write(buffer)  # write final 64 bytes
         self.ans = self.read()
-        self.transactionCounter += 1
+        self.transaction_counter += 1
 
-    def read(self, numBytes=64, endpoint=0x81):
-        """Read numBytes bytes from specified endpoint. Should only be
+    def read(self, num_bytes=64, endpoint=0x81):
+        """Read num_bytes bytes from specified endpoint. Should only be
         used directly in send().
 
         endpoint: endpoint to read from. The default IN endpoint for the
             DLPC900 is 0x81.
-        numBytes: the number of bytes to read. The maximum at once for
+        num_bytes: the number of bytes to read. The maximum at once for
             the DLPC900 is 64.
         """
-        data = self.dev.read(endpoint, numBytes)
-        # self.log.debug("READ endpoint %s: %s", hex(endpoint), decodeResponse(data))
+        data = self.dev.read(endpoint, num_bytes)
+        # self.log.debug("READ endpoint %s: %s", hex(endpoint), decode_response(data))
         return data
 
     def write(self, data=None, endpoint=0x1):
@@ -347,10 +347,10 @@ class WintechUSB:
         endpoint: The endpoint to write to. The default OUT endpoint for
             the DLPC900 is 0x1.
         """
-        # self.log.debug("WRITE endpoint %s: %s", hex(endpoint), decodeResponse(data))
+        # self.log.debug("WRITE endpoint %s: %s", hex(endpoint), decode_response(data))
         self.dev.write(endpoint, data, timeout=10000)
 
-    def checkHardwareStatus(self):
+    def check_hardware_status(self):
         """Read hardware status. See 2.1.1 "Hardware Status" in the
         programmer's guide.
         """
@@ -361,7 +361,7 @@ class WintechUSB:
         if status:
             self.log.warning(status)
 
-    def checkSystemStatus(self):
+    def check_system_status(self):
         """Read system status. See 2.1.2 "System Status" in the
         programmer's guide.
         """
@@ -372,7 +372,7 @@ class WintechUSB:
         if status:
             self.log.warning(status)
 
-    def checkMainStatus(self):
+    def check_main_status(self):
         """Read main status. See 2.1.3 "Main Status" in the programmer's
         guide.
         """
@@ -383,7 +383,7 @@ class WintechUSB:
         if status:
             self.log.warning(status)
 
-    def checkErrorStatus(self):
+    def check_error_status(self):
         """Read error status. See 2.1.6 "Read Error Code" in the
         programmer's guide.
         """
@@ -394,14 +394,14 @@ class WintechUSB:
         if errors:
             self.log.warning(errors)
 
-    def checkAllStatus(self):
+    def check_all_status(self):
         """Read all status."""
-        self.checkHardwareStatus()
-        self.checkSystemStatus()
-        self.checkMainStatus()
-        self.checkErrorStatus()
+        self.check_hardware_status()
+        self.check_system_status()
+        self.check_main_status()
+        self.check_error_status()
 
-    def setLedPower(self, power):
+    def set_led_power(self, power):
         """Set the current supplied to the LED driver. See 2.3.5.2 "LED
         Driver Current" in the programmer's guide.
 
@@ -427,33 +427,33 @@ class WintechUSB:
         if power < 0 or power > 100:
             sys.exit()
         self.send("w", 0x0B01, [0, 0, power])
-        self.checkAllStatus()
+        self.check_all_status()
 
-    def ledOn(self):
+    def led_on(self):
         """Turn on the LED. See 2.3.5.1 "LED Enable Outputs" in the
         programmer's guide.
         """
         self.log.info("LED turned on")
         self.send("w", 0x1A07, [0x4])
-        self.checkAllStatus()
+        self.check_all_status()
 
-    def ledOff(self):
+    def led_off(self):
         """Turn off the LED. See 2.3.5.1 "LED Enable Outputs" in the
         programmer's guide.
         """
         self.log.info("LED turned off")
         self.send("w", 0x1A07, [0x0])
-        self.checkAllStatus()
+        self.check_all_status()
 
-    def ledFromSequencer(self):
+    def led_from_sequencer(self):
         """Set the LED to be controlled by the sequencer. See 2.3.5.1
         "LED Enable Outputs" in the programmer's guide.
         """
         self.log.info("LED set to run from sequencer")
         self.send("w", 0x1A07, [0xC])
-        self.checkAllStatus()
+        self.check_all_status()
 
-    def idleOn(self):
+    def idle_on(self):
         """Enable idle mode. - See section 2.4.1.4 "DMD Idle Mode" in
         the programmer's guide.
 
@@ -465,20 +465,20 @@ class WintechUSB:
         this mode, the pattern sequences must first be stopped.
         To restart the pattern sequence, this mode must be disabled."
         """
-        if not self.isIdle:
+        if not self.is_idle:
             self.log.info("Idle mode enabled")
-            self.isIdle = True
+            self.is_idle = True
             self.send("w", 0x0201, [0x1])
-            self.checkAllStatus()
+            self.check_all_status()
 
-    def idleOff(self):
+    def idle_off(self):
         """Enable idle mode. - See section 2.4.1.4 "DMD Idle Mode" in
         the programmer's guide."""
-        if self.isIdle:
+        if self.is_idle:
             self.log.info("Idle mode disabled")
-            self.isIdle = False
+            self.is_idle = False
             self.send("w", 0x0201, [0x0])
-            self.checkAllStatus()
+            self.check_all_status()
 
     def standby(self):
         """Put DLPC900 into standby power mode - See 2.3.1.1 "Power
@@ -493,32 +493,32 @@ class WintechUSB:
         Status commands still work in idle mode.
         """
         self.send("w", 0x0200, [0x1])
-        self.checkAllStatus()
+        self.check_all_status()
 
-    def wakeUp(self):
+    def wakeup(self):
         """Put DLPC900 into normal power mode. See 2.3.1.1 "Power Mode"
         in the programmer's guide.
         """
         self.send("w", 0x0200, [0x0])
-        self.checkAllStatus()
+        self.check_all_status()
 
-    def softwareReset(self):
+    def software_reset(self):
         """Reset the internal DLPC900 software. A full reset takes about
         7 seconds.
         """
         self.send("w", 0x0200, [0x2])
         time.sleep(7)
-        self.checkAllStatus()
+        self.check_all_status()
 
-    def startSequence(self):
+    def start_sequence(self):
         """Start the pattern display sequence. See 2.4.4.3.1 "Pattern
         Display Start/Stop" in the programmer's guide.
         """
         self.log.info("Starting sequence")
         self.send("w", 0x1A24, [0x2])
-        self.checkAllStatus()
+        self.check_all_status()
 
-    def pauseSequence(self):
+    def pause_sequence(self):
         """Pause the pattern display sequence. See 2.4.4.3.1 "Pattern
         Display Start/Stop" in the programmer's guide.
 
@@ -528,9 +528,9 @@ class WintechUSB:
         """
         self.log.info("Pausing sequence")
         self.send("w", 0x1A24, [0x1])
-        self.checkAllStatus()
+        self.check_all_status()
 
-    def stopSequence(self):
+    def stop_sequence(self):
         """Stop the pattern display sequence. See 2.4.4.3.1 "Pattern
         Display Start/Stop" in the programmer's guide.
 
@@ -540,9 +540,9 @@ class WintechUSB:
         """
         self.log.info("Stopping sequence")
         self.send("w", 0x1A24, [0x0])
-        self.checkAllStatus()
+        self.check_all_status()
 
-    def configurePatternLut(self, images=1, repeat=1):
+    def configure_pattern_LUT(self, images=1, repeat=1):
         """Configure the pattern LUT. This must be called before
         defining any patterns. See 2.4.4.3.3 "Pattern Display LUT
         Configuration" in the programmer's guide.
@@ -552,15 +552,17 @@ class WintechUSB:
             1, 0 means repeat forever.
         """
         if images < 1:
-            sys.exit("Bad number of images provided to configurePatternLut()")
+            sys.exit("Bad number of images provided to configure_pattern_LUT()")
         if repeat < 0:
-            sys.exit("Bad repeat number provided to configurePatternLut()")
+            sys.exit("Bad repeat number provided to configure_pattern_LUT()")
         self.log.info("Configuring Pattern LUT")
-        payload = bitsToBytes(numToBits(repeat, 32) + "00000" + numToBits(images, 11))
+        payload = bits_to_bytes(
+            num_to_bits(repeat, 32) + "00000" + num_to_bits(images, 11)
+        )
         self.send("w", 0x1A31, payload)
-        self.checkAllStatus()
+        self.check_all_status()
 
-    def definePattern(self, exposure):
+    def define_pattern(self, exposure):
         """Define a pattern. See 2.4.4.3.4 "Pattern Display LUT
         Definition" in the programmer's guide. The sequencer must be
         stopped before defining a new pattern.
@@ -602,7 +604,7 @@ class WintechUSB:
             (Frame in video pattern mode). Valid range 0-23.
         """
         self.log.info("Defining pattern")
-        # self.stopSequence()
+        # self.stop_sequence()
         index = 0
         bitDepth = 8
         color = "100"  # blue channel
@@ -614,9 +616,9 @@ class WintechUSB:
         exposure = int(exposure * 1000)  # convert exposure time to us
         minExposure = [105, 304, 394, 823, 1215, 1487, 1998, 4046]
         if exposure < minExposure[bitDepth - 1]:
-            sys.exit("Too small of exposure passed to definePattern()")
+            sys.exit("Too small of exposure passed to define_pattern()")
         if exposure > 0xFFFFFF:
-            sys.exit("Too large of exposure passed to definePattern()")
+            sys.exit("Too large of exposure passed to define_pattern()")
 
         payload = list(range(12))
         payload[0] = index & 0xFF
@@ -636,4 +638,4 @@ class WintechUSB:
         payload[10] = patternId
         payload[11] = (bitPosition & 0x1F) << 3
         self.send("w", 0x1A34, payload)
-        self.checkAllStatus()
+        self.check_all_status()
