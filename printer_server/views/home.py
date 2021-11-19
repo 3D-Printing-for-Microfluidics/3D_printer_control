@@ -408,7 +408,7 @@ class PrintControl:
         force - Target force.
         speed - Speed in mm/sec. Negative speed means move up.
         """
-        force_over_speed_target = 2.0
+        force_over_speed_target = 1.75
         down_modifier = 1.0
         if speed > 0:
             # set because on down movements screw is loose
