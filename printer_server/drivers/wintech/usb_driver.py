@@ -189,13 +189,16 @@ class WintechUSB:
 
     def _HID_read(self, num_bytes=64):
         """Wrapper function for USB HID read. The default IN endpoint
-        for the DLPC900 is 0x81 so it is hard-coded here.
+        for the DLPC900 is 0x81 so it is hard-coded here. This method
+        also checks the flag byte to see if the error bit is set.
 
-        num_bytes: the number of bytes to read. The maximum at for one
+        num_bytes: the number of bytes to read. The maximum for one
         transaction on the DLPC900 is 64.
         """
         data = self.dev.read(0x81, num_bytes)
         self.log.debug("USB HID read  %s", _byte_response_to_string(data))
+        if is_set(data[0], 5):
+            self.log.warning("Command not recognized or command failed.")
         return _extract_payload(data)
 
     def _HID_write(self, data=None):
