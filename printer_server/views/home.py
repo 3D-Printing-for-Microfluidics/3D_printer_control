@@ -299,10 +299,10 @@ class PrintControl:
             acceleration=position_settings["BP up acceleration (mm/sec^2)"],
         )
         self.write_to_event_log("Finish Down Movement")
+        time.sleep(position_settings["Final wait (ms)"] / 1000)
         end_position = self.galil.getPosition()
         end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         end_index = self.loadcell.get_current_loadcell_index()
-        time.sleep(position_settings["Final wait (ms)"] / 1000)
         thickness = self.galil.cntsToMm(abs(end_position - start_position) * 1000)
         async_file_hander.write(
             self.position_log,
