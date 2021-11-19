@@ -2,13 +2,25 @@
 
 import sys
 import time
+import struct
 import atexit
 import logging
 import usb.core
 import usb.util
 
 
-def num_to_bits(number, length):
+def _read_payload_size(data):
+    """Return the payload size of a response message from the
+    DLPC900 by reading bytes 3 and 4 of the header."""
+    return struct.unpack("<H", data[2:4])[0]
+
+
+def _extract_payload(data):
+    """Return the payload of a response message from the DLPC900."""
+    return data[4 : 4 + _read_payload_size(data)]
+
+
+def _num_to_bits(number, length):
     """Convert a number into a bit string of given length.
     number - number to convert
     length - length of resultant bit string
@@ -19,7 +31,7 @@ def num_to_bits(number, length):
     return b
 
 
-def bits_to_bytes(bit_string):
+def _bits_to_bytes(bit_string):
     """Convert a bit string into a list of full bytes."""
     bytelist = []
     if len(bit_string) % 8 != 0:  # add 0 padding to fill last byte
@@ -31,27 +43,21 @@ def bits_to_bytes(bit_string):
     return bytelist
 
 
-def decode_response(buffer):
-    """Decode a byte list according to the payload length. See 1.2.1
-    "USB Transaction Sequence" in the programmer's guide.
+def _byte_response_to_string(buffer):
+    """Return a string representation of byte data, including the header.
 
-    If there are less than 4 bytes, the header to know how long the
-    payload is is missing so return the string directly. Otherwise,
-    calculate the length and use it to beuild the response.
+    If there are less than 4 bytes, the header is missing so return the
+    full string. Otherwise, trim the string according to the payload
+    length, plus the 4 byte header.
     """
+    buffer = bytes(buffer)
     if len(buffer) < 4:
-        s = " ".join([hex(i) for i in buffer])
-    else:
-        s = ""
-        # LSB of payload length comes first, +4 for header bytes
-        length = buffer[2] + 0x100 * buffer[3] + 4
-        for i in range(0, length):
-            s = " ".join((s, hex(buffer[i])))
-    return s
+        return " ".join([hex(i) for i in buffer])
+    return " ".join([hex(buffer[i]) for i in range(0, _read_payload_size(buffer) + 4)])
 
 
 def is_set(x, n):
-    """Returns True if bit n in x is set."""
+    """Returns True if bit n in x is set, else returns false."""
     return x & 2 ** n != 0
 
 
@@ -153,7 +159,6 @@ class WintechUSB:
     """
 
     def __init__(self, log_level=logging.DEBUG):
-
         """Initialize a WintechUSB object.
 
         dev - handle to kernel driver
@@ -169,15 +174,18 @@ class WintechUSB:
 
     def _free_USB_driver(self, device):
         """Free the USB driver if it is already in use."""
-        self.log.info("Freeing device driver")
+        self.log.debug("Freeing device driver")
         for cfg in device:
             for intf in cfg:
                 n = intf.bInterfaceNumber
                 if device.is_kernel_driver_active(n):
                     try:
                         device.detach_kernel_driver(n)
+                        self.log.debug("Detached kernel driver from interface %s", n)
                     except usb.core.USBError as e:
-                        sys.exit(f"Couldn't detach kernel driver from interface {n}: {e}")
+                        msg = f"Couldn't detach kernel driver from interface {n}: {e}"
+                        self.log.critical(msg)
+                        sys.exit(msg)
 
     def _HID_read(self, num_bytes=64):
         """Wrapper function for USB HID read. The default IN endpoint
@@ -187,32 +195,34 @@ class WintechUSB:
         transaction on the DLPC900 is 64.
         """
         data = self.dev.read(0x81, num_bytes)
-        # self.log.debug("READ endpoint %s: %s", hex(endpoint), decode_response(data))
-        return data
+        self.log.debug("USB HID read  %s", _byte_response_to_string(data))
+        return _extract_payload(data)
 
     def _HID_write(self, data=None):
         """Wrapper function for USB HID write. The default OUT endpoint
         for the DLPC900 is 0x1 so it is hard-coded here.
         """
-        # self.log.debug("USB HID WRITE %s", decode_response(data))
+        self.log.debug("USB HID write %s", _byte_response_to_string(data))
         self.dev.write(0x1, data, timeout=10000)
 
-    def _HID_transaction_sequence(self, mode, command, data=None, sequence_byte=0x0):
+    def _HID_transaction_sequence(self, mode, command, data=None):
         """Communicate with the DLPC900 controller over USB through a
         sequence of HID writes followed by an HID read. See 1.2.1 "USB
         Transaction Sequence" in the DLPC900 programmer's guide for more
         information.
 
         mode: 'r' for read or 'w' for write
-        sequence_byte: The DLPC900 will respond with the same sequence
-            byte that the host sent. The host can then match the
-            sequence byte from the command it sent with the sequence
-            byte from the DLPC900 response to know which command the
-            response applies to.
         command: Two byte USB command specified in the programmer's
             guide.
         data: The rest of the parameters the command needs. See the
             programmer's guide for details on each command.
+
+        The DLPC900 can accept up to 64 bytes per transaction. Commands
+        with data that are larger than 64 bytes are broken into multiple
+        write transactions of 64 bytes, with the final write transaction
+        zero padded up to 64 bytes. The DLPC900 then responds by placing
+        a response in it's internal buffer and a final read transaction
+        is issued to retrieve it.
         """
         if data is None:
             data = []
@@ -220,13 +230,12 @@ class WintechUSB:
         # format header
         buffer = []
         flag_byte = "11000000" if mode == "r" else "01000000"
-        buffer.append(bits_to_bytes(flag_byte)[0])
-        if sequence_byte == 0x0:
-            sequence_byte = self.transaction_counter & 0xFF
+        buffer.append(_bits_to_bytes(flag_byte)[0])
+        sequence_byte = self.transaction_counter & 0xFF
         buffer.append(sequence_byte)
 
         # calculate the payload length (data +2 bytes for USB command)
-        p_length = bits_to_bytes(num_to_bits(len(data) + 2, 16))
+        p_length = _bits_to_bytes(_num_to_bits(len(data) + 2, 16))
         buffer.append(p_length[0])  # add LSB then MSB
         buffer.append(p_length[1])
 
@@ -234,18 +243,18 @@ class WintechUSB:
         buffer.append(command & 0xFF)
         buffer.append(command >> 8)
 
-        # format data and send in 64 byte packets
-        if len(buffer) + len(data) < 65:
+        # format data and send in 64 byte increments
+        if len(buffer) + len(data) <= 64:  # command will fit in one 64 byte transaction
             for i in data:
                 buffer.append(i)
             for i in range(64 - len(buffer)):
-                buffer.append(0x00)  # pad unused space with zeroes
+                buffer.append(0x00)  # zero pad unused space up to 64 bytes
             self._HID_write(buffer)
         else:  # command will not fit into one transaction
             for i in range(64 - len(buffer)):
                 buffer.append(data[i])
             self._HID_write(buffer)  # write first 64 bytes
-            buffer = []  # clear the buffer
+            buffer = []
             j = 0
             while j < len(data) - 58:  # set up buffer in 64 byte increments
                 buffer.append(data[j + 58])
@@ -273,7 +282,6 @@ class WintechUSB:
         self.dev = usb.core.find(idVendor=0x0451, idProduct=0xC900)
         if self.dev is None:
             sys.exit("DLPC900 not found. Is it connected and turned on?")
-            return
         self._free_USB_driver(self.dev)
         self.dev.set_configuration()
         atexit.register(self.stop_sequence)
@@ -342,56 +350,56 @@ class WintechUSB:
         time.sleep(6)
         self.check_all_status()
 
-    def check_hardware_status(self):
+    def get_hardware_status(self):
         """Read hardware status. See 2.1.1 "Hardware Status" in the
         programmer's guide.
         """
         self.log.debug("Checking hardware status")
         response = self._HID_transaction_sequence("r", 0x1A0A)
-        self.log.debug(hex(response[4]))
-        status = parse_hardware_status(response[4])
+        self.log.debug("Hardware status: %s", hex(response[0]))
+        status = parse_hardware_status(response[0])
         if status:
             self.log.warning(status)
 
-    def check_system_status(self):
+    def get_system_status(self):
         """Read system status. See 2.1.2 "System Status" in the
         programmer's guide.
         """
         self.log.debug("Checking system status")
         response = self._HID_transaction_sequence("r", 0x1A0B)
-        self.log.debug(hex(response[4]))
-        status = parse_system_status(response[4])
+        status = parse_system_status(response[0])
+        self.log.debug("System status: %s", hex(response[0]))
         if status:
             self.log.warning(status)
 
-    def check_main_status(self):
+    def get_main_status(self):
         """Read main status. See 2.1.3 "Main Status" in the programmer's
         guide.
         """
         self.log.debug("Checking main status")
         response = self._HID_transaction_sequence("r", 0x1A0C)
-        self.log.debug(hex(response[4]))
-        status = parse_main_status(response[4])
+        self.log.debug("Main status: %s", hex(response[0]))
+        status = parse_main_status(response[0])
         if status:
             self.log.warning(status)
 
-    def check_error_status(self):
+    def get_error_status(self):
         """Read error status. See 2.1.6 "Read Error Code" in the
         programmer's guide.
         """
-        self.log.debug("Checking for errors")
+        self.log.debug("Checking error codes")
         response = self._HID_transaction_sequence("r", 0x0100)
-        self.log.debug(hex(response[4]))
-        errors = parse_error_code(response[4])
+        self.log.debug("Error code: %s", hex(response[0]))
+        errors = parse_error_code(response[0])
         if errors:
             self.log.warning(errors)
 
     def check_all_status(self):
         """Read all status."""
-        self.check_hardware_status()
-        self.check_system_status()
-        self.check_main_status()
-        self.check_error_status()
+        self.get_hardware_status()
+        self.get_system_status()
+        self.get_main_status()
+        self.get_error_status()
 
     def set_led_power(self, power):
         """Set the current supplied to the LED driver. See 2.3.5.2 "LED
@@ -548,8 +556,8 @@ class WintechUSB:
         if repeat < 0:
             sys.exit("Bad repeat number provided to configure_pattern_LUT()")
         self.log.info("Configuring Pattern LUT")
-        payload = bits_to_bytes(
-            num_to_bits(repeat, 32) + "00000" + num_to_bits(images, 11)
+        payload = _bits_to_bytes(
+            _num_to_bits(repeat, 32) + "00000" + _num_to_bits(images, 11)
         )
         self._HID_transaction_sequence("w", 0x1A31, payload)
         self.check_all_status()
