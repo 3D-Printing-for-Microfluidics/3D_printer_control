@@ -608,6 +608,7 @@ class PrintControl:
         self.write_to_event_log(f"Tip: {tip}")
         tilt = position["tilt"]
         self.write_to_event_log(f"Tilt: {tilt}")
+        self.focused_position = float(position["distance"])
 
         # update frontend progress bar
         self.state = "printing"
