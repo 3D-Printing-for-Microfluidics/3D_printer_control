@@ -15,11 +15,6 @@ def _read_payload_size(data):
     return struct.unpack("<H", data[2:4])[0]
 
 
-def _extract_payload(data):
-    """Return the payload of a response message from the DLPC900."""
-    return data[4 : 4 + _read_payload_size(data)]
-
-
 def _num_to_bits(number, length):
     """Convert a number into a bit string of given length.
     number - number to convert
@@ -43,17 +38,11 @@ def _bits_to_bytes(bit_string):
     return bytelist
 
 
-def _byte_response_to_string(buffer):
-    """Return a string representation of byte data, including the header.
-
-    If there are less than 4 bytes, the header is missing so return the
-    full string. Otherwise, trim the string according to the payload
-    length, plus the 4 byte header.
+def _bytes_to_string(buffer, num_bytes=64):
+    """Return a string representation of byte data using the first
+    num_bytes of data.
     """
-    buffer = bytes(buffer)
-    if len(buffer) < 4:
-        return " ".join([hex(i) for i in buffer])
-    return " ".join([hex(buffer[i]) for i in range(0, _read_payload_size(buffer) + 4)])
+    return " ".join([hex(buffer[i]) for i in range(0, num_bytes)])
 
 
 def is_set(x, n):
@@ -187,25 +176,31 @@ class WintechUSB:
                         self.log.critical(msg)
                         sys.exit(msg)
 
-    def _HID_read(self, num_bytes=64):
+    def _HID_read(self):
         """Wrapper function for USB HID read. The default IN endpoint
         for the DLPC900 is 0x81 so it is hard-coded here. This method
         also checks the flag byte to see if the error bit is set.
+        It also strips the header and returns only the payload bytes.
 
         num_bytes: the number of bytes to read. The maximum for one
-        transaction on the DLPC900 is 64.
+        transaction in the HID protocol is 64 bytes, so we always read
+        the maximum. If a payload is larger than 64 bytes, multiple
+        reads are concatenated to get the full response.
         """
-        data = self.dev.read(0x81, num_bytes)
-        self.log.debug("USB HID read  %s", _byte_response_to_string(data))
+        data = self.dev.read(0x81, 64)
+        p_size = _read_payload_size(data)
+        self.log.debug("USB HID read  %s", _bytes_to_string(data, min(p_size + 4, 64)))
         if is_set(data[0], 5):
             self.log.warning("Command not recognized or command failed.")
-        return _extract_payload(data)
+        return data[4 : 4 + p_size]
 
     def _HID_write(self, data=None):
         """Wrapper function for USB HID write. The default OUT endpoint
         for the DLPC900 is 0x1 so it is hard-coded here.
         """
-        self.log.debug("USB HID write %s", _byte_response_to_string(data))
+        data = bytes(data)
+        p_size = _read_payload_size(data)
+        self.log.debug("USB HID write %s", _bytes_to_string(data, min(p_size + 4, 64)))
         self.dev.write(0x1, data, timeout=10000)
 
     def _HID_transaction_sequence(self, mode, command, data=None):
@@ -642,3 +637,38 @@ class WintechUSB:
         payload[11] = (bitPosition & 0x1F) << 3
         self._HID_transaction_sequence("w", 0x1A34, payload)
         self.check_all_status()
+
+    def get_firmware_version(self):
+        """Return the version information of the DLPC900 firmware."""
+        self.log.debug("Reading firmware version information")
+        version = self._HID_transaction_sequence("r", 0x0205)
+        print(version)
+        print(type(version))
+        # print(version.tounicode())
+        print(version.tobytes().decode())
+        b = b""
+        for byte in version:
+            b += byte.to_bytes()
+        print(type(b))
+        print(b)
+        return version
+
+    def get_hardware_configuration_and_firmware_tag(self):
+        """Return the hardware configuration of the system and also
+        the 31 byte ASCII firmware tag. See 2.1.5 "Reading Hardware
+        Configuration and Firmware Tag Information" in the programmer's
+        guide.
+        """
+        self.log.info("Reading hardware configuration and firmware tag")
+        response = self._HID_transaction_sequence("r", 0x0206)
+        hw_config = {
+            0: "Unknown hardware",
+            1: "DLP6500",
+            2: "DLP9000",
+            3: "DLP670S",
+            4: "DLP500YX",
+        }.get(response[0], "Hardware not defined")
+        firmware_tag = response[1:25].tobytes().decode("ascii")
+        msg = f"Hardware: {hw_config}\tFirmware: {firmware_tag}"
+        self.log.info(msg)
+        return msg
