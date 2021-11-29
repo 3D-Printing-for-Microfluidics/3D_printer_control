@@ -176,6 +176,7 @@ class LoadCell(serial.Serial):
         Threading loop
         """
         front_end_counter = 0
+        front_end_array = []
         while self.running:
             try:
                 index = int.from_bytes(
@@ -201,6 +202,7 @@ class LoadCell(serial.Serial):
                     )
 
                 front_end_counter += 1
+                front_end_array.append(force)
                 if front_end_counter >= 10:
                     front_end_counter = 0
 
@@ -209,9 +211,10 @@ class LoadCell(serial.Serial):
                     self.currentData.append(
                         {
                             "timestamp": time.timestamp() * 1000,
-                            "force": force,
+                            "force": sum(front_end_array) / len(front_end_array),
                         }
                     )
+                    front_end_array = []
 
                 self.currentForce = force
                 self.currentIndex = index
