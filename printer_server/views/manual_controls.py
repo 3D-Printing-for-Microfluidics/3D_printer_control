@@ -43,7 +43,7 @@ def get_calibration_positions():
         "distance": kdc.getCurrentPos(),
     }
 
-    if message["tip"] is "undef":
+    if message["tip"] is None or message["tip"] is "undef":
         last_positions = get_last_calibration_positions()
         message["tip"] = last_positions[0]
         message["tilt"] = last_positions[1]
