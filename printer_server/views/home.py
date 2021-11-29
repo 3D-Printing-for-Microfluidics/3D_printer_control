@@ -295,8 +295,8 @@ class PrintControl:
         self.print_position -= position_settings["Layer thickness (um)"] / 1000
         self.galil.absMove(
             mm=self.print_position,
-            speed=position_settings["BP up speed (mm/sec)"],
-            acceleration=position_settings["BP up acceleration (mm/sec^2)"],
+            speed=position_settings["BP down speed (mm/sec)"],
+            acceleration=position_settings["BP down acceleration (mm/sec^2)"],
         )
         self.write_to_event_log("Finish Down Movement")
 
