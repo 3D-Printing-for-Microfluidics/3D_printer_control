@@ -299,6 +299,17 @@ class PrintControl:
             acceleration=position_settings["BP up acceleration (mm/sec^2)"],
         )
         self.write_to_event_log("Finish Down Movement")
+
+        force_squeeze = False
+        try:
+            force_squeeze = position_settings["Enable force squeeze"]
+        except KeyError:
+            pass
+        if force_squeeze:
+            self.write_to_event_log("Start Force Squeeze")
+            self.squeeze_resin(position_settings, layer)
+            self.write_to_event_log("Finish Force Squeeze")
+
         time.sleep(position_settings["Final wait (ms)"] / 1000)
         end_position = self.galil.getPosition()
         end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
@@ -310,8 +321,53 @@ class PrintControl:
         )
         async_file_hander.write(
             self.position_log,
-            f"{end_index},{start_position},{end_position},{thickness}\n",
+            f"{end_index},{start_position},{end_position},{thickness},{force_squeeze}\n",
         )
+
+    def squeeze_resin(self, position_settings, layer):
+        squeeze_target = position_settings["Squeeze force (N)"]
+        squeeze_wait = position_settings["Squeeze wait (ms)"] / 1000
+        use_relax_force = True
+        try:
+            use_relax_force = position_settings["Use relaxed force"]
+        except KeyError:
+            pass
+        relax_target = position_settings["Relaxed force (N)"]
+
+        time.sleep(0.05)
+        first_count = self.move_bp_to_force(squeeze_target - 4, speed=1)
+        time.sleep(0.05)
+        second_count = self.move_bp_to_force(squeeze_target - 0.4, speed=0.1)
+        time.sleep(0.05)
+        third_count = self.move_bp_to_force(squeeze_target, speed=0.01)
+        time.sleep(0.05)
+        count = first_count + second_count + third_count
+
+        log.info("Squeeze force reached %s steps", count)
+        log.info("Squeeze force: %s", self.loadcell.get_current_force())
+        log.info("Squeeze position: %s", self.galil.getPosition())
+
+        time.sleep(squeeze_wait)
+
+        if use_relax_force:
+            time.sleep(0.05)
+            first_count = self.move_bp_to_force(relax_target + 4, speed=-1)
+            time.sleep(0.05)
+            second_count = self.move_bp_to_force(relax_target + 0.4, speed=-0.1)
+            time.sleep(0.05)
+            third_count = self.move_bp_to_force(relax_target, speed=-0.01)
+            time.sleep(0.05)
+            count = first_count + second_count + third_count
+
+            log.info("Relax force reached %s steps", count)
+            log.info("Relax force: %s", self.loadcell.get_current_force())
+            log.info("Relax position: %s", self.galil.getPosition())
+        else:
+            self.galil.absMove(
+                mm=self.print_position,
+                speed=50,
+                acceleration=5,
+            )
 
     def change_focus(self, pos):
         self.write_to_event_log("Start Distance Movement")
@@ -591,7 +647,7 @@ class PrintControl:
         )
         async_file_hander.write(
             self.position_log,
-            "loadcell_end_index,start_position,end_position,thickness_um\n",
+            "loadcell_end_index,start_position,end_position,thickness_um,squeeze\n",
         )
         async_file_hander.write(self.exposure_log, "")
         async_file_hander.write(self.event_log, "timestamp,event\n")
