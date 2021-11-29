@@ -197,7 +197,7 @@ class WintechUSB:
         self.log.debug("USB HID read  %s", _bytes_to_string(data, p_size + 4))
         if is_set(data[0], 5):
             self.log.warning("Command not recognized or command failed")
-            # self.get_error_description()
+            self.get_error_description()
         return data[4 : 4 + p_size]
 
     def _HID_write(self, data=None):
@@ -400,6 +400,7 @@ class WintechUSB:
 
     def check_all_status(self):
         """Read all status."""
+        self.get_error_description()
         self.get_hardware_status()
         self.get_system_status()
         self.get_main_status()
@@ -678,3 +679,18 @@ class WintechUSB:
         msg = f"Hardware: {hw_config}\tFirmware: {firmware_tag}"
         self.log.info(msg)
         return msg
+
+    def get_error_description(self):
+        """Return the error descriptive string from the DLPC900 of the
+        last executed command. An empty string means no error.
+
+        Strings returned from the DLPC900 are null terminated and
+        internal buffers aren't sanitized between writes, so we split on
+        the NULL character and convert just the first element to ascii.
+        """
+        self.log.debug("Reading error description")
+        response = self._HID_transaction_sequence("r", 0x0101)
+        response_string = response.tobytes().split(b"\x00")[0].decode("ascii")
+        if response_string:
+            self.log.warning("Error detected: %s", response_string)
+        return response_string
