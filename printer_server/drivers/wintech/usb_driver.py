@@ -625,9 +625,17 @@ class WintechUSB:
         will start the pattern sequence by re-displaying the current
         pattern in the sequence from the beginning.
         """
-        self.log.info("Stopping sequence")
-        self._HID_transaction_sequence("w", 0x1A24, [0x0])
-        self.check_all_status()
+        if self.sequencer_is_running():
+            self.log.info("Stopping sequence")
+            self._HID_transaction_sequence("w", 0x1A24, [0x0])
+            self.check_all_status()
+
+    def sequencer_is_running(self):
+        """Return True if the sequencer is running, else return False."""
+        main_status = self.get_main_status()
+        if is_set(main_status, 1):
+            return True
+        return False
 
     def configure_pattern_LUT(self, images=1, repeat=1):
         """Configure the pattern LUT. This must be called before
