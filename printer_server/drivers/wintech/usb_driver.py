@@ -182,16 +182,22 @@ class WintechUSB:
         also checks the flag byte to see if the error bit is set.
         It also strips the header and returns only the payload bytes.
 
-        num_bytes: the number of bytes to read. The maximum for one
-        transaction in the HID protocol is 64 bytes, so we always read
-        the maximum. If a payload is larger than 64 bytes, multiple
-        reads are concatenated to get the full response.
+        The HID protocol gives 64 bytes per read. If a payload is larger
+        than 60 bytes, multiple reads are concatenated to get the full
+        response. The first read contains 4 bytes of header data and 60
+        bytes of payload data, where subsequent reads give 64 bytes of
+        payload data with no header.
         """
         data = self.dev.read(0x81, 64)
         p_size = _read_payload_size(data)
-        self.log.debug("USB HID read  %s", _bytes_to_string(data, min(p_size + 4, 64)))
+        bytes_left = p_size - 60
+        while bytes_left > 0:
+            data += self.dev.read(0x81, 64)
+            bytes_left -= 64
+        self.log.debug("USB HID read  %s", _bytes_to_string(data, p_size + 4))
         if is_set(data[0], 5):
-            self.log.warning("Command not recognized or command failed.")
+            self.log.warning("Command not recognized or command failed")
+            # self.get_error_description()
         return data[4 : 4 + p_size]
 
     def _HID_write(self, data=None):
