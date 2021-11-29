@@ -378,14 +378,15 @@ class PrintControl:
             )
             self.galil.goToZmin()
             time.sleep(0.1)
-            self.planarized_position = self.galil.bottom_position
             target_force = config_dict["loadcell_settings"][
                 "loadcell_planarization_force"
             ]
-            if self.move_bp_to_force(target_force, 5) is None:
+            if self.move_bp_to_force(target_force, speed=5, error_threshold=0.75) is None:
                 log.error("Did not reach target planarization force.")
                 return
-            self.print_position = self.galil.cntsToMm(self.planarized_position)
+            log.info(
+                "Loadcell force post planarization: %s", self.loadcell.get_current_force()
+            )
             time.sleep(0.5)
             log.info("Loadcell force after step 1: %s", self.loadcell.get_current_force())
 
@@ -402,44 +403,37 @@ class PrintControl:
             self.planarized_position = self.galil.getPosition()
             self.print_position = self.galil.cntsToMm(self.planarized_position)
 
-    def move_bp_to_force(self, force, speed):
+    def move_bp_to_force(
+        self, target_force, speed, acceleration=100, error_threshold=None
+    ):
         """Move the build platform until the target force is achieved.
 
         force - Target force.
         speed - Speed in mm/sec. Negative speed means move up.
         """
-        force_over_speed_target = 1.75
-        down_modifier = 1.0
-        if speed > 0:
-            # set because on down movements screw is loose
-            # and the change in force/time is lower
-            down_modifier = 50.0
-
-        start_force = self.loadcell.get_current_force()
+        force = self.loadcell.get_current_force()
         forces = []
         count = 0
-        self.galil.startJog(speed=speed)
-        while (speed < 0 and start_force > force) or (speed > 0 and start_force < force):
-            time.sleep(0.025)
-            curr_force = self.loadcell.get_current_force()
-            count += 1
-            log.debug("Loadcell force: %s", curr_force)
-            forces.append(curr_force)
-            if len(forces) <= 4:
-                continue
-            forces.pop(0)
-
-            if (abs(forces[0] - forces[-1]) / abs(speed)) < (
-                force_over_speed_target / down_modifier
+        if (speed < 0 and force > target_force) or (speed > 0 and force < target_force):
+            self.galil.startJog(speed=speed, acceleration=acceleration)
+            while (speed < 0 and force > target_force) or (
+                speed > 0 and force < target_force
             ):
-                self.galil.stopJog()
-                return None
-            start_force = self.loadcell.get_current_force()
-        self.galil.stopJog()
-        log.info(
-            "Loadcell force post planarization: %s", self.loadcell.get_current_force()
-        )
-        log.debug("Loadcell position: %s", self.planarized_position)
+                time.sleep(0.001)
+                force = self.loadcell.get_current_force()
+                log.debug("Loadcell force: %s", force)
+                count += 1
+                forces.append(force)
+                if len(forces) <= 100:
+                    continue
+                forces.pop(0)
+
+                if error_threshold is not None:
+                    # print(f"{abs(forces[0] - forces[-1])}, {error_threshold}")
+                    if abs(forces[0] - forces[-1]) < error_threshold:
+                        self.galil.stopJog()
+                        return None
+            self.galil.stopJog()
         return count
 
     def planarization_step_3(self):
@@ -451,16 +445,24 @@ class PrintControl:
         target force.
         """
         target_force = config_dict["loadcell_settings"]["loadcell_print_start_force"]
-        first_count = self.move_bp_to_force(target_force + 5, -0.25)
+        time.sleep(0.05)
+        first_count = self.move_bp_to_force(
+            target_force + 4, speed=-1, error_threshold=3.5
+        )
         if first_count is None:
             log.error("Loadcell planarization failed. Check build platform screw.")
             return
-        time.sleep(0.010)
-        second_count = self.move_bp_to_force(target_force, -0.05)
-        if second_count is None:
-            log.error("Loadcell planarization failed. Check build platform screw.")
-            return
-        count = first_count + second_count
+        time.sleep(0.05)
+        second_count = self.move_bp_to_force(target_force + 0.4, speed=-0.1)
+        time.sleep(0.05)
+        third_count = self.move_bp_to_force(target_force, speed=-0.01)
+        time.sleep(0.05)
+        count = first_count + second_count + third_count
+
+        log.info(
+            "Loadcell force post planarization: %s", self.loadcell.get_current_force()
+        )
+        log.debug("Loadcell position: %s", self.planarized_position)
         self.planarized_position = self.galil.getPosition()
         self.print_position = self.galil.cntsToMm(self.planarized_position)
         log.info("Loadcell planarized %s steps", count)
@@ -677,7 +679,7 @@ class PrintControl:
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
             self.galil.absMove(cnts=self.planarized_position)
-            self.print_position = self.galil.cntsToMm(self.planarized_position)
+            # self.print_position = self.galil.cntsToMm(self.planarized_position)
 
         # iterate over layers
         for i, layer in enumerate(self.layer_map):

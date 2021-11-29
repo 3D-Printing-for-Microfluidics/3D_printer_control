@@ -34,12 +34,14 @@ class Galil:
         self.homed = {}
         self.jogging = {}
         self.pre_jog_speed = {}
+        self.pre_jog_acceleration = {}
         self.error_window = {}
         self.monitoring_window = {}
         for a in self.axes:
             self.homed[a] = False
             self.jogging[a] = False
             self.pre_jog_speed[a] = 0
+            self.pre_jog_acceleration[a] = 0
             self.error_window[a] = self.tolerence[a] * self.ctspmm[a] / 1000
             self.monitoring_window[a] = self.error_window[a] * 100
 
@@ -207,7 +209,7 @@ class Galil:
             a = self.convertAxis(axis)
             self.setSpeed(10)
             self.motorOn()
-            self.startJog(speed=-15)
+            self.startJog(speed=-15, acceleration=50)
             self.g.GMotionComplete(a)
             self.stopJog()
             self.motorOn()
@@ -304,16 +306,20 @@ class Galil:
             self.setAcceleration(old_acceleration, axis=a)
         return self.getPosition(axis=a)
 
-    def startJog(self, speed=None, axis=None):
+    def startJog(self, speed=None, acceleration=None, axis=None):
         """Start a jog, non-blocking."""
         a = self.convertAxis(axis)
         if not self.jogging[a]:
             self.pre_jog_speed[a] = self.getSpeed(
                 axis=a
             )  # save the speed before jogging begins
+            self.pre_jog_acceleration[a] = self.getAcceleration(
+                axis=a
+            )  # save the speed before jogging begins
         self.jogging[a] = True
 
         self.log.info("Start jog on axis %s at speed %s mm/sec", a, speed)
+        self.setAcceleration(acceleration)
         self.send(f"JG{a}={speed * self.ctspmm[a]}")
         self.send(f"BG{a}")
 
@@ -324,6 +330,7 @@ class Galil:
         self.send(f"ST{a}")
         self.jogging[a] = False
         self.setSpeed(self.pre_jog_speed[a])
+        self.setAcceleration(self.pre_jog_acceleration[a])
 
     def waitForMotionComplete(self, cnts, wait_for_settling=True, axis=None):
         """Blocks execution until the encoder reaches the target value

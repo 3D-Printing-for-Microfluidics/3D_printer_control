@@ -179,7 +179,7 @@ def galil_move(message):
 def galil_startJog(message):
     """Start jogging the main Z stage."""
     speed = float(message["speed"])
-    galil.startJog(speed=speed)
+    galil.startJog(speed=speed, acceleration=50)
     # socketio.emit('galil_done', namespace='/manual', broadcast=True)
 
 
