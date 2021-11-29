@@ -8,6 +8,53 @@ import logging
 import usb.core
 import usb.util
 
+INPUT_BIT_DEPTHS = {0: "30-bit", 1: "24-bit", 2: "20-bit", 3: "16-bit"}
+INPUT_SOURCES = {
+    0: "Primary parallel interface",
+    1: "Internal test pattern generator",
+    2: "Flash memory",
+    3: "Solid curtain",
+}
+DISPLAY_MODES = {
+    0: "Video mode",
+    1: "Pre-stored pattern mode",
+    2: "Video pattern mode",
+    3: "Pattern On-The-Fly mode",
+}
+IT6535_POWER_MODES = {
+    0: "Power-Down",
+    1: "HDMI",
+    2: "DisplayPort",
+}
+ERROR_CODES = {
+    0: "No error.",
+    1: "Batch file checksum error.",
+    2: "Device failure.",
+    3: "Invalid command number.",
+    4: "Incompatible controller / DMD.",
+    5: "Command not allowed in current mode.",
+    6: "Invalid command parameter.",
+    7: "Item referred by the parameter is not present.",
+    8: "Out of resource (RAM / Flash).",
+    9: "Invalid BMP compression type.",
+    10: "Pattern bit number out of range.",
+    11: "Pattern BMP not present in flash.",
+    12: "Pattern dark time is out of range.",
+    13: "Signal delay parameter is out of range.",
+    14: "Pattern exposure time is out of range.",
+    15: "Pattern number is out of range.",
+    16: "Invalid pattern definition (errors other than 9-15).",
+    17: "Pattern image memory address is out of range.",
+    255: "Internal Error.",
+}
+HW_CONFIGURATION = {
+    0: "Unknown hardware",
+    1: "DLP6500",
+    2: "DLP9000",
+    3: "DLP670S",
+    4: "DLP500YX",
+}
+
 
 def _read_payload_size(data):
     """Return the payload size of a response message from the
@@ -45,8 +92,21 @@ def _bytes_to_string(buffer, num_bytes=64):
     return " ".join([hex(buffer[i]) for i in range(0, num_bytes)])
 
 
+def _get_bits(x, l, r):
+    """Return bits l:r in x, where l is the leftmost bit and r is the
+    rightmost.
+
+    For example, _get_bits(0b111001, 3, 0) would give '0b1001', and
+    _get_bits(0b111001, 5, 2) would give '0b1110'.
+    """
+    if r > l:
+        raise ValueError("'l' must be greater than or equal to 'r'")
+    mask = (1 << (l - r + 1)) - 1
+    return x >> r & mask
+
+
 def is_set(x, n):
-    """Returns True if bit n in x is set, else returns false."""
+    """Return True if bit n in x is set, else return False."""
     return x & 2 ** n != 0
 
 
@@ -118,27 +178,7 @@ def parse_error_code(code):
     """
     code = int(code)
     if code:
-        code = {
-            0: "No error.",
-            1: "Batch file checksum error.",
-            2: "Device failure.",
-            3: "Invalid command number.",
-            4: "Incompatible controller / DMD.",
-            5: "Command not allowed in current mode.",
-            6: "Invalid command parameter.",
-            7: "Item referred by the parameter is not present.",
-            8: "Out of resource (RAM / Flash).",
-            9: "Invalid BMP compression type.",
-            10: "Pattern bit number out of range.",
-            11: "Pattern BMP not present in flash.",
-            12: "Pattern dark time is out of range.",
-            13: "Signal delay parameter is out of range.",
-            14: "Pattern exposure time is out of range.",
-            15: "Pattern number is out of range.",
-            16: "Invalid pattern definition (errors other than 9-15).",
-            17: "Pattern image memory address is out of range.",
-            255: "Internal Error.",
-        }.get(code, "Not defined.")
+        code = ERROR_CODES.get(code, "Not defined.")
     return code
 
 
@@ -292,66 +332,104 @@ class WintechUSB:
         atexit.register(self.led_off)
 
         if not quick:
-            # self.stop_sequence()
+            self.stop_sequence()
             self.led_off()
-            self.set_input_source_configuration("24-bit parallel")
-            self.set_IT6535_power_mode(1)
-            self.set_display_mode(2)
+            self.set_input_source_configuration("Primary parallel interface (24-bit)")
+            self.set_IT6535_power_mode("HDMI")
+            self.set_display_mode("Video pattern mode")
             self.led_from_sequencer()
             self.log.info("Setup complete.")
 
-    def set_input_source_configuration(self, source="24-bit parallel"):
+    def get_input_source_configuration(self):
+        """Return the current input source configuration."""
+        self.log.debug("Get input source configuration")
+        config = self._HID_transaction_sequence("r", 0x1A00)[0]
+        source = INPUT_SOURCES.get(_get_bits(config, 2, 0))
+        bit_depth = INPUT_BIT_DEPTHS.get(_get_bits(config, 4, 3))
+        config = f"{source} ({bit_depth})"
+        self.log.info("Input source configuration is set to %s", config)
+        return config
+
+    def set_input_source_configuration(self, source):
         """Select the input source to be displayed by the DLPC900.
 
         Only the 24-bit parallel option is implemented. Other options
         supported by the board are are 16, 20, 24, or 30-bit parallel
-        port, Internal Test Pattern, and flash memory.
+        port, Internal Test Pattern, and flash memory. All Pattern modes
+        only use up to 24 bits. If a 30 bit video stream is input, the
+        last two bits of data for each color are not used.
         """
-        self.log.info("Set input source configuration to: %s", source)
-        if source == "24-bit parallel":
+        self.log.info("Set input source configuration to %s", source)
+        # curr_source = self.get_input_source_configuration()
+        # if source == curr_source:
+        #     return # there is a hardware bug where you have to do this every time
+        if source == "Primary parallel interface (24-bit)":
             self._HID_transaction_sequence("w", 0x1A00, [0x8])
             time.sleep(2)
+            self.get_input_source_configuration()
             self.check_all_status()
+        else:
+            self.log.warning("Unknown input source configuration %s", source)
+
+    def get_display_mode(self):
+        """Return the current display mode. See 2.4.1 'Display Mode
+        Selection' in the programmer's guide for more details. See
+        DISPLAY_MODES for valid modes.
+        """
+        self.log.debug("Get display mode")
+        mode = self._HID_transaction_sequence("r", 0x1A1B)[0]
+        mode = DISPLAY_MODES.get(_get_bits(mode, 1, 0))
+        self.log.info("Display mode is set to %s", mode)
+        return mode
 
     def set_display_mode(self, mode):
-        """Set the display mode. This takes about 5 seconds.
-
-        mode:
-            0 = Video mode
-            1 = Pre-stored pattern mode (Images from flash)
-            2 = Video pattern mode
-            3 = Pattern On-The-Fly mode (Images loaded through USB/I2C)
+        """Set the display mode. This takes about 5 seconds. See 2.4.1
+        'Display Mode Selection' in the programmer's guide for more
+        details. See DISPLAY_MODES for valid modes.
         """
-        displayModes = [
-            "Video mode",
-            "Pre-stored pattern mode",
-            "Video pattern mode",
-            "Pattern On-The-Fly mode",
-        ]
-        self.log.info("Set display mode to: %s", displayModes[mode])
-        if mode < 0 or mode > 3:
-            sys.exit("Bad display mode value passed in to set_display_mode()")
+        self.log.info("Set display mode to %s", mode)
+        curr_mode = self.get_display_mode()
+        if mode == curr_mode:
             return
-        self._HID_transaction_sequence("w", 0x1A1B, [mode])
+        try:
+            data = next(key for key, value in DISPLAY_MODES.items() if value == mode)
+        except StopIteration:
+            self.log.warning("Unknown display mode %s", mode)
+            return
+        self._HID_transaction_sequence("w", 0x1A1B, [data])
         time.sleep(5)
+        self.get_display_mode()
         self.check_all_status()
 
-    def set_IT6535_power_mode(self, source):
-        """Select an input source. See IT6535 Power Mode Command for
-        more details. It takes about 6 seconds to power up the IT6535
-        receiver.
-
-        source:
-            0 = Power-Down (Outputs will be tri-stated).
-            1 = Power-Up for HDMI input.
-            2 = Power-Up for DisplayPort input.
+    def get_IT6535_power_mode(self):
+        """Return the current IT6535 power mode setting. See 2.3.5
+        'IT6535 Power Mode' in the programmer's guide for more details.
+        See IT6535_POWER_MODES for valid modes.
         """
-        IT6535_power_modes = ["Power-down", "HDMI", "DisplayPort"]
-        self.log.info("IT6535 power mode set to: %s", IT6535_power_modes[source])
-        if source < 0 or source > 2:
-            sys.exit("Bad source value passed in to set_IT6535_power_mode()")
-        self._HID_transaction_sequence("w", 0x1A01, [source])
+        self.log.debug("Get IT6535 power mode")
+        mode = self._HID_transaction_sequence("r", 0x1A01)[0]
+        mode = IT6535_POWER_MODES.get(_get_bits(mode, 1, 0))
+        self.log.info("IT6535 power mode is set to %s", mode)
+        return mode
+
+    def set_IT6535_power_mode(self, mode):
+        """Select an input source. See 2.3.5
+        'IT6535 Power Mode' in the programmer's guide for more details.
+        See IT6535_POWER_MODES for valid modes. It takes about 6 seconds
+        to power up the IT6535 receiver.
+        """
+        self.log.info("Set IT6535 power mode to %s", mode)
+        curr_mode = self.get_IT6535_power_mode()
+        if mode == curr_mode:
+            return
+        try:
+            data = next(key for key, value in IT6535_POWER_MODES.items() if value == mode)
+        except StopIteration:
+            self.log.warning("Unknown IT6535 power mode %s", mode)
+            return
+        self._HID_transaction_sequence("w", 0x1A01, [data])
         time.sleep(6)
+        self.get_IT6535_power_mode()
         self.check_all_status()
 
     def get_hardware_status(self):
@@ -359,44 +437,48 @@ class WintechUSB:
         programmer's guide.
         """
         self.log.debug("Checking hardware status")
-        response = self._HID_transaction_sequence("r", 0x1A0A)
-        self.log.debug("Hardware status: %s", hex(response[0]))
-        status = parse_hardware_status(response[0])
+        response = self._HID_transaction_sequence("r", 0x1A0A)[0]
+        self.log.debug("Hardware status: %s", hex(response))
+        status = parse_hardware_status(response)
         if status:
             self.log.warning(status)
+        return response
 
     def get_system_status(self):
         """Read system status. See 2.1.2 "System Status" in the
         programmer's guide.
         """
         self.log.debug("Checking system status")
-        response = self._HID_transaction_sequence("r", 0x1A0B)
-        status = parse_system_status(response[0])
-        self.log.debug("System status: %s", hex(response[0]))
+        response = self._HID_transaction_sequence("r", 0x1A0B)[0]
+        status = parse_system_status(response)
+        self.log.debug("System status: %s", hex(response))
         if status:
             self.log.warning(status)
+        return response
 
     def get_main_status(self):
         """Read main status. See 2.1.3 "Main Status" in the programmer's
         guide.
         """
         self.log.debug("Checking main status")
-        response = self._HID_transaction_sequence("r", 0x1A0C)
-        self.log.debug("Main status: %s", hex(response[0]))
-        status = parse_main_status(response[0])
+        response = self._HID_transaction_sequence("r", 0x1A0C)[0]
+        self.log.debug("Main status: %s", hex(response))
+        status = parse_main_status(response)
         if status:
             self.log.warning(status)
+        return response
 
     def get_error_status(self):
         """Read error status. See 2.1.6 "Read Error Code" in the
         programmer's guide.
         """
         self.log.debug("Checking error codes")
-        response = self._HID_transaction_sequence("r", 0x0100)
-        self.log.debug("Error code: %s", hex(response[0]))
-        errors = parse_error_code(response[0])
+        response = self._HID_transaction_sequence("r", 0x0100)[0]
+        self.log.debug("Error code: %s", hex(response))
+        errors = parse_error_code(response)
         if errors:
             self.log.warning(errors)
+        return response
 
     def check_all_status(self):
         """Read all status."""
@@ -647,7 +729,7 @@ class WintechUSB:
 
     def get_firmware_version(self):
         """Return the version information of the DLPC900 firmware."""
-        self.log.debug("Reading firmware version information")
+        self.log.info("Reading firmware version information")
         version = self._HID_transaction_sequence("r", 0x0205)
         print(version)
         print(type(version))
@@ -668,13 +750,7 @@ class WintechUSB:
         """
         self.log.info("Reading hardware configuration and firmware tag")
         response = self._HID_transaction_sequence("r", 0x0206)
-        hw_config = {
-            0: "Unknown hardware",
-            1: "DLP6500",
-            2: "DLP9000",
-            3: "DLP670S",
-            4: "DLP500YX",
-        }.get(response[0], "Hardware not defined")
+        hw_config = HW_CONFIGURATION.get(response[0], "Hardware not defined")
         firmware_tag = response[1:25].tobytes().decode("ascii")
         msg = f"Hardware: {hw_config}\tFirmware: {firmware_tag}"
         self.log.info(msg)
