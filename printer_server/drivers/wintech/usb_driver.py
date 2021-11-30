@@ -105,6 +105,18 @@ def _get_bits(x, l, r):
     return x >> r & mask
 
 
+def _DLPC900_string(data):
+    """Return Python string representation from raw DLPC900 NULL
+    terminated string data.
+    """
+    return data.tobytes().split(b"\x00")[0].decode("ascii")
+
+
+def _dict_to_string(d):
+    """Return a log friendly string from a dict."""
+    return ", ".join(f"{key}: {value}" for key, value in d.items())
+
+
 def is_set(x, n):
     """Return True if bit n in x is set, else return False."""
     return x & 2 ** n != 0
@@ -737,18 +749,16 @@ class WintechUSB:
 
     def get_firmware_version(self):
         """Return the version information of the DLPC900 firmware."""
-        self.log.info("Reading firmware version information")
-        version = self._HID_transaction_sequence("r", 0x0205)
-        print(version)
-        print(type(version))
-        # print(version.tounicode())
-        print(version.tobytes().decode())
-        b = b""
-        for byte in version:
-            b += byte.to_bytes()
-        print(type(b))
-        print(b)
-        return version
+        self.log.debug("Reading firmware version information")
+        v = self._HID_transaction_sequence("r", 0x0205)
+        version_info = {
+            "Application software": f"{v[3]}.{v[2]}{_DLPC900_string(v[0:1])}",
+            "API software": f"{v[7]}.{v[6]}{_DLPC900_string(v[4:5])}",
+            "Software configuration": f"{v[11]}.{v[10]}{_DLPC900_string(v[8:9])}",
+            "Sequencer configuraton": f"{v[15]}.{v[14]}{_DLPC900_string(v[12:13])}",
+        }
+        self.log.info(_dict_to_string(version_info))
+        return version_info
 
     def get_hardware_configuration_and_firmware_tag(self):
         """Return the hardware configuration of the system and also
@@ -756,12 +766,12 @@ class WintechUSB:
         Configuration and Firmware Tag Information" in the programmer's
         guide.
         """
-        self.log.info("Reading hardware configuration and firmware tag")
+        self.log.debug("Reading hardware configuration and firmware tag")
         response = self._HID_transaction_sequence("r", 0x0206)
         hw_config = HW_CONFIGURATION.get(response[0], "Hardware not defined")
-        firmware_tag = response[1:25].tobytes().decode("ascii")
-        msg = f"Hardware: {hw_config}\tFirmware: {firmware_tag}"
-        self.log.info(msg)
+        firmware_tag = _DLPC900_string(response[1:25])
+        msg = {"Hardware config": f"{hw_config}", "Firmware tag": f"{firmware_tag}"}
+        self.log.info(_dict_to_string(msg))
         return msg
 
     def get_error_description(self):
@@ -774,7 +784,7 @@ class WintechUSB:
         """
         self.log.debug("Reading error description")
         response = self._HID_transaction_sequence("r", 0x0101)
-        response_string = response.tobytes().split(b"\x00")[0].decode("ascii")
+        response_string = _DLPC900_string(response)
         if response_string:
             self.log.warning("Error detected: %s", response_string)
         return response_string
