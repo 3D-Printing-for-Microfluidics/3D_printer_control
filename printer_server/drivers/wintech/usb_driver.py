@@ -69,8 +69,7 @@ def _num_to_bits(number, length):
     """
     b = bin(number)[2:]
     padding = length - len(b)
-    b = "0" * padding + b
-    return b
+    return "0" * padding + b
 
 
 def _bits_to_bytes(bit_string):
@@ -261,9 +260,9 @@ class WintechUSB:
         self.log.debug("USB HID write %s", _bytes_to_string(data, min(p_size + 4, 64)))
         self.dev.write(0x1, data, timeout=10000)
 
-    def _HID_transaction_sequence(self, mode, command, data=None):
+    def _DLPC900_command(self, mode, command, data=None):
         """Communicate with the DLPC900 controller over USB through a
-        sequence of HID writes followed by an HID read. See 1.2.1 "USB
+        sequence of HID writes followed by HID reads. See 1.2.1 "USB
         Transaction Sequence" in the DLPC900 programmer's guide for more
         information.
 
@@ -273,56 +272,38 @@ class WintechUSB:
         data: The rest of the parameters the command needs. See the
             programmer's guide for details on each command.
 
-        The DLPC900 can accept up to 64 bytes per transaction. Commands
-        with data that are larger than 64 bytes are broken into multiple
-        write transactions of 64 bytes, with the final write transaction
+        The DLPC900 can accept up to 64 bytes per transaction. Command
+        sequences larger than 64 bytes are broken into multiple write
+        transactions of 64 bytes each, with the final write transaction
         zero padded up to 64 bytes. The DLPC900 then responds by placing
-        a response in it's internal buffer and a final read transaction
-        is issued to retrieve it.
+        a response in it's internal buffer and a series of one or more
+        read transactions is issued to retrieve it. Only the first read
+        and write transactions include header information.
+
+        Header format:
+        1 flag byte
+        1 sequence byte
+        2 byte payload length (little-endian)
+
+        Payload format:
+        2 byte USB command (litle-endian, only included in first write transaction)
+        n bytes of data
+        zero padding up to next 64 byte boundary
         """
         if data is None:
             data = []
-
-        # format header
+        payload_length = len(data) + 2
         buffer = []
-        flag_byte = "11000000" if mode == "r" else "01000000"
-        buffer.append(_bits_to_bytes(flag_byte)[0])
-        sequence_byte = self.transaction_counter & 0xFF
-        buffer.append(sequence_byte)
-
-        # calculate the payload length (data +2 bytes for USB command)
-        p_length = _bits_to_bytes(_num_to_bits(len(data) + 2, 16))
-        buffer.append(p_length[0])  # add LSB then MSB
-        buffer.append(p_length[1])
-
-        # format USB command - LSB first, then MSB
+        buffer.append(0xC0 if mode == "r" else 0x40)
+        buffer.append(self.transaction_counter & 0xFF)
+        buffer.append(payload_length & 0xFF)
+        buffer.append(payload_length >> 8)
         buffer.append(command & 0xFF)
         buffer.append(command >> 8)
-
-        # format data and send in 64 byte increments
-        if len(buffer) + len(data) <= 64:  # command will fit in one 64 byte transaction
-            for i in data:
-                buffer.append(i)
-            for i in range(64 - len(buffer)):
-                buffer.append(0x00)  # zero pad unused space up to 64 bytes
-            self._HID_write(buffer)
-        else:  # command will not fit into one transaction
-            for i in range(64 - len(buffer)):
-                buffer.append(data[i])
-            self._HID_write(buffer)  # write first 64 bytes
-            buffer = []
-            j = 0
-            while j < len(data) - 58:  # set up buffer in 64 byte increments
-                buffer.append(data[j + 58])
-                j = j + 1
-                if j % 64 == 0:
-                    self._HID_write(buffer)  # write next 64 bytes
-                    buffer = []
-            if j % 64 != 0:
-                while j % 64 != 0:
-                    buffer.append(0x00)  # zero pad last set of bytes up to 64
-                    j = j + 1
-                self._HID_write(buffer)  # write final 64 bytes
+        buffer.extend(data)
+        buffer.extend([0x00] * (64 - len(buffer) % 64))
+        for i in range(0, len(buffer), 64):
+            self._HID_write(buffer[i : i + 64])
         self.transaction_counter += 1
         return self._HID_read()
 
@@ -355,7 +336,7 @@ class WintechUSB:
     def get_input_source_configuration(self):
         """Return the current input source configuration."""
         self.log.debug("Get input source configuration")
-        config = self._HID_transaction_sequence("r", 0x1A00)[0]
+        config = self._DLPC900_command("r", 0x1A00)[0]
         source = INPUT_SOURCES.get(_get_bits(config, 2, 0))
         bit_depth = INPUT_BIT_DEPTHS.get(_get_bits(config, 4, 3))
         config = f"{source} ({bit_depth})"
@@ -376,7 +357,7 @@ class WintechUSB:
         # if source == curr_source:
         #     return # there is a hardware bug where you have to do this every time
         if source == "Primary parallel interface (24-bit)":
-            self._HID_transaction_sequence("w", 0x1A00, [0x8])
+            self._DLPC900_command("w", 0x1A00, [0x8])
             time.sleep(2)
             self.get_input_source_configuration()
             self.check_all_status()
@@ -389,7 +370,7 @@ class WintechUSB:
         DISPLAY_MODES for valid modes.
         """
         self.log.debug("Get display mode")
-        mode = self._HID_transaction_sequence("r", 0x1A1B)[0]
+        mode = self._DLPC900_command("r", 0x1A1B)[0]
         mode = DISPLAY_MODES.get(_get_bits(mode, 1, 0))
         self.log.info("Display mode is set to %s", mode)
         return mode
@@ -408,7 +389,7 @@ class WintechUSB:
         except StopIteration:
             self.log.warning("Unknown display mode %s", mode)
             return
-        self._HID_transaction_sequence("w", 0x1A1B, [data])
+        self._DLPC900_command("w", 0x1A1B, [data])
         time.sleep(5)
         self.get_display_mode()
         self.check_all_status()
@@ -419,7 +400,7 @@ class WintechUSB:
         See IT6535_POWER_MODES for valid modes.
         """
         self.log.debug("Get IT6535 power mode")
-        mode = self._HID_transaction_sequence("r", 0x1A01)[0]
+        mode = self._DLPC900_command("r", 0x1A01)[0]
         mode = IT6535_POWER_MODES.get(_get_bits(mode, 1, 0))
         self.log.info("IT6535 power mode is set to %s", mode)
         return mode
@@ -439,7 +420,7 @@ class WintechUSB:
         except StopIteration:
             self.log.warning("Unknown IT6535 power mode %s", mode)
             return
-        self._HID_transaction_sequence("w", 0x1A01, [data])
+        self._DLPC900_command("w", 0x1A01, [data])
         time.sleep(6)
         self.get_IT6535_power_mode()
         self.check_all_status()
@@ -449,7 +430,7 @@ class WintechUSB:
         programmer's guide.
         """
         self.log.debug("Checking hardware status")
-        response = self._HID_transaction_sequence("r", 0x1A0A)[0]
+        response = self._DLPC900_command("r", 0x1A0A)[0]
         self.log.debug("Hardware status: %s", hex(response))
         status = parse_hardware_status(response)
         if status:
@@ -461,7 +442,7 @@ class WintechUSB:
         programmer's guide.
         """
         self.log.debug("Checking system status")
-        response = self._HID_transaction_sequence("r", 0x1A0B)[0]
+        response = self._DLPC900_command("r", 0x1A0B)[0]
         status = parse_system_status(response)
         self.log.debug("System status: %s", hex(response))
         if status:
@@ -473,7 +454,7 @@ class WintechUSB:
         guide.
         """
         self.log.debug("Checking main status")
-        response = self._HID_transaction_sequence("r", 0x1A0C)[0]
+        response = self._DLPC900_command("r", 0x1A0C)[0]
         self.log.debug("Main status: %s", hex(response))
         status = parse_main_status(response)
         if status:
@@ -485,7 +466,7 @@ class WintechUSB:
         programmer's guide.
         """
         self.log.debug("Checking error codes")
-        response = self._HID_transaction_sequence("r", 0x0100)[0]
+        response = self._DLPC900_command("r", 0x0100)[0]
         self.log.debug("Error code: %s", hex(response))
         errors = parse_error_code(response)
         if errors:
@@ -525,7 +506,7 @@ class WintechUSB:
         self.log.info("Setting LED power to %s", power)
         if power < 0 or power > 100:
             sys.exit()
-        self._HID_transaction_sequence("w", 0x0B01, [0, 0, power])
+        self._DLPC900_command("w", 0x0B01, [0, 0, power])
         self.check_all_status()
 
     def led_on(self):
@@ -533,7 +514,7 @@ class WintechUSB:
         programmer's guide.
         """
         self.log.info("LED turned on")
-        self._HID_transaction_sequence("w", 0x1A07, [0x4])
+        self._DLPC900_command("w", 0x1A07, [0x4])
         self.check_all_status()
 
     def led_off(self):
@@ -541,7 +522,7 @@ class WintechUSB:
         programmer's guide.
         """
         self.log.info("LED turned off")
-        self._HID_transaction_sequence("w", 0x1A07, [0x0])
+        self._DLPC900_command("w", 0x1A07, [0x0])
         self.check_all_status()
 
     def led_from_sequencer(self):
@@ -549,7 +530,7 @@ class WintechUSB:
         "LED Enable Outputs" in the programmer's guide.
         """
         self.log.info("LED set to run from sequencer")
-        self._HID_transaction_sequence("w", 0x1A07, [0xC])
+        self._DLPC900_command("w", 0x1A07, [0xC])
         self.check_all_status()
 
     def idle_on(self):
@@ -567,7 +548,7 @@ class WintechUSB:
         if not self.is_idle:
             self.log.info("Idle mode enabled")
             self.is_idle = True
-            self._HID_transaction_sequence("w", 0x0201, [0x1])
+            self._DLPC900_command("w", 0x0201, [0x1])
             self.check_all_status()
 
     def idle_off(self):
@@ -576,7 +557,7 @@ class WintechUSB:
         if self.is_idle:
             self.log.info("Idle mode disabled")
             self.is_idle = False
-            self._HID_transaction_sequence("w", 0x0201, [0x0])
+            self._DLPC900_command("w", 0x0201, [0x0])
             self.check_all_status()
 
     def standby(self):
@@ -591,21 +572,21 @@ class WintechUSB:
         Standby mode must be disabled prior to sending any new data."
         Status commands still work in idle mode.
         """
-        self._HID_transaction_sequence("w", 0x0200, [0x1])
+        self._DLPC900_command("w", 0x0200, [0x1])
         self.check_all_status()
 
     def wakeup(self):
         """Put DLPC900 into normal power mode. See 2.3.1.1 "Power Mode"
         in the programmer's guide.
         """
-        self._HID_transaction_sequence("w", 0x0200, [0x0])
+        self._DLPC900_command("w", 0x0200, [0x0])
         self.check_all_status()
 
     def software_reset(self):
         """Reset the internal DLPC900 software. A full reset takes about
         7 seconds.
         """
-        self._HID_transaction_sequence("w", 0x0200, [0x2])
+        self._DLPC900_command("w", 0x0200, [0x2])
         time.sleep(7)
         self.check_all_status()
 
@@ -614,7 +595,7 @@ class WintechUSB:
         Display Start/Stop" in the programmer's guide.
         """
         self.log.info("Starting sequence")
-        self._HID_transaction_sequence("w", 0x1A24, [0x2])
+        self._DLPC900_command("w", 0x1A24, [0x2])
         self.check_all_status()
 
     def pause_sequence(self):
@@ -626,7 +607,7 @@ class WintechUSB:
         pattern in the sequence from the beginning.
         """
         self.log.info("Pausing sequence")
-        self._HID_transaction_sequence("w", 0x1A24, [0x1])
+        self._DLPC900_command("w", 0x1A24, [0x1])
         self.check_all_status()
 
     def stop_sequence(self):
@@ -639,7 +620,7 @@ class WintechUSB:
         """
         if self.sequencer_is_running():
             self.log.info("Stopping sequence")
-            self._HID_transaction_sequence("w", 0x1A24, [0x0])
+            self._DLPC900_command("w", 0x1A24, [0x0])
             self.check_all_status()
 
     def sequencer_is_running(self):
@@ -666,7 +647,7 @@ class WintechUSB:
         payload = _bits_to_bytes(
             _num_to_bits(repeat, 32) + "00000" + _num_to_bits(images, 11)
         )
-        self._HID_transaction_sequence("w", 0x1A31, payload)
+        self._DLPC900_command("w", 0x1A31, payload)
         self.check_all_status()
 
     def define_pattern(self, exposure):
@@ -744,13 +725,13 @@ class WintechUSB:
         payload[9] = triggerOut
         payload[10] = patternId
         payload[11] = (bitPosition & 0x1F) << 3
-        self._HID_transaction_sequence("w", 0x1A34, payload)
+        self._DLPC900_command("w", 0x1A34, payload)
         self.check_all_status()
 
     def get_firmware_version(self):
         """Return the version information of the DLPC900 firmware."""
         self.log.debug("Reading firmware version information")
-        v = self._HID_transaction_sequence("r", 0x0205)
+        v = self._DLPC900_command("r", 0x0205)
         version_info = {
             "Application software": f"{v[3]}.{v[2]}{_DLPC900_string(v[0:1])}",
             "API software": f"{v[7]}.{v[6]}{_DLPC900_string(v[4:5])}",
@@ -767,7 +748,7 @@ class WintechUSB:
         guide.
         """
         self.log.debug("Reading hardware configuration and firmware tag")
-        response = self._HID_transaction_sequence("r", 0x0206)
+        response = self._DLPC900_command("r", 0x0206)
         hw_config = HW_CONFIGURATION.get(response[0], "Hardware not defined")
         firmware_tag = _DLPC900_string(response[1:25])
         msg = {"Hardware config": f"{hw_config}", "Firmware tag": f"{firmware_tag}"}
@@ -783,7 +764,7 @@ class WintechUSB:
         the NULL character and convert just the first element to ascii.
         """
         self.log.debug("Reading error description")
-        response = self._HID_transaction_sequence("r", 0x0101)
+        response = self._DLPC900_command("r", 0x0101)
         response_string = _DLPC900_string(response)
         if response_string:
             self.log.warning("Error detected: %s", response_string)
