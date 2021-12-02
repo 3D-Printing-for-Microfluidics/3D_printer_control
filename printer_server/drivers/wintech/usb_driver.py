@@ -105,8 +105,8 @@ def _get_bits(x, l, r):
 
 
 def _DLPC900_string(data):
-    """Return Python string representation from raw DLPC900 NULL
-    terminated string data.
+    """Return the Python string representation of raw NULL terminated
+    string data.
     """
     return data.tobytes().split(b"\x00")[0].decode("ascii")
 
@@ -347,6 +347,9 @@ class WintechUSB:
     def set_input_source_configuration(self, source):
         """Select the input source to be displayed by the DLPC900.
 
+        See 2.3.3.2 'Input Source Configuration' in the programmer's
+        guide.
+
         Only the 24-bit parallel option is implemented. Other options
         supported by the board are are 16, 20, 24, or 30-bit parallel
         port, Internal Test Pattern, and flash memory. All Pattern modes
@@ -366,9 +369,10 @@ class WintechUSB:
             self.log.warning("Unknown input source configuration %s", source)
 
     def get_display_mode(self):
-        """Return the current display mode. See 2.4.1 'Display Mode
-        Selection' in the programmer's guide for more details. See
-        DISPLAY_MODES for valid modes.
+        """Return the current display mode.
+
+        See 2.4.1 'Display Mode Selection' in the programmer's guide for
+        more details. See DISPLAY_MODES for valid modes.
         """
         self.log.debug("Get display mode")
         mode = self._DLPC900_command("r", 0x1A1B)[0]
@@ -377,9 +381,17 @@ class WintechUSB:
         return mode
 
     def set_display_mode(self, mode):
-        """Set the display mode. This takes about 5 seconds. See 2.4.1
-        'Display Mode Selection' in the programmer's guide for more
-        details. See DISPLAY_MODES for valid modes.
+        """Set the display mode.
+
+        See 2.4.1 Display Mode Selection' in the programmer's guide. See
+        DISPLAY_MODES for valid modes.
+
+        To change to Video pattern mode, the system must first change to
+        Video mode with the desired source enabled and sync must be
+        locked before switching to Video Pattern mode. Once sync lock is
+        achieved it takes about 300 ms to complete the transition to
+        Video Pattern mode. If the display mode is read back before this
+        time, it may not return the correct mode.
         """
         self.log.info("Set display mode to %s", mode)
         curr_mode = self.get_display_mode()
@@ -396,9 +408,10 @@ class WintechUSB:
         self.check_all_status()
 
     def get_IT6535_power_mode(self):
-        """Return the current IT6535 power mode setting. See 2.3.5
-        'IT6535 Power Mode' in the programmer's guide for more details.
-        See IT6535_POWER_MODES for valid modes.
+        """Return the current IT6535 power mode setting.
+
+        See 2.3.5 'IT6535 Power Mode' in the programmer's guide. See
+        IT6535_POWER_MODES for valid modes.
         """
         self.log.debug("Get IT6535 power mode")
         mode = self._DLPC900_command("r", 0x1A01)[0]
@@ -407,10 +420,11 @@ class WintechUSB:
         return mode
 
     def set_IT6535_power_mode(self, mode):
-        """Select an input source. See 2.3.5
-        'IT6535 Power Mode' in the programmer's guide for more details.
-        See IT6535_POWER_MODES for valid modes. It takes about 6 seconds
-        to power up the IT6535 receiver.
+        """Select an input source.
+
+        See 2.3.5 'IT6535 Power Mode' in the programmer's guide for more
+        details. See IT6535_POWER_MODES for valid modes. It takes about
+        6 seconds to power up the IT6535 receiver.
         """
         self.log.info("Set IT6535 power mode to %s", mode)
         curr_mode = self.get_IT6535_power_mode()
@@ -426,8 +440,9 @@ class WintechUSB:
         self.check_all_status()
 
     def get_hardware_status(self):
-        """Read hardware status. See 2.1.1 "Hardware Status" in the
-        programmer's guide.
+        """Return the hardware status.
+
+        See 2.1.1 "Hardware Status" in the programmer's guide.
         """
         self.log.debug("Checking hardware status")
         response = self._DLPC900_command("r", 0x1A0A)[0]
@@ -438,8 +453,9 @@ class WintechUSB:
         return response
 
     def get_system_status(self):
-        """Read system status. See 2.1.2 "System Status" in the
-        programmer's guide.
+        """Return the system status.
+
+        See 2.1.2 "System Status" in the programmer's guide.
         """
         self.log.debug("Checking system status")
         response = self._DLPC900_command("r", 0x1A0B)[0]
@@ -450,8 +466,9 @@ class WintechUSB:
         return response
 
     def get_main_status(self):
-        """Read main status. See 2.1.3 "Main Status" in the programmer's
-        guide.
+        """Return the main status.
+
+        See 2.1.3 "Main Status" in the programmer's guide.
         """
         self.log.debug("Checking main status")
         response = self._DLPC900_command("r", 0x1A0C)[0]
@@ -462,8 +479,9 @@ class WintechUSB:
         return response
 
     def get_error_status(self):
-        """Read error status. See 2.1.6 "Read Error Code" in the
-        programmer's guide.
+        """Read error status.
+
+        See 2.1.6 "Read Error Code" in the programmer's guide.
         """
         self.log.debug("Checking error codes")
         response = self._DLPC900_command("r", 0x0100)[0]
@@ -482,8 +500,9 @@ class WintechUSB:
         self.get_error_status()
 
     def set_led_power(self, power):
-        """Set the current supplied to the LED driver. See 2.3.5.2 "LED
-        Driver Current" in the programmer's guide.
+        """Set the current supplied to the LED driver. CAUTION below.
+
+        See 2.3.5.2 "LED Driver Current" in the programmer's guide.
 
         CAUTION: Care should be taken when using this command. Improper
         use of this command can lead to damage to the system. The
@@ -510,32 +529,36 @@ class WintechUSB:
         self.check_all_status()
 
     def led_on(self):
-        """Turn on the LED. See 2.3.5.1 "LED Enable Outputs" in the
-        programmer's guide.
+        """Turn on the LED.
+
+        See 2.3.5.1 "LED Enable Outputs" in the programmer's guide.
         """
         self.log.info("LED turned on")
         self._DLPC900_command("w", 0x1A07, [0x4])
         self.check_all_status()
 
     def led_off(self):
-        """Turn off the LED. See 2.3.5.1 "LED Enable Outputs" in the
-        programmer's guide.
+        """Turn off the LED.
+
+        See 2.3.5.1 "LED Enable Outputs" in the programmer's guide.
         """
         self.log.info("LED turned off")
         self._DLPC900_command("w", 0x1A07, [0x0])
         self.check_all_status()
 
     def led_from_sequencer(self):
-        """Set the LED to be controlled by the sequencer. See 2.3.5.1
-        "LED Enable Outputs" in the programmer's guide.
+        """Set the LED to be controlled by the sequencer.
+
+        See 2.3.5.1 "LED Enable Outputs" in the programmer's guide.
         """
         self.log.info("LED set to run from sequencer")
         self._DLPC900_command("w", 0x1A07, [0xC])
         self.check_all_status()
 
     def idle_on(self):
-        """Enable idle mode. - See section 2.4.1.4 "DMD Idle Mode" in
-        the programmer's guide.
+        """Enable idle mode.
+
+        See section 2.4.1.4 "DMD Idle Mode" in the programmer's guide.
 
         "It is strongly recommended that anytime the DMD is idle and not
         actively projecting data that the DMD Idle Mode be enabled to
@@ -552,8 +575,9 @@ class WintechUSB:
             self.check_all_status()
 
     def idle_off(self):
-        """Enable idle mode. - See section 2.4.1.4 "DMD Idle Mode" in
-        the programmer's guide."""
+        """Disable idle mode.
+
+        See section 2.4.1.4 "DMD Idle Mode" in the programmer's guide."""
         if self.is_idle:
             self.log.info("Idle mode disabled")
             self.is_idle = False
@@ -561,8 +585,9 @@ class WintechUSB:
             self.check_all_status()
 
     def standby(self):
-        """Put DLPC900 into standby power mode - See 2.3.1.1 "Power
-        Mode" in the programmer's guide.
+        """Put DLPC900 into standby power mode.
+
+        See 2.3.1.1 "Power Mode" in the programmer's guide.
 
         "The Power Control places the DLPC900 in a standby state and
         powers down the DMD interface. Enter Standby mode prior to any
@@ -576,31 +601,37 @@ class WintechUSB:
         self.check_all_status()
 
     def wakeup(self):
-        """Put DLPC900 into normal power mode. See 2.3.1.1 "Power Mode"
-        in the programmer's guide.
+        """Put DLPC900 into normal power mode.
+
+        See 2.3.1.1 "Power Mode" in the programmer's guide.
         """
         self._DLPC900_command("w", 0x0200, [0x0])
         self.check_all_status()
 
     def software_reset(self):
-        """Reset the internal DLPC900 software. A full reset takes about
-        7 seconds.
+        """Reset the internal DLPC900 software.
+
+        A full reset takes about 7 seconds.
         """
         self._DLPC900_command("w", 0x0200, [0x2])
         time.sleep(7)
         self.check_all_status()
 
     def start_sequence(self):
-        """Start the pattern display sequence. See 2.4.4.3.1 "Pattern
-        Display Start/Stop" in the programmer's guide.
+        """Start the pattern display sequence.
+
+        See 2.4.4.3.1 "Pattern Display Start/Stop" in the programmer's
+        guide.
         """
         self.log.info("Starting sequence")
         self._DLPC900_command("w", 0x1A24, [0x2])
         self.check_all_status()
 
     def pause_sequence(self):
-        """Pause the pattern display sequence. See 2.4.4.3.1 "Pattern
-        Display Start/Stop" in the programmer's guide.
+        """Pause the pattern display sequence.
+
+        See 2.4.4.3.1 "Pattern Display Start/Stop" in the programmer's
+        guide.
 
         If a pattern is paused during exposure, the next start command
         will start the pattern sequence by re-displaying the current
@@ -611,8 +642,10 @@ class WintechUSB:
         self.check_all_status()
 
     def stop_sequence(self):
-        """Stop the pattern display sequence. See 2.4.4.3.1 "Pattern
-        Display Start/Stop" in the programmer's guide.
+        """Stop the pattern display sequence.
+
+        See 2.4.4.3.1 "Pattern Display Start/Stop" in the programmer's
+        guide.
 
         If a pattern is stopped during exposure, the next start command
         will start the pattern sequence by re-displaying the current
@@ -632,8 +665,10 @@ class WintechUSB:
 
     def configure_pattern_LUT(self, images=1, repeat=1):
         """Configure the pattern LUT. This must be called before
-        defining any patterns. See 2.4.4.3.3 "Pattern Display LUT
-        Configuration" in the programmer's guide.
+        defining any patterns.
+
+        See 2.4.4.3.3 "Pattern Display LUT Configuration" in the
+        programmer's guide.
 
         images - The number of patterns to be uploaded.
         repeat - The number of times to repeat each pattern. Defaults to
@@ -651,9 +686,11 @@ class WintechUSB:
         self.check_all_status()
 
     def define_pattern(self, exposure):
-        """Define a pattern. See 2.4.4.3.4 "Pattern Display LUT
-        Definition" in the programmer's guide. The sequencer must be
-        stopped before defining a new pattern.
+        """Define a pattern.
+
+        See 2.4.4.3.4 "Pattern Display LUT Definition" in the
+        programmer's guide. The sequencer must be stopped before
+        defining a new pattern.
 
         exposure - Exposure time in ms.
 
@@ -742,10 +779,11 @@ class WintechUSB:
         return version_info
 
     def get_hardware_configuration_and_firmware_tag(self):
-        """Return the hardware configuration of the system and also
-        the 31 byte ASCII firmware tag. See 2.1.5 "Reading Hardware
-        Configuration and Firmware Tag Information" in the programmer's
-        guide.
+        """Return the hardware configuration of the system and the 31
+        byte ASCII firmware tag.
+
+        See 2.1.5 "Reading Hardware Configuration and Firmware Tag
+        Information" in the programmer's guide.
         """
         self.log.debug("Reading hardware configuration and firmware tag")
         response = self._DLPC900_command("r", 0x0206)
@@ -756,12 +794,10 @@ class WintechUSB:
         return msg
 
     def get_error_description(self):
-        """Return the error descriptive string from the DLPC900 of the
-        last executed command. An empty string means no error.
+        """Return the error descriptive string of the last executed
+        command.
 
-        Strings returned from the DLPC900 are null terminated and
-        internal buffers aren't sanitized between writes, so we split on
-        the NULL character and convert just the first element to ascii.
+        An empty string means no error.
         """
         self.log.debug("Reading error description")
         response = self._DLPC900_command("r", 0x0101)
