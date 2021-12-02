@@ -15,10 +15,10 @@ class Wintech:
         self.led_power = 0
         self.dmd_controller = None
 
-    def connect(self, quick=False):
+    def connect(self):
         """Start the screen thread and connect to the DMD controller."""
         self.dmd_controller = WintechUSB(log_level=self.log_level)
-        self.dmd_controller.connect(quick)
+        self.dmd_controller.connect()
 
     def project(self, exposure_time_ms, repeat=1, led_power=100):
         """Call all of the necessary methods to project an image and
@@ -30,6 +30,12 @@ class Wintech:
             forever.
         led_power: LED power setting (0-100).
         """
+        self.log.info(
+            "Exposing for %s ms at a power of %s. Repeat %s.",
+            exposure_time_ms,
+            led_power,
+            repeat,
+        )
         if 0 > exposure_time_ms > 10000:
             self.log.warning("Exposure time is too high. Using maximum of 10 seconds.")
             exposure_time_ms = 10000
@@ -38,6 +44,5 @@ class Wintech:
             self.led_power = led_power
         self.dmd_controller.define_pattern(exposure_time_ms)
         self.dmd_controller.configure_pattern_LUT(repeat=repeat)
-        # time.sleep(0.1)
         self.dmd_controller.start_sequence()
         time.sleep(exposure_time_ms * 0.001 + 0.1)

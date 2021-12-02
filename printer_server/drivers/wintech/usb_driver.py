@@ -307,7 +307,7 @@ class WintechUSB:
         self.transaction_counter += 1
         return self._HID_read()
 
-    def connect(self, quick=False):
+    def connect(self):
         """Find and connect to the DLPC900 and perform associated setup.
 
         First the VID and PID combination representing the DLPC900
@@ -323,16 +323,11 @@ class WintechUSB:
         self.dev.set_configuration()
         atexit.register(self.stop_sequence)
         atexit.register(self.led_off)
-
-        if not quick:
-            self.led_off()
-            self.set_IT6535_power_mode("HDMI")
-            self.set_display_mode("Video mode")
-            # wait for video lock
-            time.sleep(5)
-            self.set_display_mode("Video pattern mode")
-            self.led_from_sequencer()
-            self.log.info("Setup complete.")
+        self.led_off()
+        self.set_IT6535_power_mode("HDMI")
+        self.set_display_mode("Video pattern mode")
+        self.led_from_sequencer()
+        self.log.info("Setup complete")
 
     def get_input_source_configuration(self):
         """Return the current input source configuration."""
@@ -380,7 +375,7 @@ class WintechUSB:
         self.log.debug("Display mode is set to %s", mode)
         return mode
 
-    def set_display_mode(self, mode):
+    def set_display_mode(self, mode, log_level=logging.INFO):
         """Set the display mode.
 
         See 2.4.1 Display Mode Selection' in the programmer's guide. See
@@ -393,7 +388,7 @@ class WintechUSB:
         Video Pattern mode. If the display mode is read back before this
         time, it may not return the correct mode.
         """
-        self.log.info("Set display mode to %s", mode)
+        self.log.log(log_level, "Set display mode to %s", mode)
         curr_mode = self.get_display_mode()
         if mode == curr_mode:
             return
@@ -402,10 +397,27 @@ class WintechUSB:
         except StopIteration:
             self.log.warning("Unknown display mode %s", mode)
             return
+        if mode == "Video pattern mode":
+            self.set_IT6535_power_mode("HDMI", log_level=logging.DEBUG)
+            self.set_display_mode("Video mode", log_level=logging.DEBUG)
+            self.wait_for_video_lock()
         self._DLPC900_command("w", 0x1A1B, [data])
         time.sleep(1)
         self.get_display_mode()
         self.check_all_status()
+
+    def wait_for_video_lock(self, timeout=10):
+        """Block execution until video lock is acquired, with a timeout
+        in seconds.
+        """
+        self.log.debug("Wait for video lock")
+        start_time = time.time()
+        while not is_set(self.get_main_status(suppress_errors=True), 3):
+            time.sleep(0.5)
+            if time.time() - start_time >= timeout:
+                self.log.warning("Wait for video lock timed out.")
+                self.get_main_status()
+                return
 
     def get_IT6535_power_mode(self):
         """Return the current IT6535 power mode setting.
@@ -419,14 +431,14 @@ class WintechUSB:
         self.log.debug("IT6535 power mode is set to %s", mode)
         return mode
 
-    def set_IT6535_power_mode(self, mode):
+    def set_IT6535_power_mode(self, mode, log_level=logging.INFO):
         """Select an input source.
 
         See 2.3.5 'IT6535 Power Mode' in the programmer's guide for more
         details. See IT6535_POWER_MODES for valid modes. It takes about
         6 seconds to power up the IT6535 receiver.
         """
-        self.log.info("Set IT6535 power mode to %s", mode)
+        self.log.log(log_level, "Set IT6535 power mode to %s", mode)
         curr_mode = self.get_IT6535_power_mode()
         if mode == curr_mode:
             return
@@ -465,7 +477,7 @@ class WintechUSB:
             self.log.warning(status)
         return response
 
-    def get_main_status(self):
+    def get_main_status(self, suppress_errors=False):
         """Return the main status.
 
         See 2.1.3 "Main Status" in the programmer's guide.
@@ -474,7 +486,7 @@ class WintechUSB:
         response = self._DLPC900_command("r", 0x1A0C)[0]
         self.log.debug("Main status: %s", hex(response))
         status = parse_main_status(response)
-        if status:
+        if status and not suppress_errors:
             self.log.warning(status)
         return response
 
@@ -697,7 +709,7 @@ class WintechUSB:
         The minimum exposure time varies with bit depth. Allowable
         exposure times can be read with the command 0x1a42. See 2.3.5.4
         "Get Minimum LED Pattern Exposure" in the programmer's guide.
-        The minimums for this system are as follows:
+        The minimums for this system are as follows (in us):
         bit depth:     1    2    3    4    5     6     7     8
         min exposure: 105  304  394  823  1215  1487  1998  4046
 
