@@ -308,12 +308,12 @@ class WintechUSB:
         return self._HID_read()
 
     def connect(self, quick=False):
-        """Finds and connect to the device and perform other setup.
+        """Find and connect to the DLPC900 and perform associated setup.
 
-        First looks for the VID and PID combination representing the
-        DLPC900 controller. Next frees the USB driver and sets the
-        configuration. If quick is False, also sets up the sequencer,
-        video mode, and input source.
+        First the VID and PID combination representing the DLPC900
+        controller is found. The driver is then freed and the USB
+        configuration is set. Finally, a series of commands are issued
+        to ready the system for normal 3D printing operation.
         """
         self.log.info("Connecting to DLPC900 via USB")
         self.dev = usb.core.find(idVendor=0x0451, idProduct=0xC900)
@@ -325,10 +325,11 @@ class WintechUSB:
         atexit.register(self.led_off)
 
         if not quick:
-            self.stop_sequence()
             self.led_off()
-            self.set_input_source_configuration("Primary parallel interface (24-bit)")
             self.set_IT6535_power_mode("HDMI")
+            self.set_display_mode("Video mode")
+            # wait for video lock
+            time.sleep(5)
             self.set_display_mode("Video pattern mode")
             self.led_from_sequencer()
             self.log.info("Setup complete.")
@@ -353,9 +354,9 @@ class WintechUSB:
         last two bits of data for each color are not used.
         """
         self.log.info("Set input source configuration to %s", source)
-        # curr_source = self.get_input_source_configuration()
-        # if source == curr_source:
-        #     return # there is a hardware bug where you have to do this every time
+        curr_source = self.get_input_source_configuration()
+        if source == curr_source:
+            return
         if source == "Primary parallel interface (24-bit)":
             self._DLPC900_command("w", 0x1A00, [0x8])
             time.sleep(2)
@@ -372,7 +373,7 @@ class WintechUSB:
         self.log.debug("Get display mode")
         mode = self._DLPC900_command("r", 0x1A1B)[0]
         mode = DISPLAY_MODES.get(_get_bits(mode, 1, 0))
-        self.log.info("Display mode is set to %s", mode)
+        self.log.debug("Display mode is set to %s", mode)
         return mode
 
     def set_display_mode(self, mode):
@@ -390,7 +391,7 @@ class WintechUSB:
             self.log.warning("Unknown display mode %s", mode)
             return
         self._DLPC900_command("w", 0x1A1B, [data])
-        time.sleep(5)
+        time.sleep(1)
         self.get_display_mode()
         self.check_all_status()
 
@@ -402,7 +403,7 @@ class WintechUSB:
         self.log.debug("Get IT6535 power mode")
         mode = self._DLPC900_command("r", 0x1A01)[0]
         mode = IT6535_POWER_MODES.get(_get_bits(mode, 1, 0))
-        self.log.info("IT6535 power mode is set to %s", mode)
+        self.log.debug("IT6535 power mode is set to %s", mode)
         return mode
 
     def set_IT6535_power_mode(self, mode):
@@ -421,7 +422,6 @@ class WintechUSB:
             self.log.warning("Unknown IT6535 power mode %s", mode)
             return
         self._DLPC900_command("w", 0x1A01, [data])
-        time.sleep(6)
         self.get_IT6535_power_mode()
         self.check_all_status()
 
@@ -736,7 +736,7 @@ class WintechUSB:
             "Application software": f"{v[3]}.{v[2]}{_DLPC900_string(v[0:1])}",
             "API software": f"{v[7]}.{v[6]}{_DLPC900_string(v[4:5])}",
             "Software configuration": f"{v[11]}.{v[10]}{_DLPC900_string(v[8:9])}",
-            "Sequencer configuraton": f"{v[15]}.{v[14]}{_DLPC900_string(v[12:13])}",
+            "Sequencer configuration": f"{v[15]}.{v[14]}{_DLPC900_string(v[12:13])}",
         }
         self.log.info(_dict_to_string(version_info))
         return version_info
