@@ -132,12 +132,12 @@ def parse_hardware_status(hw_status):
     if is_set(hw_status, 2):
         msg += "Multiple overlapping bias or reset operations are accessing the same "
         msg += "DMD block. "
-    if is_set(hw_status, 3):
-        msg += "Forced Swap Error occurred. "
+    # if is_set(hw_status, 3):
+    #     msg += "Forced Swap Error occurred. "
     if is_set(hw_status, 4):
         msg += "Slave controller present and ready. "
-    if is_set(hw_status, 6):
-        msg += "Sequencer has detected an error condition that caused an abort. "
+    # if is_set(hw_status, 6):
+    #     msg += "Sequencer has detected an error condition that caused an abort. "
     if is_set(hw_status, 7):
         msg += "Sequencer detected an error. "
     return msg
@@ -243,7 +243,7 @@ class WintechUSB:
         p_size = _read_payload_size(data)
         bytes_left = p_size - 60
         while bytes_left > 0:
-            data += self.dev.read(0x81, 64)
+            data += self.dev.read(0x81, 64, timeout=10000)
             bytes_left -= 64
         self.log.debug("USB HID read  %s", _bytes_to_string(data, p_size + 4))
         if is_set(data[0], 5):
@@ -336,7 +336,7 @@ class WintechUSB:
         source = INPUT_SOURCES.get(_get_bits(config, 2, 0))
         bit_depth = INPUT_BIT_DEPTHS.get(_get_bits(config, 4, 3))
         config = f"{source} ({bit_depth})"
-        self.log.info("Input source configuration is set to %s", config)
+        self.log.debug("Input source configuration is set to %s", config)
         return config
 
     def set_input_source_configuration(self, source):
@@ -635,7 +635,7 @@ class WintechUSB:
         See 2.4.4.3.1 "Pattern Display Start/Stop" in the programmer's
         guide.
         """
-        self.log.info("Starting sequence")
+        self.log.debug("Starting sequence")
         self._DLPC900_command("w", 0x1A24, [0x2])
         self.check_all_status()
 
@@ -690,7 +690,7 @@ class WintechUSB:
             sys.exit("Bad number of images provided to configure_pattern_LUT()")
         if repeat < 0:
             sys.exit("Bad repeat number provided to configure_pattern_LUT()")
-        self.log.info("Configuring Pattern LUT")
+        self.log.debug("Configuring Pattern LUT")
         payload = _bits_to_bytes(
             _num_to_bits(repeat, 32) + "00000" + _num_to_bits(images, 11)
         )
@@ -740,7 +740,7 @@ class WintechUSB:
             0-255. Bits 115:11 - Bit position in the image pattern
             (Frame in video pattern mode). Valid range 0-23.
         """
-        self.log.info("Defining pattern")
+        self.log.debug("Defining pattern")
         # self.stop_sequence()
         index = 0
         bitDepth = 8
