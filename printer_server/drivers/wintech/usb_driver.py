@@ -61,26 +61,9 @@ def _read_payload_size(data):
     return (data[3] << 8) + data[2]
 
 
-def _num_to_bits(number, length):
-    """Convert a number into a bit string of given length.
-    number - number to convert
-    length - length of resultant bit string
-    """
-    b = bin(number)[2:]
-    padding = length - len(b)
-    return "0" * padding + b
-
-
-def _bits_to_bytes(bit_string):
-    """Convert a bit string into a list of full bytes."""
-    bytelist = []
-    if len(bit_string) % 8 != 0:  # add 0 padding to fill last byte
-        padding = 8 - len(bit_string) % 8
-        bit_string = "0" * padding + bit_string
-    for i in range(len(bit_string) // 8):  # pack bytes
-        bytelist.append(int(bit_string[8 * i : 8 * (i + 1)], 2))
-    bytelist.reverse()
-    return bytelist
+def _reverse_pack_bytes(val, num_bytes):
+    """Return a list of bytes packed in reverse order."""
+    return [(val >> (i * 8)) & 0xFF for i in range(num_bytes)]
 
 
 def _bytes_to_string(buffer, num_bytes=64):
@@ -694,14 +677,15 @@ class WintechUSB:
         repeat - The number of times to repeat each pattern. Defaults to
             1, 0 means repeat forever.
         """
+        self.log.debug("Configuring Pattern LUT: %s patterns %s repeat", images, repeat)
         if images < 1:
-            sys.exit("Bad number of images provided to configure_pattern_LUT()")
+            self.log.warning("Bad number of patterns: %s. Must be > 0", images)
+            return
         if repeat < 0:
-            sys.exit("Bad repeat number provided to configure_pattern_LUT()")
-        self.log.debug("Configuring Pattern LUT")
-        payload = _bits_to_bytes(
-            _num_to_bits(repeat, 32) + "00000" + _num_to_bits(images, 11)
-        )
+            self.log.warning("Bad repeat value: %s. Must be >= 0", images)
+            return
+        payload = _reverse_pack_bytes(images & 0x07FF, 2)
+        payload.extend(_reverse_pack_bytes(repeat, 4))
         self._DLPC900_command("w", 0x1A31, payload)
         self.check_all_status()
 
