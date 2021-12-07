@@ -2,7 +2,6 @@
 
 import sys
 import time
-import struct
 import atexit
 import logging
 import usb.core
@@ -59,7 +58,7 @@ HW_CONFIGURATION = {
 def _read_payload_size(data):
     """Return the payload size of a response message from the
     DLPC900 by reading bytes 3 and 4 of the header."""
-    return struct.unpack("<H", data[2:4])[0]
+    return (data[3] << 8) + data[2]
 
 
 def _num_to_bits(number, length):
@@ -184,7 +183,7 @@ def parse_main_status(main_status):
 
 
 def parse_error_code(code):
-    """Return a human readable error code. Prints 'Not defined.' if the
+    """Return a human readable error code. Returns 'Not defined.' if the
     code is undefined.
     """
     code = int(code)
