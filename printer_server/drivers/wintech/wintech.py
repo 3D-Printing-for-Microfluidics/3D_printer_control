@@ -12,7 +12,6 @@ class Wintech:
         self.log_level = log_level
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
-        self.led_power = 0
         self.dmd_controller = None
 
     def connect(self):
@@ -39,9 +38,7 @@ class Wintech:
         if 0 > exposure_time_ms > 10000:
             self.log.warning("Exposure time is too high. Using maximum of 10 seconds.")
             exposure_time_ms = 10000
-        if led_power != self.led_power:
-            self.dmd_controller.set_led_power(led_power)
-            self.led_power = led_power
+        self.dmd_controller.set_led_power(led_power)
         self.dmd_controller.define_pattern(exposure_time_ms)
         self.dmd_controller.configure_pattern_LUT(repeat=repeat)
         self.dmd_controller.start_sequence()

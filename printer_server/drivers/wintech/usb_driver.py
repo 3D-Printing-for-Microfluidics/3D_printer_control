@@ -511,10 +511,24 @@ class WintechUSB:
         self.get_main_status()
         self.get_error_status()
 
-    def set_led_power(self, power):
-        """Set the current supplied to the LED driver. CAUTION below.
+    def get_led_power(self):
+        """Return the current set LED power.
 
-        See 2.3.5.2 "LED Driver Current" in the programmer's guide.
+        Bytes 0 and 1 correspond to the RED and GREEN channels which are
+        unsed in our system so only byte 2 is returned.
+        """
+        self.log.debug("Get LED power")
+        power = self._DLPC900_command("r", 0x0B01)[2]
+        self.log.debug("LED power is set to %s", power)
+        print("--TEST-- ", power)
+        return power
+
+    def set_led_power(self, power):
+        """Set the pulse duration of the LED PWM modulation output pin.
+
+        The set value corresponds to a percentage of the LED current and
+        can be set from 0 to 100% in 256 steps, where 0 is 0% and 255 is
+        100%. See 2.3.5.2 "LED Driver Current" in the programmer's guide.
 
         CAUTION: Care should be taken when using this command. Improper
         use of this command can lead to damage to the system. The
@@ -523,20 +537,15 @@ class WintechUSB:
         specifications, selected display mode, and so forth). Therefore,
         recommended and absolute-maximum settings vary greatly.
 
-        This parameter controls the pulse duration of the specific LED
-        PWM modulation output pin. The resolution is 8 bits and
-        corresponds to a percentage of the LED current. The PWM value
-        can be set from 0 to 100% in 256 steps. If the LED PWM polarity
-        is set to normal polarity, a setting of 0xFF gives the maximum
-        PWM current. The LED current is a function of the specific LED
-        driver design.
-
         Our system shipped with a default value of 0x64 which is 100/256
         or 39% max power. To be safe, I am leaving this as the maximum.
         """
         self.log.info("Setting LED power to %s", power)
         if power < 0 or power > 100:
-            sys.exit()
+            self.log.warning("Bad LED power of %s. Should be between 0 and 100.", power)
+        curr_power = self.get_led_power()
+        if power == curr_power:
+            return
         self._DLPC900_command("w", 0x0B01, [0, 0, power])
         self.check_all_status()
 
