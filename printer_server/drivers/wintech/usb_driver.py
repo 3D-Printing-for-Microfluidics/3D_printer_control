@@ -192,46 +192,53 @@ class WintechUSB:
         self.log.setLevel(log_level)
         self.dev = None
         self.transaction_counter = 0
+        self.usb_io_counter = 0
         self.is_idle = False
 
-    def _free_USB_driver(self, device):
-        """Free the USB driver if it is already in use."""
-        self.log.debug("Freeing device driver")
-        for cfg in device:
+    def _free_USB_driver(self):
+        """Free the USB driver if it is already in use and set its
+        configuration.
+        """
+        self.log.info("Freeing device driver")
+        for cfg in self.dev:
             for intf in cfg:
                 n = intf.bInterfaceNumber
-                if device.is_kernel_driver_active(n):
+                if self.dev.is_kernel_driver_active(n):
                     try:
-                        device.detach_kernel_driver(n)
-                        self.log.debug("Detached kernel driver from interface %s", n)
+                        self.dev.detach_kernel_driver(n)
+                        self.log.info("Detached kernel driver from interface %s", n)
                     except usb.core.USBError as e:
                         msg = f"Couldn't detach kernel driver from interface {n}: {e}"
                         self.log.critical(msg)
                         sys.exit(msg)
 
+    def _HID_io_wrapper(self, fn, *args, **kwargs):
+        """Wrap HID read and write methods so they have a greater
+        likelihood of recovering from USBTimeoutError. If timeouts
+        happen often, increase the timeout value passed to the read and
+        write calls.
+        """
+        try:
+            self.usb_io_counter += 1
+            data = fn(*args, **kwargs)
+        except usb.core.USBTimeoutError:
+            self.log.warning("USB timeout occurred on %s", fn)
+            self.log.warning("Number of HID writes: %s", self.usb_io_counter)
+            self.log.warning("Number of transactions: %s", self.transaction_counter)
+            time.sleep(1)
+            self.dev.reset()
+            time.sleep(1)
+            self._free_USB_driver()
+            self.dev.set_configuration()
+            self.usb_io_counter += 1
+            data = fn(*args, **kwargs)
+        return data
+
     def _HID_read(self):
         """Wrapper function for USB HID read. The default IN endpoint
-        for the DLPC900 is 0x81 so it is hard-coded here. This method
-        also checks the flag byte to see if the error bit is set.
-        It also strips the header and returns only the payload bytes.
-
-        The HID protocol gives 64 bytes per read. If a payload is larger
-        than 60 bytes, multiple reads are concatenated to get the full
-        response. The first read contains 4 bytes of header data and 60
-        bytes of payload data, where subsequent reads give 64 bytes of
-        payload data with no header.
+        for the DLPC900 is 0x81 so it is hard-coded here.
         """
-        data = self.dev.read(0x81, 64)
-        p_size = _read_payload_size(data)
-        bytes_left = p_size - 60
-        while bytes_left > 0:
-            data += self.dev.read(0x81, 64, timeout=10000)
-            bytes_left -= 64
-        self.log.debug("USB HID read  %s", _bytes_to_string(data, p_size + 4))
-        if is_set(data[0], 5):
-            self.log.warning("Command not recognized or command failed")
-            self.get_error_description()
-        return data[4 : 4 + p_size]
+        return self._HID_io_wrapper(self.dev.read, 0x81, 64, timeout=10000)
 
     def _HID_write(self, data=None):
         """Wrapper function for USB HID write. The default OUT endpoint
@@ -240,7 +247,7 @@ class WintechUSB:
         data = bytes(data)
         p_size = _read_payload_size(data)
         self.log.debug("USB HID write %s", _bytes_to_string(data, min(p_size + 4, 64)))
-        self.dev.write(0x1, data, timeout=10000)
+        return self._HID_io_wrapper(self.dev.write, 0x1, data, timeout=10000)
 
     def _DLPC900_command(self, mode, command, data=None):
         """Communicate with the DLPC900 controller over USB through a
@@ -261,6 +268,16 @@ class WintechUSB:
         a response in it's internal buffer and a series of one or more
         read transactions is issued to retrieve it. Only the first read
         and write transactions include header information.
+
+        The HID protocol gives 64 bytes per read. If a payload is larger
+        than 60 bytes, multiple reads are concatenated to get the full
+        response. The first read contains 4 bytes of header data and 60
+        bytes of payload data, where subsequent reads give 64 bytes of
+        payload data with no header.
+
+        This method also checks the flag byte to see if the error bit is
+        set and logs additional info if it is. The header of the
+        response is stripped and only the payload bytes ar returned.
 
         Header format:
         1 flag byte
@@ -287,7 +304,18 @@ class WintechUSB:
         for i in range(0, len(buffer), 64):
             self._HID_write(buffer[i : i + 64])
         self.transaction_counter += 1
-        return self._HID_read()
+
+        data = self._HID_read()
+        payload_length = _read_payload_size(data)
+        bytes_left = payload_length - 60
+        while bytes_left > 0:
+            data += self._HID_read()
+            bytes_left -= 64
+        self.log.debug("USB HID read  %s", _bytes_to_string(data, payload_length + 4))
+        if is_set(data[0], 5):
+            self.log.warning("Command not recognized or command failed")
+            self.get_error_description()
+        return data[4 : 4 + payload_length]
 
     def connect(self):
         """Find and connect to the DLPC900 and perform associated setup.
@@ -301,7 +329,7 @@ class WintechUSB:
         self.dev = usb.core.find(idVendor=0x0451, idProduct=0xC900)
         if self.dev is None:
             sys.exit("DLPC900 not found. Is it connected and turned on?")
-        self._free_USB_driver(self.dev)
+        self._free_USB_driver()
         self.dev.set_configuration()
         atexit.register(self.stop_sequence)
         atexit.register(self.led_off)
@@ -521,7 +549,7 @@ class WintechUSB:
         Our system shipped with a default value of 0x64 which is 100/256
         or 39% max power. To be safe, I am leaving this as the maximum.
         """
-        self.log.info("Setting LED power to %s", power)
+        self.log.debug("Setting LED power to %s", power)
         if power < 0 or power > 100:
             self.log.warning("Bad LED power of %s. Should be between 0 and 100.", power)
         curr_power = self.get_led_power()
