@@ -502,7 +502,6 @@ class WintechUSB:
         self.log.debug("Get LED power")
         power = self._DLPC900_command("r", 0x0B01)[2]
         self.log.debug("LED power is set to %s", power)
-        print("--TEST-- ", power)
         return power
 
     def set_led_power(self, power):
@@ -689,7 +688,7 @@ class WintechUSB:
         self._DLPC900_command("w", 0x1A31, payload)
         self.check_all_status()
 
-    def define_pattern(self, exposure):
+    def define_pattern(self, exposure_time_ms):
         """Define a pattern.
 
         See 2.4.4.3.4 "Pattern Display LUT Definition" in the
@@ -733,39 +732,38 @@ class WintechUSB:
             (Frame in video pattern mode). Valid range 0-23.
         """
         self.log.debug("Defining pattern")
-        # self.stop_sequence()
         index = 0
-        bitDepth = 8
-        color = "100"  # blue channel
-        triggerIn = 1
-        darkTime = 0
-        triggerOut = 0
-        patternId = 0
-        bitPosition = 0
-        exposure = int(exposure * 1000)  # convert exposure time to us
-        minExposure = [105, 304, 394, 823, 1215, 1487, 1998, 4046]
-        if exposure < minExposure[bitDepth - 1]:
+        bit_depth = 8
+        color = 0b100
+        trigger_in = 1
+        dark_time = 0
+        trigger_out = 0
+        pattern_id = 0
+        bit_position = 0
+        exposure_time_us = int(exposure_time_ms * 1000)
+        min_exp_time_us = [105, 304, 394, 823, 1215, 1487, 1998, 4046]
+        if exposure_time_us < min_exp_time_us[bit_depth - 1]:
             sys.exit("Too small of exposure passed to define_pattern()")
-        if exposure > 0xFFFFFF:
+        if exposure_time_us > 0xFFFFFF:
             sys.exit("Too large of exposure passed to define_pattern()")
 
         payload = list(range(12))
         payload[0] = index & 0xFF
         payload[1] = (index >> 8) & 0xFF
-        payload[2] = exposure & 0xFF
-        payload[3] = (exposure >> 8) & 0xFF
-        payload[4] = (exposure >> 16) & 0xFF
-        temp = int("1") & 0x1
-        temp |= ((bitDepth - 1) << 1) & 0x0E
+        payload[2] = exposure_time_us & 0xFF
+        payload[3] = (exposure_time_us >> 8) & 0xFF
+        payload[4] = (exposure_time_us >> 16) & 0xFF
+        temp = 1 & 0x1
+        temp |= ((bit_depth - 1) << 1) & 0x0E
         temp |= (int(color) << 4) & 0x70
-        temp |= (triggerIn << 7) & 0x80
-        payload[5] = int(temp)
-        payload[6] = darkTime & 0xFF
-        payload[7] = (darkTime >> 8) & 0xFF
-        payload[8] = (darkTime >> 16) & 0xFF
-        payload[9] = triggerOut
-        payload[10] = patternId
-        payload[11] = (bitPosition & 0x1F) << 3
+        temp |= (trigger_in << 7) & 0x80
+        payload[5] = temp
+        payload[6] = dark_time & 0xFF
+        payload[7] = (dark_time >> 8) & 0xFF
+        payload[8] = (dark_time >> 16) & 0xFF
+        payload[9] = trigger_out
+        payload[10] = pattern_id
+        payload[11] = (bit_position & 0x1F) << 3
         self._DLPC900_command("w", 0x1A34, payload)
         self.check_all_status()
 
