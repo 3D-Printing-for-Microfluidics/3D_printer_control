@@ -2,7 +2,7 @@
 import time
 import logging
 
-from .usb_driver import WintechUSB
+from .dlpc900_usb_controller import DLPC900_USB_Controller
 
 
 class Wintech:
@@ -16,7 +16,7 @@ class Wintech:
 
     def connect(self):
         """Start the screen thread and connect to the DMD controller."""
-        self.dmd_controller = WintechUSB(log_level=self.log_level)
+        self.dmd_controller = DLPC900_USB_Controller(log_level=self.log_level)
         self.dmd_controller.connect()
 
     def project(self, exposure_time_ms, repeat=1, led_power=100):
