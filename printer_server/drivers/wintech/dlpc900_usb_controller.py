@@ -175,13 +175,13 @@ def parse_error_code(code):
     return code
 
 
-class WintechUSB:
+class DLPC900_USB_Controller:
     """USB interface for Wintech optical engine utilizing the TI DLPC900
     controller.
     """
 
     def __init__(self, log_level=logging.DEBUG):
-        """Initialize a WintechUSB object.
+        """Initialize a DLPC900_USB_Controller object.
 
         dev - handle to kernel driver
         transaction_counter - a counter used for the sequence byte
