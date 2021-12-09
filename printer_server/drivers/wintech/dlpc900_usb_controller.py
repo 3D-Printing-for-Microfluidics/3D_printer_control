@@ -333,6 +333,8 @@ class DLPC900_USB_Controller:
         self.dev.set_configuration()
         atexit.register(self.stop_sequence)
         atexit.register(self.led_off)
+        self.get_firmware_version()
+        self.get_hardware_configuration_and_firmware_tag()
         self.led_off()
         self.set_IT6535_power_mode("HDMI")
         self.set_display_mode("Video pattern mode")
