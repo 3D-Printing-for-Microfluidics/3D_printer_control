@@ -300,11 +300,7 @@ class PrintControl:
         )
         self.write_to_event_log("Finish Down Movement")
 
-        force_squeeze = False
-        try:
-            force_squeeze = position_settings["Enable force squeeze"]
-        except KeyError:
-            pass
+        force_squeeze = position_settings.get("Enable force squeeze", False)
         if force_squeeze:
             self.write_to_event_log("Start Force Squeeze")
             self.squeeze_resin(position_settings, layer)
@@ -327,11 +323,7 @@ class PrintControl:
     def squeeze_resin(self, position_settings, layer):
         squeeze_target = position_settings["Squeeze force (N)"]
         squeeze_wait = position_settings["Squeeze wait (ms)"] / 1000
-        use_relax_force = True
-        try:
-            use_relax_force = position_settings["Use relaxed force"]
-        except KeyError:
-            pass
+        use_relax_force = position_settings.get("Use relaxed force", True)
         relax_target = position_settings["Relaxed force (N)"]
 
         time.sleep(0.05)
@@ -635,11 +627,7 @@ class PrintControl:
         self.next_layer = 0
 
         # create logs and overwrite any pre-existing data
-        log_data = True
-        try:
-            log_data = self.print_settings["Header"]["Log data"]
-        except KeyError:
-            pass
+        log_data = self.print_settings.get("Header").get("Log data", True)
         async_file_hander.set_enabled(log_data)
         async_file_hander.write(
             self.position_log,
