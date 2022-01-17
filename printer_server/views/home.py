@@ -440,6 +440,8 @@ class PrintControl:
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
+        self.planarized_position = self.galil.getPosition()
+        self.print_position = self.galil.cntsToMm(self.planarized_position)
         """Raise the build platform to begin printing."""
         if config_dict["loadcell_settings"]["loadcell_planarization_enabled"]:
             if self.state == "planarizing":
@@ -447,9 +449,6 @@ class PrintControl:
                     "Loadcell force after step 2: %s", self.loadcell.get_current_force()
                 )
                 self.planarization_step_3()
-        else:
-            self.planarized_position = self.galil.getPosition()
-            self.print_position = self.galil.cntsToMm(self.planarized_position)
 
     def move_bp_to_force(
         self, target_force, speed, acceleration=100, error_threshold=None
@@ -750,7 +749,9 @@ class PrintControl:
             galil_thread = threading.Thread(
                 target=self.move_build_platform, args=[position_settings, layer]
             )
-            galil_thread.start()
+            print(self.next_layer)
+            if not self.next_layer == 1:
+                galil_thread.start()
 
             # do exposures and log data
             exposure_data = {}
@@ -781,7 +782,8 @@ class PrintControl:
                 # wait for all hardware to be ready for exposure
                 if defocus_um != 0:
                     kdc_thread.join()
-                galil_thread.join()
+                if not self.next_layer == 1:
+                    galil_thread.join()
                 screen_thread.join()
                 visitech_thread.join()
 
