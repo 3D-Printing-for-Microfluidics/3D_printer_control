@@ -462,7 +462,10 @@ class PrintControl:
         force = self.loadcell.get_current_force()
         forces = []
         count = 0
-        if (speed < 0 and force > target_force) or (speed > 0 and force < target_force):
+        if (speed > 0 and force > target_force) or (speed < 0 and force < target_force):
+            log.error("Loadcell force exceeds target value.")
+            return None
+        else:
             self.galil.startJog(speed=speed, acceleration=acceleration)
             while (speed < 0 and force > target_force) or (
                 speed > 0 and force < target_force
