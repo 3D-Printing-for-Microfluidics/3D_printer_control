@@ -416,6 +416,7 @@ class PrintControl:
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
             self.loadcell.start()
+            self.galil.logging_start()
             time.sleep(0.5)
             if self.loadcell_thread is None:
                 socketio.emit("loadcell_graph_clear", namespace="/printing")
@@ -638,7 +639,10 @@ class PrintControl:
         )
         async_file_hander.write(self.exposure_log, "")
         async_file_hander.write(self.event_log, "timestamp,event\n")
-        async_file_hander.write(self.movement_log, "timestamp,position_mm,tag\n")
+        async_file_hander.write(self.movement_log, "timestamp,")
+        for a in self.galil.axes_common_names:
+            async_file_hander.write(self.movement_log, f"{a} position_mm,")
+            async_file_hander.write(self.movement_log, f"{a} status\n")
         async_file_hander.write(
             self.loadcell_log, "system_time,loadcell_time,index,raw_data,newtons\n"
         )
@@ -674,6 +678,7 @@ class PrintControl:
 
     def finish_print(self):
         self.loadcell.stop()
+        self.galil.logging_stop()
         self.loadcell_running = False
         self.loadcell_thread = None
         socketio.emit("loadcell_graph_clear", namespace="/printing")

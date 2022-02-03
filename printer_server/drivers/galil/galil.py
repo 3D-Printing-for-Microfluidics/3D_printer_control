@@ -1,5 +1,6 @@
 """Galil control module."""
 import sys
+import threading
 import time
 import atexit
 import logging
@@ -19,6 +20,10 @@ class Galil:
         self.movement_log = None
 
         self.gclib_error = gclib.GclibError
+        self.sendLock = threading.Lock()
+
+        self.logging_running = False
+        self.logging_thread = threading.Thread(target=self.logging_loop)
 
         self.controller_name = config_dict["controller_name"]
         self.default_axis = config_dict["default_axis"]
@@ -37,6 +42,12 @@ class Galil:
         self.pre_jog_acceleration = {}
         self.error_window = {}
         self.monitoring_window = {}
+        self.logging_move_status = {}
+        # -1 = Not moving
+        # 0 = Moving
+        # 1 = Profiled Motion Complete
+        # 2 = Settling Complete
+        # 3 = Error Settling
         for a in self.axes:
             self.homed[a] = False
             self.jogging[a] = False
@@ -44,6 +55,7 @@ class Galil:
             self.pre_jog_acceleration[a] = 0
             self.error_window[a] = self.tolerence[a] * self.ctspmm[a] / 1000
             self.monitoring_window[a] = self.error_window[a] * 100
+            self.logging_move_status[a] = -1
 
         self.connected = False
 
@@ -133,6 +145,8 @@ class Galil:
         If an error is returned, request and also return more
         information about the error.
         """
+        self.sendLock.acquire()
+
         if notify:
             self.log.debug("Sent : '%s'", command)
         try:
@@ -140,12 +154,14 @@ class Galil:
             response = "".join(response)
             if notify and response != "":
                 self.log.debug("Reply: '%s'", response)
+            self.sendLock.release()
             return response
         except self.gclib_error as error:
             error_code = self.g.GCommand("TC 1")
             if error_code not in ("", "0"):
                 error = error_code
             self.log.error("Last command '%s' returned error '%s'", command, error)
+            self.sendLock.release()
             return error
 
     def checkLimits(self, axis=None):
@@ -257,6 +273,7 @@ class Galil:
             self.log.info("Move axis %s to relative position %s", a, cnts)
             self.send(f"PR{a}={cnts}")
             self.send(f"BG{a}")
+            self.logging_move_status[a] = 0
             self.waitForMotionComplete(start_position + cnts, axis=a)
         if speed is not None:
             self.setSpeed(old_speed, axis=a)
@@ -299,6 +316,7 @@ class Galil:
             self.log.info("Move axis %s to absolute position %s", a, cnts)
             self.send(f"PA{a}={cnts}")
             self.send(f"BG{a}")
+            self.logging_move_status[a] = 0
             self.waitForMotionComplete(cnts, wait_for_settling=wait_for_settling, axis=a)
         if speed is not None:
             self.setSpeed(old_speed, axis=a)
@@ -315,19 +333,21 @@ class Galil:
             )  # save the speed before jogging begins
             self.pre_jog_acceleration[a] = self.getAcceleration(
                 axis=a
-            )  # save the speed before jogging begins
+            )  # save the acceleration before jogging begins
         self.jogging[a] = True
 
         self.log.info("Start jog on axis %s at speed %s mm/sec", a, speed)
         self.setAcceleration(acceleration)
         self.send(f"JG{a}={speed * self.ctspmm[a]}")
         self.send(f"BG{a}")
+        self.logging_move_status[a] = 0
 
     def stopJog(self, axis=None):
         """Stop a jog, non-blocking."""
         a = self.convertAxis(axis)
         self.log.info("Stop jog on axis %s", a)
         self.send(f"ST{a}")
+        self.logging_move_status[a] = -1
         self.jogging[a] = False
         self.setSpeed(self.pre_jog_speed[a])
         self.setAcceleration(self.pre_jog_acceleration[a])
@@ -337,36 +357,38 @@ class Galil:
         and saves motion data as it goes.
         """
         a = self.convertAxis(axis)
-        last_position = self.getPosition(notify=False, axis=a)  # save the last position
-        self.write_to_disk(self.cntsToMm(last_position, axis=a))
         counter = 0
         time_count = 0
-        # wait until we are within 10 um of target
-        while not (
-            int(cnts - self.monitoring_window[a])
-            <= last_position
-            <= int(cnts + self.monitoring_window[a])
-        ):
+        limit_switch_triggered = False
+        in_motion = float(self.send(f"MG _BG{a}", notify=False))
+        while in_motion == 1.0:
             time.sleep(0.001)
-            last_position = self.getPosition(notify=False, axis=a)
-            self.write_to_disk(self.cntsToMm(last_position, axis=a))
+            in_motion = float(self.send(f"MG _BG{a}", notify=False))
             upper, lower = self.checkLimits(axis=a)
-            if (lower and cnts < last_position) or (upper and cnts > last_position):
-                self.log.info("Limit switch triggered")
-                self.g.GMotionComplete(a)
-                return
+            position = self.getPosition(axis=a, notify=False)
+            if (
+                not limit_switch_triggered
+                and (lower and cnts < position)
+                or (upper and cnts > position)
+            ):
+                limit_switch_triggered = True
+                wait_for_settling = False
+                self.log.info("Axis %s limit switch triggered", a)
+
+        # self.logging_profile_complete = True
+        self.logging_move_status[a] = 1
         if wait_for_settling:
             # only proceed when 10 good consecutive counts have been read
             error = self.error_window[a]
             while counter <= 5:
                 time.sleep(0.001)
-                last_position = self.getPosition(notify=False, axis=a)
-                self.write_to_disk(self.cntsToMm(last_position, axis=a))
+                position = self.getPosition(axis=a, notify=False)
                 if any(self.checkLimits(axis=a)):
-                    self.log.info("Limit switch triggered")
-                    self.g.GMotionComplete(a)
+                    self.log.info("Axis %s limit switch triggered", a)
+                    # self.logging_move_complete = True
+                    self.logging_move_status[a] = 3
                     return
-                if int(cnts - error) <= last_position <= int(cnts + error):
+                if int(cnts - error) <= position <= int(cnts + error):
                     counter += 1
                 else:
                     counter = 0
@@ -376,16 +398,50 @@ class Galil:
                     error = error * 2
                 if time_count >= 5000:
                     self.log.warning(
-                        "Z motor didn't reach position. Got to %s but needed %s",
-                        last_position,
+                        "%s motor didn't reach position. Got to %s but needed %s",
+                        a,
+                        position,
                         cnts,
                     )
                     break
-        else:
-            self.g.GMotionComplete(a)
-        self.write_to_disk(
-            self.cntsToMm(self.getPosition(notify=False, axis=a), axis=a), "move_complete"
-        )
+        # self.logging_move_complete = True
+        self.logging_move_status[a] = 2
+
+    def set_log_file(self, filename):
+        """Set the log file."""
+        self.movement_log = filename
+
+    def logging_start(self):
+        """
+        Starts collecting position data
+        """
+        if not self.logging_running:
+            self.logging_running = True
+            self.log.info("Galil logging started")
+            self.logging_thread.start()
+
+    def logging_stop(self):
+        """
+        Stops collecting position data
+        """
+
+        if self.logging_running:
+            self.logging_running = False
+            self.logging_thread.join()
+            self.logging_thread = threading.Thread(target=self.logging_loop)
+            self.log.info("Galil logging stopped")
+
+    def logging_loop(self):
+        while self.logging_running:
+            tmp = ""
+            for a in self.axes:
+                position = self.getPosition(notify=False, axis=a)
+                tmp += f"{self.cntsToMm(position, axis=a)},"
+                tmp += f"{self.logging_move_status[a]},"
+                if self.logging_move_status[a] >= 2:
+                    self.logging_move_status[a] = -1
+            self.write_to_disk(tmp)
+            time.sleep(0.001)
 
     def disconnect(self):
         """Disconnect form the Galil controller."""
@@ -419,10 +475,6 @@ class Galil:
                 print(self.send(cmd.upper()))
         except KeyboardInterrupt:
             print("\nExited by KeyboardInterrupt")
-
-    def set_log_file(self, filename):
-        """Set the log file."""
-        self.movement_log = filename
 
 
 if __name__ == "__main__":
