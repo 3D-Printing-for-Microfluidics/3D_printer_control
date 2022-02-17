@@ -1,9 +1,11 @@
 import os
 import time
 import json
+import atexit
 import shutil
 import logging
 import threading
+import RPi.GPIO as GPIO
 from pathlib import Path
 from zipfile import ZipFile, BadZipFile
 from datetime import datetime
@@ -278,6 +280,7 @@ class PrintControl:
         """Perform the build platform movements for a layer according to
         the position_settings.
         """
+        GPIO.output(7, GPIO.HIGH)
         time.sleep(position_settings["Initial wait (ms)"] / 1000)
         start_position = self.galil.getPosition()
         start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
@@ -290,6 +293,7 @@ class PrintControl:
             wait_for_settling=False,
         )
         self.write_to_event_log("Finish Up Movement")
+        GPIO.output(7, GPIO.LOW)
         time.sleep(position_settings["Up wait (ms)"] / 1000)
         self.write_to_event_log("Start Down Movement")
         self.print_position -= position_settings["Layer thickness (um)"] / 1000
@@ -395,6 +399,12 @@ class PrintControl:
             galil_thread.join()
             screen_thread.join()
             visitech_thread.join()
+
+            GPIO.setmode(GPIO.BOARD)
+            GPIO.setup(7, GPIO.OUT)
+            GPIO.output(7, GPIO.LOW)
+            atexit.register(GPIO.cleanup)
+
 
             log.info("Printer initialized, all hardware ready.")
 
@@ -852,12 +862,15 @@ class PrintControl:
 
         defaults_layer_settings = self.print_settings.get("Default layer settings")
         default_position_settings = defaults_layer_settings.get("Position settings")
+        GPIO.output(7, GPIO.HIGH)
+        time.sleep(default_position_settings["Initial wait (ms)"] / 1000)
         self.galil.absMove(
             mm=self.print_position - default_position_settings["Distance up (mm)"],
             speed=default_position_settings["BP up speed (mm/sec)"],
             acceleration=default_position_settings["BP up acceleration (mm/sec^2)"],
             wait_for_settling=False,
         )
+        GPIO.output(7, GPIO.LOW)
         self.galil.goToZmax()
         time.sleep(1.0)
 
