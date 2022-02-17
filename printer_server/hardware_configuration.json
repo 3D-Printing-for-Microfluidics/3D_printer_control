@@ -23,9 +23,9 @@
             "top_position": -400000
         },
         "loadcell_settings": {
-            "hwid": "PID=16C0:0483 SER=5712360",
-            "calibration_intercept": 34963.0,
-            "calibration_slope": -1.83,
+            "hwid": "PID=16C0:0483 SER=9881500",
+            "calibration_intercept": 33218.0,
+            "calibration_slope": -3.75,
             "loadcell_planarization_enabled": true,
             "loadcell_planarization_force": 30.0,
             "loadcell_print_start_force": 5.0

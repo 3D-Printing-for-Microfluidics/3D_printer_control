@@ -301,12 +301,15 @@ class PrintControl:
         self.write_to_event_log("Finish Down Movement")
 
         force_squeeze = position_settings.get("Enable force squeeze", False)
+        squeeze_count = position_settings.get("Squeeze count", 1)
         if force_squeeze:
-            self.write_to_event_log("Start Force Squeeze")
-            self.squeeze_resin(position_settings, layer)
-            self.write_to_event_log("Finish Force Squeeze")
-
-        time.sleep(position_settings["Final wait (ms)"] / 1000)
+            for _ in range(squeeze_count):
+                self.write_to_event_log("Start Force Squeeze")
+                self.squeeze_resin(position_settings, layer)
+                self.write_to_event_log("Finish Force Squeeze")
+                time.sleep(position_settings["Final wait (ms)"] / 1000)
+        else:
+            time.sleep(position_settings["Final wait (ms)"] / 1000)
         end_position = self.galil.getPosition()
         end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         end_index = self.loadcell.get_current_loadcell_index()
@@ -327,11 +330,11 @@ class PrintControl:
         relax_target = position_settings["Relaxed force (N)"]
 
         time.sleep(0.05)
-        first_count = self.move_bp_to_force(squeeze_target - 4, speed=1)
+        first_count = self.move_bp_to_force(squeeze_target - 4, speed=0.5)
         time.sleep(0.05)
-        second_count = self.move_bp_to_force(squeeze_target - 0.4, speed=0.1)
+        second_count = self.move_bp_to_force(squeeze_target - 0.4, speed=0.05)
         time.sleep(0.05)
-        third_count = self.move_bp_to_force(squeeze_target, speed=0.01)
+        third_count = self.move_bp_to_force(squeeze_target, speed=0.005)
         time.sleep(0.05)
         count = first_count + second_count + third_count
 
@@ -343,11 +346,11 @@ class PrintControl:
 
         if use_relax_force:
             time.sleep(0.05)
-            first_count = self.move_bp_to_force(relax_target + 4, speed=-1)
+            first_count = self.move_bp_to_force(relax_target + 4, speed=-0.5)
             time.sleep(0.05)
-            second_count = self.move_bp_to_force(relax_target + 0.4, speed=-0.1)
+            second_count = self.move_bp_to_force(relax_target + 0.4, speed=-0.05)
             time.sleep(0.05)
-            third_count = self.move_bp_to_force(relax_target, speed=-0.01)
+            third_count = self.move_bp_to_force(relax_target, speed=-0.005)
             time.sleep(0.05)
             count = first_count + second_count + third_count
 
@@ -429,7 +432,7 @@ class PrintControl:
             target_force = config_dict["loadcell_settings"][
                 "loadcell_planarization_force"
             ]
-            if self.move_bp_to_force(target_force, speed=5, error_threshold=0.75) is None:
+            if self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.75) is None:
                 log.error("Did not reach target planarization force.")
                 return
             log.info(
@@ -497,15 +500,15 @@ class PrintControl:
         target_force = config_dict["loadcell_settings"]["loadcell_print_start_force"]
         time.sleep(0.05)
         first_count = self.move_bp_to_force(
-            target_force + 4, speed=-1, error_threshold=3.5
+            target_force + 4, speed=-0.5, error_threshold=3.5
         )
         if first_count is None:
             log.error("Loadcell planarization failed. Check build platform screw.")
             return
         time.sleep(0.05)
-        second_count = self.move_bp_to_force(target_force + 0.4, speed=-0.1)
+        second_count = self.move_bp_to_force(target_force + 0.4, speed=-0.05)
         time.sleep(0.05)
-        third_count = self.move_bp_to_force(target_force, speed=-0.01)
+        third_count = self.move_bp_to_force(target_force, speed=-0.005)
         time.sleep(0.05)
         count = first_count + second_count + third_count
 
