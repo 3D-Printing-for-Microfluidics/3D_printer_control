@@ -22,8 +22,9 @@ class Galil:
         self.gclib_error = gclib.GclibError
         self.sendLock = threading.Lock()
 
+        self.thread = threading.Thread(target=self.loop)
+        self.thread_running = False
         self.logging_running = False
-        self.logging_thread = threading.Thread(target=self.logging_loop)
 
         self.controller_name = config_dict["controller_name"]
         self.default_axis = config_dict["default_axis"]
@@ -43,6 +44,7 @@ class Galil:
         self.error_window = {}
         self.monitoring_window = {}
         self.logging_move_status = {}
+        self.current_position = {}
         # -1 = Not moving
         # 0 = Moving
         # 1 = Profiled Motion Complete
@@ -56,6 +58,7 @@ class Galil:
             self.error_window[a] = self.tolerence[a] * self.ctspmm[a] / 1000
             self.monitoring_window[a] = self.error_window[a] * 100
             self.logging_move_status[a] = -1
+            self.current_position[a] = 0
 
         self.connected = False
 
@@ -116,6 +119,8 @@ class Galil:
                 self.g.GOpen(f"{self.address} --direct")
                 self.log.debug("GInfo returned: %s", self.g.GInfo())
                 self.connected = True
+                self.thread_running = True
+                self.thread.start()
                 return
         msg = f"{self.controller_name} not found."
         self.log.critical(msg)
@@ -369,7 +374,7 @@ class Galil:
             time.sleep(0.001)
             in_motion = float(self.send(f"MG _BG{a}", notify=False))
             upper, lower = self.checkLimits(axis=a)
-            position = self.getPosition(axis=a, notify=False)
+            position = self.current_position[a]
             if (
                 not limit_switch_triggered
                 and (lower and cnts < position)
@@ -386,7 +391,7 @@ class Galil:
             error = self.error_window[a]
             while counter <= 5:
                 time.sleep(0.001)
-                position = self.getPosition(axis=a, notify=False)
+                position = self.current_position[a]
                 if any(self.checkLimits(axis=a)):
                     self.log.info("Axis %s limit switch triggered", a)
                     # self.logging_move_complete = True
@@ -422,7 +427,6 @@ class Galil:
         if not self.logging_running:
             self.logging_running = True
             self.log.info("Galil logging started")
-            self.logging_thread.start()
 
     def logging_stop(self):
         """
@@ -431,25 +435,29 @@ class Galil:
 
         if self.logging_running:
             self.logging_running = False
-            self.logging_thread.join()
-            self.logging_thread = threading.Thread(target=self.logging_loop)
             self.log.info("Galil logging stopped")
 
-    def logging_loop(self):
-        while self.logging_running:
-            tmp = ""
+    def loop(self):
+        while self.thread_running:
             for a in self.axes:
-                position = self.getPosition(notify=False, axis=a)
-                tmp += f"{self.cntsToMm(position, axis=a)},"
-                tmp += f"{self.logging_move_status[a]},"
-                if self.logging_move_status[a] >= 2:
-                    self.logging_move_status[a] = -1
-            self.write_to_disk(tmp)
-            time.sleep(0.001)
+                self.current_position[a] = self.getPosition(notify=False, axis=a)
+            if self.logging_running:
+                tmp = ""
+                for a in self.axes:
+                    position = self.current_position[a]
+                    tmp += f"{self.cntsToMm(position, axis=a)},"
+                    tmp += f"{self.logging_move_status[a]},"
+                    if self.logging_move_status[a] >= 2:
+                        self.logging_move_status[a] = -1
+                self.write_to_disk(tmp)
+                time.sleep(0.001)
 
     def disconnect(self):
         """Disconnect form the Galil controller."""
         if self.connected is not False:
+            self.thread_running = False
+            self.thread.join()
+            self.thread = threading.Thread(target=self.loop)
             try:
                 self.connected = False
                 self.g.GClose()
