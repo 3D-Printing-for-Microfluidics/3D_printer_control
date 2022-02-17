@@ -145,24 +145,21 @@ class Galil:
         If an error is returned, request and also return more
         information about the error.
         """
-        self.sendLock.acquire()
-
-        if notify:
-            self.log.debug("Sent : '%s'", command)
-        try:
-            response = self.g.GCommand(command)
-            response = "".join(response)
-            if notify and response != "":
-                self.log.debug("Reply: '%s'", response)
-            self.sendLock.release()
-            return response
-        except self.gclib_error as error:
-            error_code = self.g.GCommand("TC 1")
-            if error_code not in ("", "0"):
-                error = error_code
-            self.log.error("Last command '%s' returned error '%s'", command, error)
-            self.sendLock.release()
-            return error
+        with self.sendLock:
+            if notify:
+                self.log.debug("Sent : '%s'", command)
+            try:
+                response = self.g.GCommand(command)
+                response = "".join(response)
+                if notify and response != "":
+                    self.log.debug("Reply: '%s'", response)
+                return response
+            except self.gclib_error as error:
+                error_code = self.g.GCommand("TC 1")
+                if error_code not in ("", "0"):
+                    error = error_code
+                self.log.error("Last command '%s' returned error '%s'", command, error)
+                return error
 
     def checkLimits(self, axis=None):
         """Return a tuple the state of the limit switches for the
