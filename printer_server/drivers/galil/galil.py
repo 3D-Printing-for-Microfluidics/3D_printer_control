@@ -223,13 +223,13 @@ class Galil:
             self.setSpeed(10)
             self.motorOn()
             self.startJog(speed=-15, acceleration=50)
-            self.g.GMotionComplete(a)
+            self.motionPlanningComplete(axis=a)
             self.stopJog()
             self.motorOn()
             self.send("HM")
             self.send("BGA")
             self.waitForMotionComplete(0)
-            self.g.GMotionComplete(a)
+            self.motionPlanningComplete(axis=a)
             self.homed[a] = True
             self.log.info("Homing complete.")
 
@@ -243,7 +243,7 @@ class Galil:
             time.sleep(10)
 
             for a in self.axes:
-                self.g.GMotionComplete(a)
+                self.motionPlanningComplete(axis=a)
                 self.homed[a] = True  # update class homed status
             self.log.info("Homing complete.")
 
@@ -348,6 +348,13 @@ class Galil:
         self.jogging[a] = False
         self.setSpeed(self.pre_jog_speed[a])
         self.setAcceleration(self.pre_jog_acceleration[a])
+
+    def motionPlanningComplete(self, axis=None):
+        a = self.convertAxis(axis)
+        in_motion = float(self.send(f"MG _BG{a}", notify=False))
+        while in_motion == 1.0:
+            time.sleep(0.001)
+            in_motion = float(self.send(f"MG _BG{a}", notify=False))
 
     def waitForMotionComplete(self, cnts, wait_for_settling=True, axis=None):
         """Blocks execution until the encoder reaches the target value
