@@ -336,7 +336,8 @@ class PrintControl:
         time.sleep(0.05)
         third_count = self.move_bp_to_force(squeeze_target, speed=0.005)
         time.sleep(0.05)
-        count = first_count + second_count + third_count
+        # count = first_count + second_count + third_count
+        count = first_count
 
         log.info("Squeeze force reached %s steps", count)
         log.info("Squeeze force: %s", self.loadcell.get_current_force())
@@ -352,7 +353,8 @@ class PrintControl:
             time.sleep(0.05)
             third_count = self.move_bp_to_force(relax_target, speed=-0.005)
             time.sleep(0.05)
-            count = first_count + second_count + third_count
+            # count = first_count + second_count + third_count
+            count = first_count
 
             log.info("Relax force reached %s steps", count)
             log.info("Relax force: %s", self.loadcell.get_current_force())
@@ -510,7 +512,8 @@ class PrintControl:
         time.sleep(0.05)
         third_count = self.move_bp_to_force(target_force, speed=-0.005)
         time.sleep(0.05)
-        count = first_count + second_count + third_count
+        # count = first_count + second_count + third_count
+        count = first_count
 
         log.info(
             "Loadcell force post planarization: %s", self.loadcell.get_current_force()
