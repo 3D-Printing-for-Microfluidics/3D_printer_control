@@ -301,12 +301,15 @@ class PrintControl:
         self.write_to_event_log("Finish Down Movement")
 
         force_squeeze = position_settings.get("Enable force squeeze", False)
+        squeeze_count = position_settings.get("Squeeze count", 1)
         if force_squeeze:
-            self.write_to_event_log("Start Force Squeeze")
-            self.squeeze_resin(position_settings, layer)
-            self.write_to_event_log("Finish Force Squeeze")
-
-        time.sleep(position_settings["Final wait (ms)"] / 1000)
+            for _ in range(squeeze_count):
+                self.write_to_event_log("Start Force Squeeze")
+                self.squeeze_resin(position_settings, layer)
+                self.write_to_event_log("Finish Force Squeeze")
+                time.sleep(position_settings["Final wait (ms)"] / 1000)
+        else:
+            time.sleep(position_settings["Final wait (ms)"] / 1000)
         end_position = self.galil.getPosition()
         end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         end_index = self.loadcell.get_current_loadcell_index()
