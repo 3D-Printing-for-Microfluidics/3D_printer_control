@@ -338,8 +338,8 @@ class Galil:
             )  # save the acceleration before jogging begins
         self.jogging[a] = True
 
-        self.log.info("Start jog on axis %s at speed %s mm/sec", a, speed)
         self.setAcceleration(acceleration)
+        self.log.info("Start jog on axis %s at speed %s mm/sec", a, speed)
         self.send(f"JG{a}={speed * self.ctspmm[a]}")
         self.send(f"BG{a}")
         self.logging_move_status[a] = 0
