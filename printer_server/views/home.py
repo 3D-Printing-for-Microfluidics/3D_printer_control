@@ -469,9 +469,7 @@ class PrintControl:
         force = self.loadcell.get_current_force()
         forces = []
         count = 0
-        if (speed > 0 and force > target_force) or (speed < 0 and force < target_force):
-            return 0
-        else:
+        if (speed < 0 and force > target_force) or (speed > 0 and force < target_force):
             self.galil.startJog(speed=speed, acceleration=acceleration)
             while (speed < 0 and force > target_force) or (
                 speed > 0 and force < target_force
