@@ -761,7 +761,6 @@ class PrintControl:
             galil_thread = threading.Thread(
                 target=self.move_build_platform, args=[position_settings, layer]
             )
-            print(self.next_layer)
             if not self.next_layer == 1:
                 galil_thread.start()
 
