@@ -476,12 +476,12 @@ class PrintControl:
             while (speed < 0 and force > target_force) or (
                 speed > 0 and force < target_force
             ):
-                time.sleep(0.001)
+                time.sleep(0.01)
                 force = self.loadcell.get_current_force()
                 log.debug("Loadcell force: %s", force)
                 count += 1
                 forces.append(force)
-                if len(forces) <= 100:
+                if len(forces) <= 10:
                     continue
                 forces.pop(0)
 

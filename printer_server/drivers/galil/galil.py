@@ -358,7 +358,7 @@ class Galil:
         a = self.convertAxis(axis)
         in_motion = float(self.send(f"MG _BG{a}", notify=False))
         while in_motion == 1.0:
-            time.sleep(0.001)
+            time.sleep(0.01)
             in_motion = float(self.send(f"MG _BG{a}", notify=False))
 
     def waitForMotionComplete(self, cnts, wait_for_settling=True, axis=None):
@@ -371,7 +371,7 @@ class Galil:
         limit_switch_triggered = False
         in_motion = float(self.send(f"MG _BG{a}", notify=False))
         while in_motion == 1.0:
-            time.sleep(0.001)
+            time.sleep(0.01)
             in_motion = float(self.send(f"MG _BG{a}", notify=False))
             upper, lower = self.checkLimits(axis=a)
             position = self.current_position[a]
@@ -390,7 +390,7 @@ class Galil:
             # only proceed when 10 good consecutive counts have been read
             error = self.error_window[a]
             while counter <= 5:
-                time.sleep(0.001)
+                time.sleep(0.01)
                 position = self.current_position[a]
                 if any(self.checkLimits(axis=a)):
                     self.log.info("Axis %s limit switch triggered", a)
@@ -403,9 +403,9 @@ class Galil:
                     counter = 0
                 time_count += 1
                 # timeout for collecting data, motor won't reach position
-                if time_count == 100:
+                if time_count == 10:
                     error = error * 2
-                if time_count >= 5000:
+                if time_count >= 500:
                     self.log.warning(
                         "%s motor didn't reach position. Got to %s but needed %s",
                         a,
@@ -450,7 +450,7 @@ class Galil:
                     if self.logging_move_status[a] >= 2:
                         self.logging_move_status[a] = -1
                 self.write_to_disk(tmp)
-                time.sleep(0.001)
+                time.sleep(0.01)
 
     def disconnect(self):
         """Disconnect form the Galil controller."""
