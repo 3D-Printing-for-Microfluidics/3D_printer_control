@@ -336,12 +336,14 @@ class PrintControl:
         time.sleep(0.05)
         third_count = self.move_bp_to_force(squeeze_target, speed=0.005)
         time.sleep(0.05)
-        # count = first_count + second_count + third_count
-        count = first_count
+        count = first_count + second_count + third_count
 
         log.info("Squeeze force reached %s steps", count)
         log.info("Squeeze force: %s", self.loadcell.get_current_force())
         log.info("Squeeze position: %s", self.galil.getPosition())
+
+        if self.loadcell.get_current_force() > squeeze_target * 1.10:
+            log.warning("Move_to_force overshot target value.")
 
         time.sleep(squeeze_wait)
 
@@ -353,12 +355,13 @@ class PrintControl:
             time.sleep(0.05)
             third_count = self.move_bp_to_force(relax_target, speed=-0.005)
             time.sleep(0.05)
-            # count = first_count + second_count + third_count
-            count = first_count
+            count = first_count + second_count + third_count
 
             log.info("Relax force reached %s steps", count)
             log.info("Relax force: %s", self.loadcell.get_current_force())
             log.info("Relax position: %s", self.galil.getPosition())
+            if self.loadcell.get_current_force() < relax_target * 0.90:
+                log.warning("Move_to_force overshot target value.")
         else:
             self.galil.absMove(
                 mm=self.print_position,
@@ -512,8 +515,7 @@ class PrintControl:
         time.sleep(0.05)
         third_count = self.move_bp_to_force(target_force, speed=-0.005)
         time.sleep(0.05)
-        # count = first_count + second_count + third_count
-        count = first_count
+        count = first_count + second_count + third_count
 
         log.info(
             "Loadcell force post planarization: %s", self.loadcell.get_current_force()
@@ -524,6 +526,9 @@ class PrintControl:
         log.info("Loadcell planarized %s steps", count)
         log.info("Loadcell force (post-step 2): %s", self.loadcell.get_current_force())
         log.info("Loadcell position (post-step 2): %s", self.planarized_position)
+        if self.loadcell.get_current_force() < target_force * 0.90:
+            log.warning("Move_to_force overshot target value")
+        
 
     @run_in_thread("paused", "Pause Printing")
     def pause(self):
