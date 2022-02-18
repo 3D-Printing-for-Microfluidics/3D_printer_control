@@ -330,9 +330,9 @@ class PrintControl:
         relax_target = position_settings["Relaxed force (N)"]
 
         time.sleep(0.05)
-        first_count = self.move_bp_to_force(squeeze_target - 4, speed=0.5)
+        first_count = self.move_bp_to_force(squeeze_target - 5, speed=0.5)
         time.sleep(0.05)
-        second_count = self.move_bp_to_force(squeeze_target - 0.4, speed=0.05)
+        second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
         time.sleep(0.05)
         third_count = self.move_bp_to_force(squeeze_target, speed=0.005)
         time.sleep(0.05)
@@ -347,9 +347,9 @@ class PrintControl:
 
         if use_relax_force:
             time.sleep(0.05)
-            first_count = self.move_bp_to_force(relax_target + 4, speed=-0.5)
+            first_count = self.move_bp_to_force(relax_target + 5, speed=-0.5)
             time.sleep(0.05)
-            second_count = self.move_bp_to_force(relax_target + 0.4, speed=-0.05)
+            second_count = self.move_bp_to_force(relax_target + 0.5, speed=-0.05)
             time.sleep(0.05)
             third_count = self.move_bp_to_force(relax_target, speed=-0.005)
             time.sleep(0.05)
@@ -502,13 +502,13 @@ class PrintControl:
         target_force = config_dict["loadcell_settings"]["loadcell_print_start_force"]
         time.sleep(0.05)
         first_count = self.move_bp_to_force(
-            target_force + 4, speed=-0.5, error_threshold=3.5
+            target_force + 5, speed=-0.5, error_threshold=3.5
         )
         if first_count is None:
             log.error("Loadcell planarization failed. Check build platform screw.")
             return
         time.sleep(0.05)
-        second_count = self.move_bp_to_force(target_force + 0.4, speed=-0.05)
+        second_count = self.move_bp_to_force(target_force + 0.5, speed=-0.05)
         time.sleep(0.05)
         third_count = self.move_bp_to_force(target_force, speed=-0.005)
         time.sleep(0.05)
