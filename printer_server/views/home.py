@@ -334,9 +334,9 @@ class PrintControl:
         relax_target = position_settings["Relaxed force (N)"]
 
         time.sleep(0.05)
-        first_count = self.move_bp_to_force(squeeze_target - 4, speed=0.5)
+        first_count = self.move_bp_to_force(squeeze_target - 5, speed=0.5)
         time.sleep(0.05)
-        second_count = self.move_bp_to_force(squeeze_target - 0.4, speed=0.05)
+        second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
         time.sleep(0.05)
         third_count = self.move_bp_to_force(squeeze_target, speed=0.005)
         time.sleep(0.05)
@@ -346,13 +346,16 @@ class PrintControl:
         log.info("Squeeze force: %s", self.loadcell.get_current_force())
         log.info("Squeeze position: %s", self.galil.getPosition())
 
+        if self.loadcell.get_current_force() > squeeze_target * 1.10:
+            log.warning("Move_to_force overshot target value.")
+
         time.sleep(squeeze_wait)
 
         if use_relax_force:
             time.sleep(0.05)
-            first_count = self.move_bp_to_force(relax_target + 4, speed=-0.5)
+            first_count = self.move_bp_to_force(relax_target + 5, speed=-0.5)
             time.sleep(0.05)
-            second_count = self.move_bp_to_force(relax_target + 0.4, speed=-0.05)
+            second_count = self.move_bp_to_force(relax_target + 0.5, speed=-0.05)
             time.sleep(0.05)
             third_count = self.move_bp_to_force(relax_target, speed=-0.005)
             time.sleep(0.05)
@@ -361,6 +364,8 @@ class PrintControl:
             log.info("Relax force reached %s steps", count)
             log.info("Relax force: %s", self.loadcell.get_current_force())
             log.info("Relax position: %s", self.galil.getPosition())
+            if self.loadcell.get_current_force() < relax_target * 0.90:
+                log.warning("Move_to_force overshot target value.")
         else:
             self.galil.absMove(
                 mm=self.print_position,
@@ -428,6 +433,7 @@ class PrintControl:
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
             self.loadcell.start()
+            self.galil.logging_start()
             time.sleep(0.5)
             if self.loadcell_thread is None:
                 socketio.emit("loadcell_graph_clear", namespace="/printing")
@@ -478,12 +484,12 @@ class PrintControl:
             while (speed < 0 and force > target_force) or (
                 speed > 0 and force < target_force
             ):
-                time.sleep(0.001)
+                time.sleep(0.01)
                 force = self.loadcell.get_current_force()
                 log.debug("Loadcell force: %s", force)
                 count += 1
                 forces.append(force)
-                if len(forces) <= 100:
+                if len(forces) <= 10:
                     continue
                 forces.pop(0)
 
@@ -506,13 +512,13 @@ class PrintControl:
         target_force = config_dict["loadcell_settings"]["loadcell_print_start_force"]
         time.sleep(0.05)
         first_count = self.move_bp_to_force(
-            target_force + 4, speed=-0.5, error_threshold=3.5
+            target_force + 5, speed=-0.5, error_threshold=3.5
         )
         if first_count is None:
             log.error("Loadcell planarization failed. Check build platform screw.")
             return
         time.sleep(0.05)
-        second_count = self.move_bp_to_force(target_force + 0.4, speed=-0.05)
+        second_count = self.move_bp_to_force(target_force + 0.5, speed=-0.05)
         time.sleep(0.05)
         third_count = self.move_bp_to_force(target_force, speed=-0.005)
         time.sleep(0.05)
@@ -527,6 +533,9 @@ class PrintControl:
         log.info("Loadcell planarized %s steps", count)
         log.info("Loadcell force (post-step 2): %s", self.loadcell.get_current_force())
         log.info("Loadcell position (post-step 2): %s", self.planarized_position)
+        if self.loadcell.get_current_force() < target_force * 0.90:
+            log.warning("Move_to_force overshot target value")
+        
 
     @run_in_thread("paused", "Pause Printing")
     def pause(self):
@@ -650,7 +659,10 @@ class PrintControl:
         )
         async_file_hander.write(self.exposure_log, "")
         async_file_hander.write(self.event_log, "timestamp,event\n")
-        async_file_hander.write(self.movement_log, "timestamp,position_mm,tag\n")
+        async_file_hander.write(self.movement_log, "timestamp,")
+        for a in self.galil.axes_common_names:
+            async_file_hander.write(self.movement_log, f"{a} position_mm,")
+            async_file_hander.write(self.movement_log, f"{a} status\n")
         async_file_hander.write(
             self.loadcell_log, "system_time,loadcell_time,index,raw_data,newtons\n"
         )
@@ -686,6 +698,7 @@ class PrintControl:
 
     def finish_print(self):
         self.loadcell.stop()
+        self.galil.logging_stop()
         self.loadcell_running = False
         self.loadcell_thread = None
         socketio.emit("loadcell_graph_clear", namespace="/printing")
