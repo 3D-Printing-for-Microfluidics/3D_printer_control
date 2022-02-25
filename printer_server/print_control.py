@@ -4,7 +4,6 @@ import json
 import shutil
 import logging
 import threading
-from venv import create
 import numpy as np
 from PIL import Image
 from pathlib import Path
@@ -274,25 +273,35 @@ class PrintControl:
         """Perform the build platform movements for a layer according to
         the position_settings.
         """
-        time.sleep(position_settings["Initial wait (ms)"] / 1000)
+        inital_wait = position_settings["Initial wait (ms)"] / 1000
+        up_distance = position_settings["Distance up (mm)"]
+        up_speed = position_settings["BP up speed (mm/sec)"]
+        up_acceleration = position_settings["BP up acceleration (mm/sec^2)"]
+        up_wait = position_settings["Up wait (ms)"] / 1000
+        layer_thickness = position_settings["Layer thickness (um)"] / 1000
+        down_speed = position_settings["BP down speed (mm/sec)"]
+        down_acceleration = position_settings["BP down acceleration (mm/sec^2)"]
+        final_wait = position_settings["Final wait (ms)"] / 1000
+
+        time.sleep(inital_wait)
         start_position = self.galil.getPosition()
         start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         start_index = self.loadcell.get_current_loadcell_index()
         self.write_to_event_log("Start Up Movement")
         self.galil.absMove(
-            mm=self.print_position - position_settings["Distance up (mm)"],
-            speed=position_settings["BP up speed (mm/sec)"],
-            acceleration=position_settings["BP up acceleration (mm/sec^2)"],
+            mm=self.print_position - up_distance,
+            speed=up_speed,
+            acceleration=up_acceleration,
             wait_for_settling=False,
         )
         self.write_to_event_log("Finish Up Movement")
-        time.sleep(position_settings["Up wait (ms)"] / 1000)
+        time.sleep(up_wait)
         self.write_to_event_log("Start Down Movement")
-        self.print_position -= position_settings["Layer thickness (um)"] / 1000
+        self.print_position -= layer_thickness
         self.galil.absMove(
             mm=self.print_position,
-            speed=position_settings["BP down speed (mm/sec)"],
-            acceleration=position_settings["BP down acceleration (mm/sec^2)"],
+            speed=down_speed,
+            acceleration=down_acceleration,
         )
         self.write_to_event_log("Finish Down Movement")
 
@@ -303,9 +312,9 @@ class PrintControl:
                 self.write_to_event_log("Start Force Squeeze")
                 self.squeeze_resin(position_settings, layer)
                 self.write_to_event_log("Finish Force Squeeze")
-                time.sleep(position_settings["Final wait (ms)"] / 1000)
+                time.sleep(final_wait)
         else:
-            time.sleep(position_settings["Final wait (ms)"] / 1000)
+            time.sleep(final_wait)
         end_position = self.galil.getPosition()
         end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         end_index = self.loadcell.get_current_loadcell_index()
@@ -416,7 +425,6 @@ class PrintControl:
                 "Loadcell force (pre-step 1): %s", self.loadcell.get_current_force()
             )
             self.galil.goToZmin()
-            # time.sleep(0.1)
             target_force = config_dict["loadcell_settings"][
                 "loadcell_planarization_force"
             ]
