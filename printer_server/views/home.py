@@ -329,13 +329,9 @@ class PrintControl:
         use_relax_force = position_settings.get("Use relaxed force", True)
         relax_target = position_settings["Relaxed force (N)"]
 
-        time.sleep(0.05)
         first_count = self.move_bp_to_force(squeeze_target - 5, speed=0.5)
-        time.sleep(0.05)
         second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
-        time.sleep(0.05)
         third_count = self.move_bp_to_force(squeeze_target, speed=0.005)
-        time.sleep(0.05)
         count = first_count + second_count + third_count
 
         log.info("Squeeze force reached %s steps", count)
@@ -348,13 +344,9 @@ class PrintControl:
         time.sleep(squeeze_wait)
 
         if use_relax_force:
-            time.sleep(0.05)
             first_count = self.move_bp_to_force(relax_target + 5, speed=-0.5)
-            time.sleep(0.05)
             second_count = self.move_bp_to_force(relax_target + 0.5, speed=-0.05)
-            time.sleep(0.05)
             third_count = self.move_bp_to_force(relax_target, speed=-0.005)
-            time.sleep(0.05)
             count = first_count + second_count + third_count
 
             log.info("Relax force reached %s steps", count)
@@ -433,11 +425,13 @@ class PrintControl:
                 "Loadcell force (pre-step 1): %s", self.loadcell.get_current_force()
             )
             self.galil.goToZmin()
-            time.sleep(0.1)
             target_force = config_dict["loadcell_settings"][
                 "loadcell_planarization_force"
             ]
-            if self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.75) is None:
+            if (
+                self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.75)
+                is None
+            ):
                 log.error("Did not reach target planarization force.")
                 return
             log.info(
@@ -487,8 +481,10 @@ class PrintControl:
                     # print(f"{abs(forces[0] - forces[-1])}, {error_threshold}")
                     if abs(forces[0] - forces[-1]) < error_threshold:
                         self.galil.stopJog()
+                        time.sleep(0.02)
                         return None
             self.galil.stopJog()
+            time.sleep(0.02)
         return count
 
     def planarization_step_3(self):
@@ -500,18 +496,14 @@ class PrintControl:
         target force.
         """
         target_force = config_dict["loadcell_settings"]["loadcell_print_start_force"]
-        time.sleep(0.05)
         first_count = self.move_bp_to_force(
             target_force + 5, speed=-0.5, error_threshold=3.5
         )
         if first_count is None:
             log.error("Loadcell planarization failed. Check build platform screw.")
             return
-        time.sleep(0.05)
         second_count = self.move_bp_to_force(target_force + 0.5, speed=-0.05)
-        time.sleep(0.05)
         third_count = self.move_bp_to_force(target_force, speed=-0.005)
-        time.sleep(0.05)
         count = first_count + second_count + third_count
 
         log.info(
@@ -525,7 +517,6 @@ class PrintControl:
         log.info("Loadcell position (post-step 2): %s", self.planarized_position)
         if self.loadcell.get_current_force() < target_force * 0.90:
             log.warning("Move_to_force overshot target value")
-        
 
     @run_in_thread("paused", "Pause Printing")
     def pause(self):
