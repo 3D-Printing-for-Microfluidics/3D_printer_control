@@ -533,11 +533,10 @@ class PrintControl:
             ):
                 log.error("Did not reach target planarization force.")
                 return
-            log.info(
-                "Loadcell force post planarization: %s", self.loadcell.get_current_force()
-            )
             time.sleep(0.5)
-            log.info("Loadcell force after step 1: %s", self.loadcell.get_current_force())
+            log.info(
+                "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
+            )
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
@@ -546,9 +545,6 @@ class PrintControl:
         """Raise the build platform to begin printing."""
         if config_dict["loadcell_settings"]["loadcell_planarization_enabled"]:
             if self.state == "planarizing":
-                log.debug(
-                    "Loadcell force after step 2: %s", self.loadcell.get_current_force()
-                )
                 self.planarization_step_3()
 
     def planarization_step_3(self):
