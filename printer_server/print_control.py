@@ -209,6 +209,89 @@ class PrintControl:
         else:
             raise ValueError(f"Invalid state: {state}")
 
+    def loadcell_graph_loop(self):
+        if not self.loadcell_running:
+            self.loadcell_running = True
+            while self.loadcell_running:
+                data = self.loadcell.get_current_data()
+                home.update_loadcell_graph({"data": data})
+                time.sleep(0.05)
+
+    def load_print_job(self, job_id):
+        """
+        The selected print job is retrieved from the Print Queue table
+        in the database. The current_job folder is cleared and the job
+        is extracted there. The original (still zipped) print file is
+        also copied to the print_history folder. A new entry in the
+        Print History table in the database is created for the current
+        job, and it's entry in the Print Queue table is deleted.
+        """
+        job = PrintQueue.query.get(job_id)
+        if not job:
+            log.warning("The print job with ID '%s' could not be found.", job_id)
+            return False
+        zipped_job_file = self.queue / Path(job.zip_filename)
+
+        # clear any old contents from the current_job folder
+        try:
+            shutil.rmtree(self.current_job)
+        except FileNotFoundError:
+            pass
+
+        # extract zip from self.queue to self.current_job
+        try:
+            with ZipFile(zipped_job_file, "r") as f:
+                f.extractall(self.current_job)
+        except FileNotFoundError:
+            self.delete_job({"job": job_id})
+            return False
+        return True
+
+    def move_job_to_print_history(self, job_id):
+        job = PrintQueue.query.get(job_id)
+        zipped_job_file = self.queue / Path(job.zip_filename)
+
+        # move zip file from self.queue to self.print_history
+        os.rename(zipped_job_file, self.print_history / Path(job.zip_filename))
+
+        # save job to Print History table in database
+        print_history_entry = PrintRecord(
+            original_filename=job.original_filename,
+            upload_time=job.upload_time,
+            upload_ip=job.upload_ip,
+            start_time=datetime.now(),
+            start_ip=request.remote_addr,
+        )
+        print_history_entry.save(commit=False)
+
+        # tell frontend to remove the job from the table and delete it from the database
+        self.delete_job({"job": job_id}, delete_on_disk=False)
+
+    def create_logs(self):
+        # create logs and overwrite any pre-existing data
+        log_data = self.print_settings.get("Header").get("Log data", True)
+        async_file_hander.set_enabled(log_data)
+        async_file_hander.write(
+            self.position_log,
+            "layer,duplicate,start_time,end_time,loadcell_start_index,",
+        )
+        async_file_hander.write(
+            self.position_log,
+            "loadcell_end_index,start_position,end_position,thickness_um,squeeze\n",
+        )
+        async_file_hander.write(self.exposure_log, "")
+        async_file_hander.write(self.event_log, "timestamp,event\n")
+        async_file_hander.write(self.movement_log, "timestamp,")
+        for a in self.galil.axes_common_names:
+            async_file_hander.write(self.movement_log, f"{a} position_mm,")
+            async_file_hander.write(self.movement_log, f"{a} status\n")
+        async_file_hander.write(
+            self.loadcell_log, "system_time,loadcell_time,index,raw_data,newtons\n"
+        )
+        async_file_hander.start()
+        self.galil.set_log_file(self.movement_log)
+        self.loadcell.set_log_file(self.loadcell_log)
+
     def get_position_settings(self, layer):
         """Return the position settings for the layer."""
         d = self.print_settings.get("Default layer settings").get("Position settings")
@@ -232,16 +315,6 @@ class PrintControl:
             final_settings.append(defaults.copy())
         return final_settings
 
-    def get_num_duplications(self, layer):
-        """Return the number of duplications for the layer.
-
-        Overrides default value with a layer specific one if present.
-        """
-        d = self.print_settings.get("Default layer settings").get(
-            "Number of duplications"
-        )
-        return layer.get("Number of duplications", d)
-
     def generate_layer_map(self):
         """Return an array of tuples that represent layers and their
         duplications.
@@ -260,14 +333,6 @@ class PrintControl:
         async_file_hander.write(
             self.event_log, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},{msg}\n"
         )
-
-    def loadcell_graph_loop(self):
-        if not self.loadcell_running:
-            self.loadcell_running = True
-            while self.loadcell_running:
-                data = self.loadcell.get_current_data()
-                home.update_loadcell_graph({"data": data})
-                time.sleep(0.05)
 
     def move_build_platform(self, position_settings, layer):
         """Perform the build platform movements for a layer according to
@@ -366,6 +431,41 @@ class PrintControl:
                 acceleration=5,
             )
 
+    def move_bp_to_force(
+        self, target_force, speed, acceleration=100, error_threshold=None
+    ):
+        """Move the build platform until the target force is achieved.
+
+        force - Target force.
+        speed - Speed in mm/sec. Negative speed means move up.
+        """
+        force = self.loadcell.get_current_force()
+        forces = []
+        count = 0
+        if (speed < 0 and force > target_force) or (speed > 0 and force < target_force):
+            self.galil.startJog(speed=speed, acceleration=acceleration)
+            while (speed < 0 and force > target_force) or (
+                speed > 0 and force < target_force
+            ):
+                time.sleep(0.01)
+                force = self.loadcell.get_current_force()
+                log.debug("Loadcell force: %s", force)
+                count += 1
+                forces.append(force)
+                if len(forces) <= 10:
+                    continue
+                forces.pop(0)
+
+                if error_threshold is not None:
+                    # print(f"{abs(forces[0] - forces[-1])}, {error_threshold}")
+                    if abs(forces[0] - forces[-1]) < error_threshold:
+                        self.galil.stopJog()
+                        time.sleep(0.02)
+                        return None
+            self.galil.stopJog()
+            time.sleep(0.02)
+        return count
+
     def change_focus(self, pos):
         self.write_to_event_log("Start Distance Movement")
         self.kdc.move(pos, relative=False)
@@ -452,41 +552,6 @@ class PrintControl:
                 )
                 self.planarization_step_3()
 
-    def move_bp_to_force(
-        self, target_force, speed, acceleration=100, error_threshold=None
-    ):
-        """Move the build platform until the target force is achieved.
-
-        force - Target force.
-        speed - Speed in mm/sec. Negative speed means move up.
-        """
-        force = self.loadcell.get_current_force()
-        forces = []
-        count = 0
-        if (speed < 0 and force > target_force) or (speed > 0 and force < target_force):
-            self.galil.startJog(speed=speed, acceleration=acceleration)
-            while (speed < 0 and force > target_force) or (
-                speed > 0 and force < target_force
-            ):
-                time.sleep(0.01)
-                force = self.loadcell.get_current_force()
-                log.debug("Loadcell force: %s", force)
-                count += 1
-                forces.append(force)
-                if len(forces) <= 10:
-                    continue
-                forces.pop(0)
-
-                if error_threshold is not None:
-                    # print(f"{abs(forces[0] - forces[-1])}, {error_threshold}")
-                    if abs(forces[0] - forces[-1]) < error_threshold:
-                        self.galil.stopJog()
-                        time.sleep(0.02)
-                        return None
-            self.galil.stopJog()
-            time.sleep(0.02)
-        return count
-
     def planarization_step_3(self):
         """Raise the build platform to its starting postion.
 
@@ -517,6 +582,55 @@ class PrintControl:
         log.info("Loadcell position (post-step 2): %s", self.planarized_position)
         if self.loadcell.get_current_force() < target_force * 0.90:
             log.warning("Move_to_force overshot target value")
+
+    def start(self, job_id):
+        """Do all preparatory work for a print, then start the printing
+        process in a separate thread.
+
+        The print settings file is parsed and the settings saved, then the
+        hardware operations are kicked off in a new thread.
+        """
+        if self.state != "planarized" or not job_id:
+            return
+
+        # load job and create print_history entry
+        if not self.load_print_job(job_id):
+            return
+        self.move_job_to_print_history(job_id)
+
+        # parse and save print_settings
+        with open(next(self.current_job.rglob("*.json")), "r") as file_handle:
+            self.print_settings = json.load(file_handle)
+        self.next_layer = 0
+
+        # Start async_file_handler
+        self.create_logs()
+
+        position = get_calibration_positions()
+        dist = position["distance"]
+        self.write_to_event_log(f"Distance: {dist}")
+        tip = position["tip"]
+        self.write_to_event_log(f"Tip: {tip}")
+        tilt = position["tilt"]
+        self.write_to_event_log(f"Tilt: {tilt}")
+        self.focused_position = float(position["distance"])
+
+        # update frontend progress bar
+        self.state = "printing"
+        msg = {
+            "percent": 0,
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+            "text": "Start Printing",
+        }
+        log.info(msg["text"])
+        home.update_printer_state(self.state, msg)
+
+        self.print_start_time = datetime.now()
+
+        # start printing process in a new thread
+        self.app = db.get_app()
+        self.print_thread = threading.Thread(target=self.print_worker)
+        self.print_thread.start()
 
     @run_in_thread("paused", "Pause Printing")
     def pause(self):
@@ -570,159 +684,6 @@ class PrintControl:
             else:
                 self.print_thread.join()
             log.info("Print stopped.")
-
-    def load_print_job(self, job_id):
-        """
-        The selected print job is retrieved from the Print Queue table
-        in the database. The current_job folder is cleared and the job
-        is extracted there. The original (still zipped) print file is
-        also copied to the print_history folder. A new entry in the
-        Print History table in the database is created for the current
-        job, and it's entry in the Print Queue table is deleted.
-        """
-        job = PrintQueue.query.get(job_id)
-        if not job:
-            log.warning("The print job with ID '%s' could not be found.", job_id)
-            return False
-        zipped_job_file = self.queue / Path(job.zip_filename)
-
-        # clear any old contents from the current_job folder
-        try:
-            shutil.rmtree(self.current_job)
-        except FileNotFoundError:
-            pass
-
-        # extract zip from self.queue to self.current_job
-        try:
-            with ZipFile(zipped_job_file, "r") as f:
-                f.extractall(self.current_job)
-        except FileNotFoundError:
-            self.delete_job({"job": job_id})
-            return False
-
-        # move zip file from self.queue to self.print_history
-        os.rename(zipped_job_file, self.print_history / Path(job.zip_filename))
-
-        # save job to Print History table in database
-        print_history_entry = PrintRecord(
-            original_filename=job.original_filename,
-            upload_time=job.upload_time,
-            upload_ip=job.upload_ip,
-            start_time=datetime.now(),
-            start_ip=request.remote_addr,
-        )
-        print_history_entry.save(commit=False)
-
-        # tell frontend to remove the job from the table and delete it from the database
-        self.delete_job({"job": job_id}, delete_on_disk=False)
-
-        return True
-
-    def create_logs(self):
-        # create logs and overwrite any pre-existing data
-        log_data = self.print_settings.get("Header").get("Log data", True)
-        async_file_hander.set_enabled(log_data)
-        async_file_hander.write(
-            self.position_log,
-            "layer,duplicate,start_time,end_time,loadcell_start_index,",
-        )
-        async_file_hander.write(
-            self.position_log,
-            "loadcell_end_index,start_position,end_position,thickness_um,squeeze\n",
-        )
-        async_file_hander.write(self.exposure_log, "")
-        async_file_hander.write(self.event_log, "timestamp,event\n")
-        async_file_hander.write(self.movement_log, "timestamp,")
-        for a in self.galil.axes_common_names:
-            async_file_hander.write(self.movement_log, f"{a} position_mm,")
-            async_file_hander.write(self.movement_log, f"{a} status\n")
-        async_file_hander.write(
-            self.loadcell_log, "system_time,loadcell_time,index,raw_data,newtons\n"
-        )
-        async_file_hander.start()
-        self.galil.set_log_file(self.movement_log)
-        self.loadcell.set_log_file(self.loadcell_log)
-
-    def start(self, job_id):
-        """Do all preparatory work for a print, then start the printing
-        process in a separate thread.
-
-        The print settings file is parsed and the settings saved, then the
-        hardware operations are kicked off in a new thread.
-        """
-        if self.state != "planarized" or not job_id:
-            return
-
-        # load job and create print_history entry
-        if not self.load_print_job(job_id):
-            return
-
-        # parse and save print_settings
-        with open(next(self.current_job.rglob("*.json")), "r") as file_handle:
-            self.print_settings = json.load(file_handle)
-        self.next_layer = 0
-
-        # Start async_file_handler
-        self.create_logs()
-
-        position = get_calibration_positions()
-        dist = position["distance"]
-        self.write_to_event_log(f"Distance: {dist}")
-        tip = position["tip"]
-        self.write_to_event_log(f"Tip: {tip}")
-        tilt = position["tilt"]
-        self.write_to_event_log(f"Tilt: {tilt}")
-        self.focused_position = float(position["distance"])
-
-        # update frontend progress bar
-        self.state = "printing"
-        msg = {
-            "percent": 0,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-            "text": "Start Printing",
-        }
-        log.info(msg["text"])
-        home.update_printer_state(self.state, msg)
-
-        self.print_start_time = datetime.now()
-
-        # start printing process in a new thread
-        self.app = db.get_app()
-        self.print_thread = threading.Thread(target=self.print_worker)
-        self.print_thread.start()
-
-    def finish_print(self):
-        self.galil.logging_stop()
-        self.galil.set_log_file(None)
-
-        self.loadcell.stop()
-        self.loadcell_running = False
-        self.loadcell_thread = None
-        home.clear_loadcell_graph()
-        self.loadcell.set_log_file(None)
-
-        async_file_hander.finish()
-
-        # update fontend, zip logs into archive in print_history, and update db entrty
-        with self.app.app_context():
-            latest_record = PrintRecord.query.order_by(PrintRecord.id.desc()).first()
-            latest_record.end_time = datetime.now()
-            if not self.printing_stopped.is_set():
-                latest_record.completed = True
-                self.state = "completed"
-                msg = {
-                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-                    "text": f"Printing completed. Print took {self.print_duration}",
-                }
-                log.info(msg["text"])
-                home.update_printer_state(self.state, msg)
-                self.write_to_event_log(msg["text"])
-            latest_record.save()
-            shutil.make_archive(
-                self.print_history / Path(latest_record.zip_filename[:-4]),
-                "zip",
-                self.current_job,
-            )
 
     def print_worker(self):
         """Do a 3D print.
@@ -877,6 +838,39 @@ class PrintControl:
 
         if not self.printing_paused.is_set():
             self.finish_print()
+
+    def finish_print(self):
+        self.galil.logging_stop()
+        self.galil.set_log_file(None)
+
+        self.loadcell.stop()
+        self.loadcell_running = False
+        self.loadcell_thread = None
+        home.clear_loadcell_graph()
+        self.loadcell.set_log_file(None)
+
+        async_file_hander.finish()
+
+        # update fontend, zip logs into archive in print_history, and update db entrty
+        with self.app.app_context():
+            latest_record = PrintRecord.query.order_by(PrintRecord.id.desc()).first()
+            latest_record.end_time = datetime.now()
+            if not self.printing_stopped.is_set():
+                latest_record.completed = True
+                self.state = "completed"
+                msg = {
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                    "text": f"Printing completed. Print took {self.print_duration}",
+                }
+                log.info(msg["text"])
+                home.update_printer_state(self.state, msg)
+                self.write_to_event_log(msg["text"])
+            latest_record.save()
+            shutil.make_archive(
+                self.print_history / Path(latest_record.zip_filename[:-4]),
+                "zip",
+                self.current_job,
+            )
 
     @property
     def isBusy(self):
