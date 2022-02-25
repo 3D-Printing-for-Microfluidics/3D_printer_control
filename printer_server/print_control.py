@@ -4,6 +4,7 @@ import json
 import shutil
 import logging
 import threading
+from venv import create
 import numpy as np
 from PIL import Image
 from pathlib import Path
@@ -324,13 +325,9 @@ class PrintControl:
         use_relax_force = position_settings.get("Use relaxed force", True)
         relax_target = position_settings["Relaxed force (N)"]
 
-        time.sleep(0.05)
         first_count = self.move_bp_to_force(squeeze_target - 5, speed=0.5)
-        time.sleep(0.05)
         second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
-        time.sleep(0.05)
         third_count = self.move_bp_to_force(squeeze_target, speed=0.005)
-        time.sleep(0.05)
         count = first_count + second_count + third_count
 
         log.info("Squeeze force reached %s steps", count)
@@ -343,13 +340,9 @@ class PrintControl:
         time.sleep(squeeze_wait)
 
         if use_relax_force:
-            time.sleep(0.05)
             first_count = self.move_bp_to_force(relax_target + 5, speed=-0.5)
-            time.sleep(0.05)
             second_count = self.move_bp_to_force(relax_target + 0.5, speed=-0.05)
-            time.sleep(0.05)
             third_count = self.move_bp_to_force(relax_target, speed=-0.005)
-            time.sleep(0.05)
             count = first_count + second_count + third_count
 
             log.info("Relax force reached %s steps", count)
@@ -423,7 +416,7 @@ class PrintControl:
                 "Loadcell force (pre-step 1): %s", self.loadcell.get_current_force()
             )
             self.galil.goToZmin()
-            time.sleep(0.1)
+            # time.sleep(0.1)
             target_force = config_dict["loadcell_settings"][
                 "loadcell_planarization_force"
             ]
@@ -480,8 +473,10 @@ class PrintControl:
                     # print(f"{abs(forces[0] - forces[-1])}, {error_threshold}")
                     if abs(forces[0] - forces[-1]) < error_threshold:
                         self.galil.stopJog()
+                        time.sleep(0.02)
                         return None
             self.galil.stopJog()
+            time.sleep(0.02)
         return count
 
     def planarization_step_3(self):
@@ -493,18 +488,14 @@ class PrintControl:
         target force.
         """
         target_force = config_dict["loadcell_settings"]["loadcell_print_start_force"]
-        time.sleep(0.05)
         first_count = self.move_bp_to_force(
             target_force + 5, speed=-0.5, error_threshold=3.5
         )
         if first_count is None:
             log.error("Loadcell planarization failed. Check build platform screw.")
             return
-        time.sleep(0.05)
         second_count = self.move_bp_to_force(target_force + 0.5, speed=-0.05)
-        time.sleep(0.05)
         third_count = self.move_bp_to_force(target_force, speed=-0.005)
-        time.sleep(0.05)
         count = first_count + second_count + third_count
 
         log.info(
@@ -572,25 +563,19 @@ class PrintControl:
                 self.print_thread.join()
             log.info("Print stopped.")
 
-    def start(self, job_id):
-        """Do all preparatory work for a print, then start the printing
-        process in a separate thread.
-
+    def load_print_job(self, job_id):
+        """
         The selected print job is retrieved from the Print Queue table
         in the database. The current_job folder is cleared and the job
         is extracted there. The original (still zipped) print file is
         also copied to the print_history folder. A new entry in the
         Print History table in the database is created for the current
-        job, and it's entry in the Print Queue table is deleted. The
-        print settings file is parsed and the settings saved, then the
-        hardware operations are kicked off in a new thread.
+        job, and it's entry in the Print Queue table is deleted.
         """
-        if self.state != "planarized" or not job_id:
-            return
         job = PrintQueue.query.get(job_id)
         if not job:
             log.warning("The print job with ID '%s' could not be found.", job_id)
-            return
+            return False
         zipped_job_file = self.queue / Path(job.zip_filename)
 
         # clear any old contents from the current_job folder
@@ -605,7 +590,7 @@ class PrintControl:
                 f.extractall(self.current_job)
         except FileNotFoundError:
             self.delete_job({"job": job_id})
-            return
+            return False
 
         # move zip file from self.queue to self.print_history
         os.rename(zipped_job_file, self.print_history / Path(job.zip_filename))
@@ -623,11 +608,9 @@ class PrintControl:
         # tell frontend to remove the job from the table and delete it from the database
         self.delete_job({"job": job_id}, delete_on_disk=False)
 
-        # parse and save print_settings
-        with open(next(self.current_job.rglob("*.json")), "r") as file_handle:
-            self.print_settings = json.load(file_handle)
-        self.next_layer = 0
+        return True
 
+    def create_logs(self):
         # create logs and overwrite any pre-existing data
         log_data = self.print_settings.get("Header").get("Log data", True)
         async_file_hander.set_enabled(log_data)
@@ -651,6 +634,28 @@ class PrintControl:
         async_file_hander.start()
         self.galil.set_log_file(self.movement_log)
         self.loadcell.set_log_file(self.loadcell_log)
+
+    def start(self, job_id):
+        """Do all preparatory work for a print, then start the printing
+        process in a separate thread.
+
+        The print settings file is parsed and the settings saved, then the
+        hardware operations are kicked off in a new thread.
+        """
+        if self.state != "planarized" or not job_id:
+            return
+
+        # load job and create print_history entry
+        if not self.load_print_job(job_id):
+            return
+
+        # parse and save print_settings
+        with open(next(self.current_job.rglob("*.json")), "r") as file_handle:
+            self.print_settings = json.load(file_handle)
+        self.next_layer = 0
+
+        # Start async_file_handler
+        self.create_logs()
 
         position = get_calibration_positions()
         dist = position["distance"]
@@ -679,11 +684,16 @@ class PrintControl:
         self.print_thread.start()
 
     def finish_print(self):
-        self.loadcell.stop()
         self.galil.logging_stop()
+        self.galil.set_log_file(None)
+
+        self.loadcell.stop()
         self.loadcell_running = False
         self.loadcell_thread = None
         home.clear_loadcell_graph()
+        self.loadcell.set_log_file(None)
+
+        async_file_hander.finish()
 
         # update fontend, zip logs into archive in print_history, and update db entrty
         with self.app.app_context():
@@ -705,10 +715,6 @@ class PrintControl:
                 "zip",
                 self.current_job,
             )
-
-        self.galil.set_log_file(None)
-        self.loadcell.set_log_file(None)
-        async_file_hander.finish()
 
     def print_worker(self):
         """Do a 3D print.
