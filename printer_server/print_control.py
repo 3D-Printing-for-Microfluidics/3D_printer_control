@@ -12,6 +12,7 @@ from functools import wraps
 from datetime import datetime
 from zipfile import ZipFile, BadZipFile
 
+import printer_server.views.home as home
 from printer_server.extensions import db
 from printer_server.settings import Config
 from printer_server.models import PrintQueue, PrintRecord
@@ -20,8 +21,6 @@ from printer_server.hardware_configuration import config_dict
 from printer_server.async_file_handler import async_file_hander
 from printer_server.hardware_configuration import driver_handles
 from printer_server.views.manual_controls import get_calibration_positions
-
-import printer_server.views.home as home
 
 
 log = logging.getLogger(__name__)
@@ -267,9 +266,7 @@ class PrintControl:
             self.loadcell_running = True
             while self.loadcell_running:
                 data = self.loadcell.get_current_data()
-
-                msg = {"data": data}
-                home.update_loadcell_graph(msg)
+                home.update_loadcell_graph({"data": data})
                 time.sleep(0.05)
 
     def move_build_platform(self, position_settings, layer):
@@ -547,12 +544,12 @@ class PrintControl:
         self.paused_position = None
         self.loadcell.start()
         # update fontend
+        self.state = "printing"
         msg = {
             "percent": int(100 * (self.next_layer - 1) / len(self.layer_map)),
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
             "text": "Resume Printing",
         }
-        self.state = "printing"
         log.info("Print resumed.")
         home.update_printer_state(self.state, msg)
         # resume printing in a new thread
@@ -672,7 +669,7 @@ class PrintControl:
             "text": "Start Printing",
         }
         log.info(msg["text"])
-        home.update_printer_state(self.state, dict())
+        home.update_printer_state(self.state, msg)
 
         self.print_start_time = datetime.now()
 
@@ -700,8 +697,8 @@ class PrintControl:
                     "text": f"Printing completed. Print took {self.print_duration}",
                 }
                 log.info(msg["text"])
+                home.update_printer_state(self.state, msg)
                 self.write_to_event_log(msg["text"])
-                home.update_printer_state(self.state, dict())
             latest_record.save()
             shutil.make_archive(
                 self.print_history / Path(latest_record.zip_filename[:-4]),
