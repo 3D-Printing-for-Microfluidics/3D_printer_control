@@ -245,6 +245,9 @@ class PrintControl:
 
     def move_job_to_print_history(self, job_id):
         job = PrintQueue.query.get(job_id)
+        if not job:
+            log.warning("The print job with ID '%s' could not be found.", job_id)
+            return False
         zipped_job_file = self.queue / Path(job.zip_filename)
 
         # move zip file from self.queue to self.print_history
