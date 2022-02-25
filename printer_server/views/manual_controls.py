@@ -36,7 +36,7 @@ def write_to_position_log(message):
         f.write("{} {}\n".format(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), message))
 
 
-def get_calibration_positions():
+def get_current_calibration_positions():
     message = {
         "tip": tiptilt.get_position("Tip"),
         "tilt": tiptilt.get_position("Tilt"),
@@ -53,7 +53,7 @@ def get_calibration_positions():
 
 @socketio.on("get_calibration_positions", namespace="/manual")
 def get_calibration_positions_socket():
-    message = get_calibration_positions()
+    message = get_current_calibration_positions()
     socketio.emit(
         "calibration_positions",
         message,
@@ -64,7 +64,7 @@ def get_calibration_positions_socket():
 
 
 def emit_calibration_positions(log=False):
-    message = get_calibration_positions()
+    message = get_current_calibration_positions()
 
     if log:
         write_to_position_log(message)

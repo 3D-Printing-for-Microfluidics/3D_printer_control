@@ -20,7 +20,10 @@ from printer_server.print_file_validator import validate_v02
 from printer_server.hardware_configuration import config_dict
 from printer_server.async_file_handler import async_file_hander
 from printer_server.hardware_configuration import driver_handles
-from printer_server.views.manual_controls import get_calibration_positions
+from printer_server.views.manual_controls import (
+    get_last_calibration_positions,
+    get_current_calibration_positions,
+)
 
 
 log = logging.getLogger(__name__)
@@ -38,14 +41,7 @@ def get_last_focused_position():
     """Return the last focused position for the distance axis from the
     position log file.
     """
-    log_file = Path(Config.PROJECT_ROOT) / "logs" / "calibration_position_log.txt"
-    last_line = None
-    with open(log_file) as f:
-        for line in f:
-            last_line = line.rstrip()
-    for char in ["{", "}", ":", "'", ","]:
-        last_line = last_line.replace(char, "")
-    return float(last_line.split(" ")[-1])
+    return get_last_calibration_positions()[2]
 
 
 def has_bad_metadata(filename):
@@ -606,7 +602,7 @@ class PrintControl:
         # Start async_file_handler
         self.create_logs()
 
-        position = get_calibration_positions()
+        position = get_current_calibration_positions()
         dist = position["distance"]
         self.write_to_event_log(f"Distance: {dist}")
         tip = position["tip"]
