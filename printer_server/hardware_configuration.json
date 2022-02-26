@@ -1,14 +1,6 @@
 {
     "HR3v3": {
-        "included_hardware": [
-            "galil",
-            "kdc101",
-            "loadcell",
-            "sceen",
-            "tiptilt",
-            "visitech"
-        ],
-        "galil_settings": {
+        "galil": {
             "controller_name": "DMC31010",
             "default_axis": "A",
             "axes": [
@@ -30,7 +22,8 @@
             "bottom_position": 350000,
             "top_position": -400000
         },
-        "loadcell_settings": {
+        "kcd101": {},
+        "loadcell": {
             "hwid": "PID=16C0:0483 SER=9881500",
             "calibration_intercept": 33218.0,
             "calibration_slope": -3.75,
@@ -38,20 +31,14 @@
             "loadcell_planarization_force": 30.0,
             "loadcell_print_start_force": 5.0
         },
-        "tiptilt_settings": {
+        "screen": {},
+        "tiptilt": {
             "hwid": "PID=16C0:0483 SER=5800580"
-        }
+        },
+        "visitech": {}
     },
     "HR3v3u": {
-        "included_hardware": [
-            "galil",
-            "kdc101",
-            "loadcell",
-            "sceen",
-            "tiptilt",
-            "visitech"
-        ],
-        "galil_settings": {
+        "galil": {
             "controller_name": "DMC31010",
             "default_axis": "A",
             "axes": [
@@ -73,7 +60,8 @@
             "bottom_position": 330000,
             "top_position": -400000
         },
-        "loadcell_settings": {
+        "kdc101": {},
+        "loadcell": {
             "hwid": "PID=16C0:0483 SER=5712570",
             "calibration_intercept": 34990.0,
             "calibration_slope": -2.1,
@@ -81,21 +69,14 @@
             "loadcell_planarization_force": 35.0,
             "loadcell_print_start_force": 5.0
         },
-        "tiptilt_settings": {
+        "screen": {},
+        "tiptilt": {
             "hwid": "PID=16C0:0483 SER=9881650"
-        }
+        },
+        "visitech": {}
     },
     "MR1v1": {
-        "included_hardware": [
-            "galil",
-            "loadcell",
-            "sceen",
-            "tiptilt",
-            "visitech",
-            "wintech",
-            "keyence"
-        ],
-        "galil_settings": {
+        "galil": {
             "controller_name": "DMC4040",
             "default_axis": "D",
             "axes": [
@@ -132,7 +113,7 @@
             "bottom_position": 2508800,
             "top_position": -2600000
         },
-        "loadcell_settings": {
+        "loadcell": {
             "hwid": "PID=16C0:0483 SER=9881820",
             "calibration_intercept": 34932.0,
             "calibration_slope": -1.79,
@@ -140,20 +121,16 @@
             "loadcell_planarization_force": 35.0,
             "loadcell_print_start_force": 5.0
         },
-        "tiptilt_settings": {
+        "screen": {},
+        "tiptilt": {
             "hwid": "PID=16C0:0483 SER=3794660"
-        }
+        },
+        "visitech": {},
+        "wintech": {},
+        "keyence": {}
     },
     "HR4": {
-        "included_hardware": [
-            "galil",
-            "loadcell",
-            "sceen",
-            "tiptilt",
-            "visitech",
-            "keyence"
-        ],
-        "galil_settings": {
+        "galil": {
             "controller_name": "DMC4040",
             "default_axis": "D",
             "axes": [
@@ -190,7 +167,7 @@
             "bottom_position": 2508800,
             "top_position": -2600000
         },
-        "loadcell_settings": {
+        "loadcell": {
             "hwid": "PID=16C0:0483 SER=9881500",
             "calibration_intercept": 34932.0,
             "calibration_slope": -1.79,
@@ -198,8 +175,11 @@
             "loadcell_planarization_force": 35.0,
             "loadcell_print_start_force": 5.0
         },
-        "tiptilt_settings": {
+        "screen": {},
+        "tiptilt": {
             "hwid": "PID=16C0:0483 SER=9881850"
-        }
+        },
+        "visitech": {},
+        "keyence": {}
     }
 }

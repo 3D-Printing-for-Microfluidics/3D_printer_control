@@ -524,9 +524,7 @@ class PrintControl:
                 "Loadcell force (pre-step 1): %s", self.loadcell.get_current_force()
             )
             self.galil.goToZmin()
-            target_force = config_dict["loadcell_settings"][
-                "loadcell_planarization_force"
-            ]
+            target_force = config_dict["loadcell"]["loadcell_planarization_force"]
             if (
                 self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.75)
                 is None
@@ -543,7 +541,7 @@ class PrintControl:
         self.planarized_position = self.galil.getPosition()
         self.print_position = self.galil.cntsToMm(self.planarized_position)
         """Raise the build platform to begin printing."""
-        if config_dict["loadcell_settings"]["loadcell_planarization_enabled"]:
+        if config_dict["loadcell"]["loadcell_planarization_enabled"]:
             if self.state == "planarizing":
                 self.planarization_step_3()
 
@@ -555,7 +553,7 @@ class PrintControl:
         moving up more slowly until the measured force reaches the
         target force.
         """
-        target_force = config_dict["loadcell_settings"]["loadcell_print_start_force"]
+        target_force = config_dict["loadcell"]["loadcell_print_start_force"]
         first_count = self.move_bp_to_force(
             target_force + 5, speed=-0.5, error_threshold=3.5
         )
