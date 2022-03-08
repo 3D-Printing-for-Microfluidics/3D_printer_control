@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 from os.path import exists
-from flask import Blueprint, render_template
+from flask import request, Blueprint, render_template
 
 from printer_server.extensions import socketio
 from printer_server.settings import Config
@@ -78,7 +78,7 @@ def index():
 
 @blueprint.route("handle-calibration-upload", methods=["POST"])
 def upload():
-    printer_server.drivers.screen.screen_snip.handleUpload()
+    printer_server.drivers.screen.screen_snip.handleUpload(request)
 
 
 @socketio.on("set_external_control_enable", namespace="/manual")

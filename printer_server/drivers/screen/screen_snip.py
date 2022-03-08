@@ -9,7 +9,7 @@ from PIL import Image
 imagePath = os.path.join(Config.UPLOAD_FOLDER, "calibration_images", "temp.png")
 
 
-def handleUpload():
+def handleUpload(request):
     if "file" in request.files:  # Check if the post request has the file part
         file = request.files["file"]  # Get the file
         if file.filename != "" and file:  # File part of request actually has a file
