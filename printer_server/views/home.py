@@ -13,7 +13,9 @@ from PIL import Image
 from flask import Blueprint, request, render_template
 from flask_socketio import join_room, leave_room
 
-from printer_server.views.manual_controls import get_calibration_positions
+# from printer_server.views.manual_controls import get_calibration_positions
+from printer_server.drivers.kdc101.kdc101_snip import get_kdc_positions
+from printer_server.drivers.tiptilt.tiptilt_snip import get_tiptilt_positions
 
 from printer_server.settings import Config
 from printer_server.hardware_configuration import config_dict
@@ -651,9 +653,11 @@ class PrintControl:
         self.galil.set_log_file(self.movement_log)
         self.loadcell.set_log_file(self.loadcell_log)
 
-        position = get_calibration_positions()
+        # position = get_calibration_positions()
+        position = get_kdc_positions()
         dist = position["distance"]
         self.write_to_event_log(f"Distance: {dist}")
+        position = get_tiptilt_positions()
         tip = position["tip"]
         self.write_to_event_log(f"Tip: {tip}")
         tilt = position["tilt"]
