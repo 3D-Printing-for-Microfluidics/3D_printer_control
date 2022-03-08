@@ -1,15 +1,14 @@
 import os
 from printer_server.settings import Config
 from printer_server.extensions import socketio
+from flask import request, Blueprint, render_template
 
 from PIL import Image
-from flask import request
 
 # Specify location of uploaded image and give default name
 imagePath = os.path.join(Config.UPLOAD_FOLDER, "calibration_images", "temp.png")
 
 
-@blueprint.route("handle-calibration-upload", methods=["POST"])
 def handleUpload():
     if "file" in request.files:  # Check if the post request has the file part
         file = request.files["file"]  # Get the file

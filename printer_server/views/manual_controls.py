@@ -76,6 +76,11 @@ def index():
     )
 
 
+@blueprint.route("handle-calibration-upload", methods=["POST"])
+def upload():
+    printer_server.drivers.screen.screen_snip.handleUpload()
+
+
 @socketio.on("set_external_control_enable", namespace="/manual")
 def set_external_control_enable(message):
     """set_external_control -- Sets the variable determining if printer can be auto-calibrated"""
