@@ -1,6 +1,7 @@
 {
-    "HR3v3": {
+    "HR3v3test": {
         "galil": {
+            "dummy": true,
             "controller_name": "DMC31010",
             "default_axis": "A",
             "axes": [
@@ -22,8 +23,11 @@
             "bottom_position": 350000,
             "top_position": -400000
         },
-        "kcd101": {},
+        "kdc101": {
+            "dummy": true
+        },
         "loadcell": {
+            "dummy": true,
             "hwid": "PID=16C0:0483 SER=9881500",
             "calibration_intercept": 33218.0,
             "calibration_slope": -3.75,
@@ -33,12 +37,61 @@
         },
         "screen": {},
         "tiptilt": {
+            "dummy": true,
             "hwid": "PID=16C0:0483 SER=5800580"
         },
-        "visitech": {}
+        "visitech": {
+            "dummy": true
+        }
+    },
+    "HR3v3": {
+        "galil": {
+            "dummy": false,
+            "controller_name": "DMC31010",
+            "default_axis": "A",
+            "axes": [
+                "A"
+            ],
+            "axes_common_names": [
+                "Z"
+            ],
+            "axes_travel": {
+                "A": 100
+            },
+            "axes_ctspmm": {
+                "A": 8000
+            },
+            "axes_tolerance": {
+                "A": 0.125
+            },
+            "calibration_position": 34000,
+            "bottom_position": 350000,
+            "top_position": -400000
+        },
+        "kdc101": {
+            "dummy": false
+        },
+        "loadcell": {
+            "dummy": false,
+            "hwid": "PID=16C0:0483 SER=9881500",
+            "calibration_intercept": 33218.0,
+            "calibration_slope": -3.75,
+            "loadcell_planarization_enabled": true,
+            "loadcell_planarization_force": 30.0,
+            "loadcell_print_start_force": 5.0
+        },
+        "screen": {},
+        "tiptilt": {
+            "dummy": false,
+            "hwid": "PID=16C0:0483 SER=5800580"
+        },
+        "visitech": {
+            "dummy": false
+        }
     },
     "HR3v3u": {
         "galil": {
+            "dummy": false,
             "controller_name": "DMC31010",
             "default_axis": "A",
             "axes": [
@@ -60,8 +113,11 @@
             "bottom_position": 330000,
             "top_position": -400000
         },
-        "kdc101": {},
+        "kdc101": {
+            "dummy": false
+        },
         "loadcell": {
+            "dummy": false,
             "hwid": "PID=16C0:0483 SER=5712570",
             "calibration_intercept": 34990.0,
             "calibration_slope": -2.1,
@@ -71,12 +127,16 @@
         },
         "screen": {},
         "tiptilt": {
+            "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881650"
         },
-        "visitech": {}
+        "visitech": {
+            "dummy": false
+        }
     },
     "MR1v1": {
         "galil": {
+            "dummy": false,
             "controller_name": "DMC4040",
             "default_axis": "D",
             "axes": [
@@ -114,6 +174,7 @@
             "top_position": -2600000
         },
         "loadcell": {
+            "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881820",
             "calibration_intercept": 34932.0,
             "calibration_slope": -1.79,
@@ -123,14 +184,18 @@
         },
         "screen": {},
         "tiptilt": {
+            "dummy": false,
             "hwid": "PID=16C0:0483 SER=3794660"
         },
-        "visitech": {},
+        "visitech": {
+            "dummy": false
+        },
         "wintech": {},
         "keyence": {}
     },
     "HR4": {
         "galil": {
+            "dummy": false,
             "controller_name": "DMC4040",
             "default_axis": "D",
             "axes": [
@@ -168,6 +233,7 @@
             "top_position": -2600000
         },
         "loadcell": {
+            "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881500",
             "calibration_intercept": 34932.0,
             "calibration_slope": -1.79,
@@ -177,9 +243,12 @@
         },
         "screen": {},
         "tiptilt": {
+            "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881850"
         },
-        "visitech": {},
+        "visitech": {
+            "dummy": false
+        },
         "keyence": {}
     }
 }
