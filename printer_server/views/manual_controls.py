@@ -49,17 +49,17 @@ if "visitech" in config_dict.keys():
 # Generate HTML snippit list
 hardware_partials = []
 for key in config_dict.keys():
-    path = f"drivers/{key}/{key}.html"
-    if exists(f"{Config.PRINT_SERVER_FOLDER}/{path}"):
-        hardware_partials.append(path)
+    path = f"{key}/{key}_snip.html"
+    if exists(f"{Config.PRINT_SERVER_FOLDER}/drivers/{path}"):
+        hardware_partials.append(f"../{path}")
 
 
 # Create bluprint
 blueprint = Blueprint(
     "manual_controls",
     __name__,
-    hardware=hardware_partials,
     url_prefix="/",
+    template_folder="../drivers",
     static_folder="../static",
 )
 
@@ -73,6 +73,7 @@ def index():
         tilt_position=positions[1],
         dist_position=positions[2],
         hostname=Config.HOSTNAME,
+        hardware=hardware_partials,
     )
 
 
