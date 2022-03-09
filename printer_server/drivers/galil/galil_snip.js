@@ -7,6 +7,7 @@ var enable_galil_buttons = function () {
 }
 
 $(document).ready(function () {
+    var socket = io.connect("http://" + document.domain + ":" + location.port + "/manual");
 
     // Enable galil control buttons when current galil motion is complete
     socket.on("galil_done", function () {
