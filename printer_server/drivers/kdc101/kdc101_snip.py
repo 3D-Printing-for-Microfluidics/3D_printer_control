@@ -2,16 +2,19 @@ import threading
 
 from printer_server.hardware_configuration import driver_handles
 from printer_server.extensions import socketio
-from printer_server.views.manual_controls import (
-    get_last_calibration_positions,
-    write_to_position_log,
-)
+import printer_server.views.manual_controls
+
+# from printer_server.views.manual_controls import (
+#     get_last_calibration_positions,
+#     write_to_position_log,
+# )
+
 
 kdc = driver_handles.kdc
 
 
 def get_kdc_positions():
-    last_positions = get_last_calibration_positions()
+    last_positions = printer_server.views.manual_controls.get_last_calibration_positions()
     message = {
         "tip": last_positions[0],
         "tilt": last_positions[1],
@@ -37,7 +40,7 @@ def emit_kdc_positions(log=False):
     message = get_kdc_positions()
 
     if log:
-        write_to_position_log(message)
+        printer_server.views.manual_controls.write_to_position_log(message)
     socketio.emit(
         "kdc_motor_move_complete",
         message,
