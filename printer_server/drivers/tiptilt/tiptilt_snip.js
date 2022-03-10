@@ -25,8 +25,6 @@ var update_positions = function (message) {
 }
 
 $(document).ready(function () {
-    var socket = io.connect("http://" + document.domain + ":" + location.port + "/manual");
-
         // Enable calibration motor buttons and update position labels when current motion is complete
     socket.on("tiptilt_motor_move_complete", function (message) {
         update_positions(message);

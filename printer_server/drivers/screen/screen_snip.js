@@ -7,8 +7,6 @@ var disable_upload_button = function () {
 }
 
 $(document).ready(function () {
-    var socket = io.connect("http://" + document.domain + ":" + location.port + "/manual");
-
     var filePickerElement = document.getElementById("file-picker");
 
     // Once once upload is complete, re-enable upload controls

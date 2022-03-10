@@ -25,8 +25,6 @@ var disable_project_start_stop_buttons = function () {
 }
 
 $(document).ready(function () {
-    var socket = io.connect("http://" + document.domain + ":" + location.port + "/manual");
-
     // Handles to user inputs
     var LedPowerSliderElement = document.getElementById("led-power-slider");
     var LedPowerLabelElement = document.getElementById("led-power-label");
