@@ -26,6 +26,10 @@
         "kdc101": {
             "dummy": false
         },
+        "tiptilt": {
+            "dummy": false,
+            "hwid": "PID=16C0:0483 SER=5800580"
+        },
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881500",
@@ -36,10 +40,6 @@
             "loadcell_print_start_force": 5.0
         },
         "screen": {},
-        "tiptilt": {
-            "dummy": false,
-            "hwid": "PID=16C0:0483 SER=5800580"
-        },
         "visitech": {
             "dummy": false
         }
@@ -71,6 +71,10 @@
         "kdc101": {
             "dummy": false
         },
+        "tiptilt": {
+            "dummy": false,
+            "hwid": "PID=16C0:0483 SER=9881650"
+        },
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=5712570",
@@ -81,10 +85,6 @@
             "loadcell_print_start_force": 5.0
         },
         "screen": {},
-        "tiptilt": {
-            "dummy": false,
-            "hwid": "PID=16C0:0483 SER=9881650"
-        },
         "visitech": {
             "dummy": false
         }
@@ -128,6 +128,10 @@
             "bottom_position": 2508800,
             "top_position": -2600000
         },
+        "tiptilt": {
+            "dummy": false,
+            "hwid": "PID=16C0:0483 SER=3794660"
+        },
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881820",
@@ -138,10 +142,6 @@
             "loadcell_print_start_force": 5.0
         },
         "screen": {},
-        "tiptilt": {
-            "dummy": false,
-            "hwid": "PID=16C0:0483 SER=3794660"
-        },
         "visitech": {
             "dummy": false
         },
@@ -187,6 +187,10 @@
             "bottom_position": 2508800,
             "top_position": -2600000
         },
+        "tiptilt": {
+            "dummy": false,
+            "hwid": "PID=16C0:0483 SER=9881850"
+        },
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881500",
@@ -197,10 +201,6 @@
             "loadcell_print_start_force": 5.0
         },
         "screen": {},
-        "tiptilt": {
-            "dummy": false,
-            "hwid": "PID=16C0:0483 SER=9881850"
-        },
         "visitech": {
             "dummy": false
         },
