@@ -56,4 +56,5 @@
     {% endfor %}
 </div> 
 
+<script> var axes = {{ axes|tojson }} </script>
 <script src="{{ url_for('manual_controls.static', filename='tiptilt/tiptilt_snip.js') }}"></script>

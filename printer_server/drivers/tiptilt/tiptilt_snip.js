@@ -1,5 +1,3 @@
-var axes = ['tip', 'tilt'];
-
 var disable_tiptilt_motor_buttons = function () {
     $('.tiptilt-controls button').prop('disabled', true);
 }
@@ -16,8 +14,9 @@ var update_position = function (message, axis) {
 
 // helper function to update positions on all calibration axes
 var update_positions = function (message) {
-    for (const axis of axes) {
-        update_position(message, axis);
+    for (var a of axes) {
+        a = a.toLowerCase()
+        update_position(message, a);
     }
 }
 
@@ -28,7 +27,8 @@ $(document).ready(function () {
         enable_tiptilt_motor_buttons();
     });
 
-    for (const a of axes) {
+    for (var a of axes) {
+        a = a.toLowerCase();
         // Calibration motor buttons for homing
         $(`.${a}-home-btn`).click(function () {
             // Disable calibration motor buttons
