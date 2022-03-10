@@ -81,7 +81,7 @@ def index():
 
 @blueprint.route("handle-calibration-upload", methods=["POST"])
 def upload():
-    printer_server.drivers.screen.screen_snip.handleUpload(request)
+    return printer_server.drivers.screen.screen_snip.handleUpload(request)
 
 
 @socketio.on("set_external_control_enable", namespace="/manual")
