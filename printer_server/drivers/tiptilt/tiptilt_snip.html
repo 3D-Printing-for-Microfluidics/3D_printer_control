@@ -16,17 +16,22 @@
         </div>
     </div>
 
-    <!-- Tip -->
-    <div class="container" aria-label="Tip">
+    {% set axes = ['Tip', 'Tilt'] %}
+    {% set axes_text = dict() %}
+    {% set _dummy = axes_text.update({'Tip':tip_position}) %}
+    {% set _dummy = axes_text.update({'Tilt':tilt_position}) %}
+
+    {% for axis in axes %}
+    <div class="container" aria-label="{{ axis }}">
         <div class="row">
             <div class="col-4">
-                <h5>Tip</h5>
+                <h5>{{ axis }}</h5>
             </div>
             <div class="col-2">
-                <h5 class="col text-right" id='tip-state'>{{ tip_position }}</h5>
+                <h5 class="col text-right" id='{{ axis|lower }}-state'>{{ axes_text[axis] }}</h5>
             </div>
             <div class="col-6">
-                <input class="form-control tt-cntrl-txt" type="text" id="tip-txt" placeholder="Position (um)">
+                <input class="form-control {{ axis|lower }}-cntrl-txt" type="text" id="{{ axis|lower }}-txt" placeholder="Position (um)">
             </div>
         </div>
 
@@ -34,58 +39,24 @@
             <div class="col-2">
             </div>
             <div class="col-2 text-left">
-                <button type="button" class="btn btn-outline-info btn-block tt-home-btn" id="tip-home-btn">Home</button>
+                <button type="button" class="btn btn-outline-info btn-block {{ axis|lower }}-home-btn" id="{{ axis|lower }}-home-btn">Home</button>
             </div>
             <div class="col-8 text-right">
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">-1000</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">-100</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">-10</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">-1</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">1</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">10</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">100</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">1000</button>
+                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">-1000</button>
+                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">1000</button>
                 </div>
             </div>
         </div>
 
     </div>
-
-    <!-- Tilt -->
-    <div class="container" aria-label="Tilt">
-        <div class="row">
-            <div class="col-4">
-                <h5>Tilt</h5>
-            </div>
-            <div class="col-2">
-                <h5 class="col text-right" id='tilt-state'>{{ tilt_position }}</h5>
-            </div>
-            <div class="col-6">
-                <input class="form-control tt-cntrl-txt" type="text" id="tilt-txt" placeholder="Position (um)">
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-2">
-            </div>
-            <div class="col-2 text-left">
-                <button type="button" class="btn btn-outline-info btn-block tt-home-btn"
-                    id="tilt-home-btn">Home</button>
-            </div>
-            <div class="col-8 text-right">
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">-1000</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">-100</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">-10</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">-1</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">1</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">10</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">100</button>
-                    <button type="button" class="btn btn-outline-info tt-cntrl-btn">1000</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+    {% endfor %}
+</div> 
 
 <script src="{{ url_for('manual_controls.static', filename='tiptilt/tiptilt_snip.js') }}"></script>
