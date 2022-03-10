@@ -4,11 +4,6 @@ from printer_server.hardware_configuration import driver_handles
 from printer_server.extensions import socketio
 import printer_server.views.manual_controls
 
-# from printer_server.views.manual_controls import (
-#     get_last_calibration_positions,
-#     write_to_position_log,
-# )
-
 tiptilt = driver_handles.tiptilt
 
 
