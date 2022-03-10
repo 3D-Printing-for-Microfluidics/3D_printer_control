@@ -29,6 +29,7 @@ with open(next(configuration_path), "r") as file_handle:
     config_dict = json.load(file_handle)
 config_dict = config_dict[Config.HOSTNAME]
 
+light_engines = []
 # Dynamically import python snippits
 if "galil" in config_dict.keys():
     import printer_server.drivers.galil.galil_snip
@@ -42,8 +43,10 @@ if "tiptilt" in config_dict.keys():
     import printer_server.drivers.tiptilt.tiptilt_snip
 if "visitech" in config_dict.keys():
     import printer_server.drivers.visitech.visitech_snip
+    light_engines.append("Visitech")
 # if "wintech" in config_dict.keys():
 #     import printer_server.drivers.wintech.wintech_snip
+#     light_engines.append("Wintech")
 
 
 # Generate HTML snippit list
@@ -72,6 +75,7 @@ def index():
         positions=positions,
         hostname=Config.HOSTNAME,
         hardware=hardware_partials,
+        light_engines=light_engines
     )
 
 

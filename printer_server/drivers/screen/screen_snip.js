@@ -1,18 +1,20 @@
-var enable_upload_button = function () {
-    $('#upload-btn').prop('disabled', false);
+var enable_upload_button = function (le) {
+    console.log(`enable_upload_button ${le}`)
+    $(`#${le}-upload-btn`).prop('disabled', false);
 }
 
-var disable_upload_button = function () {
-    // $('#upload-btn').prop('disabled', true);
+var disable_upload_button = function (le) {
+    console.log(`disable_upload_button ${le}`)
+    // $(`#${le}-upload-btn`).prop('disabled', true);
 }
 
 $(document).ready(function () {
-    var filePickerElement = document.getElementById("file-picker");
-
     // Once once upload is complete, re-enable upload controls
-    socket.on("calibration_image_uploaded", function () {
+    socket.on("calibration_image_uploaded", function (le) {
+        var filePickerElement = document.getElementById(`${le}-file-picker`);
+        console.log(`calibration_image_uploaded ${le}`)
         filePickerElement.classList.remove("is-invalid")
-        enable_upload_button()
+        enable_upload_button(le)
 
         var exposure = exposureElement.value;
         // Validate user input for exposure. Only allows positive integers > 0
@@ -24,29 +26,40 @@ $(document).ready(function () {
     });
 
     // If a bad file was uploaded, disable upload options
-    socket.on("calibration_image_bad", function () {
+    socket.on("calibration_image_bad", function (le) {
+        var filePickerElement = document.getElementById(`${le}-file-picker`);
+        console.log(`calibration_image_bad ${le}`)
         filePickerElement.classList.add("is-invalid")
         disable_le_buttons();
     });
 
-    // Enable upload button when a file is chosen
-    $("#file-picker").on("click", function (e) {
-        enable_upload_button();
-    });
 
-    // Upload button click function
-    $("#upload-btn").on("click", function (e) {
-        var selectedFile = filePickerElement.files[0];
-        if (typeof selectedFile !== 'undefined') {  // if there is a file selected
-            disable_le_buttons();
-            uploadFile(selectedFile);
-        }
-    });
+    for (var le of light_engines) {
+        le = le.toLowerCase()
+        // Enable upload button when a file is chosen
+        $(`#${le}-file-picker`).on("click", function (e) {
+            console.log(`#${le}-file-picker`)
+            enable_upload_button(le);
+        });
+
+        // Upload button click function
+        $(`#${le}-upload-btn`).on("click", function (e) {
+            var filePickerElement = document.getElementById(`${le}-file-picker`);
+            console.log(`#${le}-upload-btn ${le}-file-picker`)
+            var selectedFile = filePickerElement.files[0];
+            if (typeof selectedFile !== 'undefined') {  // if there is a file selected
+                disable_le_buttons();
+                uploadFile(selectedFile, le);
+            }
+        });
+    };
 });
 
-function uploadFile(image) {
+function uploadFile(image, le) {
+    console.log(`uploadFile ${le}`)
     var fd = new FormData();    // Create form data
     fd.append("file", image);   // Attach the image file
+    fd.append("light_engine", le);
     $.ajax({                    // Use ajax to compose and send the request
         url: "/handle-calibration-upload",
         method: "POST",
