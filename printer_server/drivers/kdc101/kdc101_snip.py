@@ -16,8 +16,8 @@ kdc = driver_handles.kdc
 def get_kdc_positions():
     last_positions = printer_server.views.manual_controls.get_last_calibration_positions()
     message = {
-        "tip": last_positions[0],
-        "tilt": last_positions[1],
+        "tip": last_positions["tip"],
+        "tilt": last_positions["tilt"],
         "distance": kdc.getCurrentPos(),
     }
 

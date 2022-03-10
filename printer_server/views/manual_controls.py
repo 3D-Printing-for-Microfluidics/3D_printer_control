@@ -69,9 +69,7 @@ def index():
     positions = get_last_calibration_positions()
     return render_template(
         "manual_controls.html",
-        tip_position=positions[0],
-        tilt_position=positions[1],
-        dist_position=positions[2],
+        positions=positions,
         hostname=Config.HOSTNAME,
         hardware=hardware_partials,
     )
@@ -118,8 +116,8 @@ def get_last_calibration_positions():
             last_line = line.rstrip()
     for char in ["{", "}", ":", "'", ","]:
         last_line = last_line.replace(char, "")
-    return [
-        float(last_line.split(" ")[-5]),
-        float(last_line.split(" ")[-3]),
-        float(last_line.split(" ")[-1]),
-    ]
+    return {
+        "tip":float(last_line.split(" ")[-5]),
+        "tilt":float(last_line.split(" ")[-3]),
+        "distance":float(last_line.split(" ")[-1])
+    }

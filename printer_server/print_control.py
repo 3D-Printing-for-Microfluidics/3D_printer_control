@@ -40,7 +40,7 @@ def get_last_focused_position():
     """Return the last focused position for the distance axis from the
     position log file.
     """
-    return get_last_calibration_positions()[2]
+    return get_last_calibration_positions()["distance"]
 
 
 def has_bad_metadata(filename):

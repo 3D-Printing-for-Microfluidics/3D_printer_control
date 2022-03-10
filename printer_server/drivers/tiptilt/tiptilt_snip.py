@@ -17,12 +17,12 @@ def get_tiptilt_positions():
     message = {
         "tip": tiptilt.get_position("Tip"),
         "tilt": tiptilt.get_position("Tilt"),
-        "distance": last_positions[2],
+        "distance": last_positions["distance"],
     }
 
     if message["tip"] is None or message["tip"] is "undef":
-        message["tip"] = last_positions[0]
-        message["tilt"] = last_positions[1]
+        message["tip"] = last_positions["tip"]
+        message["tilt"] = last_positions["tilt"]
 
     return message
 
