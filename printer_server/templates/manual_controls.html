@@ -32,7 +32,7 @@
 </div>
 
 {% for path in hardware %}
-{% include url_for('static', filename=path) %}
+{% include path %}
 {% endfor %}
 
 {% endblock %}

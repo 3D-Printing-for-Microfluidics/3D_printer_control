@@ -51,7 +51,7 @@ hardware_partials = []
 for key in config_dict.keys():
     path = f"{key}/{key}_snip.html"
     if exists(f"{Config.PRINT_SERVER_FOLDER}/drivers/{path}"):
-        hardware_partials.append(f"../{path}")
+        hardware_partials.append(f"{path}")
 
 
 # Create bluprint
@@ -60,7 +60,7 @@ blueprint = Blueprint(
     __name__,
     url_prefix="/",
     template_folder="../drivers",
-    static_folder="../static",
+    static_folder="../drivers",
 )
 
 # Decorator to handle navigation to calibration page
