@@ -13,14 +13,14 @@ var update_dist_position = function (message) {
 }
 
 // helper function to update positions on all calibration axes
-var update_positions = function (message) {
+var update_kdc_positions = function (message) {
     update_dist_position(message);
 }
 
 $(document).ready(function () {
     // Enable calibration motor buttons and update position labels when current motion is complete
     socket.on("kdc_motor_move_complete", function (message) {
-        update_positions(message);
+        update_kdc_positions(message);
         enable_kdc_motor_buttons();
     });
 
@@ -54,9 +54,7 @@ $(document).ready(function () {
         // Parse button content and construct message
         var microns = $(this).text();
         var axis = $(this).closest(".container").attr('aria-label');
-        var fast = document.getElementById("quick_move").checked;
-        console.log(fast)
-        var message = { "axis": axis, "microns": microns, "mode": "relative", "fast": fast, "log": true };
+        var message = { "axis": axis, "microns": microns, "mode": "relative", "fast": false, "log": true };
         // Emit control message with parsed values
         socket.emit("kdc_motor_move", message);
     });

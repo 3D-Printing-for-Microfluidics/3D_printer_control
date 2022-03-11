@@ -6,23 +6,19 @@ var enable_tiptilt_motor_buttons = function () {
     $('.tiptilt-controls button').prop('disabled', false);
 }
 
-var update_position = function (message, axis) {
-    if (!$.isEmptyObject(message)) {
-        document.getElementById(`${axis}-state`).innerHTML = message[axis];
-    }
-}
-
 // helper function to update positions on all calibration axes
-var update_positions = function (message) {
-    for (var a of axes) {
-        update_position(message, a);
+var update_tiptilt_positions = function (message) {
+    for (var axis of axes) {
+        if (!$.isEmptyObject(message)) {
+            document.getElementById(`${axis}-state`).innerHTML = message[axis];
+        }
     }
 }
 
 $(document).ready(function () {
     // Enable calibration motor buttons and update position labels when current motion is complete
     socket.on("tiptilt_motor_move_complete", function (message) {
-        update_positions(message);
+        update_tiptilt_positions(message);
         enable_tiptilt_motor_buttons();
     });
 
@@ -35,7 +31,6 @@ $(document).ready(function () {
     });
 
     for (var a of axes) {
-
         // Calibration motor text inputs for absolute positioning
         $(`.${a}-cntrl-txt`).on('change', function () {
             // Disable calibration motor buttons
