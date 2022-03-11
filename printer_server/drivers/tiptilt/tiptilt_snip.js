@@ -15,7 +15,6 @@ var update_position = function (message, axis) {
 // helper function to update positions on all calibration axes
 var update_positions = function (message) {
     for (var a of axes) {
-        a = a.toLowerCase()
         update_position(message, a);
     }
 }
@@ -28,7 +27,6 @@ $(document).ready(function () {
     });
 
     for (var a of axes) {
-        a = a.toLowerCase();
         // Calibration motor buttons for homing
         $(`.${a}-home-btn`).click(function () {
             // Disable calibration motor buttons

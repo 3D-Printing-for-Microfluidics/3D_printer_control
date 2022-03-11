@@ -16,19 +16,20 @@
         </div>
     </div>
 
-    {% set axes = ['Tip', 'Tilt'] %}
+    {% set axes = ['tip', 'tilt'] %}
 
     {% for axis in axes %}
     <div class="container" aria-label="{{ axis }}">
         <div class="row">
             <div class="col-4">
-                <h5>{{ axis }}</h5>
+                <h5>{{ axis|capitalize }}</h5>
             </div>
             <div class="col-2">
-                <h5 class="col text-right" id='{{ axis|lower }}-state'>{{ positions[axis|lower] }}</h5>
+                <h5 class="col text-right" id='{{ axis }}-state'>{{ positions[axis] }}</h5>
             </div>
             <div class="col-6">
-                <input class="form-control {{ axis|lower }}-cntrl-txt" type="text" id="{{ axis|lower }}-txt" placeholder="Position (um)">
+                <input class="form-control {{ axis }}-cntrl-txt" type="text" id="{{ axis }}-txt"
+                    placeholder="Position (um)">
             </div>
         </div>
 
@@ -36,25 +37,26 @@
             <div class="col-2">
             </div>
             <div class="col-2 text-left">
-                <button type="button" class="btn btn-outline-info btn-block {{ axis|lower }}-home-btn" id="{{ axis|lower }}-home-btn">Home</button>
+                <button type="button" class="btn btn-outline-info btn-block {{ axis }}-home-btn"
+                    id="{{ axis }}-home-btn">Home</button>
             </div>
             <div class="col-8 text-right">
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">-1000</button>
-                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">-100</button>
-                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">-10</button>
-                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">-1</button>
-                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">1</button>
-                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">10</button>
-                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">100</button>
-                    <button type="button" class="btn btn-outline-info {{ axis|lower }}-cntrl-btn">1000</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">-1000</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">1000</button>
                 </div>
             </div>
         </div>
 
     </div>
     {% endfor %}
-</div> 
+</div>
 
-<script> var axes = {{ axes|tojson }} </script>
+<script> var axes = {{ axes| tojson }}</script>
 <script src="{{ url_for('manual_controls.static', filename='tiptilt/tiptilt_snip.js') }}"></script>
