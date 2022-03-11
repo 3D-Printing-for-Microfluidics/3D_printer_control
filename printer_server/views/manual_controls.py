@@ -119,7 +119,7 @@ def get_last_calibration_positions():
     for char in ["{", "}", ":", "'", ","]:
         last_line = last_line.replace(char, "")
     return {
-        "tip":float(last_line.split(" ")[-5]),
-        "tilt":float(last_line.split(" ")[-3]),
-        "distance":float(last_line.split(" ")[-1])
+        "tip": float(last_line.split(" ")[-5]),
+        "tilt": float(last_line.split(" ")[-3]),
+        "distance": float(last_line.split(" ")[-1]),
     }
