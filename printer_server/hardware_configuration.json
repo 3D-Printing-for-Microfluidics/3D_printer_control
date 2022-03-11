@@ -45,7 +45,11 @@
             ]
         },
         "visitech": {
-            "dummy": false
+            "dummy": false,
+            "resolution": [
+                2560,
+                1600
+            ]
         }
     },
     "HR3v3u": {
@@ -94,7 +98,11 @@
             ]
         },
         "visitech": {
-            "dummy": false
+            "dummy": false,
+            "resolution": [
+                2560,
+                1600
+            ]
         }
     },
     "MR1v1": {
@@ -156,9 +164,19 @@
             ]
         },
         "visitech": {
-            "dummy": false
+            "dummy": false,
+            "resolution": [
+                2560,
+                1600
+            ]
         },
-        "wintech": {},
+        "wintech": {
+            "dummy": false,
+            "resolution": [
+                1920,
+                1080
+            ]
+        },
         "keyence": {}
     },
     "HR4": {
@@ -219,7 +237,11 @@
             ]
         },
         "visitech": {
-            "dummy": false
+            "dummy": false,
+            "resolution": [
+                2560,
+                1600
+            ]
         },
         "keyence": {}
     }

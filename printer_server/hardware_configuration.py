@@ -50,8 +50,16 @@ class Printer3D:
         if "screen" in config_dict.keys():
             from printer_server.drivers.screen import ScreenThread
 
+            resolutions = []
+            for light_engine in config_dict["screen"]["light_engines"]:
+                resolution = config_dict[light_engine]["resolution"]
+                resolutions.append(tuple(resolution))
+            resolutions.append(None)
+
             self.screen = ScreenThread(
-                config_dict=config_dict["screen"], log_level=default_log_level
+                resolutions=tuple(resolutions),
+                config_dict=config_dict["screen"],
+                log_level=default_log_level,
             )
 
         if "tiptilt" in config_dict.keys():
