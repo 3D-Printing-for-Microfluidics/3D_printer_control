@@ -8,7 +8,7 @@
                 "A"
             ],
             "axes_common_names": [
-                "Z"
+                "Build Platform"
             ],
             "axes_travel": {
                 "A": 100
@@ -61,7 +61,7 @@
                 "A"
             ],
             "axes_common_names": [
-                "Z"
+                "Build Platform"
             ],
             "axes_travel": {
                 "A": 100
@@ -119,8 +119,8 @@
             "axes_common_names": [
                 "X",
                 "Y",
-                "Z",
-                "BP"
+                "Focus",
+                "Build Platform"
             ],
             "axes_travel": {
                 "A": 300,
@@ -193,8 +193,8 @@
             "axes_common_names": [
                 "X",
                 "Y",
-                "Z",
-                "BP"
+                "Focus",
+                "Build Platform"
             ],
             "axes_travel": {
                 "A": 100,
