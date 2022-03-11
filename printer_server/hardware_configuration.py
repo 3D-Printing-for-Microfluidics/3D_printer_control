@@ -22,7 +22,7 @@ class Printer3D:
             from printer_server.drivers.galil import Galil, Galil_dummy
 
             if config_dict["galil"]["dummy"]:
-                self.galil = Galil_dummy()
+                self.galil = Galil_dummy(config_dict=config_dict["galil"])
             else:
                 self.galil = Galil(
                     config_dict=config_dict["galil"], log_level=default_log_level
