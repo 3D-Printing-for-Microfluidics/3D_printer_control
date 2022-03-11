@@ -7,20 +7,36 @@
     </div>
 
     {% for light_engine in light_engines %}
-    <div class="row {{ light_engine|lower }}" aria-label="{{ light_engine|lower }}">
-        <h5 class="col-4 text-left">{{ light_engine }}</h5>
-        <form class="col-5">
-            <input type="file" class="form-control-file" name="file" accept=".png" id="{{ light_engine|lower }}-file-picker">
+    <div class="row {{ light_engine }}" aria-label="{{ light_engine }}">
+        <h5 class="col-3 text-left">{{ light_engine|capitalize }}</h5>
+        <form class="col-4">
+            <input type="file" class="form-control-file" name="file" accept=".png" id="{{ light_engine }}-file-picker">
             <div class="invalid-feedback">
                 Please provide an 8-bit grayscale PNG file.
             </div>
         </form>
         <div class="col-3">
-            <button type="button" class="btn btn-outline-info btn-block" id="{{ light_engine|lower }}-upload-btn">Upload</button>
+            <button type="button" class="btn btn-outline-info btn-block"
+                id="{{ light_engine }}-upload-btn">Upload</button>
+        </div>
+        <div class="col-2">
+            <button type="button" class="btn btn-outline-info btn-block" id="{{ light_engine }}-draw-btn">Draw</button>
+        </div>
+    </div>
+    <div class="row {{ light_engine }}" aria-label="{{ light_engine }}">
+        <h5 class="col-7 text-left"></h5>
+        <div class="col-3">
+            <button type="button" class="btn btn-outline-info btn-block" id="{{ light_engine }}-white-btn">Draw
+                White</button>
+        </div>
+
+        <div class="col-2">
+            <button type="button" class="btn btn-outline-info btn-block"
+                id="{{ light_engine }}-clear-btn">Clear</button>
         </div>
     </div>
     {% endfor %}
 </div>
 
-<script> var light_engines = {{ light_engines|tojson }} </script>
+<script> var light_engines = {{ light_engines| tojson }}</script>
 <script src="{{ url_for('manual_controls.static', filename='screen/screen_snip.js') }}"></script>

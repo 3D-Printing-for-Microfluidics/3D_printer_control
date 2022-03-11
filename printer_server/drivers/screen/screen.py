@@ -64,8 +64,11 @@ class Screen:
 class ScreenThread(threading.Thread):
     """Create and manage a thread to control the Tk windows."""
 
-    def __init__(self, resolutions=((2560, 1600), None), log_level=logging.DEBUG):
+    def __init__(
+        self, config_dict=None, resolutions=((2560, 1600), None), log_level=logging.DEBUG
+    ):
         super().__init__(daemon=True)
+        self.light_engines = config_dict["light_engines"]
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         self.resolutions = resolutions

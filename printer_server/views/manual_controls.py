@@ -43,10 +43,8 @@ if "tiptilt" in config_dict.keys():
     import printer_server.drivers.tiptilt.tiptilt_snip
 if "visitech" in config_dict.keys():
     import printer_server.drivers.visitech.visitech_snip
-    light_engines.append("Visitech")
 # if "wintech" in config_dict.keys():
 #     import printer_server.drivers.wintech.wintech_snip
-#     light_engines.append("Wintech")
 
 
 # Generate HTML snippit list
@@ -75,7 +73,7 @@ def index():
         positions=positions,
         hostname=Config.HOSTNAME,
         hardware=hardware_partials,
-        light_engines=light_engines
+        light_engines=config_dict["screen"]["light_engines"],
     )
 
 

@@ -39,7 +39,11 @@
             "loadcell_planarization_force": 30.0,
             "loadcell_print_start_force": 5.0
         },
-        "screen": {},
+        "screen": {
+            "light_engines": [
+                "Visitech"
+            ]
+        },
         "visitech": {
             "dummy": false
         }
@@ -84,7 +88,11 @@
             "loadcell_planarization_force": 35.0,
             "loadcell_print_start_force": 5.0
         },
-        "screen": {},
+        "screen": {
+            "light_engines": [
+                "Visitech"
+            ]
+        },
         "visitech": {
             "dummy": false
         }
@@ -141,7 +149,12 @@
             "loadcell_planarization_force": 35.0,
             "loadcell_print_start_force": 5.0
         },
-        "screen": {},
+        "screen": {
+            "light_engines": [
+                "Visitech",
+                "Wintech"
+            ]
+        },
         "visitech": {
             "dummy": false
         },
@@ -200,7 +213,11 @@
             "loadcell_planarization_force": 35.0,
             "loadcell_print_start_force": 5.0
         },
-        "screen": {},
+        "screen": {
+            "light_engines": [
+                "Visitech"
+            ]
+        },
         "visitech": {
             "dummy": false
         },
