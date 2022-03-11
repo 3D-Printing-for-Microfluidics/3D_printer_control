@@ -32,10 +32,18 @@
 </div>
 <hr class="bg-secondary">
 
+{% if initalized %}
+
 {% for path in hardware %}
 {% include path %}
 <hr class="bg-secondary">
 {% endfor %}
+
+{% else %}
+
+<h5> Printer must be initalized to access manual controls </h5>
+
+{% endif %}
 
 {% endblock %}
 

@@ -8,6 +8,7 @@ from flask import request, Blueprint, render_template
 
 from printer_server.extensions import socketio
 from printer_server.settings import Config
+import printer_server.views.home
 
 
 class External_Control:
@@ -68,11 +69,13 @@ blueprint = Blueprint(
 @blueprint.route("/manual")
 def index():
     positions = get_last_calibration_positions()
+    initialized = printer_server.views.home.print_control.state != "uninitialized"
     return render_template(
         "manual_controls.html",
-        positions=positions,
+        initalized=initialized,
         hostname=Config.HOSTNAME,
         hardware=hardware_partials,
+        positions=positions,
         light_engines=config_dict["screen"]["light_engines"],
     )
 
