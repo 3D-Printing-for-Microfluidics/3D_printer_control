@@ -73,16 +73,16 @@ class Printer3D:
             else:
                 self.visitech = Visitech(log_level=default_log_level)
 
-        if "wintech" in config_dict.keys():
-            from printer_server.drivers.wintech import Wintech
+        # if "wintech" in config_dict.keys():
+        #     from printer_server.drivers.wintech import Wintech
 
-            if config_dict["wintech"]["dummy"]:
-                # Update this when we merge in new wintech driver
-                # self.wintech = Wintech(log_level=default_log_level)
-                self.wintech = Wintech()
-            else:
-                # add in wintech dummy here
-                pass
+        #     if config_dict["wintech"]["dummy"]:
+        #         # Update this when we merge in new wintech driver
+        #         # self.wintech = Wintech(log_level=default_log_level)
+        #         self.wintech = Wintech()
+        #     else:
+        #         # add in wintech dummy here
+        #         pass
 
 
 driver_handles = Printer3D()
