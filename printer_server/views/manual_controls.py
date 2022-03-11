@@ -5,6 +5,9 @@ from pathlib import Path
 from datetime import datetime
 from os.path import exists
 from flask import request, Blueprint, render_template
+from printer_server.drivers.galil.galil_snip import (
+    galil_get_positions,
+)
 
 from printer_server.extensions import socketio
 from printer_server.settings import Config
@@ -68,15 +71,25 @@ blueprint = Blueprint(
 # Decorator to handle navigation to calibration page
 @blueprint.route("/manual")
 def index():
-    calibration_positions = get_last_calibration_positions()
     initialized = printer_server.views.home.print_control.state != "uninitialized"
+    calibration_positions = get_last_calibration_positions()
+    galil_stages = {}
+    galil_positions = galil_get_positions()
+    for i in range(len(config_dict["galil"]["axes"])):
+        axis = config_dict["galil"]["axes"][i]
+        galil_stages[axis] = {
+            "common": config_dict["galil"]["axes_common_names"][i],
+            "position": galil_positions[axis],
+        }
+
     return render_template(
         "manual_controls.html",
         initalized=initialized,
         hostname=Config.HOSTNAME,
         hardware=hardware_partials,
-        calibration_positions=calibration_positions,
         light_engines=config_dict["screen"]["light_engines"],
+        galil_stages=galil_stages,
+        calibration_positions=calibration_positions,
     )
 
 

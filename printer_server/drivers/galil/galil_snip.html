@@ -2,12 +2,12 @@
 <div class="container galil">
     <div class="row top-buffer">
         <div class="col-12">
-            <h3>Main Stage Control</h3>
+            <h3>Galil Stage Controls</h3>
         </div>
     </div>
     <div class="row">
         <div class="col-3">
-            <h5 class="col text-right" id='galil-position'>?</h5>
+            <h5>Quick Actions</h5>
         </div>
         <div class="col-3">
             <button type="button" class="btn btn-outline-info btn-block" id="galil-home-btn">Home</button>
@@ -19,6 +19,46 @@
             <button type="button" class="btn btn-outline-info btn-block" id="galil-bottom-btn">Go to Bottom</button>
         </div>
     </div>
+    <div class="row">
+        <div class="col-3">
+            <h5>Stage Controls</h5>
+        </div>
+    </div>
+    {% for axis in galil_stages.keys() %}
+    <div class="container" aria-label="{{ axis }}">
+        <div class="row">
+            <div class="col-3">
+                <h5>{{ galil_stages[axis]["common"] }}</h5>
+            </div>
+            <div class="col-2">
+                <h5 class="col text-right" id='galil-{{ axis }}-state'>{{ galil_stages[axis]["position"] }}</h5>
+            </div>
+            <div class="col-7">
+                <input class="form-control galil-{{ axis }}-cntrl-txt" type="text" id="galil-{{ axis }}-txt"
+                    placeholder="Position (um)">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-2"></div>
+            <div class="col-10 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-info galil-{{ axis }}-cntrl-btn">-10000</button>
+                    <button type="button" class="btn btn-outline-info galil-{{ axis }}-cntrl-btn">-1000</button>
+                    <button type="button" class="btn btn-outline-info galil-{{ axis }}-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-outline-info galil-{{ axis }}-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-outline-info galil-{{ axis }}-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-outline-info galil-{{ axis }}-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-outline-info galil-{{ axis }}-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-outline-info galil-{{ axis }}-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-outline-info galil-{{ axis }}-cntrl-btn">1000</button>
+                    <button type="button" class="btn btn-outline-info galil-{{ axis }}-cntrl-btn">10000</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {% endfor %}
 </div>
 
+<script> var galil_stages = {{ galil_stages| tojson }}</script>
 <script src="{{ url_for('manual_controls.static', filename='galil/galil_snip.js') }}"></script>
