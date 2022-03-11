@@ -2,17 +2,14 @@
 <div class="container tiptilt-controls">
     <div class="container">
         <div class="row">
-            <div class="col-9">
+            <div class="col-4">
                 <h3>Tip/Tilt Controls</h3>
             </div>
-            <div class="col-3">
-                <div class="btn-group btn-group-toggle float-right" data-toggle="buttons">
-                    <label class="btn btn-outline-info btn-fixed-width shadow-none active"><input type="radio"
-                            checked>Precise</label>
-                    <label class="btn btn-outline-info btn-fixed-width shadow-none"><input type="radio"
-                            id="quick_move">Fast</label>
-                </div>
+            <div class="col-4"></div>
+            <div class="col-4 text-left">
+                <button type="button" class="btn btn-outline-info btn-block tt-home-btn" id="tt-home-btn">Home</button>
             </div>
+            <div class="col-3"></div>
         </div>
     </div>
 
@@ -34,12 +31,15 @@
         </div>
 
         <div class="row">
-            <div class="col-2">
+            <div class="col-3">
+                <div class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                    <label class="btn btn-outline-info btn-fixed-width shadow-none active"><input type="radio"
+                            checked>Precise</label>
+                    <label class="btn btn-outline-info btn-fixed-width shadow-none"><input type="radio"
+                            id="{{ axis }}_quick_move">Fast</label>
+                </div>
             </div>
-            <div class="col-2 text-left">
-                <button type="button" class="btn btn-outline-info btn-block {{ axis }}-home-btn"
-                    id="{{ axis }}-home-btn">Home</button>
-            </div>
+            <div class="col-1"></div>
             <div class="col-8 text-right">
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">-1000</button>

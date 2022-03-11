@@ -26,17 +26,15 @@ $(document).ready(function () {
         enable_tiptilt_motor_buttons();
     });
 
+    // Calibration motor buttons for homing
+    $(".tt-home-btn").click(function () {
+        // Disable calibration motor buttons
+        disable_tiptilt_motor_buttons();
+        // Emit control message with parsed values
+        socket.emit("tiptilt_motor_home");
+    });
+
     for (var a of axes) {
-        // Calibration motor buttons for homing
-        $(`.${a}-home-btn`).click(function () {
-            // Disable calibration motor buttons
-            disable_tiptilt_motor_buttons();
-            // Parse button content and construct message
-            var axis = $(this).closest(".container").attr('aria-label');
-            var message = { "axis": axis };
-            // Emit control message with parsed values
-            socket.emit("tiptilt_motor_home", message);
-        });
 
         // Calibration motor text inputs for absolute positioning
         $(`.${a}-cntrl-txt`).on('change', function () {
@@ -45,7 +43,9 @@ $(document).ready(function () {
             // Parse button content and construct message
             var microns = $(this).val();
             var axis = $(this).closest(".container").attr('aria-label');
-            var message = { "axis": axis, "microns": microns, "mode": "absolute", "fast": false, "log": true };
+            var fast = document.getElementById(`${axis}_quick_move`).checked;
+            console.log(fast)
+            var message = { "axis": axis, "microns": microns, "mode": "absolute", "fast": fast, "log": true };
             // Emit control message with parsed values
             socket.emit("tiptilt_motor_move", message);
         });
@@ -57,7 +57,7 @@ $(document).ready(function () {
             // Parse button content and construct message
             var microns = $(this).text();
             var axis = $(this).closest(".container").attr('aria-label');
-            var fast = document.getElementById("quick_move").checked;
+            var fast = document.getElementById(`${axis}_quick_move`).checked;
             console.log(fast)
             var message = { "axis": axis, "microns": microns, "mode": "relative", "fast": fast, "log": true };
             // Emit control message with parsed values

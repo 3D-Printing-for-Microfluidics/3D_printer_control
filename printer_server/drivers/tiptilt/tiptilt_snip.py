@@ -61,12 +61,10 @@ def moveTipTiltMotor(message):
 
 
 @socketio.on("tiptilt_motor_home", namespace="/manual")
-def homeTipTiltMotor(message):
-    axis = message["axis"]
-
-    def func(axis):
+def homeTipTiltMotor():
+    def func():
         tiptilt.home()
         emit_tiptilt_positions(log=True)
 
-    t = threading.Thread(target=func, args=[axis])
+    t = threading.Thread(target=func)
     t.start()
