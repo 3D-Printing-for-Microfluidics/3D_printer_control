@@ -41,7 +41,7 @@
         },
         "screen": {
             "light_engines": [
-                "Visitech"
+                "visitech"
             ]
         },
         "visitech": {
@@ -90,7 +90,7 @@
         },
         "screen": {
             "light_engines": [
-                "Visitech"
+                "visitech"
             ]
         },
         "visitech": {
@@ -151,8 +151,8 @@
         },
         "screen": {
             "light_engines": [
-                "Visitech",
-                "Wintech"
+                "visitech",
+                "wintech"
             ]
         },
         "visitech": {
@@ -215,7 +215,7 @@
         },
         "screen": {
             "light_engines": [
-                "Visitech"
+                "visitech"
             ]
         },
         "visitech": {
