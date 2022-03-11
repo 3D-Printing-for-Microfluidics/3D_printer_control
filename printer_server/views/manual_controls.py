@@ -68,14 +68,14 @@ blueprint = Blueprint(
 # Decorator to handle navigation to calibration page
 @blueprint.route("/manual")
 def index():
-    positions = get_last_calibration_positions()
+    calibration_positions = get_last_calibration_positions()
     initialized = printer_server.views.home.print_control.state != "uninitialized"
     return render_template(
         "manual_controls.html",
         initalized=initialized,
         hostname=Config.HOSTNAME,
         hardware=hardware_partials,
-        positions=positions,
+        calibration_positions=calibration_positions,
         light_engines=config_dict["screen"]["light_engines"],
     )
 
