@@ -46,7 +46,7 @@ def galil_move(message):
     """Move the main Z stage. All units in mm."""
     mode = message["mode"]
     speed = float(message["speed"])
-    distance = float(message["distance"])
+    distance = float(message["distance"])/1000
     acceleration = float(message["acceleration"])
     axis = message["axis"]
     if mode == "absolute":
