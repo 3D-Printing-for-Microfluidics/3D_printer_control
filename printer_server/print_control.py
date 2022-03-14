@@ -395,7 +395,7 @@ class PrintControl:
         squeeze_target = position_settings["Squeeze force (N)"]
         squeeze_wait = position_settings["Squeeze wait (ms)"] / 1000
         use_relax_force = position_settings.get("Use relaxed force", True)
-        relax_target = position_settings["Relaxed force (N)"]
+        relax_target = position_settings.get("Relaxed force (N)", 0)
 
         first_count = self.move_bp_to_force(squeeze_target - 5, speed=0.5)
         second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
