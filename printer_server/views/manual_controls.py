@@ -14,19 +14,6 @@ from printer_server.settings import Config
 import printer_server.views.home
 
 
-class External_Control:
-    def __init__(self):
-        self.enable_flag = False
-
-    def set_enable(self, status):
-        self.enable_flag = status
-
-    def get_enable(self):
-        return self.enable_flag
-
-
-external_control_enable = External_Control()
-
 # Dynamically get hardware components
 configuration_path = Path(Config.PRINT_SERVER_FOLDER).rglob("hardware_configuration.json")
 with open(next(configuration_path), "r") as file_handle:
@@ -35,6 +22,8 @@ config_dict = config_dict[Config.HOSTNAME]
 
 light_engines = []
 # Dynamically import python snippits
+if "external_control" in config_dict.keys():
+    import printer_server.drivers.external_control.external_control_snip
 if "galil" in config_dict.keys():
     import printer_server.drivers.galil.galil_snip
 if "kdc101" in config_dict.keys():
@@ -52,11 +41,11 @@ if "visitech" in config_dict.keys():
 
 
 # Generate HTML snippit list
-hardware_partials = []
+hardware_partials = {}
 for key in config_dict.keys():
     path = f"{key}/{key}_snip.html"
     if exists(f"{Config.PRINT_SERVER_FOLDER}/drivers/{path}"):
-        hardware_partials.append(f"{path}")
+        hardware_partials[key] = f"{path}"
 
 
 # Create bluprint
@@ -96,23 +85,6 @@ def index():
 @blueprint.route("handle-calibration-upload", methods=["POST"])
 def upload():
     return printer_server.drivers.screen.screen_snip.handleUpload(request)
-
-
-@socketio.on("set_external_control_enable", namespace="/manual")
-def set_external_control_enable(message):
-    """set_external_control -- Sets the variable determining if printer can be auto-calibrated"""
-    external_control_enable.set_enable(message == "Enabled")
-
-
-@socketio.on("get_external_control_enable", namespace="/manual")
-def get_external_control_enable():
-    """Return the external control enable flag."""
-    socketio.emit(
-        "external_control_enable",
-        external_control_enable.get_enable(),
-        namespace="/manual",
-        broadcast=True,
-    )
 
 
 position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")

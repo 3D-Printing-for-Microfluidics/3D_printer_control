@@ -1,5 +1,6 @@
 {
     "HR3v3": {
+        "external_control": {},
         "galil": {
             "dummy": false,
             "controller_name": "DMC31010",
@@ -53,6 +54,7 @@
         }
     },
     "HR3v3u": {
+        "external_control": {},
         "galil": {
             "dummy": false,
             "controller_name": "DMC31010",
@@ -106,6 +108,7 @@
         }
     },
     "MR1v1": {
+        "external_control": {},
         "galil": {
             "dummy": false,
             "controller_name": "DMC4040",
@@ -180,6 +183,7 @@
         "keyence": {}
     },
     "HR4": {
+        "external_control": {},
         "galil": {
             "dummy": false,
             "controller_name": "DMC4040",
