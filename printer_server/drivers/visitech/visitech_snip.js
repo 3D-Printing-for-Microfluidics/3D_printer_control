@@ -57,12 +57,34 @@ $(document).ready(function () {
         }
     })
 
+    $("#visitech-repeat-chkbx").click(function () {
+        var repeatCheckboxElement = document.getElementById("visitech-repeat-chkbx");
+        var repeat = Number(!repeatCheckboxElement.checked);
+        if (repeat == 0) {
+            exposureElement.classList.remove("is-invalid")
+            $('#visitech-exposure-txt').prop('disabled', true);
+        }
+        else {
+            $('#visitech-exposure-txt').prop('disabled', false);
+        }
+    });
+
     // Light engine control start button click function
     $("#visitech-start-btn").click(function () {
         var repeatCheckboxElement = document.getElementById("visitech-repeat-chkbx");
         var exposure = exposureElement.value;
         var repeat = Number(!repeatCheckboxElement.checked);
         var ledPower = LedPowerSliderElement.value;
+
+        if (!/^\d+$/.test(exposure) && !exposure > 0) {
+            if (repeat == 1) {
+                exposureElement.classList.add("is-invalid")
+                return
+            }
+            else {
+                exposure = 1
+            }
+        }
         socket.emit("visitech_start", { "repeat": repeat, "exposure": exposure, "ledPower": ledPower });
     });
 
