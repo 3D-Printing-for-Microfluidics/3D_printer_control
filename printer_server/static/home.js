@@ -17,8 +17,6 @@ let loadcell_trace = {
 var loadcell_traces = [loadcell_trace];
 
 function draw_loadcell_graph() {
-    console.log(graph_autoscale)
-
     var defaultPlotlyConfiguration = {
         displayModeBar: false,
         displaylogo: false,
