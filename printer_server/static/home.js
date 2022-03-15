@@ -17,6 +17,7 @@ let loadcell_trace = {
 var loadcell_traces = [loadcell_trace];
 
 function draw_loadcell_graph() {
+    console.log(graph_autoscale)
 
     var defaultPlotlyConfiguration = {
         displayModeBar: false,
@@ -35,7 +36,7 @@ function draw_loadcell_graph() {
         yaxis: {
             ticksuffix: "",
             range: [-50, 50],
-            autorange: false,
+            autorange: graph_autoscale,
             linecolor: 'white',
             linewidth: 1,
             mirror: true
@@ -276,7 +277,7 @@ $(document).ready(function () {
         logout = function () {
             document.removeEventListener(event, reset, false);
             var content = 'This page has timed out. Please reload the page.';
-            document.getElementById('base-body').innerHTML = content; 
+            document.getElementById('base-body').innerHTML = content;
             socket.disconnect();
         },
         reset = function () {
@@ -305,7 +306,7 @@ $(document).ready(function () {
         $("#collapseLoadcell").addClass('show');
         socket.emit("request_loadcell_data");
     };
-    
+
     var hide_loadcell = function (btn) {
         $("#toggle-loadcell").text("Show loadcell data");
         $("#collapseLoadcell").removeClass('show');

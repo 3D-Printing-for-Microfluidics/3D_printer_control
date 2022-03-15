@@ -31,6 +31,8 @@ class LoadCell(serial.Serial):
         self.start_time = 0
         self.running = False
         self.freq = 1000
+        self.graph_newtons = True
+        self.graph_autoscale = False
 
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
@@ -171,6 +173,22 @@ class LoadCell(serial.Serial):
         """
         return self.currentIndex
 
+    def set_graph_autoscale(self, mode):
+        if mode == "True":
+            self.graph_autoscale = True
+        elif mode == "False":
+            self.graph_autoscale = False
+        else:
+            pass
+
+    def set_graph_mode(self, mode):
+        if mode == "Counts":
+            self.graph_newtons = False
+        elif mode == "Newtons":
+            self.graph_newtons = True
+        else:
+            pass
+
     def loop(self):
         """
         Threading loop
@@ -202,7 +220,10 @@ class LoadCell(serial.Serial):
                     )
 
                 front_end_counter += 1
-                front_end_array.append(force)
+                if self.graph_newtons:
+                    front_end_array.append(force)
+                else:
+                    front_end_array.append(data)
                 if front_end_counter >= 10:
                     front_end_counter = 0
 

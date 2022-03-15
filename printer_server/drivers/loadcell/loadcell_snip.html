@@ -1,0 +1,31 @@
+<div class="container loadcell">
+    <div class="row">
+        <div class="col-6">
+            <h3>Loadcell Controls</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <h5>Loadcell Graph Y-Axis</h5>
+        </div>
+        <div class="col-6">
+            <div id="loadcell_graph_mode" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                <label class="btn btn-outline-info btn-fixed-width shadow-none">Counts<input type="radio"></label>
+                <label class="btn btn-outline-info btn-fixed-width shadow-none active">Newtons<input
+                        type="radio"></label>
+            </div>
+        </div>
+
+        <div class="col-6">
+            <h5>Loadcell Graph Autoscale</h5>
+        </div>
+        <div class="col-6">
+            <div id="loadcell_graph_autoscale" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                <label class="btn btn-outline-info btn-fixed-width shadow-none">True<input type="radio"></label>
+                <label class="btn btn-outline-info btn-fixed-width shadow-none active">False<input type="radio"></label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='loadcell/loadcell_snip.js') }}"></script>

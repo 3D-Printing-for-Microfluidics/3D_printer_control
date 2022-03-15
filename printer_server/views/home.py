@@ -18,7 +18,12 @@ print_control = PrintControl()
 @blueprint.route("/")
 def index():
     allJobs = PrintQueue.query.all()
-    return render_template("home.html", allJobs=allJobs, hostname=Config.HOSTNAME)
+    return render_template(
+        "home.html",
+        allJobs=allJobs,
+        hostname=Config.HOSTNAME,
+        graph_autoscale=print_control.loadcell.graph_autoscale,
+    )
 
 
 def update_printer_state(state, msg):

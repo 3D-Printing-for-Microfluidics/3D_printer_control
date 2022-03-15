@@ -39,8 +39,8 @@ if "galil" in config_dict.keys():
     import printer_server.drivers.galil.galil_snip
 if "kdc101" in config_dict.keys():
     import printer_server.drivers.kdc101.kdc101_snip
-# if "loadcell" in config_dict.keys():
-#     import printer_server.drivers.loadcell.loadcell_snip
+if "loadcell" in config_dict.keys():
+    import printer_server.drivers.loadcell.loadcell_snip
 if "screen" in config_dict.keys():
     import printer_server.drivers.screen.screen_snip
 if "tiptilt" in config_dict.keys():

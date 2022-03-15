@@ -4,7 +4,7 @@ from printer_server.logging_handler import dummy_log
 class Loadcell_dummy:
     @dummy_log
     def __init__(self, *args, **kwargs):
-        pass
+        self.graph_autoscale = False
 
     @dummy_log
     def findUsbPort(self, *args, **kwargs):
@@ -35,10 +35,10 @@ class Loadcell_dummy:
         pass
 
     def get_current_data(self, *args, **kwargs):
-        return  {
-                    "timestamp": 0,
-                    "index": 0,
-                    "force": 0,
+        return {
+            "timestamp": 0,
+            "index": 0,
+            "force": 0,
         }
 
     @dummy_log
@@ -48,6 +48,19 @@ class Loadcell_dummy:
     @dummy_log
     def get_current_loadcell_index(self, *args, **kwargs):
         return 0
+
+    @dummy_log
+    def set_graph_autoscale(self, mode):
+        if mode == "True":
+            self.graph_autoscale = True
+        elif mode == "False":
+            self.graph_autoscale = False
+        else:
+            pass
+
+    @dummy_log
+    def set_graph_mode(self, *args, **kwargs):
+        pass
 
     @dummy_log
     def loop(self, *args, **kwargs):

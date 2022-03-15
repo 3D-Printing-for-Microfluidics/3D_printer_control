@@ -161,6 +161,9 @@
 
 {% block scripts %}
 {{super()}}
+<script>
+    var graph_autoscale = {{ graph_autoscale| lower }}
+</script>
 <script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
 <script src="{{ url_for('static', filename='lib/plotly-1.54.6.min.js') }}"></script>
 <script src="{{ url_for('static', filename='home.js') }}"></script>
