@@ -26,9 +26,38 @@
     <script src="{{ url_for('static', filename='lib/ajax-popper-1.14.3.min.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/bootstrap-4.1.1.min.js') }}"></script>
     {% endblock %}
-    
+
     {% block content %}
+    <script src="{{ url_for('static', filename='lib/jdenticon-3.1.1.min.js') }}"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/jdenticon@3.1.1/dist/jdenticon.min.js" async
+        integrity="sha384-l0/0sn63N3mskDgRYJZA6Mogihu0VY3CusdLMiwpJ9LFPklOARUcOiWEIGGmFELx" crossorigin="anonymous">
+        </script> -->
+
+    <script>
+
+        window.jdenticon_config = {
+            hues: [
+                204.07, //blue
+                210.83, //indigo
+                262.83, //purple
+                261.26, //pink
+                332.47, //red
+                5.61, //orange
+                27.3, //yellow
+                36.8, //green
+                164.68, //teal
+                162.25, //cyan
+                0 //white
+            ]
+        };
+
+    </script>
+
     <div class="jumbotron jumbotron-fluid text-center">
+        <svg data-jdenticon-value={{ hostname }} width="60" height="60">
+            <!-- Fallback text or image for browsers not supporting inline svg. -->
+            {{ hostname }}
+        </svg>
         {% block printer3d_state %}{% endblock %}
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container">
