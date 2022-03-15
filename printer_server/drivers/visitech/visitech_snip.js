@@ -66,5 +66,15 @@ $(document).ready(function () {
         socket.emit("visitech_start", { "repeat": repeat, "exposure": exposure, "ledPower": ledPower });
     });
 
-    
+    socket.on("update_led_status", function (message) {
+        var statusElement = document.getElementById("visitech-status");
+        if (message == true) {
+            statusElement.classList.remove("invisible")
+        }
+        else {
+            statusElement.classList.add("invisible")
+        }
+        $('#visitech-status').prop('disabled', message);
+    });
+
 });

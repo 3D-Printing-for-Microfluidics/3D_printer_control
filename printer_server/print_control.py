@@ -767,7 +767,9 @@ class PrintControl:
                 pre_exposure_status = self.visitech.read_all_status()
                 time.sleep(settings["Wait before exposure (ms)"] / 1000)
                 self.write_to_event_log("Start Exposure")
+                home.update_led_status(True)
                 self.visitech.perform_exposure(exposure_time_ms)
+                home.update_led_status(False)
                 self.write_to_event_log("Finish Exposure")
                 time.sleep(settings["Wait after exposure (ms)"] / 1000)
 
@@ -813,6 +815,7 @@ class PrintControl:
 
         # always turn off the Visitech
         self.visitech.stop_sequencer()
+        home.update_led_status(False)
         self.screen.clear()
         self.print_duration = datetime.now() - self.print_start_time
 

@@ -6,8 +6,9 @@ visitech = driver_handles.visitech
 
 @socketio.on("visitech_stop", namespace="/manual")
 def visitechStop():
-    """Turn off the LED in the light engin."""
+    """Turn off the LED in the light engine."""
     visitech.stop_sequencer()
+    socketio.emit("update_led_status", False, namespace="/manual")
     socketio.emit("visitech_stop_complete", namespace="/manual", broadcast=True)
 
 
@@ -17,7 +18,10 @@ def visitechProject(message):
     ledPower = int(message["ledPower"])
     repeat = int(message["repeat"])
     exposure = int(message["exposure"])
+    socketio.emit("update_led_status", True, namespace="/manual")
     visitech.project(exposure, ledPower, repeat)
+    if repeat != 0:
+        socketio.emit("update_led_status", False, namespace="/manual")
     socketio.emit("visitech_start_complete", namespace="/manual", broadcast=True)
 
 
