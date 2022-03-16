@@ -29,9 +29,6 @@
 
     {% block content %}
     <script src="{{ url_for('static', filename='lib/jdenticon-3.1.1.min.js') }}"></script>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/jdenticon@3.1.1/dist/jdenticon.min.js" async
-        integrity="sha384-l0/0sn63N3mskDgRYJZA6Mogihu0VY3CusdLMiwpJ9LFPklOARUcOiWEIGGmFELx" crossorigin="anonymous">
-        </script> -->
 
     <script>
 
@@ -53,34 +50,42 @@
 
     </script>
 
-    <div class="jumbotron jumbotron-fluid text-center">
-        <svg data-jdenticon-value={{ hostname }} width="60" height="60">
-            <!-- Fallback text or image for browsers not supporting inline svg. -->
-            {{ hostname }}
-        </svg>
-        {% block printer3d_state %}{% endblock %}
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <div class="container">
+    <div class="col-12 jumbotron jumbotron-fluid">
+        <div class="container">
+            <div class="row">
+                <div>
+                    <svg data-jdenticon-value={{ hostname }} width="69" height="69">
+                        <!-- Fallback text or image for browsers not supporting inline svg. -->
+                        {{ hostname }}
+                    </svg>
+                </div>
+                <div>
+                    {% block printer3d_state %}{% endblock %}
+                    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                            <ul class="navbar-nav mr-auto">
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('home.index') }}">Home<span
+                                            class="sr-only">(current)</span></a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('manual_controls.index') }}">Manual
+                                        Controls</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('print_history.index') }}">Print
+                                        History</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('server_logs.index') }}">Server Logs</a>
+                                </li>
+                            </ul>
+                        </div>
 
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav mr-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('home.index') }}">Home<span
-                                    class="sr-only">(current)</span></a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('manual_controls.index') }}">Manual Controls</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('print_history.index') }}">Print History</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('server_logs.index') }}">Server Logs</a>
-                        </li>
-                    </ul>
+                    </nav>
                 </div>
             </div>
-        </nav>
+        </div>
     </div>
 
 

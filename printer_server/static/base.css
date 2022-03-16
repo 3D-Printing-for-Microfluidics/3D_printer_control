@@ -5,16 +5,23 @@
 }
 
 .jumbotron {
-  padding-top: 1em;
-  padding-bottom: 1em;
+  padding-top: 0.75em;
+  padding-bottom: 0.5em;
   margin-bottom: 1.5rem;
 }
 
 .navbar {
-  padding: 0
+  padding: 0;
+  margin-left: -0.5rem;
+}
+
+svg {
+  margin-left: 2.25rem;
+  margin-right: 2rem;
 }
 
 .jumbotron h2 {
+  margin-top: 0;
   margin-bottom: 0;
 }
 
