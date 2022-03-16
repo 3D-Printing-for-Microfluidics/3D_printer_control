@@ -6,8 +6,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link id="favicon1" rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link id="favicon2" rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 
     <title>{% block title %}{% endblock %}</title>
 
@@ -31,7 +31,6 @@
     <script src="{{ url_for('static', filename='lib/jdenticon-3.1.1.min.js') }}"></script>
 
     <script>
-
         window.jdenticon_config = {
             hues: [
                 204.07, //blue
@@ -47,17 +46,16 @@
                 0 //white
             ]
         };
-
     </script>
 
     <div class="col-12 jumbotron jumbotron-fluid">
         <div class="container">
             <div class="row">
-                <div>
-                    <svg id="identicon" data-jdenticon-value={{ hostname }} width="69" height="69">
-                        <!-- Fallback text or image for browsers not supporting inline svg. -->
-                        {{ hostname }}
-                    </svg>
+                <div class="identicon-container">
+                    <canvas id="identicon" class="identicon" data-jdenticon-value={{ hostname }} width="69"
+                        height="69">{{ hostname
+                        }}
+                    </canvas>
                 </div>
                 <div>
                     {% block printer3d_state %}{% endblock %}
@@ -88,6 +86,21 @@
         </div>
     </div>
 
+    <script>
+        jdenticon()
+        var l = document.getElementById("identicon");
+        var identicon_href = l.toDataURL("image/png")
+    </script>
+
+    <!-- <link id="favicon1" rel="shortcut icon" type="image/png">
+    <link id="favicon2" rel="icon" type="image/png"> -->
+
+    <script>
+        document.getElementById("favicon1").setAttribute("href", identicon_href);
+        document.getElementById("favicon2").setAttribute("href", identicon_href);
+        document.getElementById("favicon1").setAttribute("type", "image/png");
+        document.getElementById("favicon2").setAttribute("type", "image/png");
+    </script>
 
     <div class="container" id="base-body">
         {% with messages = get_flashed_messages(with_categories=true) %}
