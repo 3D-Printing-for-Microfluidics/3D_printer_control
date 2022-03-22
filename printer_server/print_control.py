@@ -464,6 +464,9 @@ class PrintControl:
             time.sleep(0.02)
         return count
 
+    def get_focus(self):
+        return self.kdc.getCurrentPos()
+
     def change_focus(self, pos):
         self.write_to_event_log("Start Distance Movement")
         self.kdc.move(pos, relative=False)
@@ -657,7 +660,7 @@ class PrintControl:
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
             "text": "Resume Printing",
         }
-        log.info("Print resumed.")
+        log.info(msg["text"])
         home.update_printer_state(self.state, msg)
         # resume printing in a new thread
         self.app = db.get_app()
@@ -691,14 +694,17 @@ class PrintControl:
         # clear old flags
         self.printing_stopped.clear()
         self.printing_paused.clear()
+
+        # clear visitech overcurrent error
         self.visitech.get_sticky_errors(warn=False)
-        suppress_visitech_ocp_error = True
+        self.suppress_visitech_ocp_error = True
+
+        # generate layer map
         self.layer_map = self.generate_layer_map()
 
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
             self.galil.absMove(cnts=self.planarized_position)
-            # self.print_position = self.galil.cntsToMm(self.planarized_position)
 
         # iterate over layers
         for i, layer in enumerate(self.layer_map):
@@ -711,117 +717,19 @@ class PrintControl:
                 break  # pause, don't do anything else
             self.next_layer = i + 1
 
-            # read settings for this layer
-            current_layer_settings = self.print_settings["Layers"][layer[0]]
-            position_settings = self.get_position_settings(current_layer_settings)
-            image_settings_list = self.get_image_settings(current_layer_settings)
-            slices_folder = Path(self.print_settings["Header"]["Image directory"])
-
-            # update log messages
-            msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
-            log.info(msg)
-            self.write_to_event_log(msg)
-
-            galil_thread = threading.Thread(
-                target=self.move_build_platform, args=[position_settings, layer]
-            )
-            if not self.next_layer == 1:
-                galil_thread.start()
-
-            # do exposures and log data
-            exposure_data = {}
-            for j, settings in enumerate(image_settings_list):
-                image = self.current_job / slices_folder / Path(settings["Image file"])
-                exposure_time_ms = settings["Layer exposure time (ms)"]
-                power = settings["Light engine power setting"]
-                defocus_um = settings["Relative focus position (um)"]
-
-                layer_start_position = self.kdc.getCurrentPos()
-                if defocus_um != 0:
-                    kdc_thread = threading.Thread(
-                        target=self.change_focus,
-                        args=[self.focused_position + defocus_um],
-                    )
-                    kdc_thread.start()
-                    image = shift_image(image, x=um_to_px(defocus_um))
-
-                screen_thread = threading.Thread(target=self.screen.draw, args=[image])
-                screen_thread.start()
-
-                self.write_to_event_log("Setup Exposure")
-                visitech_thread = threading.Thread(
-                    target=self.visitech.setup_exposure, args=[exposure_time_ms, power]
-                )
-                visitech_thread.start()
-
-                # wait for all hardware to be ready for exposure
-                if defocus_um != 0:
-                    kdc_thread.join()
-                if not self.next_layer == 1:
-                    galil_thread.join()
-                screen_thread.join()
-                visitech_thread.join()
-
-                # do the exposure
-                position_during_exposure = self.kdc.getCurrentPos()
-                pre_exposure_status = self.visitech.read_all_status()
-                time.sleep(settings["Wait before exposure (ms)"] / 1000)
-                self.write_to_event_log("Start Exposure")
-                home.update_led_status(True)
-                self.visitech.perform_exposure(exposure_time_ms)
-                home.update_led_status(False)
-                self.write_to_event_log("Finish Exposure")
-                time.sleep(settings["Wait after exposure (ms)"] / 1000)
-
-                # Suppress the first Visitech OCP error. This appears to always be
-                # triggered on the first exposure of each print job. It would be better
-                # to figure out why this happens in the hardware and fix it there.
-                if suppress_visitech_ocp_error:
-                    suppress_visitech_ocp_error = False  # only do this once per print
-                    for e in self.visitech.get_sticky_errors(warn=False):
-                        if e and e.lower() != "led over current protection triggered":
-                            log.warning("Visitech error: %s", e)  # report other errors
-                post_exposure_status = self.visitech.read_all_status()
-
-                # fix focus if this exposure was defocused
-                if defocus_um != 0:
-                    self.change_focus(self.focused_position)
-
-                exposure_data[j] = {
-                    "image": image.name,
-                    "power setting": power,
-                    "exposure time (ms)": exposure_time_ms,
-                    "layer starting position": layer_start_position,
-                    "position during exposure": position_during_exposure,
-                    "post exposure position": self.kdc.getCurrentPos(),
-                    "pre exposure status": pre_exposure_status,
-                    "post exposure status": post_exposure_status,
-                }
-
-                async_file_hander.write(self.exposure_log, f"layer {layer}:\n")
-                for x in exposure_data:
-                    async_file_hander.write(
-                        self.exposure_log,
-                        f"{json.dumps({x: exposure_data[x]}, indent=2)}\n",
-                    )
-
-            msg = {
-                "percent": int(100 * i / len(self.layer_map)),
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-                "text": msg,
-            }
-            # update frontend message pane and progress bar
-            home.update_printer_state("print progress", msg)
+            # process layer
+            self.layer_worker(i, layer)
 
         # always turn off the Visitech
         self.visitech.stop_sequencer()
         home.update_led_status(False)
         self.screen.clear()
-        self.print_duration = datetime.now() - self.print_start_time
 
+        # set paused position
         if self.printing_paused.is_set():
             self.paused_position = self.galil.getPosition()
 
+        # move to top
         defaults_layer_settings = self.print_settings.get("Default layer settings")
         default_position_settings = defaults_layer_settings.get("Position settings")
         self.galil.absMove(
@@ -833,8 +741,130 @@ class PrintControl:
         self.galil.goToZmax()
         time.sleep(1.0)
 
+        # finish print
         if not self.printing_paused.is_set():
             self.finish_print()
+
+    def layer_worker(self, i, layer):
+        """Process a single layer of the 3D print.
+
+        This method should only be called from inside print_worker.
+        """
+        # read settings for this layer
+        current_layer_settings = self.print_settings["Layers"][layer[0]]
+        position_settings = self.get_position_settings(current_layer_settings)
+        image_settings_list = self.get_image_settings(current_layer_settings)
+
+        # update log messages
+        msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
+        log.info(msg)
+        self.write_to_event_log(msg)
+
+        # move build platform
+        galil_thread = threading.Thread(
+            target=self.move_build_platform, args=[position_settings, layer]
+        )
+        if not self.next_layer == 1:
+            galil_thread.start()
+
+        # do exposures
+        exposure_data = {}
+        for j, settings in enumerate(image_settings_list):
+            self.exposure_worker(j, settings, exposure_data, galil_thread)
+
+        # log exposure data
+        async_file_hander.write(self.exposure_log, f"layer {layer}:\n")
+        for x in exposure_data:
+            async_file_hander.write(
+                self.exposure_log,
+                f"{json.dumps({x: exposure_data[x]}, indent=2)}\n",
+            )
+
+        # update frontend message pane and progress bar
+        msg = {
+            "percent": int(100 * i / len(self.layer_map)),
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+            "text": msg,
+        }
+        home.update_printer_state("print progress", msg)
+
+    def exposure_worker(self, j, settings, exposure_data, galil_thread):
+        """Process a single exposure of the 3D print.
+
+        This method should only be called from inside layer_worker.
+        """
+        # read settings for this exposure
+        slices_folder = Path(self.print_settings["Header"]["Image directory"])
+        image = self.current_job / slices_folder / Path(settings["Image file"])
+        exposure_time_ms = settings["Layer exposure time (ms)"]
+        power = settings["Light engine power setting"]
+        defocus_um = settings["Relative focus position (um)"]
+
+        # defocus thread
+        layer_start_position = self.get_focus()
+        if defocus_um != 0:
+            kdc_thread = threading.Thread(
+                target=self.change_focus,
+                args=[self.focused_position + defocus_um],
+            )
+            kdc_thread.start()
+            image = shift_image(image, x=um_to_px(defocus_um))
+
+        # screen thread
+        screen_thread = threading.Thread(target=self.screen.draw, args=[image])
+        screen_thread.start()
+
+        # visitech setup thread
+        self.write_to_event_log("Setup Exposure")
+        visitech_thread = threading.Thread(
+            target=self.visitech.setup_exposure, args=[exposure_time_ms, power]
+        )
+        visitech_thread.start()
+
+        # wait for all hardware to be ready for exposure
+        if defocus_um != 0:
+            kdc_thread.join()
+        if not self.next_layer == 1:
+            galil_thread.join()
+        screen_thread.join()
+        visitech_thread.join()
+
+        # do the exposure
+        position_during_exposure = self.get_focus()
+        pre_exposure_status = self.visitech.read_all_status()
+        time.sleep(settings["Wait before exposure (ms)"] / 1000)
+        self.write_to_event_log("Start Exposure")
+        home.update_led_status(True)
+        self.visitech.perform_exposure(exposure_time_ms)
+        home.update_led_status(False)
+        self.write_to_event_log("Finish Exposure")
+        time.sleep(settings["Wait after exposure (ms)"] / 1000)
+
+        # Suppress the first Visitech OCP error. This appears to always be
+        # triggered on the first exposure of each print job. It would be better
+        # to figure out why this happens in the hardware and fix it there.
+        if self.suppress_visitech_ocp_error:
+            self.suppress_visitech_ocp_error = False  # only do this once per print
+            for e in self.visitech.get_sticky_errors(warn=False):
+                if e and e.lower() != "led over current protection triggered":
+                    log.warning("Visitech error: %s", e)  # report other errors
+        post_exposure_status = self.visitech.read_all_status()
+
+        # fix focus if this exposure was defocused
+        if defocus_um != 0:
+            self.change_focus(self.focused_position)
+
+        # save expoure data
+        exposure_data[j] = {
+            "image": image.name,
+            "power setting": power,
+            "exposure time (ms)": exposure_time_ms,
+            "layer starting position": layer_start_position,
+            "position during exposure": position_during_exposure,
+            "post exposure position": self.get_focus(),
+            "pre exposure status": pre_exposure_status,
+            "post exposure status": post_exposure_status,
+        }
 
     def finish_print(self):
         self.galil.logging_stop()
@@ -849,6 +879,7 @@ class PrintControl:
         async_file_hander.finish()
 
         # update fontend, zip logs into archive in print_history, and update db entrty
+        self.print_duration = datetime.now() - self.print_start_time
         with self.app.app_context():
             latest_record = PrintRecord.query.order_by(PrintRecord.id.desc()).first()
             latest_record.end_time = datetime.now()
