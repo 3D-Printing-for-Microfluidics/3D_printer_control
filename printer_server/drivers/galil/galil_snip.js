@@ -45,7 +45,7 @@ $(document).ready(function () {
             // Parse button content and construct message
             var distance = $(this).val();
             var axis = $(this).closest(".container").attr('aria-label');
-            var message = { "mode": "absolute", "distance": distance, speed: 25, acceleration: 50, "axis": axis };
+            var message = { "mode": "absolute", "distance": distance, speed: 25, acceleration: 50, "axis": axis, "log": true };
             socket.emit("galil_move", message);
         });
 
@@ -55,7 +55,7 @@ $(document).ready(function () {
             // Parse button content and construct message
             var distance = $(this).text();
             var axis = $(this).closest(".container").attr('aria-label');
-            var message = { "mode": "relative", "distance": distance, speed: 25, acceleration: 50, "axis": axis };
+            var message = { "mode": "relative", "distance": distance, speed: 25, acceleration: 50, "axis": axis, "log": true };
             socket.emit("galil_move", message);
         });
     }

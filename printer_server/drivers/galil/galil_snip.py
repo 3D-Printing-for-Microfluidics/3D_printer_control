@@ -1,5 +1,6 @@
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration import driver_handles
+import printer_server.views.manual_controls
 
 
 galil = driver_handles.galil
@@ -46,13 +47,17 @@ def galil_move(message):
     """Move the main Z stage. All units in mm."""
     mode = message["mode"]
     speed = float(message["speed"])
-    distance = float(message["distance"])/1000
+    distance = float(message["distance"]) / 1000
     acceleration = float(message["acceleration"])
     axis = message["axis"]
     if mode == "absolute":
         galil.absMove(mm=distance, speed=speed, acceleration=acceleration, axis=axis)
     elif mode == "relative":
         galil.relMove(mm=distance, speed=speed, acceleration=acceleration, axis=axis)
+    if galil.getCommonName(axis) == "Focus" and message["log"] == True:
+        printer_server.views.manual_controls.write_to_position_log(
+            get_galil_focus_positions()
+        )
     socketio.emit(
         "galil_done", galil_get_positions(), namespace="/manual", broadcast=True
     )
@@ -80,6 +85,17 @@ def galil_get_positions():
     for axis in galil.axes:
         positions[axis] = galil.cntsToMm(galil.getPosition(axis=axis), axis=axis) * 1000
     return positions
+
+
+def get_galil_focus_positions():
+    last_positions = printer_server.views.manual_controls.get_last_calibration_positions()
+    message = {
+        "tip": last_positions["tip"],
+        "tilt": last_positions["tilt"],
+        "distance": galil.cntsToMm(galil.getPosition(axis="Focus"), axis="Focus") * 1000,
+    }
+    print(f"message:{message}")
+    return message
 
 
 @socketio.on("galil_get_position", namespace="/manual")
