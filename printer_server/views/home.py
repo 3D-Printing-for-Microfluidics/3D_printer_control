@@ -2,7 +2,6 @@ import logging
 from flask import Blueprint, request, render_template
 from flask_socketio import join_room, leave_room
 
-from printer_server.print_control import PrintControl
 from printer_server.settings import Config
 from printer_server.models import PrintQueue
 from printer_server.extensions import socketio
@@ -11,8 +10,29 @@ blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
+# Dynamically import PrintControl
+if Config.HOSTNAME == "HR3v3test":
+    from printer_server.print_control_subclasses import HR3_PrintControl
 
-print_control = PrintControl()
+    print_control = HR3_PrintControl()
+elif Config.HOSTNAME == "HR3v3":
+    from printer_server.print_control_subclasses import HR3_PrintControl
+
+    print_control = HR3_PrintControl()
+elif Config.HOSTNAME == "HR3v3u":
+    from printer_server.print_control_subclasses import HR3_PrintControl
+
+    print_control = HR3_PrintControl()
+elif Config.HOSTNAME == "HR4":
+    from printer_server.print_control_subclasses import HR4_PrintControl
+
+    print_control = HR4_PrintControl()
+elif Config.HOSTNAME == "MR1v1":
+    from printer_server.print_control import PrintControl
+
+    print_control = PrintControl()
+else:
+    log.error("Printer control module not found")
 
 
 @blueprint.route("/")
