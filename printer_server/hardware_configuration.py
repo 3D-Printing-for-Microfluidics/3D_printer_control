@@ -92,5 +92,10 @@ class Printer3D:
         #         # add in wintech dummy here
         #         pass
 
+        if "keyence" in config_dict.keys():
+            from printer_server.drivers.keyence import Keyence
+
+            self.keyence = Keyence()
+
 
 driver_handles = Printer3D()
