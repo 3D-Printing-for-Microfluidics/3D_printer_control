@@ -12,17 +12,17 @@ log.setLevel(logging.INFO)
 
 # Dynamically import PrintControl
 if Config.HOSTNAME == "HR3v3test":
-    from printer_server.print_control_subclasses import HR3_PrintControl
+    from printer_server.print_control_subclasses import HR3v3u_PrintControl
 
-    print_control = HR3_PrintControl()
+    print_control = HR3v3_PrintControl()
 elif Config.HOSTNAME == "HR3v3":
-    from printer_server.print_control_subclasses import HR3_PrintControl
+    from printer_server.print_control_subclasses import HR3v3_PrintControl
 
-    print_control = HR3_PrintControl()
+    print_control = HR3v3_PrintControl()
 elif Config.HOSTNAME == "HR3v3u":
-    from printer_server.print_control_subclasses import HR3_PrintControl
+    from printer_server.print_control_subclasses import HR3v3u_PrintControl
 
-    print_control = HR3_PrintControl()
+    print_control = HR3v3u_PrintControl()
 elif Config.HOSTNAME == "HR4":
     from printer_server.print_control_subclasses import HR4_PrintControl
 

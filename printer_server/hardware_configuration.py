@@ -36,6 +36,11 @@ class Printer3D:
             else:
                 self.kdc = KDC101(log_level=default_log_level)
 
+        if "gpio" in config_dict.keys():
+            from printer_server.drivers.gpio import GPIO
+
+            self.gpio = GPIO()
+
         if "loadcell" in config_dict.keys():
             from printer_server.drivers.loadcell import LoadCell, Loadcell_dummy
 
