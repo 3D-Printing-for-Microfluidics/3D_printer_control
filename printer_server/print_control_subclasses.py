@@ -1,4 +1,4 @@
-from print_control import *
+from printer_server.print_control import *
 
 
 def move_all_galil(
@@ -259,7 +259,8 @@ class HR4_PrintControl(PrintControl):
     def pre_exposure_joins(self):
         """Join X, Y, and Focus threads"""
         for thread in self.galil_threads:
-            thread.join()
+            if thread is not None:
+                thread.join()
 
 
 # def galil_setup_thread(self):
