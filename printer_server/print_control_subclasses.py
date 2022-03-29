@@ -190,7 +190,7 @@ class HR4_PrintControl(PrintControl):
         time.sleep(1.0)
         x_offset = self.default_x_offset + keyence_x_offset
         y_offset = self.default_y_offset + keyence_y_offset
-        move_all_galil(x_offset, y_offset, z_offset, None)
+        move_all_galil(self.galil, x_offset, y_offset, z_offset, None)
         time.sleep(0.1)
         self.keyence_start_position = float(self.keyence.read_all()[1])
 
@@ -202,7 +202,9 @@ class HR4_PrintControl(PrintControl):
                 x = settings.get("Image x offset (um)", self.default_x_offset)
                 y = settings.get("Image y offset (um)", self.default_y_offset)
                 if f"{x}, {y}" not in self.keyence_measurement_list:
-                    move_all_galil(x + keyence_x_offset, y + keyence_y_offset, None, None)
+                    move_all_galil(
+                        self.galil, x + keyence_x_offset, y + keyence_y_offset, None, None
+                    )
                     time.sleep(0.1)
                     self.keyence_measurement_list[f"{x}, {y}"] = float(
                         self.keyence.read_all()[1]
@@ -231,7 +233,8 @@ class HR4_PrintControl(PrintControl):
         )
         # time.sleep(0.1)
         # GPIO.output(7, GPIO.LOW)
-        threads = move_all_galil(
+        move_all_galil(
+            self.galil,
             self.default_x_offset,
             self.default_y_offset,
             self.focused_position,
