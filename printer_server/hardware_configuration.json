@@ -218,7 +218,7 @@
                 "C": 0.125,
                 "D": 0.125
             },
-            "calibration_position": 2315000,
+            "calibration_position": 1491842,
             "bottom_position": 2508800,
             "top_position": -2600000
         },
@@ -228,11 +228,11 @@
         },
         "loadcell": {
             "dummy": false,
-            "hwid": "PID=16C0:0483 SER=9881500",
-            "calibration_intercept": 34932.0,
-            "calibration_slope": -1.79,
-            "loadcell_planarization_enabled": false,
-            "loadcell_planarization_force": 35.0,
+            "hwid": "PID=16C0:0483 SER=5712360",
+            "calibration_intercept": 34785.0,
+            "calibration_slope": -1.83,
+            "loadcell_planarization_enabled": true,
+            "loadcell_planarization_force": 30.0,
             "loadcell_print_start_force": 5.0
         },
         "screen": {
