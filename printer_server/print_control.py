@@ -334,9 +334,7 @@ class PrintControl:
         )
 
     def move_build_platform_up(self, position_settings):
-        """Helper for move_build_platform. Moves the build platform up
-        according to the position_settings
-        """
+        """Moves the build platform up according to the position_settings"""
         up_distance = position_settings["Distance up (mm)"]
         up_speed = position_settings["BP up speed (mm/sec)"]
         up_acceleration = position_settings["BP up acceleration (mm/sec^2)"]
@@ -351,9 +349,7 @@ class PrintControl:
         self.write_to_event_log("Finish Up Movement")
 
     def move_build_platform_down(self, position_settings):
-        """Helper for move_build_platform. Moves the build platform down
-        according to the position_settings
-        """
+        """Moves the build platform down according to the position_settings"""
         down_speed = position_settings["BP down speed (mm/sec)"]
         down_acceleration = position_settings["BP down acceleration (mm/sec^2)"]
 

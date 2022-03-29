@@ -83,12 +83,9 @@ class HR3_PrintControl(PrintControl):
         """Move BP stage up 'Distance up (mm)'' then to top"""
         defaults_layer_settings = self.print_settings.get("Default layer settings")
         default_position_settings = defaults_layer_settings.get("Position settings")
-        self.galil.absMove(
-            mm=self.print_position - default_position_settings["Distance up (mm)"],
-            speed=default_position_settings["BP up speed (mm/sec)"],
-            acceleration=default_position_settings["BP up acceleration (mm/sec^2)"],
-            wait_for_settling=False,
-        )
+
+        time.sleep(defaults_layer_settings["Initial wait (ms)"] / 1000)
+        self.move_build_platform_up(default_position_settings)
         self.galil.goToZmax()
         time.sleep(1.0)
 
@@ -181,12 +178,8 @@ class HR4_PrintControl(PrintControl):
 
         # time.sleep(1.0)
         # GPIO.output(7, GPIO.HIGH)
-        self.galil.absMove(
-            mm=self.print_position - self.default_position_settings["Distance up (mm)"],
-            speed=self.default_position_settings["BP up speed (mm/sec)"],
-            acceleration=self.default_position_settings["BP up acceleration (mm/sec^2)"],
-            wait_for_settling=False,
-        )
+        time.sleep(defaults_layer_settings["Initial wait (ms)"] / 1000)
+        self.move_build_platform_up(self.default_position_settings)
         time.sleep(1.0)
         x_offset = self.default_x_offset + keyence_x_offset
         y_offset = self.default_y_offset + keyence_y_offset
@@ -211,26 +204,16 @@ class HR4_PrintControl(PrintControl):
                     )
         # time.sleep(0.1)
         # GPIO.output(7, GPIO.LOW)
-        self.galil.absMove(
-            mm=self.print_position,
-            speed=self.default_position_settings["BP down speed (mm/sec)"],
-            acceleration=self.default_position_settings[
-                "BP down acceleration (mm/sec^2)"
-            ],
-            wait_for_settling=True,
-        )
+        time.sleep(self.default_position_settings["Up wait (ms)"] / 1000)
+        self.move_build_platform_down(self.default_position_settings)
 
     def post_print_tasks(self):
         """Move all galil stages to their starting positions"""
+
         # time.sleep(1.0)
         # GPIO.output(7, GPIO.HIGH)
-        time.sleep(self.default_position_settings["Initial wait (ms)"] / 1000)
-        self.galil.absMove(
-            mm=self.print_position - self.default_position_settings["Distance up (mm)"],
-            speed=self.default_position_settings["BP up speed (mm/sec)"],
-            acceleration=self.default_position_settings["BP up acceleration (mm/sec^2)"],
-            wait_for_settling=False,
-        )
+        time.sleep(self.defaults_layer_settings["Initial wait (ms)"] / 1000)
+        self.move_build_platform_up(self.default_position_settings)
         # time.sleep(0.1)
         # GPIO.output(7, GPIO.LOW)
         move_all_galil(
