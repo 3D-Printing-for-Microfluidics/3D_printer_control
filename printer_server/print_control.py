@@ -488,8 +488,6 @@ class PrintControl:
             screen_thread.join()
             visitech_thread.join()
 
-            log.info("Printer initialized, all hardware ready.")
-
     def galil_setup_thread(self):
         """Initialize and home Galil controller"""
         self.galil.connect()
