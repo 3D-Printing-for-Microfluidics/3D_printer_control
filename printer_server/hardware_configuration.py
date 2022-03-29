@@ -8,6 +8,7 @@ from printer_server.drivers.visitech import Visitech, Visitech_dummy
 from printer_server.drivers.kdc101 import KDC101, KDC101_dummy
 from printer_server.drivers.tiptilt import TipTilt, TipTilt_dummy
 from printer_server.drivers.loadcell import LoadCell, Loadcell_dummy
+from printer_server.drivers.gpio import GPIO
 
 default_log_level = logging.INFO
 dummy = False
@@ -30,6 +31,7 @@ class Printer3D:
             self.kdc = KDC101_dummy()
             self.tiptilt = TipTilt_dummy(verbose=True)
             self.loadcell = Loadcell_dummy()
+            self.gpio = GPIO()
         else:
             self.galil = Galil(
                 config_dict=config_dict["galil_settings"], log_level=default_log_level
@@ -42,6 +44,7 @@ class Printer3D:
             self.loadcell = LoadCell(
                 config_dict=config_dict["loadcell_settings"], log_level=default_log_level
             )
+            self.gpio = GPIO()
 
 
 driver_handles = Printer3D()
