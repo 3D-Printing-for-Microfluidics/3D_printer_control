@@ -105,7 +105,7 @@ class HR3v3u_PrintControl(PrintControl):
         defaults_layer_settings = self.print_settings.get("Default layer settings")
         default_position_settings = defaults_layer_settings.get("Position settings")
 
-        time.sleep(defaults_layer_settings["Initial wait (ms)"] / 1000)
+        time.sleep(default_position_settings["Initial wait (ms)"] / 1000)
         self.move_build_platform_up(default_position_settings)
         self.galil.goToZmax()
         time.sleep(1.0)
@@ -206,7 +206,7 @@ class HR4_PrintControl(GPIO_PrintControl):
 
         # time.sleep(1.0)
         self.gpio.film_relay_on()
-        time.sleep(defaults_layer_settings["Initial wait (ms)"] / 1000)
+        time.sleep(self.default_position_settings["Initial wait (ms)"] / 1000)
         self.move_build_platform_up(self.default_position_settings)
         time.sleep(1.0)
         x_offset = self.default_x_offset + keyence_x_offset
@@ -240,7 +240,7 @@ class HR4_PrintControl(GPIO_PrintControl):
 
         # time.sleep(1.0)
         self.gpio.film_relay_on()
-        time.sleep(self.defaults_layer_settings["Initial wait (ms)"] / 1000)
+        time.sleep(self.default_position_settings["Initial wait (ms)"] / 1000)
         self.move_build_platform_up(self.default_position_settings)
         # time.sleep(0.1)
         self.gpio.film_relay_off()
