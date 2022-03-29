@@ -85,30 +85,6 @@ function update_loop(message) {
     }
 }
 
-$("#create-job").on("click", function () {
-    if ($("#collapseUpload").hasClass("show")) {
-        $(this).text("Upload a job");
-    } else {
-        $(this).text("Hide");
-    }
-});
-
-$("#job-table").on("click", ".clickable-row", function (event) {
-    if ($(this).hasClass("table-success")) {
-        $(this).removeClass("table-success");
-        start_job_id = "";
-        $("#start-btn").prop("disabled", true);
-    } else {
-        $(this).addClass("table-success").siblings().removeClass("table-success");
-        start_job_id = $(this).attr("id").replace("row-", "")
-        $("#start-btn").prop("disabled", false);
-    }
-});
-
-$("#clear-print-message").on("click", function () {
-    $("#print-message > div").remove();
-});
-
 var show_btn = function (btn) {
     $(".printer-btn").prop("disabled", true).addClass("d-none");
     $(btn).prop("disabled", false).removeClass("d-none");
@@ -291,6 +267,30 @@ $(document).ready(function () {
     // On Safari, if the window is closed it works, but if it is reloaded you need to wait for the timeout
     window.addEventListener('beforeunload', function (e) {
         socket.disconnect();
+    });
+
+    $("#clear-print-message").on("click", function () {
+        $("#print-message > div").remove();
+    });
+
+    $("#create-job").on("click", function () {
+        if ($("#collapseUpload").hasClass("show")) {
+            $(this).text("Upload a job");
+        } else {
+            $(this).text("Hide");
+        }
+    });
+    
+    $("#job-table").on("click", ".clickable-row", function (event) {
+        if ($(this).hasClass("table-success")) {
+            $(this).removeClass("table-success");
+            start_job_id = "";
+            $("#start-btn").prop("disabled", true);
+        } else {
+            $(this).addClass("table-success").siblings().removeClass("table-success");
+            start_job_id = $(this).attr("id").replace("row-", "")
+            $("#start-btn").prop("disabled", false);
+        }
     });
 
     // Set up the handler for the file input box.
