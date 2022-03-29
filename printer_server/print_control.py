@@ -21,8 +21,9 @@ from printer_server.hardware_configuration import config_dict
 from printer_server.async_file_handler import async_file_hander
 from printer_server.hardware_configuration import driver_handles
 from printer_server.views.manual_controls import get_last_calibration_positions
-from printer_server.drivers.kdc101.kdc101_snip import get_kdc_positions
-from printer_server.drivers.tiptilt.tiptilt_snip import get_tiptilt_positions
+
+# from printer_server.drivers.kdc101.kdc101_snip import get_kdc_positions
+# from printer_server.drivers.tiptilt.tiptilt_snip import get_tiptilt_positions
 
 
 log = logging.getLogger(__name__)
@@ -148,7 +149,6 @@ class PrintControl:
         # hardware handles
         self.galil = driver_handles.galil
         self.visitech = driver_handles.visitech
-        self.kdc = driver_handles.kdc
         self.tiptilt = driver_handles.tiptilt
         self.loadcell = driver_handles.loadcell
         self.screen = driver_handles.screen
@@ -170,6 +170,7 @@ class PrintControl:
         self.event_log = str(self.current_job / "event_log.csv")
 
         # values used during printing
+        self.image = None
         self.planarized_position = None
         self.focused_position = None
         self.print_position = None
@@ -465,12 +466,8 @@ class PrintControl:
         return count
 
     def get_focus(self):
-        return self.kdc.getCurrentPos()
-
-    def change_focus(self, pos):
-        self.write_to_event_log("Start Distance Movement")
-        self.kdc.move(pos, relative=False)
-        self.write_to_event_log("Finish Distance Movement")
+        log.warn("Base printer_control class does not have a defined focus stage")
+        return 0
 
     @run_in_thread("initialized", "Initialize")
     def initialize(self):
@@ -481,27 +478,17 @@ class PrintControl:
             self.tiptilt.connect()
             self.loadcell.connect()
 
-            kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
             galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
             screen_thread = threading.Thread(target=driver_handles.screen.start, args=[])
             visitech_thread = threading.Thread(target=self.visitech.connect, args=[])
-            kdc_thread.start()
             galil_thread.start()
             screen_thread.start()
             visitech_thread.start()
-            kdc_thread.join()
             galil_thread.join()
             screen_thread.join()
             visitech_thread.join()
 
             log.info("Printer initialized, all hardware ready.")
-
-    def kdc_setup_thread(self):
-        """Initialize and home ThorLabs stage"""
-        self.kdc.connect()
-        if not self.kdc.homed:
-            self.kdc.home()
-            self.kdc.move(self.focused_position, relative=False)
 
     def galil_setup_thread(self):
         """Initialize and home Galil controller"""
@@ -601,12 +588,13 @@ class PrintControl:
         # Start async_file_handler
         self.create_logs()
 
-        position = get_kdc_positions()
+        position = get_last_calibration_positions()
+        # position = get_kdc_positions()
         dist = position["distance"]
         self.write_to_event_log(f"Distance: {dist}")
         self.focused_position = float(position["distance"])
 
-        position = get_tiptilt_positions()
+        # position = get_tiptilt_positions()
         tip = position["tip"]
         self.write_to_event_log(f"Tip: {tip}")
         tilt = position["tilt"]
@@ -682,6 +670,12 @@ class PrintControl:
                 self.print_thread.join()
             log.info("Print stopped.")
 
+    def pre_print_tasks(self):
+        return
+
+    def post_print_tasks(self):
+        return
+
     def print_worker(self):
         """Do a 3D print.
 
@@ -701,6 +695,8 @@ class PrintControl:
 
         # generate layer map
         self.layer_map = self.generate_layer_map()
+
+        self.pre_print_tasks()
 
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
@@ -729,17 +725,7 @@ class PrintControl:
         if self.printing_paused.is_set():
             self.paused_position = self.galil.getPosition()
 
-        # move to top
-        defaults_layer_settings = self.print_settings.get("Default layer settings")
-        default_position_settings = defaults_layer_settings.get("Position settings")
-        self.galil.absMove(
-            mm=self.print_position - default_position_settings["Distance up (mm)"],
-            speed=default_position_settings["BP up speed (mm/sec)"],
-            acceleration=default_position_settings["BP up acceleration (mm/sec^2)"],
-            wait_for_settling=False,
-        )
-        self.galil.goToZmax()
-        time.sleep(1.0)
+        self.post_print_tasks()
 
         # finish print
         if not self.printing_paused.is_set():
@@ -788,6 +774,15 @@ class PrintControl:
         }
         home.update_printer_state("print progress", msg)
 
+    def pre_exposure_tasks(self, settings):
+        return
+
+    def pre_exposure_joins(self):
+        return
+
+    def post_exposure_tasks(self):
+        return
+
     def exposure_worker(self, j, settings, exposure_data, galil_thread):
         """Process a single exposure of the 3D print.
 
@@ -795,23 +790,15 @@ class PrintControl:
         """
         # read settings for this exposure
         slices_folder = Path(self.print_settings["Header"]["Image directory"])
-        image = self.current_job / slices_folder / Path(settings["Image file"])
+        self.image = self.current_job / slices_folder / Path(settings["Image file"])
         exposure_time_ms = settings["Layer exposure time (ms)"]
         power = settings["Light engine power setting"]
-        defocus_um = settings["Relative focus position (um)"]
-
-        # defocus thread
         layer_start_position = self.get_focus()
-        if defocus_um != 0:
-            kdc_thread = threading.Thread(
-                target=self.change_focus,
-                args=[self.focused_position + defocus_um],
-            )
-            kdc_thread.start()
-            image = shift_image(image, x=um_to_px(defocus_um))
+
+        self.pre_exposure_tasks(settings)
 
         # screen thread
-        screen_thread = threading.Thread(target=self.screen.draw, args=[image])
+        screen_thread = threading.Thread(target=self.screen.draw, args=[self.image])
         screen_thread.start()
 
         # visitech setup thread
@@ -822,12 +809,12 @@ class PrintControl:
         visitech_thread.start()
 
         # wait for all hardware to be ready for exposure
-        if defocus_um != 0:
-            kdc_thread.join()
         if not self.next_layer == 1:
             galil_thread.join()
         screen_thread.join()
         visitech_thread.join()
+
+        self.pre_exposure_joins()
 
         # do the exposure
         position_during_exposure = self.get_focus()
@@ -840,6 +827,8 @@ class PrintControl:
         self.write_to_event_log("Finish Exposure")
         time.sleep(settings["Wait after exposure (ms)"] / 1000)
 
+        self.post_exposure_tasks()
+
         # Suppress the first Visitech OCP error. This appears to always be
         # triggered on the first exposure of each print job. It would be better
         # to figure out why this happens in the hardware and fix it there.
@@ -850,13 +839,9 @@ class PrintControl:
                     log.warning("Visitech error: %s", e)  # report other errors
         post_exposure_status = self.visitech.read_all_status()
 
-        # fix focus if this exposure was defocused
-        if defocus_um != 0:
-            self.change_focus(self.focused_position)
-
         # save expoure data
         exposure_data[j] = {
-            "image": image.name,
+            "image": self.image.name,
             "power setting": power,
             "exposure time (ms)": exposure_time_ms,
             "layer starting position": layer_start_position,
