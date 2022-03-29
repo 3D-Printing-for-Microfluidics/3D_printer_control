@@ -145,11 +145,7 @@
 
 {% block scripts %}
 {{ super() }}
-<script>
-    $('#apply_button').on('click', function (e) {
-        location.href = "{{ url_for('print_history.index') }}" + '?start=' + $('#start-date').val() + '&end=' + $('#end-date').val();
-    });
-</script>
 <script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
+<script> var print_history_url = "{{ url_for('print_history.index') }}" </script>
 <script src="{{ url_for('static', filename='print_history.js') }}"></script>
 {% endblock %}
