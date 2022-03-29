@@ -230,6 +230,16 @@
                             "type": "string",
                             "description": "Default image file"
                         },
+                        "Image x offset (um)": {
+                            "type": "integer",
+                            "default": 0,
+                            "description": "Default x position for layer."
+                        },
+                        "Image y offset (um)": {
+                            "type": "integer",
+                            "default": 0,
+                            "description": "Default y position for layer."
+                        },
                         "Layer exposure time (ms)": {
                             "type": "number",
                             "minimum": 0,
@@ -394,6 +404,16 @@
                                     "type": "string",
                                     "default": "png",
                                     "description": "Default image file"
+                                },
+                                "Image x offset (um)": {
+                                    "type": "integer",
+                                    "default": 0,
+                                    "description": "Default x position for layer."
+                                },
+                                "Image y offset (um)": {
+                                    "type": "integer",
+                                    "default": 0,
+                                    "description": "Default y position for layer."
                                 },
                                 "Layer exposure time (ms)": {
                                     "type": "number",
