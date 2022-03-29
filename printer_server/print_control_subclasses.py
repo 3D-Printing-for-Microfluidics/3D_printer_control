@@ -56,11 +56,12 @@ class GPIO_PrintControl(PrintControl):
         super().move_build_platform_up(position_settings)
         self.gpio.film_relay_off()
 
-    def initialize(self):
+    @run_in_thread("initialized", "Initialize")
+    def initialize(self, run_in_thread=True):
         if self.state == "uninitialized":
             gpio_thread = threading.Thread(target=self.gpio.initialize, args=[])
             gpio_thread.start()
-            super().initialize()
+            super().initialize(run_in_thread=run_in_thread)
             gpio_thread.join()
 
 
@@ -91,12 +92,13 @@ class HR3v3u_PrintControl(PrintControl):
             self.kdc.home()
             self.kdc.move(self.focused_position, relative=False)
 
-    def initialize(self):
+    @run_in_thread("initialized", "Initialize")
+    def initialize(self, run_in_thread=True):
         """Start KDC setup thread"""
         if self.state == "uninitialized":
             self.kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
             self.kdc_thread.start()
-            super().initialize()
+            super().initialize(run_in_thread=False)
             self.kdc_thread.join()
             log.info("Printer initialized, all hardware ready.")
 
@@ -134,6 +136,10 @@ class HR3v3u_PrintControl(PrintControl):
 
 
 class HR3v3_PrintControl(HR3v3u_PrintControl, GPIO_PrintControl):
+    @run_in_thread("initialized", "Initialize")
+    def initialize(self, run_in_thread=True):
+        return super().initialize(run_in_thread=False)
+
     def post_print_tasks(self):
         self.gpio.film_relay_on()
         super().post_print_tasks()
@@ -161,12 +167,12 @@ class HR4_PrintControl(GPIO_PrintControl):
         )
 
     @run_in_thread("initialized", "Initialize")
-    def initialize(self):
+    def initialize(self, run_in_thread=True):
         """Initialize keyence sensor"""
         if self.state == "uninitialized":
             keyence_thread = threading.Thread(target=self.keyence.connect, args=[])
             keyence_thread.start()
-            super().initialize()
+            super().initialize(run_in_thread=False)
             keyence_thread.join()
             log.info("Printer initialized, all hardware ready.")
 

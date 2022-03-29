@@ -116,19 +116,25 @@ def run_in_thread(state, text):
     def decorator(f):
         @wraps(f)
         def decorated_function(self, *args, **kwargs):
-            def func(self, *args, **kwargs):
-                f(self, *args, **kwargs)
-                self.state = state
-                home.update_printer_state(self.state, dict())
+            if kwargs.get("run_in_thread", True):
 
-            msg = {
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-                "text": text,
-            }
-            log.info(msg["text"])
-            home.update_printer_state("busy", msg)
-            _thread = threading.Thread(target=func, args=(self, *args), kwargs={**kwargs})
-            _thread.start()
+                def func(self, *args, **kwargs):
+                    f(self, *args, **kwargs)
+                    self.state = state
+                    home.update_printer_state(self.state, dict())
+
+                msg = {
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                    "text": text,
+                }
+                log.info(msg["text"])
+                home.update_printer_state("busy", msg)
+                _thread = threading.Thread(
+                    target=func, args=(self, *args), kwargs={**kwargs}
+                )
+                _thread.start()
+            else:
+                f(self, *args, **kwargs)
 
         return decorated_function
 
@@ -480,7 +486,7 @@ class PrintControl:
         return 0
 
     @run_in_thread("initialized", "Initialize")
-    def initialize(self):
+    def initialize(self, run_in_thread=True):
         """Put all hardware into starting configuration."""
         if self.state == "uninitialized":
             self.state = "busy"
