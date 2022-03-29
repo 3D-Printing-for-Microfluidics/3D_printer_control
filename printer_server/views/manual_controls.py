@@ -63,13 +63,14 @@ def index():
     initialized = printer_server.views.home.print_control.state != "uninitialized"
     calibration_positions = get_last_calibration_positions()
     galil_stages = {}
-    galil_positions = galil_get_positions()
-    for i in range(len(config_dict["galil"]["axes"])):
-        axis = config_dict["galil"]["axes"][i]
-        galil_stages[axis] = {
-            "common": config_dict["galil"]["axes_common_names"][i],
-            "position": galil_positions[axis],
-        }
+    if initialized:
+        galil_positions = galil_get_positions()
+        for i in range(len(config_dict["galil"]["axes"])):
+            axis = config_dict["galil"]["axes"][i]
+            galil_stages[axis] = {
+                "common": config_dict["galil"]["axes_common_names"][i],
+                "position": galil_positions[axis],
+            }
 
     return render_template(
         "manual_controls.html",
