@@ -83,7 +83,8 @@ def galil_get_positions():
     """Get the position the main Z stage."""
     positions = {}
     for axis in galil.axes:
-        positions[axis] = galil.cntsToMm(galil.getPosition(axis=axis), axis=axis) * 1000
+        position = galil.cntsToMm(galil.getPosition(axis=axis), axis=axis) * 1000
+        positions[axis] = f"{position:.1f}"
     return positions
 
 
