@@ -8,7 +8,7 @@ Column = db.Column
 relationship = db.relationship
 
 
-class CRUDMixin(object):
+class CRUDMixin:
     """Mixin that adds convenience methods for CRUD (create, read,
     update, delete) operations.
     """
@@ -46,7 +46,7 @@ class Model(CRUDMixin, db.Model):
 
 # From Mike Bayer's "Building the app" talk
 # https://speakerdeck.com/zzzeek/building-the-app
-class SurrogatePK(object):
+class SurrogatePK:
     """A mixin that adds a surrogate integer 'primary key' column named
     ``id`` to any declarative-mapped class.
     """

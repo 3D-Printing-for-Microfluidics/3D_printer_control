@@ -3,7 +3,7 @@ import os
 import socket
 
 
-class Config(object):
+class Config:
     """Base configuration."""
 
     SECRET_KEY = os.environ.get("PRINTER_SERVER_SECRET", "secret-key")  # TODO: Change me
