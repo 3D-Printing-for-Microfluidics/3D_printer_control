@@ -175,12 +175,19 @@ class PrintControl:
         self.movement_log = str(self.current_job / "movement_data.csv")
         self.event_log = str(self.current_job / "event_log.csv")
 
+        # threads
+        self.galil_thread = None
+        self.screen_thread = None
+        self.visitech_thread = None
+
         # values used during printing
         self.image = None
         self.planarized_position = None
         self.focused_position = None
         self.print_position = None
         self.print_settings = None
+        self.exposure_time_ms = None
+        self.power = None
         self.layer_map = []
         self.next_layer = 0
         self.paused_position = None
@@ -494,15 +501,17 @@ class PrintControl:
             self.tiptilt.connect()
             self.loadcell.connect()
 
-            galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
-            screen_thread = threading.Thread(target=driver_handles.screen.start, args=[])
-            visitech_thread = threading.Thread(target=self.visitech.connect, args=[])
-            galil_thread.start()
-            screen_thread.start()
-            visitech_thread.start()
-            galil_thread.join()
-            screen_thread.join()
-            visitech_thread.join()
+            self.galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
+            self.screen_thread = threading.Thread(
+                target=driver_handles.screen.start, args=[]
+            )
+            self.visitech_thread = threading.Thread(target=self.visitech.connect, args=[])
+            self.galil_thread.start()
+            self.screen_thread.start()
+            self.visitech_thread.start()
+            self.galil_thread.join()
+            self.screen_thread.join()
+            self.visitech_thread.join()
 
     def galil_setup_thread(self):
         """Initialize and home Galil controller"""
@@ -761,16 +770,16 @@ class PrintControl:
         self.write_to_event_log(msg)
 
         # move build platform
-        galil_thread = threading.Thread(
+        self.galil_thread = threading.Thread(
             target=self.move_build_platform, args=[position_settings, layer]
         )
         if not self.next_layer == 1:
-            galil_thread.start()
+            self.galil_thread.start()
 
         # do exposures
         exposure_data = {}
         for j, settings in enumerate(image_settings_list):
-            self.exposure_worker(j, settings, exposure_data, galil_thread)
+            self.exposure_worker(j, settings, exposure_data)
 
         # log exposure data
         async_file_hander.write(self.exposure_log, f"layer {layer}:\n")
@@ -789,15 +798,28 @@ class PrintControl:
         home.update_printer_state("print progress", msg)
 
     def pre_exposure_tasks(self, settings):
-        return
+        # screen thread
+        self.screen_thread = threading.Thread(target=self.screen.draw, args=[self.image])
+        self.screen_thread.start()
+
+        # visitech setup thread
+        self.write_to_event_log("Setup Exposure")
+        self.visitech_thread = threading.Thread(
+            target=self.visitech.setup_exposure, args=[self.exposure_time_ms, self.power]
+        )
+        self.visitech_thread.start()
 
     def pre_exposure_joins(self):
-        return
+        # wait for all hardware to be ready for exposure
+        if not self.next_layer == 1:
+            self.galil_thread.join()
+        self.screen_thread.join()
+        self.visitech_thread.join()
 
     def post_exposure_tasks(self):
         return
 
-    def exposure_worker(self, j, settings, exposure_data, galil_thread):
+    def exposure_worker(self, j, settings, exposure_data):
         """Process a single exposure of the 3D print.
 
         This method should only be called from inside layer_worker.
@@ -805,29 +827,12 @@ class PrintControl:
         # read settings for this exposure
         slices_folder = Path(self.print_settings["Header"]["Image directory"])
         self.image = self.current_job / slices_folder / Path(settings["Image file"])
-        exposure_time_ms = settings["Layer exposure time (ms)"]
-        power = settings["Light engine power setting"]
+        self.exposure_time_ms = settings["Layer exposure time (ms)"]
+        self.power = settings["Light engine power setting"]
         layer_start_position = self.get_focus()
 
+        # run pre-exposure tasks
         self.pre_exposure_tasks(settings)
-
-        # screen thread
-        screen_thread = threading.Thread(target=self.screen.draw, args=[self.image])
-        screen_thread.start()
-
-        # visitech setup thread
-        self.write_to_event_log("Setup Exposure")
-        visitech_thread = threading.Thread(
-            target=self.visitech.setup_exposure, args=[exposure_time_ms, power]
-        )
-        visitech_thread.start()
-
-        # wait for all hardware to be ready for exposure
-        if not self.next_layer == 1:
-            galil_thread.join()
-        screen_thread.join()
-        visitech_thread.join()
-
         self.pre_exposure_joins()
 
         # do the exposure
@@ -836,7 +841,7 @@ class PrintControl:
         time.sleep(settings["Wait before exposure (ms)"] / 1000)
         self.write_to_event_log("Start Exposure")
         home.update_led_status(True)
-        self.visitech.perform_exposure(exposure_time_ms)
+        self.visitech.perform_exposure(self.exposure_time_ms)
         home.update_led_status(False)
         self.write_to_event_log("Finish Exposure")
         time.sleep(settings["Wait after exposure (ms)"] / 1000)
@@ -856,8 +861,8 @@ class PrintControl:
         # save expoure data
         exposure_data[j] = {
             "image": self.image.name,
-            "power setting": power,
-            "exposure time (ms)": exposure_time_ms,
+            "power setting": self.power,
+            "exposure time (ms)": self.exposure_time_ms,
             "layer starting position": layer_start_position,
             "position during exposure": position_during_exposure,
             "post exposure position": self.get_focus(),

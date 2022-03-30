@@ -99,11 +99,13 @@ class HR3v3u_PrintControl(PrintControl):
             )
             self.kdc_thread.start()
             self.image = shift_image(self.image, x=um_to_px(self.defocus_um))
+        return super().pre_exposure_tasks(settings)
 
     def pre_exposure_joins(self):
         """If layer is defocused, wait for KDC thread to finish"""
         if self.defocus_um != 0:
             self.kdc_thread.join()
+        return super().pre_exposure_joins()
 
     def post_exposure_tasks(self):
         """If layer is defocused, return KDC to focus position"""
@@ -235,12 +237,14 @@ class HR4_PrintControl(PrintControl):
         self.galil_threads = move_all_galil(
             self.galil, x_offset, y_offset, z_focus, None, join=False
         )
+        return super().pre_exposure_tasks(settings)
 
     def pre_exposure_joins(self):
         """Join X, Y, and Focus threads"""
         for thread in self.galil_threads:
             if thread is not None:
                 thread.join()
+        return super().pre_exposure_joins()
 
 
 class GPIO_PrintControl(PrintControl):
