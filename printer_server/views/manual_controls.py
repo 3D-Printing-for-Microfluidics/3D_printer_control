@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Control view."""
 import json
 from pathlib import Path

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """User forms."""
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, StringField
@@ -12,9 +11,7 @@ from printer_server.models import User
 class RegisterForm(FlaskForm):
     """Register form."""
 
-    username = StringField(
-        "Username", validators=[DataRequired(), Length(min=3, max=25)]
-    )
+    username = StringField("Username", validators=[DataRequired(), Length(min=3, max=25)])
     email = StringField(
         "Email", validators=[DataRequired(), Email(), Length(min=6, max=40)]
     )

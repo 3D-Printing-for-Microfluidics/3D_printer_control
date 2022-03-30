@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Application configuration."""
 import os
 import socket
