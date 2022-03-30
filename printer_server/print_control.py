@@ -341,10 +341,12 @@ class PrintControl:
 
     def move_build_platform_up(self, position_settings):
         """Moves the build platform up according to the position_settings"""
+        inital_wait = position_settings["Initial wait (ms)"] / 1000
         up_distance = position_settings["Distance up (mm)"]
         up_speed = position_settings["BP up speed (mm/sec)"]
         up_acceleration = position_settings["BP up acceleration (mm/sec^2)"]
 
+        time.sleep(inital_wait)
         self.write_to_event_log("Start Up Movement")
         self.galil.absMove(
             mm=self.print_position - up_distance,
@@ -356,9 +358,11 @@ class PrintControl:
 
     def move_build_platform_down(self, position_settings):
         """Moves the build platform down according to the position_settings"""
+        up_wait = position_settings["Up wait (ms)"] / 1000
         down_speed = position_settings["BP down speed (mm/sec)"]
         down_acceleration = position_settings["BP down acceleration (mm/sec^2)"]
 
+        time.sleep(up_wait)
         self.write_to_event_log("Start Down Movement")
         self.galil.absMove(
             mm=self.print_position,
@@ -371,17 +375,13 @@ class PrintControl:
         """Perform the build platform movements for a layer according to
         the position_settings.
         """
-        inital_wait = position_settings["Initial wait (ms)"] / 1000
-        up_wait = position_settings["Up wait (ms)"] / 1000
         final_wait = position_settings["Final wait (ms)"] / 1000
         layer_thickness = position_settings["Layer thickness (um)"] / 1000
 
         start_position = self.galil.getPosition()
         start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         start_index = self.loadcell.get_current_loadcell_index()
-        time.sleep(inital_wait)
         self.move_build_platform_up(position_settings)
-        time.sleep(up_wait)
         self.print_position -= layer_thickness
         self.move_build_platform_down(position_settings)
 

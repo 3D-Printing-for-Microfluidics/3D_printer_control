@@ -24,9 +24,9 @@ elif Config.HOSTNAME == "HR3v3u":
 
     print_control = HR3v3u_PrintControl()
 elif Config.HOSTNAME == "HR4":
-    from printer_server.print_control_subclasses import HR4_PrintControl
+    from printer_server.print_control_subclasses import HR4Film_PrintControl
 
-    print_control = HR4_PrintControl()
+    print_control = HR4Film_PrintControl()
 elif Config.HOSTNAME == "MR1v1":
     from printer_server.print_control import PrintControl
 

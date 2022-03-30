@@ -43,28 +43,6 @@ def move_all_galil(
         return threads
 
 
-class GPIO_PrintControl(PrintControl):
-    def __init__(self):
-        super().__init__()
-        self.gpio = driver_handles.gpio
-
-    def move_build_platform(self, position_settings, layer):
-        self.gpio.film_relay_on()
-        return super().move_build_platform(position_settings, layer)
-
-    def move_build_platform_up(self, position_settings):
-        super().move_build_platform_up(position_settings)
-        self.gpio.film_relay_off()
-
-    @run_in_thread("initialized", "Initialize")
-    def initialize(self, run_in_thread=True):
-        if self.state == "uninitialized":
-            gpio_thread = threading.Thread(target=self.gpio.initialize, args=[])
-            gpio_thread.start()
-            super().initialize(run_in_thread=run_in_thread)
-            gpio_thread.join()
-
-
 class HR3v3u_PrintControl(PrintControl):
     # from printer_server.drivers.kdc101.kdc101_snip import get_kdc_positions
 
@@ -107,7 +85,6 @@ class HR3v3u_PrintControl(PrintControl):
         defaults_layer_settings = self.print_settings.get("Default layer settings")
         default_position_settings = defaults_layer_settings.get("Position settings")
 
-        time.sleep(default_position_settings["Initial wait (ms)"] / 1000)
         self.move_build_platform_up(default_position_settings)
         self.galil.goToZmax()
         time.sleep(1.0)
@@ -135,18 +112,7 @@ class HR3v3u_PrintControl(PrintControl):
             self.change_focus(self.focused_position)
 
 
-class HR3v3_PrintControl(HR3v3u_PrintControl, GPIO_PrintControl):
-    @run_in_thread("initialized", "Initialize")
-    def initialize(self, run_in_thread=True):
-        return super().initialize(run_in_thread=False)
-
-    def post_print_tasks(self):
-        self.gpio.film_relay_on()
-        super().post_print_tasks()
-        self.gpio.film_relay_off()
-
-
-class HR4_PrintControl(GPIO_PrintControl):
+class HR4_PrintControl(PrintControl):
     def __init__(self):
         """Create keyence handle"""
         super().__init__()
@@ -211,8 +177,7 @@ class HR4_PrintControl(GPIO_PrintControl):
         z_offset = self.focused_position - 750
 
         # time.sleep(1.0)
-        self.gpio.film_relay_on()
-        time.sleep(self.default_position_settings["Initial wait (ms)"] / 1000)
+        # self.gpio.film_relay_on()
         self.move_build_platform_up(self.default_position_settings)
         time.sleep(1.0)
         x_offset = self.default_x_offset + keyence_x_offset
@@ -237,19 +202,17 @@ class HR4_PrintControl(GPIO_PrintControl):
                         self.keyence.read_all()[1]
                     )
         # time.sleep(0.1)
-        self.gpio.film_relay_off()
-        time.sleep(self.default_position_settings["Up wait (ms)"] / 1000)
+        # self.gpio.film_relay_off()
         self.move_build_platform_down(self.default_position_settings)
 
     def post_print_tasks(self):
         """Move all galil stages to their starting positions"""
 
         # time.sleep(1.0)
-        self.gpio.film_relay_on()
-        time.sleep(self.default_position_settings["Initial wait (ms)"] / 1000)
+        # self.gpio.film_relay_on()
         self.move_build_platform_up(self.default_position_settings)
         # time.sleep(0.1)
-        self.gpio.film_relay_off()
+        # self.gpio.film_relay_off()
         move_all_galil(
             self.galil,
             self.default_x_offset,
@@ -278,6 +241,37 @@ class HR4_PrintControl(GPIO_PrintControl):
         for thread in self.galil_threads:
             if thread is not None:
                 thread.join()
+
+
+class GPIO_PrintControl(PrintControl):
+    def __init__(self):
+        super().__init__()
+        self.gpio = driver_handles.gpio
+
+    def move_build_platform_up(self, position_settings):
+        self.gpio.film_relay_on()
+        super().move_build_platform_up(position_settings)
+        self.gpio.film_relay_off()
+
+    @run_in_thread("initialized", "Initialize")
+    def initialize(self, run_in_thread=True):
+        if self.state == "uninitialized":
+            gpio_thread = threading.Thread(target=self.gpio.initialize, args=[])
+            gpio_thread.start()
+            super().initialize(run_in_thread=run_in_thread)
+            gpio_thread.join()
+
+
+class HR3v3_PrintControl(HR3v3u_PrintControl, GPIO_PrintControl):
+    @run_in_thread("initialized", "Initialize")
+    def initialize(self, run_in_thread=True):
+        return super().initialize(run_in_thread=False)
+
+
+class HR4Film_PrintControl(HR3v3u_PrintControl, GPIO_PrintControl):
+    @run_in_thread("initialized", "Initialize")
+    def initialize(self, run_in_thread=True):
+        return super().initialize(run_in_thread=False)
 
 
 # def galil_setup_thread(self):
