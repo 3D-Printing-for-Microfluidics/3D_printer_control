@@ -85,6 +85,8 @@ class Visitech:
             None  # start as None so we can tell if a connection has been attempted
         )
 
+        self.exposure_time = 0
+
         # register exit handlers
         atexit.register(self.disconnect)  # close the TCP conenction on exit
         atexit.register(self.stop_sequencer)  # make sure DMD is stopped on exit
@@ -673,6 +675,7 @@ class Visitech:
             p - power setting
             r - number of repeats
         """
+        self.exposure_time = t
         if t is not 0:
             max_t = 10000
             self.log.info(
@@ -683,19 +686,20 @@ class Visitech:
                 msg += f"of {max_t} ms. Using exposure time of {max_t} ms instead."
                 self.log.warning(msg)
                 t = max_t
+                self.exposure_time = max_t
             self.set_led_amplitude(p)
             self.set_sequencer_lut_definition(exposure=t * 1000)
             self.set_sequencer_lut_config(repeats=r)
 
-    def perform_exposure(self, t):
+    def perform_exposure(self):
         """
         Start an exposure.
             t - exposure time in milliseconds
         """
-        if t != 0:
-            self.log.info("Exposing for %s ms", t)
+        if self.exposure_time != 0:
+            self.log.info("Exposing for %s ms", self.exposure_time)
             self.start_sequencer()
-            time.sleep(t * 1e-3)
+            time.sleep(self.exposure_time * 1e-3)
 
     def project(self, exposure, power, repeats=1):
         """

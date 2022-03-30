@@ -841,7 +841,7 @@ class PrintControl:
         time.sleep(settings["Wait before exposure (ms)"] / 1000)
         self.write_to_event_log("Start Exposure")
         home.update_led_status(True)
-        self.visitech.perform_exposure(self.exposure_time_ms)
+        self.visitech.perform_exposure()
         home.update_led_status(False)
         self.write_to_event_log("Finish Exposure")
         time.sleep(settings["Wait after exposure (ms)"] / 1000)

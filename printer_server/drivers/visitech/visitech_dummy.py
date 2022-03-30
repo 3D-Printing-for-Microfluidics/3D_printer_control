@@ -178,7 +178,7 @@ class Visitech_dummy:
         pass
 
     @dummy_log
-    def perform_exposure(self, t):
+    def perform_exposure(self):
         pass
 
     @dummy_log
