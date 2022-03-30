@@ -268,7 +268,7 @@ class HR3v3_PrintControl(HR3v3u_PrintControl, GPIO_PrintControl):
         return super().initialize(run_in_thread=False)
 
 
-class HR4Film_PrintControl(HR3v3u_PrintControl, GPIO_PrintControl):
+class HR4Film_PrintControl(HR4_PrintControl, GPIO_PrintControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=True):
         return super().initialize(run_in_thread=False)
