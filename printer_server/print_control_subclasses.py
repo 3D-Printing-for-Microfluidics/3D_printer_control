@@ -82,6 +82,7 @@ class HR3v3u_PrintControl(PrintControl):
 
     def post_print_tasks(self):
         """Move BP stage up 'Distance up (mm)'' then to top"""
+        super().post_print_tasks()
         defaults_layer_settings = self.print_settings.get("Default layer settings")
         default_position_settings = defaults_layer_settings.get("Position settings")
 
@@ -209,6 +210,7 @@ class HR4_PrintControl(PrintControl):
 
     def post_print_tasks(self):
         """Move all galil stages to their starting positions"""
+        super().post_print_tasks()
 
         # time.sleep(1.0)
         # self.gpio.film_relay_on()

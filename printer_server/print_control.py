@@ -697,7 +697,10 @@ class PrintControl:
         return
 
     def post_print_tasks(self):
-        return
+        # always turn off the Visitech
+        self.visitech.stop_sequencer()
+        home.update_led_status(False)
+        self.screen.clear()
 
     def print_worker(self):
         """Do a 3D print.
@@ -738,11 +741,6 @@ class PrintControl:
 
             # process layer
             self.layer_worker(i, layer)
-
-        # always turn off the Visitech
-        self.visitech.stop_sequencer()
-        home.update_led_status(False)
-        self.screen.clear()
 
         # set paused position
         if self.printing_paused.is_set():
