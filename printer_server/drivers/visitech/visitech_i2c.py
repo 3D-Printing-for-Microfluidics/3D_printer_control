@@ -50,8 +50,7 @@ class Visitech:
         self.screenThread.screen.clear()
 
     def split_exposure_time(self, exposure):
-        """Split a long exposure time into an array of smaller exposure times.
-        """
+        """Split a long exposure time into an array of smaller exposure times."""
         n = int(exposure // self.max_exp_time)
         if exposure % self.max_exp_time != 0:
             exposure = [self.max_exp_time] * n + [exposure % self.max_exp_time]

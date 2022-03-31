@@ -38,7 +38,11 @@ def index():
                 "modified": time.strftime(time_fmt, time.localtime(stat.st_mtime)),
             }
         )
-    return render_template("server_logs.html", hostname=Config.HOSTNAME, files=files,)
+    return render_template(
+        "server_logs.html",
+        hostname=Config.HOSTNAME,
+        files=files,
+    )
 
 
 @blueprint.route("/server_logs/<path:file_name>")
@@ -53,4 +57,7 @@ def display(file_name):
 def download(file_name):
     """Download the file."""
     log.info("Downloading %s...", logs_folder / file_name)
-    return send_file(os.path.join(logs_folder, file_name), as_attachment=True,)
+    return send_file(
+        os.path.join(logs_folder, file_name),
+        as_attachment=True,
+    )
