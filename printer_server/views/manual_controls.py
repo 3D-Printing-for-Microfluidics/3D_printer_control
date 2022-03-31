@@ -33,6 +33,8 @@ if "gpio" in config_dict.keys():
     import printer_server.drivers.gpio.gpio_snip
 if "kdc101" in config_dict.keys():
     import printer_server.drivers.kdc101.kdc101_snip
+# if "keyence" in config_dict.keys():
+#     import printer_server.drivers.keyence.keyence_snip
 if "loadcell" in config_dict.keys():
     import printer_server.drivers.loadcell.loadcell_snip
 if "screen" in config_dict.keys():
@@ -67,24 +69,25 @@ def index():
         hardware["external_control"]["enabled"] = enabled
 
     if initialized:
-    calibration_positions = get_last_calibration_positions()
+        calibration_positions = get_last_calibration_positions()
         if "galil" in config_dict.keys():
             galil_positions = (
                 printer_server.drivers.galil.galil_snip.galil_get_positions()
             )
             hardware["galil"]["stages"] = {}
-        for i in range(len(config_dict["galil"]["axes"])):
-            axis = config_dict["galil"]["axes"][i]
+            for i in range(len(config_dict["galil"]["axes"])):
+                axis = config_dict["galil"]["axes"][i]
                 hardware["galil"]["stages"][axis] = {
-                "common": config_dict["galil"]["axes_common_names"][i],
-                "position": galil_positions[axis],
-            }
+                    "common": config_dict["galil"]["axes_common_names"][i],
+                    "position": galil_positions[axis],
+                }
         if "gpio" in config_dict.keys():
             hardware["gpio"][
                 "film"
             ] = printer_server.drivers.gpio.gpio_snip.getFilmRelayState()
         if "kdc101" in config_dict.keys():
             hardware["kdc101"]["distance"] = calibration_positions["distance"]
+        # if "keyence" in config_dict.keys():
         if "loadcell" in config_dict.keys():
             hardware["loadcell"][
                 "autoscale"
@@ -101,6 +104,8 @@ def index():
             hardware["visitech"][
                 "status"
             ] = printer_server.drivers.visitech.visitech_snip.getLedStatus()
+        # if "wintech" in config_dict.keys():
+        #     pass
 
     return render_template(
         "manual_controls.html",
