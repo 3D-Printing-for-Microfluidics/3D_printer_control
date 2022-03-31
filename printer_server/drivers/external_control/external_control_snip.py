@@ -22,7 +22,7 @@ def set_external_control_enable(message):
 
 
 @socketio.on("get_external_control_enable", namespace="/manual")
-def get_external_control_enable():
+def get_external_control_enable(emit = True):
     """Return the external control enable flag."""
     socketio.emit(
         "external_control_enable",
@@ -30,3 +30,4 @@ def get_external_control_enable():
         namespace="/manual",
         broadcast=True,
     )
+    return external_control_enable.get_enable()

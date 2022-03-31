@@ -56,6 +56,14 @@ blueprint = Blueprint(
 @blueprint.route("/manual")
 def index():
     initialized = printer_server.views.home.print_control.state != "uninitialized"
+
+    # Get driver status
+    if "external_control" in config_dict.keys():
+        enabled = printer_server.drivers.external_control.external_control_snip.get_external_control_enable(
+            emit=False
+        )
+        hardware["external_control"]["enabled"] = enabled
+
     if initialized:
     calibration_positions = get_last_calibration_positions()
         if "galil" in config_dict.keys():

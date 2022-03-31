@@ -7,11 +7,16 @@
             </div>
             <div class="col-6">
                 <div id="external_enable" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
-                    <label class="btn btn-outline-info btn-fixed-width shadow-none">Enabled<input type="radio"></label>
-                    <label class="btn btn-outline-info btn-fixed-width shadow-none active">Disabled<input
+                    <label
+                        class="btn btn-outline-info btn-fixed-width shadow-none {% if hardware['external_control']['enabled'] %} active {% endif %}">Enabled<input
+                            type="radio"></label>
+                    <label
+                        class="btn btn-outline-info btn-fixed-width shadow-none {% if not hardware['external_control']['enabled'] %} active {% endif %}">Disabled<input
                             type="radio"></label>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script src="{{ url_for('manual_controls.static', filename='external_control/external_control_snip.js') }}"></script>
