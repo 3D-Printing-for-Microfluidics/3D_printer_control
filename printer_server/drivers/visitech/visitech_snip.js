@@ -63,8 +63,7 @@ $(document).ready(function () {
         if (repeat == 0) {
             exposureElement.classList.remove("is-invalid")
             $('#visitech-exposure-txt').prop('disabled', true);
-        }
-        else {
+        } else {
             $('#visitech-exposure-txt').prop('disabled', false);
         }
     });
@@ -80,8 +79,7 @@ $(document).ready(function () {
             if (repeat == 1) {
                 exposureElement.classList.add("is-invalid")
                 return
-            }
-            else {
+            } else {
                 exposure = 1
             }
         }
@@ -92,8 +90,7 @@ $(document).ready(function () {
         var statusElement = document.getElementById("visitech-status");
         if (message == true) {
             statusElement.classList.remove("invisible")
-        }
-        else {
+        } else {
             statusElement.classList.add("invisible")
         }
         $('#visitech-status').prop('disabled', message);

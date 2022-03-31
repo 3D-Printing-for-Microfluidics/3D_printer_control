@@ -280,7 +280,7 @@ $(document).ready(function () {
             $(this).text("Hide");
         }
     });
-    
+
     $("#job-table").on("click", ".clickable-row", function (event) {
         if ($(this).hasClass("table-success")) {
             $(this).removeClass("table-success");

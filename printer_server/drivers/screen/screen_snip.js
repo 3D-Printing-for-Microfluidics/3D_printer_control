@@ -32,8 +32,7 @@ $(document).ready(function () {
             const curFiles = filePickerElement.files;
             if (curFiles.length === 0) {
                 disable_upload_button(projector);
-            }
-            else {
+            } else {
                 enable_upload_button(projector);
             }
         });
@@ -43,7 +42,7 @@ $(document).ready(function () {
             var projector = $(this).closest(".row").attr('aria-label');
             var filePickerElement = document.getElementById(`${projector}-file-picker`);
             var selectedFile = filePickerElement.files[0];
-            if (typeof selectedFile !== 'undefined') {  // if there is a file selected
+            if (typeof selectedFile !== 'undefined') { // if there is a file selected
                 uploadFile(selectedFile, projector);
                 disable_upload_button(projector);
             }
@@ -70,11 +69,11 @@ $(document).ready(function () {
 });
 
 function uploadFile(image, le) {
-    var fd = new FormData();    // Create form data
-    fd.append("file", image);   // Attach the image file
+    var fd = new FormData(); // Create form data
+    fd.append("file", image); // Attach the image file
     fd.append("light_engine", le);
     console.log(le)
-    $.ajax({                    // Use ajax to compose and send the request
+    $.ajax({ // Use ajax to compose and send the request
         url: "/handle-calibration-upload",
         method: "POST",
         contentType: false,
