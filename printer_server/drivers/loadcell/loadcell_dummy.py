@@ -5,6 +5,7 @@ class Loadcell_dummy:
     @dummy_log
     def __init__(self, *args, **kwargs):
         self.graph_autoscale = False
+        self.graph_newtons = True
 
     @dummy_log
     def findUsbPort(self, *args, **kwargs):
@@ -49,6 +50,12 @@ class Loadcell_dummy:
     def get_current_loadcell_index(self, *args, **kwargs):
         return 0
 
+    def get_graph_autoscale(self):
+        return self.graph_autoscale
+
+    def get_graph_mode(self):
+        return self.graph_newtons
+
     @dummy_log
     def set_graph_autoscale(self, mode):
         if mode == "True":
@@ -59,8 +66,13 @@ class Loadcell_dummy:
             pass
 
     @dummy_log
-    def set_graph_mode(self, *args, **kwargs):
-        pass
+    def set_graph_mode(self, mode):
+        if mode == "Counts":
+            self.graph_newtons = False
+        elif mode == "Newtons":
+            self.graph_newtons = True
+        else:
+            pass
 
     @dummy_log
     def loop(self, *args, **kwargs):

@@ -79,6 +79,13 @@ def index():
             }
         if "kdc101" in config_dict.keys():
             hardware["kdc101"]["distance"] = calibration_positions["distance"]
+        if "loadcell" in config_dict.keys():
+            hardware["loadcell"][
+                "autoscale"
+            ] = printer_server.drivers.loadcell.loadcell_snip.get_graph_autoscale()
+            hardware["loadcell"][
+                "in_newtons"
+            ] = printer_server.drivers.loadcell.loadcell_snip.get_graph_mode()
         if "screen" in config_dict.keys():
             hardware["screen"]["light_engines"] = config_dict["screen"]["light_engines"]
         if "tiptilt" in config_dict.keys():

@@ -12,3 +12,11 @@ def setLoadcellGraphMode(message):
 @socketio.on("loadcell_graph_autoscale", namespace="/manual")
 def setLoadcellGraphAutoscale(message):
     loadcell.set_graph_autoscale(message)
+
+
+def get_graph_autoscale():
+    return loadcell.get_graph_autoscale()
+
+
+def get_graph_mode():
+    return loadcell.get_graph_mode()

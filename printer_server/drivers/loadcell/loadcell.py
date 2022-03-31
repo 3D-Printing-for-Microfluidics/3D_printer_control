@@ -173,6 +173,12 @@ class LoadCell(serial.Serial):
         """
         return self.currentIndex
 
+    def get_graph_autoscale(self):
+        return self.graph_autoscale
+
+    def get_graph_mode(self):
+        return self.graph_newtons
+
     def set_graph_autoscale(self, mode):
         if mode == "True":
             self.graph_autoscale = True
