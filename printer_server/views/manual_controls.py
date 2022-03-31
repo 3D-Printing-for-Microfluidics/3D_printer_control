@@ -29,6 +29,8 @@ if "external_control" in config_dict.keys():
     import printer_server.drivers.external_control.external_control_snip
 if "galil" in config_dict.keys():
     import printer_server.drivers.galil.galil_snip
+if "gpio" in config_dict.keys():
+    import printer_server.drivers.gpio.gpio_snip
 if "kdc101" in config_dict.keys():
     import printer_server.drivers.kdc101.kdc101_snip
 if "loadcell" in config_dict.keys():
@@ -77,6 +79,10 @@ def index():
                 "common": config_dict["galil"]["axes_common_names"][i],
                 "position": galil_positions[axis],
             }
+        if "gpio" in config_dict.keys():
+            hardware["gpio"][
+                "film"
+            ] = printer_server.drivers.gpio.gpio_snip.getFilmRelayState()
         if "kdc101" in config_dict.keys():
             hardware["kdc101"]["distance"] = calibration_positions["distance"]
         if "loadcell" in config_dict.keys():

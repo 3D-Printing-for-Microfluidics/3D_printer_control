@@ -1,0 +1,24 @@
+<div class="container gpio">
+    <div class="row">
+        <div class="col-6">
+            <h3>GPIO Controls</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <h5>Film Relay</h5>
+        </div>
+        <div class="col-6">
+            <div id="film-relay" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                <label
+                    class="btn btn-outline-info btn-fixed-width shadow-none {% if hardware['gpio']['film'] %} active {% endif %}">On<input
+                        type="radio"></label>
+                <label
+                    class="btn btn-outline-info btn-fixed-width shadow-none {% if not hardware['gpio']['film'] %} active {% endif %}">Off<input
+                        type="radio"></label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='gpio/gpio_snip.js') }}"></script>
