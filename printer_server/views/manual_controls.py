@@ -4,9 +4,6 @@ from pathlib import Path
 from datetime import datetime
 from os.path import exists
 from flask import request, Blueprint, render_template
-from printer_server.drivers.galil.galil_snip import (
-    galil_get_positions,
-)
 
 from printer_server.extensions import socketio
 from printer_server.settings import Config
@@ -19,7 +16,14 @@ with open(next(configuration_path), "r") as file_handle:
     config_dict = json.load(file_handle)
 config_dict = config_dict[Config.HOSTNAME]
 
-light_engines = []
+# Generate HTML snippit list
+hardware = {}
+for key in config_dict.keys():
+    path = f"{key}/{key}_snip.html"
+    if exists(f"{Config.PRINT_SERVER_FOLDER}/drivers/{path}"):
+        temp_dict = {"path": f"{path}"}
+        hardware[key] = temp_dict
+
 # Dynamically import python snippits
 if "external_control" in config_dict.keys():
     import printer_server.drivers.external_control.external_control_snip
@@ -39,14 +43,6 @@ if "visitech" in config_dict.keys():
 #     import printer_server.drivers.wintech.wintech_snip
 
 
-# Generate HTML snippit list
-hardware_partials = {}
-for key in config_dict.keys():
-    path = f"{key}/{key}_snip.html"
-    if exists(f"{Config.PRINT_SERVER_FOLDER}/drivers/{path}"):
-        hardware_partials[key] = f"{path}"
-
-
 # Create bluprint
 blueprint = Blueprint(
     "manual_controls",
@@ -60,25 +56,32 @@ blueprint = Blueprint(
 @blueprint.route("/manual")
 def index():
     initialized = printer_server.views.home.print_control.state != "uninitialized"
-    calibration_positions = get_last_calibration_positions()
-    galil_stages = {}
     if initialized:
-        galil_positions = galil_get_positions()
+    calibration_positions = get_last_calibration_positions()
+        if "galil" in config_dict.keys():
+            galil_positions = (
+                printer_server.drivers.galil.galil_snip.galil_get_positions()
+            )
+            hardware["galil"]["stages"] = {}
         for i in range(len(config_dict["galil"]["axes"])):
             axis = config_dict["galil"]["axes"][i]
-            galil_stages[axis] = {
+                hardware["galil"]["stages"][axis] = {
                 "common": config_dict["galil"]["axes_common_names"][i],
                 "position": galil_positions[axis],
             }
+        if "kdc101" in config_dict.keys():
+            hardware["kdc101"]["distance"] = calibration_positions["distance"]
+        if "screen" in config_dict.keys():
+            hardware["screen"]["light_engines"] = config_dict["screen"]["light_engines"]
+        if "tiptilt" in config_dict.keys():
+            hardware["tiptilt"]["tip"] = calibration_positions["tip"]
+            hardware["tiptilt"]["tilt"] = calibration_positions["tilt"]
 
     return render_template(
         "manual_controls.html",
         initalized=initialized,
         hostname=Config.HOSTNAME,
-        hardware=hardware_partials,
-        light_engines=config_dict["screen"]["light_engines"],
-        galil_stages=galil_stages,
-        calibration_positions=calibration_positions,
+        hardware=hardware,
     )
 
 

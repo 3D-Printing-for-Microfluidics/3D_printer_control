@@ -6,7 +6,7 @@
         </div>
     </div>
 
-    {% for light_engine in light_engines %}
+    {% for light_engine in hardware['screen']['light_engines'] %}
     <div class="row {{ light_engine }}" aria-label="{{ light_engine }}">
         <h5 class="col-3 text-left">{{ light_engine|capitalize }}</h5>
         <form class="col-4">
@@ -39,5 +39,4 @@
     {% endfor %}
 </div>
 
-<script> var light_engines = {{ light_engines| tojson }}</script>
 <script src="{{ url_for('manual_controls.static', filename='screen/screen_snip.js') }}"></script>

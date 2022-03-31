@@ -22,7 +22,7 @@ $(document).ready(function () {
     });
 
 
-    for (var le of light_engines) {
+    for (var le of hardware["screen"]["light_engines"]) {
 
         $(`#${le}-upload-btn`).prop('disabled', true);
 

@@ -7,7 +7,7 @@ var enable_galil_buttons = function () {
 }
 
 var update_galil_positions = function (message) {
-    for (var stage in galil_stages) {
+    for (var stage in hardware["galil"]["stages"]) {
         if (!$.isEmptyObject(message)) {
             document.getElementById(`galil-${stage}-state`).innerHTML = message[stage];
         }
@@ -38,7 +38,7 @@ $(document).ready(function () {
         socket.emit("galil_home");
     });
 
-    for (var stage in galil_stages) {
+    for (var stage in hardware["galil"]["stages"]) {
         // Galil stages text inputs for absolute positioning
         $(`.galil-${stage}-cntrl-txt`).on('change', function () {
             disable_galil_buttons();

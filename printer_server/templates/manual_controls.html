@@ -15,15 +15,15 @@
 
 {% if initalized %}
 
-{% for driver, path in hardware.items() %}
-{% include path %}
+{% for driver, dict in hardware.items() %}
+{% include dict['path'] %}
 <hr class="bg-secondary">
 {% endfor %}
 
 {% else %}
 
 {% if "external_control" in hardware.keys() %}
-{% include hardware["external_control"] %}
+{% include hardware['external_control']['path'] %}
 <hr class="bg-secondary">
 {% endif %}
 
@@ -36,6 +36,9 @@
 {% block scripts %}
 {{super()}}
 <script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
-<script> var socket;</script>
+<script>
+    var socket;
+    var hardware = {{ hardware| tojson }};
+</script>
 <script src="{{ url_for('static', filename='manual_controls.js') }}"></script>
 {% endblock %}
