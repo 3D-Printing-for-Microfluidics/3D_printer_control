@@ -33,3 +33,7 @@ def visitechStatus():
         namespace="/manual",
         broadcast=True,
     )
+
+
+def getLedStatus():
+    return visitech.led_on

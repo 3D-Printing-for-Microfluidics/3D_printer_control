@@ -85,6 +85,7 @@ class Visitech:
         )
 
         self.exposure_time = 0
+        self.led_on = False
 
         # register exit handlers
         atexit.register(self.disconnect)  # close the TCP conenction on exit
@@ -369,6 +370,7 @@ class Visitech:
         Return type +OK
         """
         if self.socket is not None:
+            self.led_on = False
             return self.send("SET SEQ OFF")
         return ""
 
@@ -695,10 +697,12 @@ class Visitech:
         Start an exposure.
             t - exposure time in milliseconds
         """
+        self.led_on = True
         if self.exposure_time != 0:
             self.log.info("Exposing for %s ms", self.exposure_time)
             self.start_sequencer()
             time.sleep(self.exposure_time * 1e-3)
+        self.led_on = False
 
     def project(self, exposure, power, repeats=1):
         """
@@ -712,6 +716,7 @@ class Visitech:
             repeats,
         )
         self.set_led_amplitude(power)
+        self.led_on = True
         if repeats == 0:  # if continuous display is desired
             # this provides the minimum blanking of 233 us of the full 33333 us cycle
             # (at 30Hz on HDMI)
@@ -725,3 +730,4 @@ class Visitech:
                 self.set_sequencer_lut_config(repeats=repeats)
                 self.start_sequencer()
                 time.sleep(t * 1e-3)
+                self.led_on = False

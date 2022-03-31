@@ -7,6 +7,7 @@ class Visitech_dummy:
     @dummy_log
     def __init__(self):
         self.max_exp_time = 10000  # max single projection time in ms
+        self.led_on = False
 
     @dummy_log
     def connect(self):
@@ -87,6 +88,7 @@ class Visitech_dummy:
         return self.send("SET SEQ ON")
 
     def stop_sequencer(self):
+        self.led_on = False
         return self.send("SET SEQ OFF")
 
     def pause_sequencer(self):
@@ -183,6 +185,7 @@ class Visitech_dummy:
 
     @dummy_log
     def project(self, exposure, power, repeats=1):
+        self.led_on = True
         if repeats == 0:  # if continuous display is desired
             self.set_sequencer_lut_definition(
                 33100
@@ -201,3 +204,4 @@ class Visitech_dummy:
                 self.start_sequencer()  # start the sequencer
                 time.sleep(0.1 + t * 1e-3)
                 self.stop_sequencer()  # stop the sequencer
+                self.led_on = False

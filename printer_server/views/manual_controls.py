@@ -91,6 +91,10 @@ def index():
         if "tiptilt" in config_dict.keys():
             hardware["tiptilt"]["tip"] = calibration_positions["tip"]
             hardware["tiptilt"]["tilt"] = calibration_positions["tilt"]
+        if "visitech" in config_dict.keys():
+            hardware["visitech"][
+                "status"
+            ] = printer_server.drivers.visitech.visitech_snip.getLedStatus()
 
     return render_template(
         "manual_controls.html",
