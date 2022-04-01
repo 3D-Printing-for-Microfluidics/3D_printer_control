@@ -249,6 +249,77 @@ class HR4_PrintControl(PrintControl):
         return super().pre_exposure_joins()
 
 
+class MR1v1_PrintControl(PrintControl):
+    def get_focus(self):
+        """Return galil 'Focus' axis position"""
+        return int(
+            self.galil.cntsToMm(self.galil.getPosition(axis="Focus"), axis="Focus") * 1000
+        )
+
+    def galil_setup_thread(self):
+        """Initialize and home Galil controller"""
+        self.galil.connect()
+        self.galil.initialize()
+        self.galil.home()
+
+        galil_X_thread = threading.Thread(target=self.galil_x_thread, args=[])
+        galil_Y_thread = threading.Thread(target=self.galil_y_thread, args=[])
+        galil_Z_thread = threading.Thread(target=self.galil_z_thread, args=[])
+        galil_BP_thread = threading.Thread(target=self.galil_bp_thread, args=[])
+
+        galil_X_thread.start()
+        galil_Y_thread.start()
+        galil_Z_thread.start()
+        galil_BP_thread.start()
+
+        galil_X_thread.join()
+        galil_Y_thread.join()
+        galil_Z_thread.join()
+        galil_BP_thread.join()
+
+    def galil_x_thread(self):
+        self.galil.absMove(cnts=-6750000, speed=100, axis="X")  # Visitech
+        # self.galil.absMove(cnts=7232000, speed=100, axis="X") # Wintech?
+        # self.galil.absMove(cnts=-500000, speed=100, axis="X") # Keyence?
+
+    def galil_y_thread(self):
+        self.galil.absMove(cnts=-1350000, speed=50, axis="Y")
+
+    def galil_z_thread(self):
+        self.galil.absMove(mm=self.focused_position / 1000, speed=50, axis="Focus")
+
+    def galil_bp_thread(self):
+        self.galil.goToZmax()
+
+    def pre_print_tasks(self):
+        defaults_layer_settings = self.print_settings.get("Default layer settings")
+        self.default_position_settings = defaults_layer_settings.get("Position settings")
+
+    def post_print_tasks(self):
+        """Move all galil stages to their starting positions"""
+        super().post_print_tasks()
+
+        self.move_build_platform_up(self.default_position_settings)
+        self.galil.goToZmax()
+
+    def pre_exposure_tasks(self, settings):
+        """Move X, Y, and Focus stages to exposure positions"""
+        defocus_um = settings["Relative focus position (um)"]
+        z_focus = self.focused_position + defocus_um
+
+        self.galil_threads = move_all_galil(
+            self.galil, None, None, z_focus, None, join=False
+        )
+        return super().pre_exposure_tasks(settings)
+
+    def pre_exposure_joins(self):
+        """Join X, Y, and Focus threads"""
+        for thread in self.galil_threads:
+            if thread is not None:
+                thread.join()
+        return super().pre_exposure_joins()
+
+
 class GPIO_PrintControl(PrintControl):
     def __init__(self):
         super().__init__()

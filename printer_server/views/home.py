@@ -28,9 +28,9 @@ elif Config.HOSTNAME == "HR4":
 
     print_control = HR4Film_PrintControl()
 elif Config.HOSTNAME == "MR1v1":
-    from printer_server.print_control import PrintControl
+    from printer_server.print_control_subclasses import MR1v1_PrintControl
 
-    print_control = PrintControl()
+    print_control = MR1v1_PrintControl()
 else:
     log.error("Printer control module not found")
 
