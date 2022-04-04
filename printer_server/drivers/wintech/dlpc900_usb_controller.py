@@ -766,6 +766,7 @@ class DLPC900_USB_Controller:
         bit_depth = 8
         color = 0b100
         trigger_in = 1
+        clear_pattern = 1
         dark_time = 0
         trigger_out = 0
         pattern_id = 0
@@ -783,7 +784,7 @@ class DLPC900_USB_Controller:
         payload[2] = exposure_time_us & 0xFF
         payload[3] = (exposure_time_us >> 8) & 0xFF
         payload[4] = (exposure_time_us >> 16) & 0xFF
-        temp = 1 & 0x1
+        temp = clear_pattern & 0x1
         temp |= ((bit_depth - 1) << 1) & 0x0E
         temp |= (int(color) << 4) & 0x70
         temp |= (trigger_in << 7) & 0x80
