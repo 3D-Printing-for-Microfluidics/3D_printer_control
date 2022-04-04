@@ -39,8 +39,10 @@ root_logger.setLevel(logging.INFO)
 log = logging.getLogger(__name__)
 
 # Exammple of how to set up the virtual screens
-log.info("Setting up virtual screens...")
-s = ScreenThread(resolutions=((2560, 1600), (1920, 1080)))
+s = ScreenThread(
+    config_dict={"light_engines": ["visitech, wintech"]},
+    resolutions=((2560, 1600), (1920, 1080)),
+)
 s.start()
 time.sleep(1)  # the screen setup needs a little time to get ready
 
