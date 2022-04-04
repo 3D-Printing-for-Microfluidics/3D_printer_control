@@ -699,7 +699,7 @@ class PrintControl:
     def post_print_tasks(self):
         # always turn off the Visitech
         self.visitech.stop_sequencer()
-        home.update_led_status(False)
+        home.update_visitech_led_status(False)
         self.screen.clear()
 
     def print_worker(self):
@@ -838,9 +838,9 @@ class PrintControl:
         pre_exposure_status = self.visitech.read_all_status()
         time.sleep(settings["Wait before exposure (ms)"] / 1000)
         self.write_to_event_log("Start Exposure")
-        home.update_led_status(True)
+        home.update_visitech_led_status(True)
         self.visitech.perform_exposure()
-        home.update_led_status(False)
+        home.update_visitech_led_status(False)
         self.write_to_event_log("Finish Exposure")
         time.sleep(settings["Wait after exposure (ms)"] / 1000)
 
