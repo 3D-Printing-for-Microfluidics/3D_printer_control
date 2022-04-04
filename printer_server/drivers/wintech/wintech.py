@@ -1,69 +1,45 @@
-"""Wintech optical engine control module."""
+"""Wintech optical engine controller."""
 import time
-import atexit
+import logging
 
-from ..screen import ScreenThread
-from .usb_driver import WintechUSB
+from .dlpc900_usb_controller import DLPC900_USB_Controller
 
 
 class Wintech:
-    """Control class for the Wintech optical engine."""
+    """Control module for the Wintech optical engine."""
 
-    def __init__(self, resolution=(1920, 1080), fullscreen=True, verbose=False):
-        self.resolution = resolution
-        self.fullscreen = fullscreen
-        self.dmd_controller = WintechUSB(verbose=verbose)
-        self.screenThread = ScreenThread(self.resolution, self.fullscreen)
-        self.ledPower = 0
-        atexit.register(self.screenThread.stop)
-        atexit.register(self.dmd_controller.stopSequence)
-        atexit.register(self.dmd_controller.ledOff)
+    def __init__(self, log_level=logging.DEBUG):
+        self.log_level = log_level
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+        self.dmd_controller = None
 
-    def connect(self, quick=False):
+    def connect(self):
         """Start the screen thread and connect to the DMD controller."""
-        self.screenThread.start()
-        self.dmd_controller.connect(quick)
+        self.dmd_controller = DLPC900_USB_Controller(log_level=self.log_level)
+        self.dmd_controller.connect()
 
-    def projectMulti(self, images, exposureTimes, ledPowers):
-        """Project multiple images with its own exposure time and
-        and LED power setting.
+    def project(self, exposure_time_ms, repeat=1, led_power=100):
+        """Call all of the necessary methods to project an image and
+        block until projection is complete. Note that the image must be
+        drawn to the virtual screen before this method is called.
 
-        images: A list of image filenames.
-        exposureTimes: A list of exposure times (ms).
-        ledPowers: A list of led power settings (0-1000).
-        """
-        for image, exposure, ledPower in zip(images, exposureTimes, ledPowers):
-            self.project(image, exposure, ledPower)
-
-    def project(self, image, exposure, repeat=1, ledPower=100):
-        """Project an image for a period of exposure (ms). Breaks
-        exposure times longer than 10,000 into a series of shorter
-        exposures.
-
-        image: An 8-bit grayscale image filename.
-        exposure: Exposure time (ms).
+        exposure_time_ms: Exposure time (ms).
         repeat: How many times to repeat the exposure. 0 means repeat
             forever.
-        ledPower: LED power setting (0-100).
+        led_power: LED power setting (0-100).
         """
-        max_time = 10000
-        n = int(exposure // max_time)
-        if exposure % max_time != 0:
-            exposure = [max_time] * n + [exposure % max_time]
-        else:
-            exposure = [max_time] * n
-        if ledPower != self.ledPower:
-            self.dmd_controller.setLedPower(ledPower)
-        for t in exposure:
-            self.dmd_controller.definePattern(t)
-            self.dmd_controller.configurePatternLut(repeat=repeat)
-            self.screenThread.screen.draw(image)
-            time.sleep(0.1)
-            self.dmd_controller.startSequence()
-            if repeat != 0:
-                time.sleep(t * 0.001 + 0.1)
-                self.dmd_controller.stopSequence()
-
-    def clear(self):
-        """Clear the projector screen to black."""
-        self.screenThread.screen.clear()
+        self.log.info(
+            "Exposing for %s ms at a power of %s. Repeat %s.",
+            exposure_time_ms,
+            led_power,
+            repeat,
+        )
+        if 0 > exposure_time_ms > 10000:
+            self.log.warning("Exposure time is too high. Using maximum of 10 seconds.")
+            exposure_time_ms = 10000
+        self.dmd_controller.set_led_power(led_power)
+        self.dmd_controller.define_pattern(exposure_time_ms)
+        self.dmd_controller.configure_pattern_LUT(repeat=repeat)
+        self.dmd_controller.start_sequence()
+        time.sleep(exposure_time_ms * 0.001 + 0.1)
