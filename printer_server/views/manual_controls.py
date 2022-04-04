@@ -43,8 +43,8 @@ if "tiptilt" in config_dict.keys():
     import printer_server.drivers.tiptilt.tiptilt_snip
 if "visitech" in config_dict.keys():
     import printer_server.drivers.visitech.visitech_snip
-# if "wintech" in config_dict.keys():
-#     import printer_server.drivers.wintech.wintech_snip
+if "wintech" in config_dict.keys():
+    import printer_server.drivers.wintech.wintech_snip
 
 
 # Create bluprint
@@ -104,8 +104,10 @@ def index():
             hardware["visitech"][
                 "status"
             ] = printer_server.drivers.visitech.visitech_snip.getLedStatus()
-        # if "wintech" in config_dict.keys():
-        #     pass
+        if "wintech" in config_dict.keys():
+            hardware["wintech"][
+                "status"
+            ] = printer_server.drivers.wintech.wintech_snip.getLedStatus()
 
     return render_template(
         "manual_controls.html",

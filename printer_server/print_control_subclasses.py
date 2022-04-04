@@ -250,11 +250,27 @@ class HR4_PrintControl(PrintControl):
 
 
 class MR1v1_PrintControl(PrintControl):
+    def __init__(self):
+        """Create wintech handle"""
+        super().__init__()
+        self.wintech_thread = None
+        self.wintech = driver_handles.wintech
+
     def get_focus(self):
         """Return galil 'Focus' axis position"""
         return int(
             self.galil.cntsToMm(self.galil.getPosition(axis="Focus"), axis="Focus") * 1000
         )
+
+    @run_in_thread("initialized", "Initialize")
+    def initialize(self, run_in_thread=True):
+        """Initialize wintech sensor"""
+        if self.state == "uninitialized":
+            self.wintech_thread = threading.Thread(target=self.wintech.connect, args=[])
+            self.wintech_thread.start()
+            super().initialize(run_in_thread=False)
+            self.wintech_thread.join()
+            log.info("Printer initialized, all hardware ready.")
 
     def galil_setup_thread(self):
         """Initialize and home Galil controller"""

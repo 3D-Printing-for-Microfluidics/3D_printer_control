@@ -1,0 +1,49 @@
+<!-- Light Engine Control -->
+<div class="container top-buffer wintech">
+    <div class="row">
+        <div class="col-10">
+            <h3>Wintech</h3>
+        </div>
+    </div>
+
+    <!-- LED Power -->
+    <div class="row">
+        <h5 class="col-3 text-left">LED Power</h5>
+        <h5 class="col-1 text-left" id="wintech-led-power-label"></h5>
+        <div class="slidecontainer col-8"><input type="range" min="1" max="200" value="100" class="slider"
+                id="wintech-led-power-slider"></div>
+    </div>
+
+    <!-- Repeat and Exposure Time -->
+    <div class="row">
+        <h5 class="col-4 text-left">Exposure</h5>
+        <div class="col-2 form-group text-center">
+            <input class="form-check-input" type="checkbox" value="" id="wintech-repeat-chkbx">
+            <label class="form-check-label" for="wintech-repeat-chkbx">Repeat</label>
+        </div>
+        <div class="col-6 form-group">
+            <input class="form-control" type="text" id="wintech-exposure-txt" placeholder="Exposure Time (ms)">
+            <div class="invalid-feedback">
+                Please provide an integer greater than zero.
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Stop -->
+    <div class="row">
+        <h5 class="col-4">Project</h5>
+        <!-- <h5 class="col-2 badge badge-pill badge-warning invisible disabled" id="visitech-status">LED ON</h5> -->
+        <div class="col-2"><button type="button"
+                class="btn btn-outline-warning {% if not hardware['wintech']['status'] %} invisible {% endif %} disabled"
+                id="wintech-status">LED ON</button></div>
+        <div class="col-3"><button type="button" class="btn btn-outline-info btn-block"
+                id="wintech-start-btn">Start</button>
+        </div>
+        <div class="col-3"><button type="button" class="btn btn-outline-info btn-block"
+                id="wintech-stop-btn">Stop</button>
+        </div>
+    </div>
+
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='wintech/wintech_snip.js') }}"></script>
