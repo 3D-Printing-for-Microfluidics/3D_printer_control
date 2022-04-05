@@ -1,11 +1,13 @@
-var enable_visitech_start_stop_buttons = function () {
+var enable_visitech_start_button = function () {
     $('#visitech-start-btn').prop('disabled', false);
-    $('#visitech-stop-btn').prop('disabled', false);
+    $('#visitech-start-btn').addClass('btn-outline-info');
+    $('#visitech-start-btn').removeClass('btn-outline-secondary');
 }
 
-var disable_visitech_start_stop_buttons = function () {
+var disable_visitech_start_button = function () {
     $('#visitech-start-btn').prop('disabled', true);
-    $('#visitech-stop-btn').prop('disabled', true);
+    $('#visitech-start-btn').removeClass('btn-outline-info');
+    $('#visitech-start-btn').addClass('btn-outline-secondary');
 }
 
 $(document).ready(function () {
@@ -34,10 +36,10 @@ $(document).ready(function () {
         // Validate user input. Only allows positive integers > 0
         if (/^\d+$/.test(exposure) && exposure > 0) {
             VisitechExposureElement.classList.remove("is-invalid")
-            enable_visitech_start_stop_buttons();
+            enable_visitech_start_button();
         } else {
             VisitechExposureElement.classList.add("is-invalid")
-            disable_visitech_start_stop_buttons();
+            disable_visitech_start_button();
         }
     })
 

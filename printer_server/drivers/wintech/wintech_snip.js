@@ -1,11 +1,13 @@
-var enable_wintech_start_stop_buttons = function () {
+var enable_wintech_start_button = function () {
     $('#wintech-start-btn').prop('disabled', false);
-    $('#wintech-stop-btn').prop('disabled', false);
+    $('#wintech-start-btn').addClass('btn-outline-info');
+    $('#wintech-start-btn').removeClass('btn-outline-secondary');
 }
 
-var disable_wintech_start_stop_buttons = function () {
+var disable_wintech_start_button = function () {
     $('#wintech-start-btn').prop('disabled', true);
-    $('#wintech-stop-btn').prop('disabled', true);
+    $('#wintech-start-btn').removeClass('btn-outline-info');
+    $('#wintech-start-btn').addClass('btn-outline-secondary');
 }
 
 $(document).ready(function () {
@@ -34,10 +36,10 @@ $(document).ready(function () {
         // Validate user input. Only allows positive integers > 0
         if (/^\d+$/.test(exposure) && exposure > 0) {
             WintechExposureElement.classList.remove("is-invalid")
-            enable_wintech_start_stop_buttons();
+            enable_wintech_start_button();
         } else {
             WintechExposureElement.classList.add("is-invalid")
-            disable_wintech_start_stop_buttons();
+            disable_wintech_start_button();
         }
     })
 
