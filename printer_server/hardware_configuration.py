@@ -87,9 +87,12 @@ class Printer3D:
                 self.visitech = Visitech(log_level=default_log_level)
 
         if "wintech" in config_dict.keys():
-            from printer_server.drivers.wintech import Wintech
+            from printer_server.drivers.wintech import Wintech, Wintech_dummy
 
-            self.wintech = Wintech(log_level=default_log_level)
+            if config_dict["wintech"]["dummy"]:
+                self.wintech = Wintech_dummy()
+            else:
+                self.wintech = Wintech(log_level=default_log_level)
 
         if "keyence" in config_dict.keys():
             from printer_server.drivers.keyence import Keyence
