@@ -31,7 +31,9 @@
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=5800580"
         },
-        "gpio": {},
+        "gpio": {
+            "dummy": true
+        },
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881500",
@@ -227,7 +229,9 @@
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881850"
         },
-        "gpio": {},
+        "gpio": {
+            "dummy": true
+        },
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=5712360",
