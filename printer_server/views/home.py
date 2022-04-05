@@ -154,7 +154,7 @@ class PrintControl:
         # hardware handles
         self.galil = driver_handles.galil
         self.visitech = driver_handles.visitech
-        self.kdc = driver_handles.kdc
+        self.wintech = driver_handles.wintech
         self.tiptilt = driver_handles.tiptilt
         self.loadcell = driver_handles.loadcell
         self.screen = driver_handles.screen
@@ -315,7 +315,7 @@ class PrintControl:
 
     def change_focus(self, pos):
         self.write_to_event_log("Start Distance Movement")
-        self.kdc.move(pos, relative=False)
+        self.galil.absMove(mm=pos / 1000, speed=25, axis="Z")
         self.write_to_event_log("Finish Distance Movement")
 
     def connect(self, room):
@@ -332,33 +332,32 @@ class PrintControl:
             self.tiptilt.connect()
             self.loadcell.connect()
 
-            kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
             galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
             screen_thread = threading.Thread(target=driver_handles.screen.start, args=[])
             visitech_thread = threading.Thread(target=self.visitech.connect, args=[])
-            kdc_thread.start()
+            wintech_thread = threading.Thread(target=self.wintech.connect, args=[])
             galil_thread.start()
             screen_thread.start()
             visitech_thread.start()
-            kdc_thread.join()
+            wintech_thread.start()
             galil_thread.join()
             screen_thread.join()
             visitech_thread.join()
+            wintech_thread.join()
 
             log.info("Printer initialized, all hardware ready.")
-
-    def kdc_setup_thread(self):
-        """Initialize and home ThorLabs stage"""
-        self.kdc.connect()
-        if not self.kdc.homed:
-            self.kdc.home()
-            self.kdc.move(self.focused_position, relative=False)
 
     def galil_setup_thread(self):
         """Initialize and home Galil controller"""
         self.galil.connect()
         self.galil.initialize()
         self.galil.home()
+
+        self.galil.absMove(cnts=-6750000, speed=100, axis="X")
+        # self.galil.absMove(cnts=7232000, speed=100, axis="X") # Wintech
+        # self.galil.absMove(cnts=-500000, speed=100, axis="X") # Keyence
+        self.galil.absMove(cnts=-1350000, speed=100, axis="Y")
+        self.galil.absMove(mm=self.focused_position / 1000, speed=100, axis="Z")
         self.galil.goToZmax()
 
     @run_in_thread("planarizing", "Planarization Step 1")
@@ -401,13 +400,13 @@ class PrintControl:
             self.planarized_position = self.galil.getPosition()
             self.print_position = self.galil.cntsToMm(self.planarized_position)
 
-    def move_bp_to_force(self, force, speed):
+    def move_bp_to_force(self, force, speed, check_error=True):
         """Move the build platform until the target force is achieved.
 
         force - Target force.
         speed - Speed in mm/sec. Negative speed means move up.
         """
-        force_over_speed_target = 2.0
+        force_over_speed_target = 1.75
         down_modifier = 1.0
         if speed > 0:
             # set because on down movements screw is loose
@@ -428,11 +427,12 @@ class PrintControl:
                 continue
             forces.pop(0)
 
-            if (abs(forces[0] - forces[-1]) / abs(speed)) < (
-                force_over_speed_target / down_modifier
-            ):
-                self.galil.stopJog()
-                return None
+            if check_error:
+                if (abs(forces[0] - forces[-1]) / abs(speed)) < (
+                    force_over_speed_target / down_modifier
+                ):
+                    self.galil.stopJog()
+                    return None
             start_force = self.loadcell.get_current_force()
         self.galil.stopJog()
         log.info(
@@ -455,7 +455,7 @@ class PrintControl:
             log.error("Loadcell planarization failed. Check build platform screw.")
             return
         time.sleep(0.010)
-        second_count = self.move_bp_to_force(target_force, -0.05)
+        second_count = self.move_bp_to_force(target_force, -0.05, check_error=False)
         if second_count is None:
             log.error("Loadcell planarization failed. Check build platform screw.")
             return
@@ -608,6 +608,8 @@ class PrintControl:
         tilt = position["tilt"]
         self.write_to_event_log(f"Tilt: {tilt}")
 
+        self.focused_position = float(position["distance"])
+
         # update frontend progress bar
         self.state = "printing"
         msg = {
@@ -702,7 +704,8 @@ class PrintControl:
             galil_thread = threading.Thread(
                 target=self.move_build_platform, args=[position_settings, layer]
             )
-            galil_thread.start()
+            if not self.next_layer == 1:
+                galil_thread.start()
 
             # do exposures and log data
             exposure_data = {}
@@ -712,14 +715,7 @@ class PrintControl:
                 power = settings["Light engine power setting"]
                 defocus_um = settings["Relative focus position (um)"]
 
-                layer_start_position = self.kdc.getCurrentPos()
-                if defocus_um != 0:
-                    kdc_thread = threading.Thread(
-                        target=self.change_focus,
-                        args=[self.focused_position + defocus_um],
-                    )
-                    kdc_thread.start()
-                    image = shift_image(image, x=um_to_px(defocus_um))
+                layer_start_position = 0
 
                 screen_thread = threading.Thread(target=self.screen.draw, args=[image])
                 screen_thread.start()
@@ -731,14 +727,30 @@ class PrintControl:
                 visitech_thread.start()
 
                 # wait for all hardware to be ready for exposure
-                if defocus_um != 0:
-                    kdc_thread.join()
-                galil_thread.join()
+                if not self.next_layer == 1:
+                    galil_thread.join()
                 screen_thread.join()
                 visitech_thread.join()
 
+                layer_start_position = int(
+                    self.galil.cntsToMm(self.galil.getPosition(axis="Z")) * 1000
+                )
+                if defocus_um != 0:
+                    kdc_thread = threading.Thread(
+                        target=self.change_focus,
+                        args=[self.focused_position + defocus_um],
+                    )
+                    kdc_thread.start()
+                    # image = shift_image(image, x=um_to_px(defocus_um))
+
+                if defocus_um != 0:
+                    kdc_thread.join()
+
                 # do the exposure
-                position_during_exposure = self.kdc.getCurrentPos()
+                position_during_exposure = 0
+                position_during_exposure = int(
+                    self.galil.cntsToMm(self.galil.getPosition(axis="Z")) * 1000
+                )
                 pre_exposure_status = self.visitech.read_all_status()
                 time.sleep(settings["Wait before exposure (ms)"] / 1000)
                 self.write_to_event_log("Start Exposure")
@@ -766,7 +778,10 @@ class PrintControl:
                     "exposure time (ms)": exposure_time_ms,
                     "layer starting position": layer_start_position,
                     "position during exposure": position_during_exposure,
-                    "post exposure position": self.kdc.getCurrentPos(),
+                    "post exposure position": 0,
+                    "post exposure position": int(
+                        self.galil.cntsToMm(self.galil.getPosition(axis="Z")) * 1000
+                    ),
                     "pre exposure status": pre_exposure_status,
                     "post exposure status": post_exposure_status,
                 }

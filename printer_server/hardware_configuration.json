@@ -104,14 +104,14 @@
                 "D": 0.125
             },
             "calibration_position": 2315000,
-            "bottom_position": 2508800,
+            "bottom_position": 2400000,
             "top_position": -2600000
         },
         "loadcell_settings": {
             "hwid": "PID=16C0:0483 SER=9881820",
-            "calibration_intercept": 34932.0,
-            "calibration_slope": -1.79,
-            "loadcell_planarization_enabled": false,
+            "calibration_intercept": 32800.37,
+            "calibration_slope": -1.24,
+            "loadcell_planarization_enabled": true,
             "loadcell_planarization_force": 35.0,
             "loadcell_print_start_force": 5.0
         },

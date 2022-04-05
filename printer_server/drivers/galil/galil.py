@@ -369,7 +369,8 @@ class Galil:
                     error = error * 2
                 if time_count >= 5000:
                     self.log.warning(
-                        "Z motor didn't reach position. Got to %s but needed %s",
+                        "%s motor didn't reach position. Got to %s but needed %s",
+                        a,
                         last_position,
                         cnts,
                     )
