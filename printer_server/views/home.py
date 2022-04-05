@@ -13,6 +13,8 @@ from PIL import Image
 from flask import Blueprint, request, render_template
 from flask_socketio import join_room, leave_room
 
+import RPi.GPIO as GPIO
+
 from printer_server.views.manual_controls import get_calibration_positions
 
 from printer_server.settings import Config
@@ -153,8 +155,8 @@ class PrintControl:
 
         # hardware handles
         self.galil = driver_handles.galil
+        self.keyence = driver_handles.keyence
         self.visitech = driver_handles.visitech
-        self.kdc = driver_handles.kdc
         self.tiptilt = driver_handles.tiptilt
         self.loadcell = driver_handles.loadcell
         self.screen = driver_handles.screen
@@ -176,6 +178,7 @@ class PrintControl:
         self.event_log = str(self.current_job / "event_log.csv")
 
         # values used during printing
+        self.keyence_start_position = None
         self.planarized_position = None
         self.focused_position = None
         self.print_position = None
@@ -278,6 +281,7 @@ class PrintControl:
         """Perform the build platform movements for a layer according to
         the position_settings.
         """
+        GPIO.output(7, GPIO.HIGH)
         time.sleep(position_settings["Initial wait (ms)"] / 1000)
         start_position = self.galil.getPosition()
         start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
@@ -290,6 +294,7 @@ class PrintControl:
             wait_for_settling=False,
         )
         self.write_to_event_log("Finish Up Movement")
+        GPIO.output(7, GPIO.LOW)
         time.sleep(position_settings["Up wait (ms)"] / 1000)
         self.write_to_event_log("Start Down Movement")
         self.print_position -= position_settings["Layer thickness (um)"] / 1000
@@ -369,10 +374,57 @@ class PrintControl:
                 acceleration=5,
             )
 
-    def change_focus(self, pos):
+    def change_focus(self, pos, relative=False):
         self.write_to_event_log("Start Distance Movement")
-        self.kdc.move(pos, relative=False)
+        if relative:
+            start_position = int(
+                self.galil.cntsToMm(self.galil.getPosition(axis="Focus"), axis="Focus")
+                * 1000
+            )
+            self.galil.absMove(mm=(start_position + pos) / 1000, speed=25, axis="Focus")
+        else:
+            self.galil.absMove(mm=pos / 1000, speed=25, axis="Focus")
         self.write_to_event_log("Finish Distance Movement")
+
+    def move_x_y_z(self, x, y, z, join=True):
+        x_thread = None
+        y_thread = None
+        z_thread = None
+        if x is not None:
+            x_thread = threading.Thread(
+                target=self.galil.absMove,
+                kwargs={"mm": x / 1000, "speed": 50, "axis": "X"},
+            )
+            x_thread.start()
+        if y is not None:
+            y_thread = threading.Thread(
+                target=self.galil.absMove,
+                kwargs={"mm": y / 1000, "speed": 50, "axis": "Y"},
+            )
+            y_thread.start()
+        if z is not None:
+            z_thread = threading.Thread(
+                target=self.galil.absMove,
+                kwargs={"mm": z / 1000, "speed": 25, "axis": "Z"},
+            )
+            z_thread.start()
+
+        if join:
+            if x is not None:
+                x_thread.join()
+            if y is not None:
+                y_thread.join()
+            if z is not None:
+                z_thread.join()
+        else:
+            threads = []
+            if x is not None:
+                threads.append(x_thread)
+            if y is not None:
+                threads.append(y_thread)
+            if z is not None:
+                threads.append(z_thread)
+            return threads
 
     def connect(self, room):
         socketio.emit(
@@ -388,33 +440,59 @@ class PrintControl:
             self.tiptilt.connect()
             self.loadcell.connect()
 
-            kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
+            keyence_thread = threading.Thread(target=self.keyence.connect, args=[])
             galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
             screen_thread = threading.Thread(target=driver_handles.screen.start, args=[])
             visitech_thread = threading.Thread(target=self.visitech.connect, args=[])
-            kdc_thread.start()
+            keyence_thread.start()
             galil_thread.start()
             screen_thread.start()
             visitech_thread.start()
-            kdc_thread.join()
+            keyence_thread.join()
             galil_thread.join()
             screen_thread.join()
             visitech_thread.join()
 
-            log.info("Printer initialized, all hardware ready.")
+            GPIO.setmode(GPIO.BOARD)
+            GPIO.setup(7, GPIO.OUT)
+            GPIO.output(7, GPIO.LOW)
 
-    def kdc_setup_thread(self):
-        """Initialize and home ThorLabs stage"""
-        self.kdc.connect()
-        if not self.kdc.homed:
-            self.kdc.home()
-            self.kdc.move(self.focused_position, relative=False)
+            log.info("Printer initialized, all hardware ready.")
 
     def galil_setup_thread(self):
         """Initialize and home Galil controller"""
         self.galil.connect()
         self.galil.initialize()
         self.galil.home()
+
+        # galil_X_thread = threading.Thread(target=self.galil_x_thread, args=[])
+        # galil_Y_thread = threading.Thread(target=self.galil_y_thread, args=[])
+        galil_Z_thread = threading.Thread(target=self.galil_z_thread, args=[])
+        galil_BP_thread = threading.Thread(target=self.galil_bp_thread, args=[])
+
+        # galil_X_thread.start()
+        # galil_Y_thread.start()
+        galil_Z_thread.start()
+        galil_BP_thread.start()
+
+        # galil_X_thread.join()
+        # galil_Y_thread.join()
+        galil_Z_thread.join()
+        galil_BP_thread.join()
+
+    # def galil_x_thread(self):
+    #      # self.galil.absMove(cnts=-4800000, speed=100, axis="X") # Visitech
+    #     # self.galil.absMove(cnts=7232000, speed=100, axis="X") # Wintech
+    #     # self.galil.absMove(cnts=-500000, speed=100, axis="X") # Keyence
+
+    # def galil_y_thread(self):
+    #     # self.galil.absMove(mm=0, speed=50, axis="Y")
+    #     self.galil.absMove(mm=5, speed=50, axis="Y")
+
+    def galil_z_thread(self):
+        self.galil.absMove(mm=self.focused_position / 1000, speed=50, axis="Focus")
+
+    def galil_bp_thread(self):
         self.galil.goToZmax()
 
     @run_in_thread("planarizing", "Planarization Step 1")
@@ -432,12 +510,26 @@ class PrintControl:
             log.debug(
                 "Loadcell force (pre-step 1): %s", self.loadcell.get_current_force()
             )
+
+            # x_offset = 0 - 5777
+            # y_offset = 8000 - 32169
+            # z_offset = self.focused_position - 750
+
+            # self.move_x_y_z(x_offset, y_offset, z_offset)
+            # time.sleep(0.1)
+            # self.keyence_start_position = float(self.keyence.read_all()[1])
+            # time.sleep(0.1)
+            # self.move_x_y_z(None, None, self.focused_position, join=False)
+
             self.galil.goToZmin()
             time.sleep(0.1)
             target_force = config_dict["loadcell_settings"][
                 "loadcell_planarization_force"
             ]
-            if self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.75) is None:
+            if (
+                self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.75)
+                is None
+            ):
                 log.error("Did not reach target planarization force.")
                 return
             log.info(
@@ -525,7 +617,6 @@ class PrintControl:
         log.info("Loadcell position (post-step 2): %s", self.planarized_position)
         if self.loadcell.get_current_force() < target_force * 0.90:
             log.warning("Move_to_force overshot target value")
-        
 
     @run_in_thread("paused", "Pause Printing")
     def pause(self):
@@ -652,7 +743,8 @@ class PrintControl:
         async_file_hander.write(self.movement_log, "timestamp,")
         for a in self.galil.axes_common_names:
             async_file_hander.write(self.movement_log, f"{a} position_mm,")
-            async_file_hander.write(self.movement_log, f"{a} status\n")
+            async_file_hander.write(self.movement_log, f"{a} status,")
+        async_file_hander.write(self.movement_log, "keyence,\n")
         async_file_hander.write(
             self.loadcell_log, "system_time,loadcell_time,index,raw_data,newtons\n"
         )
@@ -687,12 +779,17 @@ class PrintControl:
         self.print_thread.start()
 
     def finish_print(self):
+        print("loadcell stop")
         self.loadcell.stop()
+        print("logging stop")
         self.galil.logging_stop()
+        print("loadcell running")
         self.loadcell_running = False
         self.loadcell_thread = None
+        print("emit")
         socketio.emit("loadcell_graph_clear", namespace="/printing")
 
+        print("update record")
         # update fontend, zip logs into archive in print_history, and update db entrty
         with self.app.app_context():
             latest_record = PrintRecord.query.order_by(PrintRecord.id.desc()).first()
@@ -714,6 +811,7 @@ class PrintControl:
                 self.current_job,
             )
 
+        print("end")
         self.galil.set_log_file(None)
         self.loadcell.set_log_file(None)
         async_file_hander.finish()
@@ -733,6 +831,56 @@ class PrintControl:
         self.visitech.get_sticky_errors(warn=False)
         suppress_visitech_ocp_error = True
         self.layer_map = self.generate_layer_map()
+
+        defaults_layer_settings = self.print_settings.get("Default layer settings")
+        default_position_settings = defaults_layer_settings.get("Position settings")
+        default_image_settings = defaults_layer_settings.get("Image settings")
+        default_x_offset = default_image_settings.get("Image x offset (um)", 0)
+        default_y_offset = default_image_settings.get("Image y offset (um)", 0)
+
+        # check for keyence positions
+        keyence_x_offset = -5777
+        keyence_y_offset = -32169
+        z_offset = self.focused_position - 750
+
+        self.move_x_y_z(0, -25000, z_offset)
+        time.sleep(1.0)
+        GPIO.output(7, GPIO.HIGH)
+        self.galil.absMove(
+            mm=self.print_position - default_position_settings["Distance up (mm)"],
+            speed=default_position_settings["BP up speed (mm/sec)"],
+            acceleration=default_position_settings["BP up acceleration (mm/sec^2)"],
+            wait_for_settling=False,
+        )
+        time.sleep(1.0)
+        x_offset = default_x_offset + keyence_x_offset
+        y_offset = default_y_offset + keyence_y_offset
+        self.move_x_y_z(x_offset, y_offset, None)
+        time.sleep(0.1)
+        self.keyence_start_position = float(self.keyence.read_all()[1])
+
+        keyence_measurement_list = {}
+        for i, layer in enumerate(self.layer_map):
+            current_layer_settings = self.print_settings["Layers"][layer[0]]
+            image_settings_list = self.get_image_settings(current_layer_settings)
+            for j, settings in enumerate(image_settings_list):
+                x = settings.get("Image x offset (um)", default_x_offset)
+                y = settings.get("Image y offset (um)", default_y_offset)
+                if f"{x}, {y}" not in keyence_measurement_list:
+                    self.move_x_y_z(x + keyence_x_offset, y + keyence_y_offset, None)
+                    time.sleep(0.1)
+                    keyence_measurement_list[f"{x}, {y}"] = float(
+                        self.keyence.read_all()[1]
+                    )
+        self.move_x_y_z(0, -25000, None)
+        time.sleep(0.1)
+        GPIO.output(7, GPIO.LOW)
+        self.galil.absMove(
+            mm=self.print_position,
+            speed=default_position_settings["BP down speed (mm/sec)"],
+            acceleration=default_position_settings["BP down acceleration (mm/sec^2)"],
+            wait_for_settling=True,
+        )
 
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
@@ -761,11 +909,36 @@ class PrintControl:
             log.info(msg)
             self.write_to_event_log(msg)
 
-            galil_thread = threading.Thread(
+            # self.move_x_y_z(0, -25000, self.focused_position - 750)
+            # time.sleep(1.0)
+
+            bp_thread = threading.Thread(
                 target=self.move_build_platform, args=[position_settings, layer]
             )
             if not self.next_layer == 1:
-                galil_thread.start()
+                bp_thread.start()
+
+            if not self.next_layer == 1:
+                bp_thread.join()
+
+            # time.sleep(1.0)
+
+            # keyence_x_offset = -5777
+            # keyence_y_offset = -32169
+            # keyence_measurement_list = []
+            # for j, settings in enumerate(image_settings_list):
+            #     x_offset = (
+            #         settings.get("Image x offset (um)", default_x_offset)
+            #         + keyence_x_offset
+            #     )
+            #     y_offset = (
+            #         settings.get("Image y offset (um)", default_y_offset)
+            #         + keyence_y_offset
+            #     )
+
+            #     self.move_x_y_z(x_offset, y_offset, None)
+            #     time.sleep(0.1)
+            #     keyence_measurement_list.append(float(self.keyence.read_all()[1]))
 
             # do exposures and log data
             exposure_data = {}
@@ -775,14 +948,40 @@ class PrintControl:
                 power = settings["Light engine power setting"]
                 defocus_um = settings["Relative focus position (um)"]
 
-                layer_start_position = self.kdc.getCurrentPos()
-                if defocus_um != 0:
-                    kdc_thread = threading.Thread(
-                        target=self.change_focus,
-                        args=[self.focused_position + defocus_um],
+                x_offset = settings.get("Image x offset (um)", default_x_offset)
+                y_offset = settings.get("Image y offset (um)", default_y_offset)
+
+                layer_start_position = int(
+                    self.galil.cntsToMm(
+                        self.galil.getPosition(axis="Focus"), axis="Focus"
                     )
-                    kdc_thread.start()
-                    image = shift_image(image, x=um_to_px(defocus_um))
+                    * 1000
+                )
+
+                # # keyence correction
+                keyence_measurement = keyence_measurement_list[f"{x_offset}, {y_offset}"]
+                # z_correction = self.keyence_start_position - keyence_measurement_list[j]
+                z_correction = self.keyence_start_position - keyence_measurement
+                z_focus = self.focused_position + defocus_um + z_correction * 1000
+
+                # z_diff = self.keyence_start_position + defocus_um - float(self.keyence.read_all()[1])
+                # while abs(z_diff) > 1:
+                #     self.change_focus(z_diff, relative=True)
+                #     z_diff = self.keyence_start_position + defocus_um - float(self.keyence.read_all()[1])
+                #     log.info(f"delta Z: {z_diff}")
+
+                # # linear correction
+                # starting_x = self.galil.cntsToMm(
+                #     self.galil.getPosition(axis="X"), axis="X"
+                # )
+                # starting_y = self.galil.cntsToMm(
+                #     self.galil.getPosition(axis="Y"), axis="Y"
+                # )
+                # x_diff = x_offset / 1000 - starting_x
+                # y_diff = y_offset / 1000 - starting_y
+                # z_focus = self.focused_position + defocus_um - (3 * x_diff) + (2 * y_diff)
+
+                threads = self.move_x_y_z(x_offset, y_offset, z_focus, join=False)
 
                 screen_thread = threading.Thread(target=self.screen.draw, args=[image])
                 screen_thread.start()
@@ -794,16 +993,26 @@ class PrintControl:
                 visitech_thread.start()
 
                 # wait for all hardware to be ready for exposure
-                if defocus_um != 0:
-                    kdc_thread.join()
-                if not self.next_layer == 1:
-                    galil_thread.join()
+
+                for thread in threads:
+                    thread.join()
+                # x_thread.join()
+                # y_thread.join()
+                # z_thread.join()
+                # # if not self.next_layer == 1:
+                # #     bp_thread.join()
                 screen_thread.join()
                 visitech_thread.join()
 
                 # do the exposure
-                position_during_exposure = self.kdc.getCurrentPos()
+                position_during_exposure = int(
+                    self.galil.cntsToMm(
+                        self.galil.getPosition(axis="Focus"), axis="Focus"
+                    )
+                    * 1000
+                )
                 pre_exposure_status = self.visitech.read_all_status()
+
                 time.sleep(settings["Wait before exposure (ms)"] / 1000)
                 self.write_to_event_log("Start Exposure")
                 self.visitech.perform_exposure(exposure_time_ms)
@@ -821,8 +1030,8 @@ class PrintControl:
                 post_exposure_status = self.visitech.read_all_status()
 
                 # fix focus if this exposure was defocused
-                if defocus_um != 0:
-                    self.change_focus(self.focused_position)
+                # if defocus_um != 0:
+                #     self.change_focus(self.focused_position)
 
                 exposure_data[j] = {
                     "image": image.name,
@@ -830,7 +1039,12 @@ class PrintControl:
                     "exposure time (ms)": exposure_time_ms,
                     "layer starting position": layer_start_position,
                     "position during exposure": position_during_exposure,
-                    "post exposure position": self.kdc.getCurrentPos(),
+                    "post exposure position": int(
+                        self.galil.cntsToMm(
+                            self.galil.getPosition(axis="Focus"), axis="Focus"
+                        )
+                        * 1000
+                    ),
                     "pre exposure status": pre_exposure_status,
                     "post exposure status": post_exposure_status,
                 }
@@ -862,16 +1076,25 @@ class PrintControl:
         if self.printing_paused.is_set():
             self.paused_position = self.galil.getPosition()
 
-        defaults_layer_settings = self.print_settings.get("Default layer settings")
-        default_position_settings = defaults_layer_settings.get("Position settings")
+        self.move_x_y_z(0, -25000, self.focused_position - 750)
+
+        GPIO.output(7, GPIO.HIGH)
+        time.sleep(default_position_settings["Initial wait (ms)"] / 1000)
         self.galil.absMove(
             mm=self.print_position - default_position_settings["Distance up (mm)"],
             speed=default_position_settings["BP up speed (mm/sec)"],
             acceleration=default_position_settings["BP up acceleration (mm/sec^2)"],
             wait_for_settling=False,
         )
+        threads = self.move_x_y_z(
+            default_x_offset, default_y_offset, self.focused_position, join=False
+        )
+        GPIO.output(7, GPIO.LOW)
         self.galil.goToZmax()
         time.sleep(1.0)
+
+        for thread in threads:
+            thread.join()
 
         if not self.printing_paused.is_set():
             self.finish_print()
@@ -899,6 +1122,9 @@ class PrintControl:
             socketio.emit(msg, dict(), namespace="/printing", broadcast=True)
             time.sleep(1)
             func()
+
+            GPIO.output(7, GPIO.LOW)
+            GPIO.cleanup()
 
         else:
             msg = {

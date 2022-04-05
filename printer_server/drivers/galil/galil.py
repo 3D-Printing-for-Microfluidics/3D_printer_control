@@ -12,9 +12,12 @@ from printer_server.async_file_handler import async_file_hander
 class Galil:
     def __init__(
         self,
+        keyence,
         config_dict=None,
         log_level=logging.DEBUG,
     ):
+        self.keyence = keyence
+
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         self.movement_log = None
@@ -81,8 +84,9 @@ class Galil:
         """Return converted axis name (eg. maps X,Y,Z to A,B,C)"""
         if axis is None:
             axis = self.default_axis
-        axis = axis.upper()
         for i in range(len(self.axes)):
+            if axis.upper() in (self.axes[i], self.axes_common_names[i]):
+                return self.axes[i]
             if axis in (self.axes[i], self.axes_common_names[i]):
                 return self.axes[i]
         raise ValueError("Invalid axis supplied")
@@ -449,6 +453,19 @@ class Galil:
                     tmp += f"{self.logging_move_status[a]},"
                     if self.logging_move_status[a] >= 2:
                         self.logging_move_status[a] = -1
+                keyence_data = self.keyence.read_all()
+                tmp += f"{keyence_data[1]},"
+                tmp += f"{keyence_data[2]},"
+                tmp += f"{keyence_data[3]},"
+                tmp += f"{keyence_data[4]},"
+                tmp += f"{keyence_data[5]},"
+                tmp += f"{keyence_data[6]},"
+                tmp += f"{keyence_data[7]},"
+                tmp += f"{keyence_data[8]},"
+                tmp += f"{keyence_data[9]},"
+                tmp += f"{keyence_data[10]},"
+                tmp += f"{keyence_data[11]},"
+                tmp += f"{keyence_data[12]},"
                 self.write_to_disk(tmp)
                 time.sleep(0.01)
 

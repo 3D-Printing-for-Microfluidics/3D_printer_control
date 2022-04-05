@@ -1,7 +1,9 @@
 import json
 import logging
 from pathlib import Path
+from printer_server.drivers.keyence.keyence import Keyence
 from printer_server.settings import Config
+from printer_server.drivers.keyence import Keyence
 from printer_server.drivers.screen import ScreenThread
 from printer_server.drivers.galil import Galil, Galil_dummy
 from printer_server.drivers.visitech import Visitech, Visitech_dummy
@@ -31,11 +33,13 @@ class Printer3D:
             self.tiptilt = TipTilt_dummy(verbose=True)
             self.loadcell = Loadcell_dummy()
         else:
+            self.keyence = Keyence()
             self.galil = Galil(
-                config_dict=config_dict["galil_settings"], log_level=default_log_level
+                self.keyence,
+                config_dict=config_dict["galil_settings"],
+                log_level=default_log_level,
             )
             self.visitech = Visitech(log_level=default_log_level)
-            self.kdc = KDC101(log_level=default_log_level)
             self.tiptilt = TipTilt(
                 config_dict=config_dict["tiptilt_settings"], log_level=default_log_level
             )
