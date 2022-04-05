@@ -1,15 +1,9 @@
 from printer_server.logging_handler import dummy_log
 
 
-def cleanFileName(name):
-    for c in '\\/:*?"<>| ':
-        name = name.replace(c, "")
-    return name
-
-
 class Galil_dummy:
     @dummy_log
-    def __init__(self, config_dict=None, address=None):
+    def __init__(self, config_dict=None):
         self.controller_name = config_dict["controller_name"]
         self.default_axis = config_dict["default_axis"]
         self.axes = config_dict["axes"]
@@ -48,8 +42,18 @@ class Galil_dummy:
                 return self.axes[i]
         raise ValueError("Invalid axis supplied")
 
+    def getCommonName(self, axis):
+        if axis is None:
+            axis = self.default_axis
+        for i in range(len(self.axes)):
+            if axis in (self.axes[i], self.axes_common_names[i]):
+                return self.axes_common_names[i]
+            if axis.upper() in (self.axes[i], self.axes_common_names[i]):
+                return self.axes_common_names[i]
+        raise ValueError("Invalid axis supplied")
+
     @dummy_log
-    def initialize(self):
+    def initialize(self, *args, **kwargs):
         self.motorOn()
 
     @dummy_log
@@ -65,7 +69,11 @@ class Galil_dummy:
         self.positions["A"] = self.bottom_position
 
     @dummy_log
-    def connect(self):
+    def connect(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def write_to_disk(self, *args):
         pass
 
     def mmToCnts(self, mm, axis="A"):
@@ -77,11 +85,11 @@ class Galil_dummy:
         return counts / self.ctspmm[axis]
 
     @dummy_log
-    def send(self, command):
+    def send(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def checkLimits(self, axis="A"):
+    def checkLimits(self, *args, **kwargs):
         pass
 
     @dummy_log
@@ -89,32 +97,33 @@ class Galil_dummy:
         return self.positions[axis]
 
     @dummy_log
-    def motorOn(self, axis="A"):
+    def motorOn(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def motorOff(self, axis="A"):
+    def motorOff(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def getAcceleration(self, axis="A"):
+    def getAcceleration(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def setAcceleration(self, acceleration, axis="A"):
+    def setAcceleration(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def getSpeed(self, axis="A"):
+    def getSpeed(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def setSpeed(self, speed, axis="A"):
+    def setSpeed(self, *args, **kwargs):
         pass
 
     @dummy_log
     def home(self, axis="A"):
-        pass
+        for a in self.axes:
+            self.positions[a] = 0
 
     @dummy_log
     def relMove(self, mm=None, cnts=None, speed=None, acceleration=None, axis="A"):
@@ -140,33 +149,44 @@ class Galil_dummy:
             self.positions[axis] = cnts
 
     @dummy_log
-    def startJog(self, speed=None, axis="A"):
+    def startJog(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def stopJog(self, axis="A"):
+    def stopJog(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def waitForMotionComplete(self, cnts, wait_for_settling=True, axis="A"):
+    def motionPlanningComplete(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def saveMotionData(self, filename=None):
+    def waitForMotionComplete(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def disconnect(self):
+    def set_log_file(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def downloadProgram(self, filename):
+    def logging_start(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def interactiveMode(self):
+    def logging_stop(self, *args, **kwargs):
+        pass
+
+    def loop(self, *args, **kwargs):
         pass
 
     @dummy_log
-    def set_log_file(self, filename):
+    def disconnect(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def downloadProgram(self, *args, **kwargs):
+        pass
+
+    @dummy_log
+    def interactiveMode(self, *args, **kwargs):
         pass
