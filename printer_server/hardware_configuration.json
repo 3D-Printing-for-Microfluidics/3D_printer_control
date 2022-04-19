@@ -21,7 +21,7 @@
                 "A": 0.125
             },
             "calibration_position": 34000,
-            "bottom_position": 350000,
+            "bottom_position": 323913,
             "top_position": -400000
         },
         "kdc101": {
@@ -78,7 +78,7 @@
                 "A": 0.125
             },
             "calibration_position": 75041,
-            "bottom_position": 330000,
+            "bottom_position": 322272,
             "top_position": -400000
         },
         "kdc101": {
@@ -222,7 +222,7 @@
                 "D": 0.125
             },
             "calibration_position": 1491842,
-            "bottom_position": 2508800,
+            "bottom_position": 2234317,
             "top_position": -2600000
         },
         "tiptilt": {
