@@ -235,8 +235,8 @@
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=5712360",
-            "calibration_intercept": 34785.0,
-            "calibration_slope": -1.83,
+            "calibration_intercept": 32298.1,
+            "calibration_slope": -3.31,
             "loadcell_planarization_enabled": true,
             "loadcell_planarization_force": 30.0,
             "loadcell_print_start_force": 5.0
