@@ -429,7 +429,7 @@ class PrintControl:
                 "loadcell_planarization_force"
             ]
             if (
-                self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.75)
+                self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.3)
                 is None
             ):
                 log.error("Did not reach target planarization force.")
@@ -497,7 +497,7 @@ class PrintControl:
         """
         target_force = config_dict["loadcell_settings"]["loadcell_print_start_force"]
         first_count = self.move_bp_to_force(
-            target_force + 5, speed=-0.5, error_threshold=3.5
+            target_force + 5, speed=-0.5, error_threshold=2.5
         )
         if first_count is None:
             log.error("Loadcell planarization failed. Check build platform screw.")
