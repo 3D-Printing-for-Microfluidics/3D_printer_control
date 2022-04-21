@@ -33,8 +33,8 @@ if "gpio" in config_dict.keys():
     import printer_server.drivers.gpio.gpio_snip
 if "kdc101" in config_dict.keys():
     import printer_server.drivers.kdc101.kdc101_snip
-# if "keyence" in config_dict.keys():
-#     import printer_server.drivers.keyence.keyence_snip
+if "keyence" in config_dict.keys():
+    import printer_server.drivers.keyence.keyence_snip
 if "loadcell" in config_dict.keys():
     import printer_server.drivers.loadcell.loadcell_snip
 if "screen" in config_dict.keys():
@@ -87,7 +87,15 @@ def index():
             ] = printer_server.drivers.gpio.gpio_snip.getFilmRelayState()
         if "kdc101" in config_dict.keys():
             hardware["kdc101"]["distance"] = calibration_positions["distance"]
-        # if "keyence" in config_dict.keys():
+        if "keyence" in config_dict.keys():
+            sensors = config_dict["keyence"]["sensors"].keys()
+            hardware["keyence"]["sensors"] = sensors
+            for sensor in sensors:
+                sensor_reading = printer_server.drivers.keyence.keyence_snip.read_sensor(
+                    config_dict["keyence"]["sensors"][sensor]["measurement_index"]
+                )
+                hardware["keyence"]["readings"][sensor] = sensor_reading
+
         if "loadcell" in config_dict.keys():
             hardware["loadcell"][
                 "autoscale"

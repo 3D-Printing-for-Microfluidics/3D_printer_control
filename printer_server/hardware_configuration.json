@@ -174,16 +174,34 @@
             "resolution": [
                 2560,
                 1600
-            ]
+            ],
+            "x_offset": -6750000,
+            "y_offset": 0
         },
         "wintech": {
             "dummy": false,
             "resolution": [
                 1920,
                 1080
-            ]
+            ],
+            "x_offset": 7232000,
+            "y_offset": 0
         },
-        "keyence": {}
+        "keyence": {
+            "dummy": false,
+            "sensors": {
+                "visitech": {
+                    "x_offset": -6750000,
+                    "y_offset": 0,
+                    "measurement_index": 0
+                },
+                "wintech": {
+                    "x_offset": 7232000,
+                    "y_offset": 0,
+                    "measurement_index": 1
+                }
+            }
+        }
     },
     "HR4": {
         "external_control": {},
@@ -251,8 +269,19 @@
             "resolution": [
                 2560,
                 1600
-            ]
+            ],
+            "x_offset": 0,
+            "y_offset": 0
         },
-        "keyence": {}
+        "keyence": {
+            "dummy": false,
+            "sensors": {
+                "visitech": {
+                    "x_offset": -5777,
+                    "y_offset": -32169,
+                    "measurement_index": 0
+                }
+            }
+        }
     }
 }
