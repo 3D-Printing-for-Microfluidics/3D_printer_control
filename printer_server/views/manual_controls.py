@@ -88,8 +88,9 @@ def index():
         if "kdc101" in config_dict.keys():
             hardware["kdc101"]["distance"] = calibration_positions["distance"]
         if "keyence" in config_dict.keys():
-            sensors = config_dict["keyence"]["sensors"].keys()
+            sensors = list(config_dict["keyence"]["sensors"].keys())
             hardware["keyence"]["sensors"] = sensors
+            hardware["keyence"]["readings"] = {}
             for sensor in sensors:
                 sensor_reading = printer_server.drivers.keyence.keyence_snip.read_sensor(
                     config_dict["keyence"]["sensors"][sensor]["measurement_index"]

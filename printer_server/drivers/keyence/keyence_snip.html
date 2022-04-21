@@ -16,8 +16,9 @@
             <div class="col-4">
                 <h5>{{ sensor|capitalize}}</h5>
             </div>
-            <div class="col-2">
-                <h5 class="col text-right" id='keyence-{sensor}-state'>{{ hardware['keyence']['readings'][sensor] }}
+            <div class="col-6">
+                <h5 class="col text-right" id='keyence-{sensor}-state'>Readout: {{
+                    hardware['keyence']['readings'][sensor] }} um
                 </h5>
             </div>
         </div>
