@@ -205,7 +205,8 @@ class HR4_PrintControl(PrintControl):
                     self.keyence_measurement_list[f"{x}, {y}"] = (
                         self.keyence_start_position - keyence_position
                     )
-        self.write_to_event_log(f"Focus Offsets: {self.keyence_measurement_list}")
+        self.write_to_event_log(f"Keyence Focus Position: {self.keyence_start_position}")
+        self.write_to_event_log(f"Keyence Focus Offsets: {self.keyence_measurement_list}")
         # time.sleep(0.1)
         # self.gpio.film_relay_off()
         self.move_build_platform_down(self.default_position_settings)
