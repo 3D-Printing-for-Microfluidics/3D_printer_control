@@ -102,6 +102,10 @@ class Keyence:
         # print(f"data type: {type(data)}, data: {data}")
         return data
 
+    def read_sensor(self, index):
+        """Returns the readout of the given sensor in um"""
+        return float(self.read_all()[index + 1])
+
 
 def testing1():
     """

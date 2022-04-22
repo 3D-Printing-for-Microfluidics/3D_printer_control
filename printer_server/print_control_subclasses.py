@@ -201,9 +201,11 @@ class HR4_PrintControl(PrintControl):
                         self.galil, x + keyence_x_offset, y + keyence_y_offset, None, None
                     )
                     time.sleep(0.1)
-                    self.keyence_measurement_list[f"{x}, {y}"] = float(
-                        self.keyence.read_all()[1]
+                    keyence_position = float(self.keyence.read_all()[1])
+                    self.keyence_measurement_list[f"{x}, {y}"] = (
+                        self.keyence_start_position - keyence_position
                     )
+        self.write_to_event_log(f"Focus Offsets: {self.keyence_measurement_list}")
         # time.sleep(0.1)
         # self.gpio.film_relay_off()
         self.move_build_platform_down(self.default_position_settings)
@@ -233,8 +235,7 @@ class HR4_PrintControl(PrintControl):
 
         # keyence correction
         keyence_measurement = self.keyence_measurement_list[f"{x_offset}, {y_offset}"]
-        z_correction = self.keyence_start_position - keyence_measurement
-        z_focus = self.focused_position + defocus_um + z_correction * 1000
+        z_focus = self.focused_position + defocus_um + keyence_measurement
 
         self.galil_threads = move_all_galil(
             self.galil, x_offset, y_offset, z_focus, None, join=False

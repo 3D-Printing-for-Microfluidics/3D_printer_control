@@ -8,4 +8,4 @@ keyence = driver_handles.keyence
 
 def read_sensor(index):
     """Returns the readout of the given sensor in um"""
-    return float(keyence.read_all()[index + 1]) * 1000
+    return keyence.read_sensor(index)
