@@ -90,13 +90,10 @@ def galil_get_positions():
 
 def get_galil_focus_positions():
     last_positions = printer_server.views.manual_controls.get_last_calibration_positions()
-    message = {
-        "tip": last_positions["tip"],
-        "tilt": last_positions["tilt"],
-        "distance": galil.cntsToMm(galil.getPosition(axis="Focus"), axis="Focus") * 1000,
-    }
-    print(f"message:{message}")
-    return message
+    last_positions["distance"] = (
+        galil.cntsToMm(galil.getPosition(axis="Focus"), axis="Focus") * 1000
+    )
+    return last_positions
 
 
 @socketio.on("galil_get_position", namespace="/manual")

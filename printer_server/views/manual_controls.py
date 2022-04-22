@@ -136,7 +136,11 @@ position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
 
 def write_to_position_log(message):
     with open(position_log_file, "a") as f:
-        f.write("{} {}\n".format(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), message))
+        f.write(
+            "{} {}\n".format(
+                datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), json.dumps(message)
+            )
+        )
 
 
 def get_last_calibration_positions():
@@ -148,10 +152,8 @@ def get_last_calibration_positions():
     with open(log_file) as f:
         for line in f:
             last_line = line.rstrip()
-    for char in ["{", "}", ":", "'", ","]:
-        last_line = last_line.replace(char, "")
-    return {
-        "tip": float(last_line.split(" ")[-5]),
-        "tilt": float(last_line.split(" ")[-3]),
-        "distance": float(last_line.split(" ")[-1]),
-    }
+
+    last_line = last_line[20:]
+    last_line = last_line.replace("'", '"')
+    temp = json.loads(last_line)
+    return temp

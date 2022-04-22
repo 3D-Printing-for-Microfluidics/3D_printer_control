@@ -9,17 +9,15 @@ tiptilt = driver_handles.tiptilt
 
 def get_tiptilt_positions():
     last_positions = printer_server.views.manual_controls.get_last_calibration_positions()
-    message = {
-        "tip": tiptilt.get_position("tip"),
-        "tilt": tiptilt.get_position("tilt"),
-        "distance": last_positions["distance"],
-    }
 
-    if message["tip"] is None or message["tip"] is "undef":
-        message["tip"] = last_positions["tip"]
-        message["tilt"] = last_positions["tilt"]
+    new_tip = tiptilt.get_position("tip")
+    new_tilt = tiptilt.get_position("tilt")
 
-    return message
+    if new_tip is not None and new_tip is not "undef":
+        last_positions["tip"] = new_tip
+        last_positions["tilt"] = new_tilt
+
+    return last_positions
 
 
 @socketio.on("get_tiptilt_positions", namespace="/manual")
