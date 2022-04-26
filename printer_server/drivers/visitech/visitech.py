@@ -677,12 +677,15 @@ class Visitech:
             r - number of repeats
         """
         self.exposure_time = t
+
         min_t = 4.046
         max_t = 10000
         self.log.info(
             "Setting up exposure for %s ms at power setting %s. Repeat %s", t, p, r
         )
-        if t > max_t:
+        if t == 0:
+            return
+        elif t > max_t:
             msg = f"Exposure time {t} ms is greater than maximum possible exposure time "
             msg += f"of {max_t} ms. Using exposure time of {max_t} ms instead."
             self.log.warning(msg)
