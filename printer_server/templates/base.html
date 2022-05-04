@@ -6,8 +6,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link id="favicon1" rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link id="favicon2" rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 
     <title>{% block title %}{% endblock %}</title>
 
@@ -19,33 +19,85 @@
 </head>
 
 <body>
-    {% block content %}
-    <div class="jumbotron jumbotron-fluid text-center">
-        {% block printer3d_state %}{% endblock %}
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <div class="container">
+    {% block scripts %}
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="{{ url_for('static', filename='lib/jquery-3.3.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/ajax-popper-1.14.3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/bootstrap-4.1.1.min.js') }}"></script>
+    {% endblock %}
 
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav mr-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('home.index') }}">Home<span
-                                    class="sr-only">(current)</span></a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('manual_controls.index') }}">Manual Controls</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('print_history.index') }}">Print History</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('server_logs.index') }}">Server Logs</a>
-                        </li>
-                    </ul>
+    {% block content %}
+    <script src="{{ url_for('static', filename='lib/jdenticon-3.1.1.min.js') }}"></script>
+
+    <!-- Set color palette of identicon -->
+    <script>
+        window.jdenticon_config = {
+            hues: [
+                204.07, //blue
+                210.83, //indigo
+                262.83, //purple
+                261.26, //pink
+                332.47, //red
+                5.61, //orange
+                27.3, //yellow
+                36.8, //green
+                164.68, //teal
+                162.25, //cyan
+                0 //white
+            ]
+        };
+    </script>
+
+    <div class="col-12 jumbotron jumbotron-fluid">
+        <div class="container">
+            <div class="row">
+                <div class="identicon-container">
+                    <canvas id="identicon" class="identicon" data-jdenticon-value={{ hostname }} width="69"
+                        height="69">{{ hostname
+                        }}
+                    </canvas>
+                </div>
+                <div>
+                    {% block printer3d_state %}{% endblock %}
+                    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                            <ul class="navbar-nav mr-auto">
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('home.index') }}">Home<span
+                                            class="sr-only">(current)</span></a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('manual_controls.index') }}">Manual
+                                        Controls</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('print_history.index') }}">Print
+                                        History</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('server_logs.index') }}">Server Logs</a>
+                                </li>
+                            </ul>
+                        </div>
+
+                    </nav>
                 </div>
             </div>
-        </nav>
+        </div>
     </div>
 
+    <!-- Set favicon as identicon -->
+    <script>
+        jdenticon()
+        var l = document.getElementById("identicon");
+        var identicon_href = l.toDataURL("image/png")
+
+        document.getElementById("favicon1").setAttribute("href", identicon_href);
+        document.getElementById("favicon2").setAttribute("href", identicon_href);
+        document.getElementById("favicon1").setAttribute("type", "image/png");
+        document.getElementById("favicon2").setAttribute("type", "image/png");
+    </script>
 
     <div class="container" id="base-body">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -62,14 +114,6 @@
         {% block page_content %}{% endblock %}
     </div>
 
-    {% endblock %}
-
-    {% block scripts %}
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="{{ url_for('static', filename='lib/jquery-3.3.1.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='lib/ajax-popper-1.14.3.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='lib/bootstrap-4.1.1.min.js') }}"></script>
     {% endblock %}
 </body>
 

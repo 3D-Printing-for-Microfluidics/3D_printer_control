@@ -16,4 +16,8 @@ $(document).ready(function () {
         console.log(message)
         $("table").before(flash_msg);
     });
+
+    $('#apply_button').on('click', function (e) {
+        location.href = print_history_url + '?start=' + $('#start-date').val() + '&end=' + $('#end-date').val();
+    });
 });

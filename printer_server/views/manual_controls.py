@@ -1,88 +1,146 @@
-# -*- coding: utf-8 -*-
 """Control view."""
-import os
-import threading
+import json
 from pathlib import Path
 from datetime import datetime
-from PIL import Image
-from flask import Blueprint, request, render_template
+from os.path import exists
+from flask import request, Blueprint, render_template
 
 from printer_server.extensions import socketio
 from printer_server.settings import Config
-from printer_server.hardware_configuration import driver_handles
+import printer_server.views.home
 
 
-class External_Control:
-    def __init__(self):
-        self.enable_flag = False
+# Dynamically get hardware components
+configuration_path = Path(Config.PRINT_SERVER_FOLDER).rglob("hardware_configuration.json")
+with open(next(configuration_path), "r") as file_handle:
+    config_dict = json.load(file_handle)
+config_dict = config_dict[Config.HOSTNAME]
 
-    def set_enable(self, status):
-        self.enable_flag = status
+# Generate HTML snippit list
+hardware = {}
+for key in config_dict.keys():
+    path = f"{key}/{key}_snip.html"
+    if exists(f"{Config.PRINT_SERVER_FOLDER}/drivers/{path}"):
+        temp_dict = {"path": f"{path}"}
+        hardware[key] = temp_dict
 
-    def get_enable(self):
-        return self.enable_flag
+# Dynamically import python snippits
+if "external_control" in config_dict.keys():
+    import printer_server.drivers.external_control.external_control_snip
+if "galil" in config_dict.keys():
+    import printer_server.drivers.galil.galil_snip
+if "gpio" in config_dict.keys():
+    import printer_server.drivers.gpio.gpio_snip
+if "kdc101" in config_dict.keys():
+    import printer_server.drivers.kdc101.kdc101_snip
+if "keyence" in config_dict.keys():
+    import printer_server.drivers.keyence.keyence_snip
+if "loadcell" in config_dict.keys():
+    import printer_server.drivers.loadcell.loadcell_snip
+if "screen" in config_dict.keys():
+    import printer_server.drivers.screen.screen_snip
+if "tiptilt" in config_dict.keys():
+    import printer_server.drivers.tiptilt.tiptilt_snip
+if "visitech" in config_dict.keys():
+    import printer_server.drivers.visitech.visitech_snip
+if "wintech" in config_dict.keys():
+    import printer_server.drivers.wintech.wintech_snip
 
 
-galil = driver_handles.galil
-visitech = driver_handles.visitech
-tiptilt = driver_handles.tiptilt
-kdc = driver_handles.kdc
-external_control_enable = External_Control()
+# Create bluprint
+blueprint = Blueprint(
+    "manual_controls",
+    __name__,
+    url_prefix="/",
+    template_folder="../drivers",
+    static_folder="../drivers",
+)
+
+# Decorator to handle navigation to calibration page
+@blueprint.route("/manual")
+def index():
+    initialized = printer_server.views.home.print_control.state != "uninitialized"
+
+    # Get driver status
+    if "external_control" in config_dict.keys():
+        enabled = printer_server.drivers.external_control.external_control_snip.get_external_control_enable(
+            emit=False
+        )
+        hardware["external_control"]["enabled"] = enabled
+
+    if initialized:
+        calibration_positions = get_last_calibration_positions()
+        if "galil" in config_dict.keys():
+            galil_positions = (
+                printer_server.drivers.galil.galil_snip.galil_get_positions()
+            )
+            hardware["galil"]["stages"] = {}
+            for i in range(len(config_dict["galil"]["axes"])):
+                axis = config_dict["galil"]["axes"][i]
+                hardware["galil"]["stages"][axis] = {
+                    "common": config_dict["galil"]["axes_common_names"][i],
+                    "position": galil_positions[axis],
+                }
+        if "gpio" in config_dict.keys():
+            hardware["gpio"][
+                "film"
+            ] = printer_server.drivers.gpio.gpio_snip.getFilmRelayState()
+        if "kdc101" in config_dict.keys():
+            hardware["kdc101"]["distance"] = calibration_positions["distance"]
+        if "keyence" in config_dict.keys():
+            sensors = list(config_dict["keyence"]["sensors"].keys())
+            hardware["keyence"]["sensors"] = sensors
+            hardware["keyence"]["readings"] = {}
+            for sensor in sensors:
+                sensor_reading = printer_server.drivers.keyence.keyence_snip.read_sensor(
+                    config_dict["keyence"]["sensors"][sensor]["measurement_index"]
+                )
+                hardware["keyence"]["readings"][sensor] = sensor_reading
+
+        if "loadcell" in config_dict.keys():
+            hardware["loadcell"][
+                "autoscale"
+            ] = printer_server.drivers.loadcell.loadcell_snip.get_graph_autoscale()
+            hardware["loadcell"][
+                "in_newtons"
+            ] = printer_server.drivers.loadcell.loadcell_snip.get_graph_mode()
+        if "screen" in config_dict.keys():
+            hardware["screen"]["light_engines"] = config_dict["screen"]["light_engines"]
+        if "tiptilt" in config_dict.keys():
+            hardware["tiptilt"]["tip"] = calibration_positions["tip"]
+            hardware["tiptilt"]["tilt"] = calibration_positions["tilt"]
+        if "visitech" in config_dict.keys():
+            hardware["visitech"][
+                "status"
+            ] = printer_server.drivers.visitech.visitech_snip.getLedStatus()
+        if "wintech" in config_dict.keys():
+            hardware["wintech"][
+                "status"
+            ] = printer_server.drivers.wintech.wintech_snip.getLedStatus()
+
+    return render_template(
+        "manual_controls.html",
+        initalized=initialized,
+        hostname=Config.HOSTNAME,
+        hardware=hardware,
+    )
+
+
+@blueprint.route("handle-calibration-upload", methods=["POST"])
+def upload():
+    return printer_server.drivers.screen.screen_snip.handleUpload(request)
+
+
 position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
 
 
 def write_to_position_log(message):
     with open(position_log_file, "a") as f:
-        f.write("{} {}\n".format(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), message))
-
-
-def get_calibration_positions():
-    message = {
-        "tip": tiptilt.get_position("Tip"),
-        "tilt": tiptilt.get_position("Tilt"),
-        "distance": kdc.getCurrentPos(),
-    }
-
-    if message["tip"] is None or message["tip"] is "undef":
-        last_positions = get_last_calibration_positions()
-        message["tip"] = last_positions[0]
-        message["tilt"] = last_positions[1]
-
-    return message
-
-
-@socketio.on("get_calibration_positions", namespace="/manual")
-def get_calibration_positions_socket():
-    message = get_calibration_positions()
-    socketio.emit(
-        "calibration_positions",
-        message,
-        namespace="/manual",
-        broadcast=True,
-    )
-    return message
-
-
-def emit_calibration_positions(log=False):
-    message = get_calibration_positions()
-
-    if log:
-        write_to_position_log(message)
-    socketio.emit(
-        "calibration_motor_move_complete",
-        message,
-        namespace="/manual",
-        broadcast=True,
-    )
-
-
-# Create bluprint
-blueprint = Blueprint(
-    "manual_controls", __name__, url_prefix="/", static_folder="../static"
-)
-
-# Specify location of uploaded image and give default name
-imagePath = os.path.join(Config.UPLOAD_FOLDER, "calibration_images", "temp.png")
+        f.write(
+            "{} {}\n".format(
+                datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), json.dumps(message)
+            )
+        )
 
 
 def get_last_calibration_positions():
@@ -94,187 +152,8 @@ def get_last_calibration_positions():
     with open(log_file) as f:
         for line in f:
             last_line = line.rstrip()
-    for char in ["{", "}", ":", "'", ","]:
-        last_line = last_line.replace(char, "")
-    return [
-        float(last_line.split(" ")[-5]),
-        float(last_line.split(" ")[-3]),
-        float(last_line.split(" ")[-1]),
-    ]
 
-
-# Decorator to handle navigation to calibration page
-@blueprint.route("/manual")
-def index():
-    positions = get_last_calibration_positions()
-    return render_template(
-        "manual_controls.html",
-        tip_position=positions[0],
-        tilt_position=positions[1],
-        dist_position=positions[2],
-        hostname=Config.HOSTNAME,
-    )
-
-
-@socketio.on("set_external_control_enable", namespace="/manual")
-def set_external_control_enable(message):
-    """set_external_control -- Sets the variable determining if printer can be auto-calibrated"""
-    external_control_enable.set_enable(message == "Enabled")
-
-
-@socketio.on("get_external_control_enable", namespace="/manual")
-def get_external_control_enable():
-    """Return the external control enable flag."""
-    socketio.emit(
-        "external_control_enable",
-        external_control_enable.get_enable(),
-        namespace="/manual",
-        broadcast=True,
-    )
-
-
-@socketio.on("galil_go_to_calibration", namespace="/manual")
-def galil_go_to_calibration():
-    """Move main Z stage to default position with calibration system."""
-    galil.goToZcalibration()
-    socketio.emit("galil_done", namespace="/manual", broadcast=True)
-
-
-@socketio.on("galil_go_to_top", namespace="/manual")
-def galil_go_to_top():
-    """Move main Z stage to max position (up)."""
-    galil.goToZmax()
-    socketio.emit("galil_done", namespace="/manual", broadcast=True)
-
-
-@socketio.on("galil_go_to_bottom", namespace="/manual")
-def galil_go_to_bottom():
-    """Move main z stage to min position (down)."""
-    galil.goToZmin()
-    socketio.emit("galil_done", namespace="/manual", broadcast=True)
-
-
-@socketio.on("galil_home", namespace="/manual")
-def home():
-    """Home main z stage."""
-    galil.home()
-    socketio.emit("galil_done", namespace="/manual", broadcast=True)
-
-
-@socketio.on("galil_move", namespace="/manual")
-def galil_move(message):
-    """Move the main Z stage. All units in mm."""
-    mode = message["mode"]
-    speed = float(message["speed"])
-    distance = float(message["distance"])
-    acceleration = float(message["acceleration"])
-    if mode == "absolute":
-        galil.absMove(mm=distance, speed=speed, acceleration=acceleration)
-    elif mode == "relative":
-        galil.relMove(mm=distance, speed=speed, acceleration=acceleration)
-    socketio.emit("galil_done", namespace="/manual", broadcast=True)
-
-
-@socketio.on("galil_start_jog", namespace="/manual")
-def galil_startJog(message):
-    """Start jogging the main Z stage."""
-    speed = float(message["speed"])
-    galil.startJog(speed=speed, acceleration=50)
-    # socketio.emit('galil_done', namespace='/manual', broadcast=True)
-
-
-@socketio.on("galil_stop_jog", namespace="/manual")
-def galil_stopJog():
-    """Stop jogging the main Z stage"""
-    galil.stopJog()
-    socketio.emit("galil_done", namespace="/manual", broadcast=True)
-
-
-@socketio.on("galil_get_position", namespace="/manual")
-def galil_get_position():
-    """Get the position the main Z stage."""
-    message = {"position": galil.cntsToMm(galil.getPosition())}
-    socketio.emit("galil_position", message, namespace="/manual", broadcast=True)
-
-
-@socketio.on("calibration_motor_move", namespace="/manual")
-def moveCalibrationMotor(message):
-    axis = message["axis"]
-    distance_um = float(message["microns"])
-    mode = message["mode"]
-    fast = message["fast"]
-    mode = (
-        mode != "absolute"
-    )  # convert mode to True/False, absolute is true, all else is false
-    if axis == "Distance":
-        kdc.move(distance_um, relative=mode)
-    else:
-        tiptilt.move(axis, distance_um, relative=mode, fast=fast)
-    emit_calibration_positions(log=message["log"])
-
-
-@socketio.on("calibration_motor_home", namespace="/manual")
-def homeCalibrationMotor(message):
-    axis = message["axis"]
-
-    def func(axis):
-        if axis == "Distance":
-            kdc.home()
-        else:
-            tiptilt.home()
-        emit_calibration_positions(log=True)
-
-    t = threading.Thread(target=func, args=[axis])
-    t.start()
-
-
-@socketio.on("light_engine_stop", namespace="/manual")
-def lightEngineStop():
-    """Turn off the LED in the light engin."""
-    visitech.stop_sequencer()
-    socketio.emit("light_engine_stop_complete", namespace="/manual", broadcast=True)
-
-
-@socketio.on("light_engine_start", namespace="/manual")
-def lightEngineProject(message):
-    """Project the image with the given settings."""
-    ledPower = int(message["ledPower"])
-    repeat = int(message["repeat"])
-    exposure = int(message["exposure"])
-    driver_handles.screen.draw(imagePath)
-    visitech.project(exposure, ledPower, repeat)
-    socketio.emit("light_engine_start_complete", namespace="/manual", broadcast=True)
-
-
-@socketio.on("light_engine_get_status", namespace="/manual")
-def lightEngineStatus():
-    socketio.emit(
-        "light_engine_status",
-        visitech.read_all_status(),
-        namespace="/manual",
-        broadcast=True,
-    )
-
-
-@blueprint.route("handle-calibration-upload", methods=["POST"])
-def handleUpload():
-    if "file" in request.files:  # Check if the post request has the file part
-        file = request.files["file"]  # Get the file
-        if file.filename != "" and file:  # File part of request actually has a file
-            try:
-                with Image.open(file) as img:  # Open file as PIL object
-                    # Check imagePath format and mode
-                    if img.format == "PNG" and img.mode == "L":
-                        # Seek to the beginning of file (fixes bug in Werkzeug file I\O)
-                        file.stream.seek(0)
-                        file.save(imagePath)  # save it to the server
-                        socketio.emit(
-                            "calibration_image_uploaded",
-                            namespace="/manual",
-                            broadcast=True,
-                        )
-                        return ""
-            except (OSError, FileNotFoundError):  # File has big issues
-                pass
-    socketio.emit("calibration_image_bad", namespace="/manual", broadcast=True)
-    return ""
+    last_line = last_line[20:]
+    last_line = last_line.replace("'", '"')
+    temp = json.loads(last_line)
+    return temp

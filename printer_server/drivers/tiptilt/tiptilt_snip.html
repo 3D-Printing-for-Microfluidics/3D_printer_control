@@ -1,0 +1,60 @@
+<!-- Calibration Motor Control -->
+<div class="container tiptilt-controls">
+    <div class="container">
+        <div class="row">
+            <div class="col-4">
+                <h3>Tip/Tilt Controls</h3>
+            </div>
+            <div class="col-2"></div>
+            <div class="col-6 text-left">
+                <button type="button" class="btn btn-outline-info btn-block tt-home-btn" id="tt-home-btn">Home</button>
+            </div>
+            <div class="col-3"></div>
+        </div>
+    </div>
+
+    {% set axes = ['tip', 'tilt'] %} {% for axis in axes %}
+    <div class="container" aria-label="{{ axis }}">
+        <div class="row">
+            <div class="col-4">
+                <h5>{{ axis|capitalize }}</h5>
+            </div>
+            <div class="col-2">
+                <h5 class="col text-right" id='{{ axis }}-state'>{{ hardware['tiptilt'][axis] }}</h5>
+            </div>
+            <div class="col-6">
+                <input class="form-control {{ axis }}-cntrl-txt" type="text" id="{{ axis }}-txt"
+                    placeholder="Position (um)">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-3">
+                <div class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                    <label class="btn btn-outline-info btn-fixed-width shadow-none active"><input type="radio"
+                            checked>Precise</label>
+                    <label class="btn btn-outline-info btn-fixed-width shadow-none"><input type="radio"
+                            id="{{ axis }}_quick_move">Fast</label>
+                </div>
+            </div>
+            <div class="col-1"></div>
+            <div class="col-8 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">-1000</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-outline-info {{ axis }}-cntrl-btn">1000</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {% endfor %}
+</div>
+
+<script> var axes = {{ axes| tojson }}</script>
+<script src="{{ url_for('manual_controls.static', filename='tiptilt/tiptilt_snip.js') }}"></script>

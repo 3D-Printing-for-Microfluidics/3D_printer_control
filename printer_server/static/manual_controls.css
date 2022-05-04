@@ -8,6 +8,10 @@
     margin-top:10px;
 }
 
+.jumbotron {
+    margin-top:-10px;
+}
+
 .btn {
 	cursor: pointer;
 }
@@ -67,6 +71,11 @@
 .form-control{
     background-color: rgb(230, 230, 230);
 }
+
+.form-control:disabled{
+    background-color: #999
+}
+
 
 h5, .h5{
     margin-top: 6px;

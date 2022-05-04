@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# This script should be run from inside the main 3D_printer_control directory
+
 # Set project root
 PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
 
@@ -8,11 +10,12 @@ PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
 
 # Open printer server folder
 # cd $PROJECT_ROOT/printer_server
-cd $PROJECT_ROOT
+# cd $PROJECT_ROOT
 
 # Remove old database if it exists
-# [ -e dev.db ] && echo "Moving old db to dev.db.bak" && mv dev.db dev.db.bak
+rm -r migrations.bak
 [ -e migrations ] && echo "Moving old migrations to migrations.bak" && mv migrations migrations.bak
+rm -r 3d_printer_database.db.bak
 [ -e 3d_printer_database.db ] && echo "Moving old db to 3d_printer_database.db.bak" && mv 3d_printer_database.db 3d_printer_database.db.bak
 
 

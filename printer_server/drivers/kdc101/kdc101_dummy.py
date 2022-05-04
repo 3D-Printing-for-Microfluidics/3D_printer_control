@@ -19,7 +19,7 @@ class KDC101_dummy:
 
     @dummy_log
     def home(self):
-        pass
+        self.position = 0
 
     @dummy_log
     def move(self, *args, **kwargs):

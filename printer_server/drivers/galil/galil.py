@@ -81,10 +81,21 @@ class Galil:
         """Return converted axis name (eg. maps X,Y,Z to A,B,C)"""
         if axis is None:
             axis = self.default_axis
-        axis = axis.upper()
         for i in range(len(self.axes)):
             if axis in (self.axes[i], self.axes_common_names[i]):
                 return self.axes[i]
+            if axis.upper() in (self.axes[i], self.axes_common_names[i]):
+                return self.axes[i]
+        raise ValueError("Invalid axis supplied")
+
+    def getCommonName(self, axis):
+        if axis is None:
+            axis = self.default_axis
+        for i in range(len(self.axes)):
+            if axis in (self.axes[i], self.axes_common_names[i]):
+                return self.axes_common_names[i]
+            if axis.upper() in (self.axes[i], self.axes_common_names[i]):
+                return self.axes_common_names[i]
         raise ValueError("Invalid axis supplied")
 
     def initialize(self):

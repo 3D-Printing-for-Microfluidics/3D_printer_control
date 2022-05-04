@@ -1,7 +1,10 @@
-# -*- coding: utf-8 -*-
 """Database models"""
+import os
+import logging
+from pathlib import Path
 from datetime import datetime
 
+from printer_server.settings import Config
 from printer_server.database import (
     Column,
     Model,
@@ -10,6 +13,9 @@ from printer_server.database import (
     reference_col,
     relationship,
 )
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 
 class User(SurrogatePK, Model):
@@ -86,6 +92,30 @@ class PrintQueue(SurrogatePK, Model):
         """
         return "{}.zip".format(self.upload_time.strftime("job-%Y-%m-%d_%H-%M-%S.%f"))
 
+    def remove_orphaned_entries(self):
+        queue_path = Path(Config.UPLOAD_FOLDER) / "queue"
+        entries = self.query.order_by(self.id).all()
+        for entry in entries:
+            entry_path = queue_path / entry.zip_filename
+            if not entry_path.exists():
+                log.info(
+                    "Removing orphaned queue db entry: {}".format(entry.original_filename)
+                )
+                entry.delete()
+
+    def remove_orphaned_files(self):
+        queue_path = Path(Config.UPLOAD_FOLDER) / "queue"
+        zips = list(queue_path.glob("*.zip"))
+        for entry in self.query.order_by(self.id).all():
+            entry_path = queue_path / entry.zip_filename
+            zips.remove(entry_path)
+        for entry in zips:
+            try:
+                log.info("Removing orphaned queue zip: {}".format(entry))
+                os.remove(entry)
+            except FileNotFoundError:
+                log.warn("Error: Failed to remove zip")
+
 
 class PrintRecord(SurrogatePK, Model):
     """Print Record
@@ -143,6 +173,55 @@ class PrintRecord(SurrogatePK, Model):
             zip_filename -- job-2018-05-10T02-41-18.960939.zip
         """
         return "{}.zip".format(self.upload_time.strftime("job-%Y-%m-%d_%H-%M-%S.%f"))
+
+    def remove_orphaned_entries(self):
+        print_history_path = Path(Config.UPLOAD_FOLDER) / "print_history"
+        entries = self.query.order_by(self.id).all()
+        for entry in entries:
+            entry_path = print_history_path / entry.zip_filename
+            if not entry_path.exists():
+                log.info(
+                    "Removing orphaned print histroy db entry: {}".format(
+                        entry.original_filename
+                    )
+                )
+                entry.delete()
+
+    def remove_orphaned_files(self):
+        print_history_path = Path(Config.UPLOAD_FOLDER) / "print_history"
+        zips = list(print_history_path.glob("*.zip"))
+        for entry in self.query.order_by(self.id).all():
+            entry_path = print_history_path / entry.zip_filename
+            zips.remove(entry_path)
+        for entry in zips:
+            try:
+                log.info("Removing orphaned print_history zip: {}".format(entry))
+                os.remove(entry)
+            except FileNotFoundError:
+                log.warn("Error: Failed to remove zip")
+
+    def remove_old_jobs(self):
+        MAX_ENTRIES = 750
+        print_history_path = Path(Config.UPLOAD_FOLDER) / "print_history"
+        entries_count = len(self.query.order_by(self.id).all())
+        num_entries_to_delete = entries_count - MAX_ENTRIES
+        if num_entries_to_delete <= 0:
+            num_entries_to_delete = 0
+        else:
+            log.info(
+                "Cleaning print history ({} jobs removed)".format(num_entries_to_delete)
+            )
+
+        entries_to_be_deleted = (
+            self.query.order_by(self.id).limit(num_entries_to_delete).all()
+        )
+
+        for entry in entries_to_be_deleted:
+            try:
+                os.remove(os.path.join(print_history_path / entry.zip_filename))
+            except FileNotFoundError:
+                pass
+            entry.delete()
 
 
 class ServerLog(SurrogatePK, Model):

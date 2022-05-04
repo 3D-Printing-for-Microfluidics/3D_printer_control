@@ -3,7 +3,8 @@
 {% block title %}Home ({{ hostname }}){% endblock %}
 
 {% block printer3d_state %}
-<h2 id='printer-state'></h2>
+<h2 style="display: inline">{{ hostname }} - </h2>
+<h2 id='printer-state' style="display: inline"></h2>
 {% endblock %}
 
 {% block styles %}
@@ -99,8 +100,6 @@
     </div>
 </div>
 
-<hr>
-
 <h5>Jobs in queue</h5>
 
 <table class="table table-hover" id="job-table">
@@ -127,15 +126,10 @@
     </tbody>
 </table>
 
-<hr>
-
 <div class="collapse" id="collapseLoadcell">
     <container>
         <div class="loadcell-data" id="loadcell-data"></div>
     </container>
-
-    <hr>
-
 </div>
 
 
@@ -155,8 +149,7 @@
 <div class="border rounded px-3 py-2" data-spy="scroll" data-offset="0" id="print-message">
 </div>
 
-
-<hr>
+<br>
 
 <div class="row mb-5">
     <div class="col-auto mr-auto">
@@ -169,6 +162,9 @@
 
 {% block scripts %}
 {{super()}}
+<script>
+    var graph_autoscale = {{ graph_autoscale| lower }}
+</script>
 <script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
 <script src="{{ url_for('static', filename='lib/plotly-1.54.6.min.js') }}"></script>
 <script src="{{ url_for('static', filename='home.js') }}"></script>

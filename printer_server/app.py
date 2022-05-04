@@ -1,16 +1,10 @@
-# -*- coding: utf-8 -*-
 """The app module, containing the app factory function."""
 from werkzeug.contrib.fixers import ProxyFix
 from flask import Flask, render_template
 from printer_server.extensions import db, migrate, socketio
+from printer_server.models import PrintRecord, PrintQueue
 from printer_server import commands, models
-from printer_server.views import (
-    home,
-    manual_controls,
-    print_history,
-    server_logs,
-    loadcell,
-)
+from printer_server.views import home, manual_controls, print_history, server_logs
 from printer_server.settings import ProdConfig
 from printer_server.hardware_configuration import driver_handles
 from printer_server.logging_handler import configure_loggers
@@ -32,6 +26,10 @@ def create_app(config_object=ProdConfig):
     register_commands(app)
     register_hardware(app)
     register_logger(app)
+
+    with app.app_context():
+        cleanup_db()
+
     return app
 
 
@@ -47,7 +45,6 @@ def register_blueprints(app):
     app.register_blueprint(home.blueprint)
     app.register_blueprint(manual_controls.blueprint)
     app.register_blueprint(print_history.blueprint)
-    app.register_blueprint(loadcell.blueprint)
     app.register_blueprint(server_logs.blueprint)
 
 
@@ -89,3 +86,12 @@ def register_hardware(app):
 def register_logger(app):
     if not app.debug:
         configure_loggers(app)
+
+
+def cleanup_db():
+    PrintQueue().remove_orphaned_entries()
+    PrintQueue().remove_orphaned_files()
+
+    PrintRecord().remove_orphaned_entries()
+    PrintRecord().remove_orphaned_files()
+    PrintRecord().remove_old_jobs()

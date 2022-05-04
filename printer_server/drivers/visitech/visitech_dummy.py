@@ -7,6 +7,7 @@ class Visitech_dummy:
     @dummy_log
     def __init__(self):
         self.max_exp_time = 10000  # max single projection time in ms
+        self.led_on = False
 
     @dummy_log
     def connect(self):
@@ -87,6 +88,7 @@ class Visitech_dummy:
         return self.send("SET SEQ ON")
 
     def stop_sequencer(self):
+        self.led_on = False
         return self.send("SET SEQ OFF")
 
     def pause_sequencer(self):
@@ -145,12 +147,24 @@ class Visitech_dummy:
     def set_pixel_mode(self, mode):
         return self.send("SET PIXEL MODE {}".format(mode))
 
+    def park_dmd_mirrors(self):
+        return self.send("SET MIRRORS PARKED")
+
+    def unpark_dmd_mirrors(self):
+        return self.send("SET MIRRORS UNPARKED")
+
     def get_sticky_errors(self, warn=True):
         self.send("GET STICKY ERRORS")
         return ""
 
     def get_logs(self):
         return self.send("GET LOGS")
+
+    def get_normalization_factor(self):
+        return float(self.send("FACTORY GET NORMALIZATION VALUE"))
+
+    def set_normalization_factor(self, normalization_factor):
+        return self.send(f"FACTORY SET NORMALIZATION VALUE {normalization_factor}")
 
     def split_exposure_time(self, exposure):
         """
@@ -175,29 +189,55 @@ class Visitech_dummy:
 
     @dummy_log
     def setup_exposure(self, t, p, r=1):
-        pass
+        """
+        Setup an exposure.
+            t - exposure time in milliseconds
+            p - power setting
+            r - number of repeats
+        """
+        self.exposure_time = t
+        min_t = 4.046
+        max_t = 10000
+        if t > max_t:
+            t = max_t
+            self.exposure_time = max_t
+        elif t < min_t:
+            t = min_t
+            self.exposure_time = min_t
+        self.set_led_amplitude(p)
+        self.set_sequencer_lut_definition(exposure=t * 1000)
+        self.set_sequencer_lut_config(repeats=r)
 
     @dummy_log
-    def perform_exposure(self, t):
-        pass
+    def perform_exposure(self):
+        """
+        Start an exposure.
+        """
+        self.led_on = True
+        if self.exposure_time != 0:
+            self.start_sequencer()
+            time.sleep(self.exposure_time * 1e-3)
+        self.led_on = False
 
     @dummy_log
     def project(self, exposure, power, repeats=1):
+        """
+        Call all of the necessary methods to project an image, and block
+        until projection is complete.
+        """
+        self.set_led_amplitude(power)
+        self.led_on = True
         if repeats == 0:  # if continuous display is desired
-            self.set_sequencer_lut_definition(
-                33100
-            )  # this provides the minimum blanking of 233 us of the full 33333 us cycle (at 30Hz on HDMI)
-            self.set_sequencer_lut_config(repeats=0)  # 0 means repeat forever
-            self.start_sequencer()  # start the sequencer and don't stop it (will be stopped on program exit)
+            # this provides the minimum blanking of 233 us of the full 33333 us cycle
+            # (at 30Hz on HDMI)
+            self.set_sequencer_lut_definition(33100, 0, 0, 8, 0, 0, 0)
+            self.set_sequencer_lut_config(repeats=0)
+            self.start_sequencer()  # sequencer will be stopped on program exit
         else:  # normal display is desired
             for t in self.split_exposure_time(exposure):
-                self.set_sequencer_lut_definition(
-                    exposure=t * 1000
-                )  # the TI board expects exposure in microseconds
-                self.set_sequencer_lut_config(
-                    repeats=repeats
-                )  # set the number of repetitions
-                time.sleep(0.1)
-                self.start_sequencer()  # start the sequencer
-                time.sleep(0.1 + t * 1e-3)
-                self.stop_sequencer()  # stop the sequencer
+                # the TI board expects exposure in microseconds
+                self.set_sequencer_lut_definition(exposure=t * 1000)
+                self.set_sequencer_lut_config(repeats=repeats)
+                self.start_sequencer()
+                time.sleep(t * 1e-3)
+                self.led_on = False

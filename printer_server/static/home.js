@@ -17,7 +17,6 @@ let loadcell_trace = {
 var loadcell_traces = [loadcell_trace];
 
 function draw_loadcell_graph() {
-
     var defaultPlotlyConfiguration = {
         displayModeBar: false,
         displaylogo: false,
@@ -35,7 +34,7 @@ function draw_loadcell_graph() {
         yaxis: {
             ticksuffix: "",
             range: [-50, 50],
-            autorange: false,
+            autorange: graph_autoscale,
             linecolor: 'white',
             linewidth: 1,
             mirror: true
@@ -85,30 +84,6 @@ function update_loop(message) {
         )
     }
 }
-
-$("#create-job").on("click", function () {
-    if ($("#collapseUpload").hasClass("show")) {
-        $(this).text("Upload a job");
-    } else {
-        $(this).text("Hide");
-    }
-});
-
-$("#job-table").on("click", ".clickable-row", function (event) {
-    if ($(this).hasClass("table-success")) {
-        $(this).removeClass("table-success");
-        start_job_id = "";
-        $("#start-btn").prop("disabled", true);
-    } else {
-        $(this).addClass("table-success").siblings().removeClass("table-success");
-        start_job_id = $(this).attr("id").replace("row-", "")
-        $("#start-btn").prop("disabled", false);
-    }
-});
-
-$("#clear-print-message").on("click", function () {
-    $("#print-message > div").remove();
-});
 
 var show_btn = function (btn) {
     $(".printer-btn").prop("disabled", true).addClass("d-none");
@@ -276,7 +251,7 @@ $(document).ready(function () {
         logout = function () {
             document.removeEventListener(event, reset, false);
             var content = 'This page has timed out. Please reload the page.';
-            document.getElementById('base-body').innerHTML = content; 
+            document.getElementById('base-body').innerHTML = content;
             socket.disconnect();
         },
         reset = function () {
@@ -294,6 +269,30 @@ $(document).ready(function () {
         socket.disconnect();
     });
 
+    $("#clear-print-message").on("click", function () {
+        $("#print-message > div").remove();
+    });
+
+    $("#create-job").on("click", function () {
+        if ($("#collapseUpload").hasClass("show")) {
+            $(this).text("Upload a job");
+        } else {
+            $(this).text("Hide");
+        }
+    });
+
+    $("#job-table").on("click", ".clickable-row", function (event) {
+        if ($(this).hasClass("table-success")) {
+            $(this).removeClass("table-success");
+            start_job_id = "";
+            $("#start-btn").prop("disabled", true);
+        } else {
+            $(this).addClass("table-success").siblings().removeClass("table-success");
+            start_job_id = $(this).attr("id").replace("row-", "")
+            $("#start-btn").prop("disabled", false);
+        }
+    });
+
     // Set up the handler for the file input box.
     $("#file-picker").on("change", function () {
         addFiles(this.files);
@@ -305,7 +304,7 @@ $(document).ready(function () {
         $("#collapseLoadcell").addClass('show');
         socket.emit("request_loadcell_data");
     };
-    
+
     var hide_loadcell = function (btn) {
         $("#toggle-loadcell").text("Show loadcell data");
         $("#collapseLoadcell").removeClass('show');
