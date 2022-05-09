@@ -296,7 +296,8 @@ class PrintControl:
         async_file_hander.write(self.movement_log, "timestamp,")
         for a in self.galil.axes_common_names:
             async_file_hander.write(self.movement_log, f"{a} position_mm,")
-            async_file_hander.write(self.movement_log, f"{a} status\n")
+            async_file_hander.write(self.movement_log, f"{a} status,")
+        async_file_hander.write(self.movement_log, "\n")
         async_file_hander.write(
             self.loadcell_log, "system_time,loadcell_time,index,raw_data,newtons\n"
         )
@@ -878,8 +879,6 @@ class PrintControl:
         home.clear_loadcell_graph()
         self.loadcell.set_log_file(None)
 
-        async_file_hander.finish()
-
         # update fontend, zip logs into archive in print_history, and update db entrty
         self.print_duration = datetime.now() - self.print_start_time
         with self.app.app_context():
@@ -895,6 +894,9 @@ class PrintControl:
                 log.info(msg["text"])
                 home.update_printer_state(self.state, msg)
                 self.write_to_event_log(msg["text"])
+
+            async_file_hander.finish()
+
             latest_record.save()
             shutil.make_archive(
                 self.print_history / Path(latest_record.zip_filename[:-4]),
