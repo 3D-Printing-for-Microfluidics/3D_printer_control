@@ -31,11 +31,13 @@ class AsyncFileHandler:
             for key in self.queues:
                 q = self.queues[key]
                 q.join()
-                del q
-            self.queues = {}
             self.thread_stopped.set()
             self.thread.join()
             self.thread = None
+            for key in self.queues:
+                q = self.queues[key]
+                del q
+            self.queues = {}
 
     def loop(self):
         while True:
