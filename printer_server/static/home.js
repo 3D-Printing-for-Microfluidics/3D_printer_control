@@ -9,6 +9,7 @@ let loadcell_trace = {
     y: [0],
     mode: 'lines',
     name: "1",
+    type: "scattergl",
     line: {
         shape: 'spline',
         color: 'rgb(255, 255, 255)'
