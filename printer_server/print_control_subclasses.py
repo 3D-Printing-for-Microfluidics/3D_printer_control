@@ -257,6 +257,7 @@ class MR1v1_PrintControl(PrintControl):
         super().__init__()
         self.wintech_thread = None
         self.wintech = driver_handles.wintech
+        self.keyence = driver_handles.keyence
 
     def get_focus(self):
         """Return galil 'Focus' axis position"""
@@ -269,8 +270,11 @@ class MR1v1_PrintControl(PrintControl):
         """Initialize wintech sensor"""
         if self.state == "uninitialized":
             self.wintech_thread = threading.Thread(target=self.wintech.connect, args=[])
+            keyence_thread = threading.Thread(target=self.keyence.connect, args=[])
             self.wintech_thread.start()
+            keyence_thread.start()
             super().initialize(run_in_thread=False)
+            keyence_thread.join()
             self.wintech_thread.join()
             log.info("Printer initialized, all hardware ready.")
 
