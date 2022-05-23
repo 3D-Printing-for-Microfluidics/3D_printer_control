@@ -11,8 +11,8 @@ DEFAULT_SENSOR_IP = "192.168.0.15"
 DEFAULT_SENSOR_PORT = 24685
 LOG_FORMAT = "%(asctime)s: %(levelname)s: %(name)s: %(message)s"
 
-# READ_ALL_VALUES = "MA,0"
-READ_ALL_VALUES = "MA,2"
+READ_ALL_VALUES = "MA,0"
+# READ_ALL_VALUES = "MA,2"
 
 
 class Keyence:
