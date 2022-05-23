@@ -38,11 +38,13 @@ root_logger.setLevel(logging.INFO)
 
 log = logging.getLogger(__name__)
 
-# Exammple of how to set up the virtual screens
+# Exammple of how to set up the virtual screen
 s = ScreenThread(
-    config_dict={"light_engines": ["visitech, wintech"]},
     resolutions=((2560, 1600), (1920, 1080)),
+    config_dict={"light_engines": ["visitech, wintech"]},
+    log_level=logging.INFO,
 )
+
 s.start()
 time.sleep(1)  # the screen setup needs a little time to get ready
 
@@ -57,12 +59,30 @@ p.dmd_controller.get_hardware_configuration_and_firmware_tag()
 
 # Example of how to draw images to Visitech and Wintech virtual screens
 s.draw(screen=1, img_path="printer_server/drivers/wintech/images/1.png")
+# s.draw(screen=1, img_path="printer_server/drivers/wintech/images/white.png")
 s.draw(screen=0, img_path="printer_server/drivers/visitech/images/visitech_1.png")
+# s.draw(screen=0, img_path="printer_server/drivers/visitech/images/white.png")
 
 # Some test code to run a number of projections and report some class data
 num_tests = 10
+print("Exposures using project:", num_tests)
 for _ in range(num_tests):
     p.project(random.randint(5, 1000), led_power=30)
+print("Exposures using setup/perform_exposure:", num_tests)
+for _ in range(num_tests):
+    p.setup_exposure(random.randint(5, 1000), led_power=30)
+    p.perform_exposure()
+print("Exposures using project (repeating):", num_tests)
+for _ in range(num_tests):
+    p.project(1000, led_power=30, repeat=0)
+    time.sleep(random.randint(500, 3000) / 1000)
+    p.stop_sequencer()
+print("Exposures using setup/perform_exposure (repeating):", num_tests)
+for _ in range(num_tests):
+    p.setup_exposure(1000, led_power=30, repeat=0)
+    p.perform_exposure()
+    time.sleep(random.randint(500, 3000) / 1000)
+    p.stop_sequencer()
 print("Number of images projected:", num_tests)
 print("Number of DLPC900 transactions:", p.dmd_controller.transaction_counter)
 print("Number of HID writes:", p.dmd_controller.usb_io_counter)
