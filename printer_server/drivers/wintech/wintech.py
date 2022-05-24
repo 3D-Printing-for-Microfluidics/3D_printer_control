@@ -101,7 +101,7 @@ class Wintech:
             exposure_time_ms = min_t
         self.led_on = True
         if repeat == 0:
-            self.dmd_controller.define_pattern(33.1)
+            self.dmd_controller.define_pattern(10000)
             self.dmd_controller.configure_pattern_LUT(repeat=repeat)
             self.dmd_controller.start_sequence()
         else:

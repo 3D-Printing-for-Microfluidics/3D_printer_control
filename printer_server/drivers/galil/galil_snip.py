@@ -54,9 +54,16 @@ def galil_move(message):
         galil.absMove(mm=distance, speed=speed, acceleration=acceleration, axis=axis)
     elif mode == "relative":
         galil.relMove(mm=distance, speed=speed, acceleration=acceleration, axis=axis)
-    if galil.getCommonName(axis) == "Focus" and message["log"] == True:
-        printer_server.views.manual_controls.write_to_position_log(
-            get_galil_focus_positions()
+    if galil.getCommonName(axis) == "Focus":
+        if message["log"] == True:
+            printer_server.views.manual_controls.write_to_position_log(
+                get_galil_focus_positions()
+            )
+        socketio.emit(
+            "calibration_positions",
+            get_galil_focus_positions(),
+            namespace="/manual",
+            broadcast=True,
         )
     socketio.emit(
         "galil_done", galil_get_positions(), namespace="/manual", broadcast=True
