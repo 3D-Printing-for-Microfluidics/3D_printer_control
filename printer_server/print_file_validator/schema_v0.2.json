@@ -208,6 +208,11 @@
                             "minimum": 0,
                             "default": 0,
                             "description": "Time to wait after final exposure on a layer"
+                        },
+                        "Pause after layer": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Should the print pause after this layer"
                         }
                     },
                     "additionalProperties": false,
@@ -391,6 +396,11 @@
                                 "minimum": 0,
                                 "default": 0,
                                 "description": "Time to wait after final exposure on a layer"
+                            },
+                            "Pause after layer": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Should the print pause after this layer"
                             }
                         },
                         "additionalProperties": false

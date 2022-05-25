@@ -653,6 +653,7 @@ class PrintControl:
         3D printer can resume and continue finishing the print job.
         """
         if self.state == "printing":
+            self.write_to_event_log("Pause Print")
             self.printing_paused.set()
             self.print_thread.join()
 
@@ -661,6 +662,7 @@ class PrintControl:
         if self.state != "paused":
             return
         log.info("Resuming print...")
+        self.write_to_event_log("Resume Print")
         self.galil.absMove(cnts=self.paused_position)
         self.print_position = self.galil.cntsToMm(self.paused_position)
         self.paused_position = None
@@ -795,6 +797,9 @@ class PrintControl:
             "text": msg,
         }
         home.update_printer_state("print progress", msg)
+
+        if position_settings.get("Pause after layer", False):
+            self.pause()
 
     def pre_exposure_tasks(self, settings):
         # screen thread
