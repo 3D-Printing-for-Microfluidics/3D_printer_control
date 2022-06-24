@@ -148,7 +148,39 @@
             },
             "calibration_position": 2315000,
             "bottom_position": 2400000,
-            "top_position": -2600000
+            "top_position": -2600000,
+            "coord_systems": {
+                "global": {
+                    "X": 0,
+                    "Y": 0,
+                    "Focus": 0,
+                    "Build Platform": 0
+                },
+                "visitech": {
+                    "X": -131.836,
+                    "Y": -26.367,
+                    "Focus": 48.325,
+                    "Build Platform": 0
+                },
+                "wintech": {
+                    "X": 121.417,
+                    "Y": -23.759,
+                    "Focus": 49.577,
+                    "Build Platform": 0
+                },
+                "keyence_visitech": {
+                    "X": -80.006,
+                    "Y": -21.950,
+                    "Focus": 48.337,
+                    "Build Platform": 0
+                },
+                "keyence_wintech": {
+                    "X": 85.056,
+                    "Y": -20.621,
+                    "Focus": 50.000,
+                    "Build Platform": 0
+                }
+            }
         },
         "tiptilt": {
             "dummy": false,
@@ -191,13 +223,9 @@
             "dummy": false,
             "sensors": {
                 "visitech": {
-                    "x_offset": -6750000,
-                    "y_offset": 0,
                     "measurement_index": 0
                 },
                 "wintech": {
-                    "x_offset": 7232000,
-                    "y_offset": 0,
                     "measurement_index": 1
                 }
             }
@@ -277,10 +305,28 @@
             "dummy": false,
             "sensors": {
                 "visitech": {
-                    "x_offset": -5777,
-                    "y_offset": -32169,
                     "measurement_index": 0
                 }
+            }
+        },
+        "coord_systems": {
+            "global": {
+                "X": 0,
+                "Y": 0,
+                "Focus": 0,
+                "Build Platform": 0
+            },
+            "visitech": {
+                "X": 0,
+                "Y": 0,
+                "Focus": 3.154,
+                "Build Platform": 0
+            },
+            "keyence_visitech": {
+                "X": -5777,
+                "Y": -32169,
+                "Focus": 2.404,
+                "Build Platform": 0
             }
         }
     }

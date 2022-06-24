@@ -18,6 +18,7 @@ class Galil:
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         self.movement_log = None
+        self.config_dict = config_dict
 
         self.gclib_error = gclib.GclibError
         self.sendLock = threading.Lock()

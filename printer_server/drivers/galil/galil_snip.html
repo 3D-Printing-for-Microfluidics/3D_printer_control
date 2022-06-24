@@ -16,6 +16,21 @@
             <button type="button" class="btn btn-outline-info btn-block" id="galil-bottom-btn">Go to Bottom</button>
         </div>
     </div>
+    {% if 'coord_systems' in hardware['galil'] %}
+    <div class="row">
+        <div class="col-4">
+            <h5>Coordinate System</h5>
+        </div>
+        <div class="col-8">
+            <div id="coord_systems" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                {% for coord in hardware['galil']['coord_systems'].keys() %}
+                <label class="btn btn-outline-info shadow-none {% if coord == 'global' %} active {% endif %}">{{
+                    coord|capitalize }}<input type="radio"></label>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
     {% for axis in hardware['galil']['stages'].keys() %}
     <div class="container" aria-label="{{ axis }}">
         <div class="row">

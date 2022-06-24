@@ -81,6 +81,8 @@ def index():
                     "common": config_dict["galil"]["axes_common_names"][i],
                     "position": galil_positions[axis],
                 }
+            if "coord_systems" in config_dict["galil"]:
+                hardware["galil"]["coord_systems"] = config_dict["galil"]["coord_systems"]
         if "gpio" in config_dict.keys():
             hardware["gpio"][
                 "film"

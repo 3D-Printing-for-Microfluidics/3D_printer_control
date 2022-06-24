@@ -15,6 +15,11 @@ var update_galil_positions = function (message) {
 }
 
 $(document).ready(function () {
+    // Change coordinate systems
+    $("#coord_systems :input").change(function () {
+        socket.emit("galil_set_coodinate_system", $(this).parent().text().toLowerCase());
+    });
+
     // Enable galil control buttons when current galil motion is complete
     socket.on("galil_done", function (message) {
         update_galil_positions(message)

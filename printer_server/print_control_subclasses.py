@@ -300,12 +300,16 @@ class MR1v1_PrintControl(PrintControl):
         galil_BP_thread.join()
 
     def galil_x_thread(self):
-        self.galil.absMove(cnts=-6750000, speed=100, axis="X")  # Visitech
+        pos = config_dict["galil"]["coord_systems"]["visitech"]["X"]
+        self.galil.absMove(mm=pos, speed=200, acceleration=800, axis="X")
+        # self.galil.absMove(cnts=-6750000, speed=100, axis="X")  # Visitech
         # self.galil.absMove(cnts=7232000, speed=100, axis="X") # Wintech?
         # self.galil.absMove(cnts=-500000, speed=100, axis="X") # Keyence?
 
     def galil_y_thread(self):
-        self.galil.absMove(cnts=-1350000, speed=50, axis="Y")
+        pos = config_dict["galil"]["coord_systems"]["visitech"]["Y"]
+        self.galil.absMove(mm=pos, speed=200, acceleration=800, axis="Y")
+        # self.galil.absMove(cnts=-1350000, speed=50, axis="Y")
 
     def galil_z_thread(self):
         self.galil.absMove(mm=self.focused_position / 1000, speed=50, axis="Focus")

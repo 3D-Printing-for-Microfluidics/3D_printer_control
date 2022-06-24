@@ -2,8 +2,18 @@ from printer_server.extensions import socketio
 from printer_server.hardware_configuration import driver_handles
 import printer_server.views.manual_controls
 
-
 galil = driver_handles.galil
+coord_system = None
+
+
+@socketio.on("galil_set_coodinate_system", namespace="/manual")
+def galil_set_coodinate_system(message):
+    "Set coordinate system offsets"
+    global coord_system
+    coord_system = galil.config_dict["coord_systems"][message]
+    socketio.emit(
+        "galil_done", galil_get_positions(), namespace="/manual", broadcast=True
+    )
 
 
 @socketio.on("galil_go_to_calibration", namespace="/manual")
@@ -51,6 +61,9 @@ def galil_move(message):
     acceleration = float(message["acceleration"])
     axis = message["axis"]
     if mode == "absolute":
+        global coord_system
+        if coord_system is not None:
+            distance += coord_system[galil.getCommonName(axis)]
         galil.absMove(mm=distance, speed=speed, acceleration=acceleration, axis=axis)
     elif mode == "relative":
         galil.relMove(mm=distance, speed=speed, acceleration=acceleration, axis=axis)
@@ -90,7 +103,11 @@ def galil_get_positions():
     """Get the position the main Z stage."""
     positions = {}
     for axis in galil.axes:
-        position = galil.cntsToMm(galil.getPosition(axis=axis), axis=axis) * 1000
+        position = galil.cntsToMm(galil.getPosition(axis=axis), axis=axis)
+        global coord_system
+        if coord_system is not None:
+            position -= coord_system[galil.getCommonName(axis)]
+        position *= 1000
         positions[axis] = f"{position:.1f}"
     return positions
 
