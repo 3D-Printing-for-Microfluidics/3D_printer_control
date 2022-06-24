@@ -44,8 +44,6 @@ def move_all_galil(
 
 
 class HR3v3u_PrintControl(PrintControl):
-    # from printer_server.drivers.kdc101.kdc101_snip import get_kdc_positions
-
     def __init__(self):
         """Create KDC handle"""
         super().__init__()
@@ -179,8 +177,6 @@ class HR4_PrintControl(PrintControl):
         keyence_y_offset = -32169
         z_offset = self.focused_position - 750
 
-        # time.sleep(1.0)
-        # self.gpio.film_relay_on()
         self.move_build_platform_up(self.default_position_settings)
         time.sleep(1.0)
         x_offset = self.default_x_offset + keyence_x_offset
@@ -207,19 +203,13 @@ class HR4_PrintControl(PrintControl):
                     )
         self.write_to_event_log(f"Keyence Focus Position: {self.keyence_start_position}")
         self.write_to_event_log(f"Keyence Focus Offsets: {self.keyence_measurement_list}")
-        # time.sleep(0.1)
-        # self.gpio.film_relay_off()
         self.move_build_platform_down(self.default_position_settings)
 
     def post_print_tasks(self):
         """Move all galil stages to their starting positions"""
         super().post_print_tasks()
 
-        # time.sleep(1.0)
-        # self.gpio.film_relay_on()
         self.move_build_platform_up(self.default_position_settings)
-        # time.sleep(0.1)
-        # self.gpio.film_relay_off()
         move_all_galil(
             self.galil,
             self.default_x_offset,
@@ -375,34 +365,3 @@ class HR4Film_PrintControl(HR4_PrintControl, GPIO_PrintControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=True):
         return super().initialize(run_in_thread=False)
-
-
-# def galil_setup_thread(self):
-#     """Initialize and home Galil controller"""
-#     self.galil.connect()
-#     self.galil.initialize()
-#     self.galil.home()
-
-#     # galil_X_thread = threading.Thread(target=self.galil_x_thread, args=[])
-#     # galil_Y_thread = threading.Thread(target=self.galil_y_thread, args=[])
-#     galil_Z_thread = threading.Thread(target=self.galil_z_thread, args=[])
-#     galil_BP_thread = threading.Thread(target=self.galil_bp_thread, args=[])
-
-#     # galil_X_thread.start()
-#     # galil_Y_thread.start()
-#     galil_Z_thread.start()
-#     galil_BP_thread.start()
-
-#     # galil_X_thread.join()
-#     # galil_Y_thread.join()
-#     galil_Z_thread.join()
-#     galil_BP_thread.join()
-
-# # def galil_x_thread(self):
-# #      # self.galil.absMove(cnts=-4800000, speed=100, axis="X") # Visitech
-# #     # self.galil.absMove(cnts=7232000, speed=100, axis="X") # Wintech
-# #     # self.galil.absMove(cnts=-500000, speed=100, axis="X") # Keyence
-
-# # def galil_y_thread(self):
-# #     # self.galil.absMove(mm=0, speed=50, axis="Y")
-# #     self.galil.absMove(mm=5, speed=50, axis="Y")
