@@ -149,20 +149,15 @@ class HR4_PrintControl(PrintControl):
         self.galil.initialize()
         self.galil.home()
 
-        galil_Z_thread = threading.Thread(target=self.galil_z_thread, args=[])
-        galil_BP_thread = threading.Thread(target=self.galil_bp_thread, args=[])
+        visitech_offsets = config_dict["galil"]["coord_systems"]["visitech"]
 
-        galil_Z_thread.start()
-        galil_BP_thread.start()
-
-        galil_Z_thread.join()
-        galil_BP_thread.join()
-
-    def galil_z_thread(self):
-        self.galil.absMove(mm=self.focused_position / 1000, speed=50, axis="Focus")
-
-    def galil_bp_thread(self):
-        self.galil.goToZmax()
+        move_all_galil(
+            self.galil,
+            visitech_offsets["X"],
+            visitech_offsets["Y"],
+            self.focused_position,
+            self.galil.cntsToMm(self.galil.top_position, axis="Focus") * 1000,
+        )
 
     def pre_print_tasks(self):
         """Move keyence sensor to all exposure positions and get focus offsets"""
@@ -173,15 +168,17 @@ class HR4_PrintControl(PrintControl):
         self.default_y_offset = default_image_settings.get("Image y offset (um)", 0)
 
         # check for keyence positions
-        keyence_x_offset = -5777
-        keyence_y_offset = -32169
-        z_offset = self.focused_position - 750
+        keyence_offsets = config_dict["galil"]["coord_systems"]["keyence_visitech"]
 
         self.move_build_platform_up(self.default_position_settings)
         time.sleep(1.0)
-        x_offset = self.default_x_offset + keyence_x_offset
-        y_offset = self.default_y_offset + keyence_y_offset
-        move_all_galil(self.galil, x_offset, y_offset, z_offset, None)
+        move_all_galil(
+            self.galil,
+            self.default_x_offset + keyence_offsets["X"],
+            self.default_y_offset + keyence_offsets["Y"],
+            self.focused_position - 750,
+            None,
+        )
         time.sleep(0.1)
         self.keyence_start_position = float(self.keyence.read_all()[1])
 
@@ -190,15 +187,19 @@ class HR4_PrintControl(PrintControl):
             current_layer_settings = self.print_settings["Layers"][layer[0]]
             image_settings_list = self.get_image_settings(current_layer_settings)
             for j, settings in enumerate(image_settings_list):
-                x = settings.get("Image x offset (um)", self.default_x_offset)
-                y = settings.get("Image y offset (um)", self.default_y_offset)
-                if f"{x}, {y}" not in self.keyence_measurement_list:
+                x_offset = settings.get("Image x offset (um)", self.default_x_offset)
+                y_offset = settings.get("Image y offset (um)", self.default_y_offset)
+                if f"{x_offset}, {y_offset}" not in self.keyence_measurement_list:
                     move_all_galil(
-                        self.galil, x + keyence_x_offset, y + keyence_y_offset, None, None
+                        self.galil,
+                        x_offset + keyence_offsets["X"],
+                        y_offset + keyence_offsets["Y"],
+                        None,
+                        None,
                     )
                     time.sleep(0.1)
                     keyence_position = float(self.keyence.read_all()[1])
-                    self.keyence_measurement_list[f"{x}, {y}"] = (
+                    self.keyence_measurement_list[f"{x_offset}, {y_offset}"] = (
                         self.keyence_start_position - keyence_position
                     )
         self.write_to_event_log(f"Keyence Focus Position: {self.keyence_start_position}")
@@ -210,10 +211,11 @@ class HR4_PrintControl(PrintControl):
         super().post_print_tasks()
 
         self.move_build_platform_up(self.default_position_settings)
+        visitech_offsets = config_dict["galil"]["coord_systems"]["visitech"]
         move_all_galil(
             self.galil,
-            self.default_x_offset,
-            self.default_y_offset,
+            visitech_offsets["X"],
+            visitech_offsets["Y"],
             self.focused_position,
             self.galil.top_position,
         )
@@ -221,6 +223,7 @@ class HR4_PrintControl(PrintControl):
     def pre_exposure_tasks(self, settings):
         """Move X, Y, and Focus stages to exposure positions"""
         defocus_um = settings["Relative focus position (um)"]
+        visitech_offsets = config_dict["galil"]["coord_systems"]["visitech"]
         x_offset = settings.get("Image x offset (um)", self.default_x_offset)
         y_offset = settings.get("Image y offset (um)", self.default_y_offset)
 
@@ -229,7 +232,12 @@ class HR4_PrintControl(PrintControl):
         z_focus = self.focused_position + defocus_um + keyence_measurement
 
         self.galil_threads = move_all_galil(
-            self.galil, x_offset, y_offset, z_focus, None, join=False
+            self.galil,
+            x_offset + visitech_offsets["X"],
+            y_offset + visitech_offsets["Y"],
+            z_focus,
+            None,
+            join=False,
         )
         return super().pre_exposure_tasks(settings)
 

@@ -63,7 +63,7 @@ def galil_move(message):
     if mode == "absolute":
         global coord_system
         if coord_system is not None:
-            distance += coord_system[galil.getCommonName(axis)]
+            distance += coord_system[galil.getCommonName(axis)] / 1000
         galil.absMove(mm=distance, speed=speed, acceleration=acceleration, axis=axis)
     elif mode == "relative":
         galil.relMove(mm=distance, speed=speed, acceleration=acceleration, axis=axis)
@@ -106,7 +106,7 @@ def galil_get_positions():
         position = galil.cntsToMm(galil.getPosition(axis=axis), axis=axis)
         global coord_system
         if coord_system is not None:
-            position -= coord_system[galil.getCommonName(axis)]
+            position -= coord_system[galil.getCommonName(axis)] / 1000
         position *= 1000
         positions[axis] = f"{position:.1f}"
     return positions
