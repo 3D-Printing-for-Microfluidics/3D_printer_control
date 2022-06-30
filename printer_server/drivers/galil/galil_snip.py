@@ -73,7 +73,7 @@ def galil_move(message):
                 get_galil_focus_positions()
             )
         socketio.emit(
-            "calibration_positions",
+            "calibration_focus_position",
             get_galil_focus_positions(),
             namespace="/manual",
             broadcast=True,

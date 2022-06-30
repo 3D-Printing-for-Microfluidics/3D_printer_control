@@ -24,7 +24,7 @@ def get_tiptilt_positions():
 def get_tiptilt_positions_socket():
     message = get_tiptilt_positions()
     socketio.emit(
-        "calibration_positions",
+        "calibration_tiptilt_positions",
         message,
         namespace="/manual",
         broadcast=True,

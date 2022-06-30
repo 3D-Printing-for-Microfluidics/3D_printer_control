@@ -17,7 +17,7 @@ def get_kdc_positions():
 def get_kdc_positions_socket():
     message = get_kdc_positions()
     socketio.emit(
-        "calibration_positions",
+        "calibration_focus_position",
         message,
         namespace="/manual",
         broadcast=True,
