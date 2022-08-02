@@ -246,6 +246,10 @@
                             "maximum": 10000,
                             "description": "Default time to expose a single image layer for."
                         },
+                        "Light engine": {
+                            "type": "string",
+                            "description": "Default light engine for exposure."
+                        },
                         "Light engine power setting": {
                             "type": "integer",
                             "minimum": 0,
@@ -420,6 +424,11 @@
                                     "minimum": 0,
                                     "maximum": 10000,
                                     "description": "Default time to expose a single image layer for."
+                                },
+                                "Light engine": {
+                                    "type": "string",
+                                    "default": "visitech",
+                                    "description": "Default light engine for exposure."
                                 },
                                 "Light engine power setting": {
                                     "type": "integer",

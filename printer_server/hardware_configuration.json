@@ -159,25 +159,25 @@
                 "visitech": {
                     "X": -131836,
                     "Y": -26367,
-                    "Focus": 48325,
+                    "Focus": 47695,
                     "Build Platform": 0
                 },
                 "wintech": {
-                    "X": 121417,
-                    "Y": -23759,
-                    "Focus": 49717,
+                    "X": 127052,
+                    "Y": -19567,
+                    "Focus": 47951,
                     "Build Platform": 0
                 },
                 "keyence_visitech": {
-                    "X": -80006,
-                    "Y": -21950,
-                    "Focus": 48337,
+                    "X": -79936,
+                    "Y": -22590,
+                    "Focus": 47268,
                     "Build Platform": 0
                 },
                 "keyence_wintech": {
-                    "X": 85056,
-                    "Y": -20621,
-                    "Focus": 50000,
+                    "X": 90648,
+                    "Y": -16641,
+                    "Focus": 49098,
                     "Build Platform": 0
                 }
             }
