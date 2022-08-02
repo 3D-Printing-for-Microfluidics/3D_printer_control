@@ -186,6 +186,17 @@
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=3794660"
         },
+        "keyence": {
+            "dummy": false,
+            "sensors": {
+                "visitech": {
+                    "measurement_index": 1
+                },
+                "wintech": {
+                    "measurement_index": 0
+                }
+            }
+        },
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881820",
@@ -214,17 +225,6 @@
                 1920,
                 1080
             ]
-        },
-        "keyence": {
-            "dummy": false,
-            "sensors": {
-                "visitech": {
-                    "measurement_index": 0
-                },
-                "wintech": {
-                    "measurement_index": 1
-                }
-            }
         }
     },
     "HR4": {
