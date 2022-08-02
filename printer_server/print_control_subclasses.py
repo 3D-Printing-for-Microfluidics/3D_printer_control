@@ -2,7 +2,20 @@ from printer_server.print_control import *
 
 
 def move_all_galil(
-    galil, x, y, z, bp, join=True, speed_x=50, speed_y=50, speed_z=25, speed_bp=25
+    galil,
+    x,
+    y,
+    z,
+    bp,
+    join=True,
+    speed_x=50,
+    speed_y=50,
+    speed_z=25,
+    speed_bp=25,
+    acceleration_x=50,
+    acceleration_y=50,
+    acceleration_z=50,
+    acceleration_bp=50,
 ):
     """
     Starts multithreaded movement on all of the galil axes. If any axis is set to none, it will not move.
@@ -12,26 +25,46 @@ def move_all_galil(
     if x is not None:
         threads[0] = threading.Thread(
             target=galil.absMove,
-            kwargs={"mm": x / 1000, "speed": speed_x, "axis": "X"},
+            kwargs={
+                "mm": x / 1000,
+                "speed": speed_x,
+                "acceleration": acceleration_x,
+                "axis": "X",
+            },
         )
         threads[0].start()
     if y is not None:
         threads[1] = threading.Thread(
             target=galil.absMove,
-            kwargs={"mm": y / 1000, "speed": speed_y, "axis": "Y"},
+            kwargs={
+                "mm": y / 1000,
+                "speed": speed_y,
+                "acceleration": acceleration_y,
+                "axis": "Y",
+            },
         )
         threads[1].start()
     if z is not None:
         threads[2] = threading.Thread(
             target=galil.absMove,
-            kwargs={"mm": z / 1000, "speed": speed_z, "axis": "Focus"},
+            kwargs={
+                "mm": z / 1000,
+                "speed": speed_z,
+                "acceleration": acceleration_z,
+                "axis": "Focus",
+            },
         )
         threads[2].start()
 
     if bp is not None:
         threads[3] = threading.Thread(
             target=galil.absMove,
-            kwargs={"mm": bp / 1000, "speed": speed_bp, "axis": "Build Platform"},
+            kwargs={
+                "mm": bp / 1000,
+                "speed": speed_bp,
+                "acceleration": acceleration_bp,
+                "axis": "Build Platform",
+            },
         )
         threads[3].start()
 
@@ -322,6 +355,24 @@ class MR1v1_PrintControl(HR4_PrintControl):
             self.wintech_thread.join()
             log.info("Printer initialized, all hardware ready.")
 
+    # def galil_setup_thread(self):
+    #     """Initialize and home Galil controller"""
+    #     self.galil.connect()
+    #     self.galil.initialize()
+    #     self.galil.home()
+
+    #     move_all_galil(
+    #         self.galil,
+    #         self.coord_systems["light_engine"]["visitech"]["X"],
+    #         self.coord_systems["light_engine"]["visitech"]["Y"],
+    #         self.coord_systems["light_engine"]["visitech"]["Focus"],
+    #         self.galil.cntsToMm(self.galil.top_position, axis="Focus") * 1000,
+    #         speed_x=100,
+    #         speed_y=100,
+    #         acceleration_x=400,
+    #         acceleration_y=400,
+    #     )
+
     def pre_print_tasks(self):
         """Move keyence sensor to all exposure positions and get focus offsets"""
         defaults_layer_settings = self.print_settings.get("Default layer settings")
@@ -438,28 +489,154 @@ class MR1v1_PrintControl(HR4_PrintControl):
         self.move_build_platform_down(self.default_position_settings)
 
     def post_print_tasks(self):
-        """Move all galil stages to their starting positions"""
+        # always turn off the Visitech
+        self.wintech.stop_sequencer()
+        home.update_wintech_led_status(False)
+        self.screen.clear(screen=config_dict["screen"]["light_engines"].index("wintech"))
         super().post_print_tasks()
 
-        self.move_build_platform_up(self.default_position_settings)
-        self.galil.goToZmax()
+        # keyence_indexes = config_dict["keyence"]["sensors"]
+        # for light_engine in config_dict["screen"]["light_engines"]:
+        #     # get home keyence reading
+        #     move_all_galil(
+        #         self.galil,
+        #         self.default_x_offset + self.coord_systems["keyence"][light_engine]["X"],
+        #         self.default_y_offset + self.coord_systems["keyence"][light_engine]["Y"],
+        #         self.coord_systems["keyence"][light_engine]["Focus"],
+        #         None,
+        #     )
+        #     time.sleep(1.0)
+        #     self.write_to_event_log(
+        #         f"{light_engine.capitalize()} Keyence Focus Position: {float(self.keyence.read_all()[keyence_indexes[light_engine]['measurement_index'] + 1])}"
+        #     )
 
-    def pre_exposure_tasks(self, settings):
+    def pre_exposure_tasks(self, settings, light_engine):
         """Move X, Y, and Focus stages to exposure positions"""
         defocus_um = settings["Relative focus position (um)"]
-        z_focus = self.focused_position + defocus_um
+        x_offset = settings.get("Image x offset (um)", self.default_x_offset)
+        y_offset = settings.get("Image y offset (um)", self.default_y_offset)
+        screen_index = config_dict["screen"]["light_engines"].index(light_engine)
 
+        # keyence correction
+        base_focus = self.coord_systems["light_engine"][light_engine]["Focus"]
+        keyence_measurement = self.keyence_measurement_list[
+            f"{light_engine} {x_offset}, {y_offset}"
+        ]
+        z_focus = base_focus + defocus_um + keyence_measurement
         self.galil_threads = move_all_galil(
-            self.galil, None, None, z_focus, None, join=False
+            self.galil,
+            x_offset + self.coord_systems["light_engine"][light_engine]["X"],
+            y_offset + self.coord_systems["light_engine"][light_engine]["Y"],
+            z_focus,
+            None,
+            join=False,
         )
-        return super().pre_exposure_tasks(settings)
 
-    def pre_exposure_joins(self):
+        # screen thread
+        self.screen_thread = threading.Thread(
+            target=self.screen.draw,
+            args=[self.image],
+            kwargs={"screen": screen_index},
+        )
+        self.screen_thread.start()
+
+        self.write_to_event_log("Setup Exposure")
+        if light_engine == "wintech":
+            # wintech setup thread
+            self.wintech_thread = threading.Thread(
+                target=self.wintech.setup_exposure,
+                args=[self.exposure_time_ms, self.power],
+            )
+            self.wintech_thread.start()
+        else:
+            # visitech setup thread
+            self.visitech_thread = threading.Thread(
+                target=self.visitech.setup_exposure,
+                args=[self.exposure_time_ms, self.power],
+            )
+            self.visitech_thread.start()
+
+    def pre_exposure_joins(self, light_engine):
         """Join X, Y, and Focus threads"""
         for thread in self.galil_threads:
             if thread is not None:
                 thread.join()
-        return super().pre_exposure_joins()
+
+        # wait for all hardware to be ready for exposure
+        if not self.next_layer == 1:
+            self.galil_thread.join()
+        self.screen_thread.join()
+        if light_engine == "wintech":
+            self.wintech_thread.join()
+        else:
+            self.visitech_thread.join()
+
+    def exposure_worker(self, j, settings, exposure_data):
+        """Process a single exposure of the 3D print.
+
+        This method should only be called from inside layer_worker.
+        """
+        # read settings for this exposure
+        slices_folder = Path(self.print_settings["Header"]["Image directory"])
+        self.image = self.current_job / slices_folder / Path(settings["Image file"])
+        self.exposure_time_ms = settings["Layer exposure time (ms)"]
+        self.power = settings["Light engine power setting"]
+        light_engine = settings.get("Light engine", "visitech")
+        layer_start_position = self.get_focus()
+
+        # run pre-exposure tasks
+        self.pre_exposure_tasks(settings, light_engine)
+        self.pre_exposure_joins(light_engine)
+
+        if light_engine == "wintech":
+            position_during_exposure = self.get_focus()
+            pre_exposure_status = ""
+            time.sleep(settings["Wait before exposure (ms)"] / 1000)
+            self.write_to_event_log("Start Exposure")
+            home.update_wintech_led_status(True)
+            self.wintech.perform_exposure()
+            home.update_wintech_led_status(False)
+            self.write_to_event_log("Finish Exposure")
+            time.sleep(settings["Wait after exposure (ms)"] / 1000)
+
+            self.post_exposure_tasks()
+            post_exposure_status = ""
+
+        else:
+            # do the exposure
+            position_during_exposure = self.get_focus()
+            pre_exposure_status = self.visitech.read_all_status()
+            time.sleep(settings["Wait before exposure (ms)"] / 1000)
+            self.write_to_event_log("Start Exposure")
+            home.update_visitech_led_status(True)
+            self.visitech.perform_exposure()
+            home.update_visitech_led_status(False)
+            self.write_to_event_log("Finish Exposure")
+            time.sleep(settings["Wait after exposure (ms)"] / 1000)
+
+            self.post_exposure_tasks()
+
+            # Suppress the first Visitech OCP error. This appears to always be
+            # triggered on the first exposure of each print job. It would be better
+            # to figure out why this happens in the hardware and fix it there.
+            if self.suppress_visitech_ocp_error:
+                self.suppress_visitech_ocp_error = False  # only do this once per print
+                for e in self.visitech.get_sticky_errors(warn=False):
+                    if e and e.lower() != "led over current protection triggered":
+                        log.warning("Visitech error: %s", e)  # report other errors
+            post_exposure_status = self.visitech.read_all_status()
+
+        # save expoure data
+        exposure_data[j] = {
+            "image": self.image.name,
+            "power setting": self.power,
+            "exposure time (ms)": self.exposure_time_ms,
+            "layer starting position": layer_start_position,
+            "position during exposure": position_during_exposure,
+            "post exposure position": self.get_focus(),
+            "pre exposure status": pre_exposure_status,
+            "post exposure status": post_exposure_status,
+        }
 
 
 class GPIO_PrintControl(PrintControl):
