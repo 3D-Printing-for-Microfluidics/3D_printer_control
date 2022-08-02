@@ -43,6 +43,13 @@ def move_all_galil(
         return threads
 
 
+def get_keyence_position(sensor):
+    """Return the last focused position for the keyence sensor from the
+    position log file.
+    """
+    return get_last_calibration_positions()[f"keyence_{sensor}"]
+
+
 class HR3v3u_PrintControl(PrintControl):
     def __init__(self):
         """Create KDC handle"""
@@ -118,7 +125,14 @@ class HR4_PrintControl(PrintControl):
         """Create keyence handle"""
         super().__init__()
         self.keyence = driver_handles.keyence
-        self.keyence_start_position = None
+        self.coord_systems = {
+            "keyence": {
+                "visitech": config_dict["galil"]["coord_systems"]["keyence_visitech"]
+            },
+            "light_engine": {
+                "visitech": config_dict["galil"]["coord_systems"]["visitech"]
+            },
+        }
         self.keyence_measurement_list = None
 
         self.default_position_settings = None
@@ -149,13 +163,11 @@ class HR4_PrintControl(PrintControl):
         self.galil.initialize()
         self.galil.home()
 
-        visitech_offsets = config_dict["galil"]["coord_systems"]["visitech"]
-
         move_all_galil(
             self.galil,
-            visitech_offsets["X"],
-            visitech_offsets["Y"],
-            self.focused_position,
+            self.coord_systems["light_engine"]["visitech"]["X"],
+            self.coord_systems["light_engine"]["visitech"]["Y"],
+            self.coord_systems["light_engine"]["visitech"]["Focus"],
             self.galil.cntsToMm(self.galil.top_position, axis="Focus") * 1000,
         )
 
@@ -168,19 +180,52 @@ class HR4_PrintControl(PrintControl):
         self.default_y_offset = default_image_settings.get("Image y offset (um)", 0)
 
         # check for keyence positions
-        keyence_offsets = config_dict["galil"]["coord_systems"]["keyence_visitech"]
+        keyence_index = (
+            config_dict["keyence"]["sensors"]["visitech"]["measurement_index"] + 1
+        )
 
         self.move_build_platform_up(self.default_position_settings)
         time.sleep(1.0)
+
+        keyence_start_position = get_keyence_position("visitech")
+        self.write_to_event_log(
+            f"Visitech Keyence Target Focus Position: {keyence_start_position}"
+        )
+        # goto position
         move_all_galil(
             self.galil,
-            self.default_x_offset + keyence_offsets["X"],
-            self.default_y_offset + keyence_offsets["Y"],
-            self.focused_position - 750,
+            self.default_x_offset + self.coord_systems["keyence"]["visitech"]["X"],
+            self.default_y_offset + self.coord_systems["keyence"]["visitech"]["Y"],
+            self.coord_systems["keyence"]["visitech"]["Focus"],
             None,
         )
-        time.sleep(0.1)
-        self.keyence_start_position = float(self.keyence.read_all()[1])
+        time.sleep(1.0)
+        # get keyence reading
+        temp_position = float(self.keyence.read_all()[keyence_index])
+        move_all_galil(
+            self.galil,
+            None,
+            None,
+            self.coord_systems["keyence"]["visitech"]["Focus"]
+            + (keyence_start_position - temp_position),
+            None,
+        )
+        time.sleep(1.0)
+        temp_position = float(self.keyence.read_all()[keyence_index])
+        self.write_to_event_log(
+            f"Visitech Keyence Actual Focus Position: {temp_position}"
+        )
+        current_position = (
+            self.galil.cntsToMm(self.galil.getPosition(axis="Focus"), axis="Focus") * 1000
+        )
+        focus_drift = (
+            self.coord_systems["keyence"]["visitech"]["Focus"] - current_position
+        )
+
+        self.coord_systems["keyence"]["visitech"]["Focus"] = current_position
+        self.coord_systems["light_engine"]["visitech"]["Focus"] = (
+            self.coord_systems["light_engine"]["visitech"]["Focus"] - focus_drift
+        )
 
         self.keyence_measurement_list = {}
         for i, layer in enumerate(self.layer_map):
@@ -192,17 +237,16 @@ class HR4_PrintControl(PrintControl):
                 if f"{x_offset}, {y_offset}" not in self.keyence_measurement_list:
                     move_all_galil(
                         self.galil,
-                        x_offset + keyence_offsets["X"],
-                        y_offset + keyence_offsets["Y"],
+                        x_offset + self.coord_systems["keyence"]["visitech"]["X"],
+                        y_offset + self.coord_systems["keyence"]["visitech"]["Y"],
                         None,
                         None,
                     )
                     time.sleep(0.1)
-                    keyence_position = float(self.keyence.read_all()[1])
+                    keyence_position = float(self.keyence.read_all()[keyence_index])
                     self.keyence_measurement_list[f"{x_offset}, {y_offset}"] = (
-                        self.keyence_start_position - keyence_position
+                        keyence_start_position - keyence_position
                     )
-        self.write_to_event_log(f"Keyence Focus Position: {self.keyence_start_position}")
         self.write_to_event_log(f"Keyence Focus Offsets: {self.keyence_measurement_list}")
         self.move_build_platform_down(self.default_position_settings)
 
@@ -211,30 +255,32 @@ class HR4_PrintControl(PrintControl):
         super().post_print_tasks()
 
         self.move_build_platform_up(self.default_position_settings)
-        visitech_offsets = config_dict["galil"]["coord_systems"]["visitech"]
         move_all_galil(
             self.galil,
-            visitech_offsets["X"],
-            visitech_offsets["Y"],
-            self.focused_position,
+            self.coord_systems["light_engine"]["visitech"]["X"],
+            self.coord_systems["light_engine"]["visitech"]["Y"],
+            self.coord_systems["light_engine"]["visitech"]["Focus"],
             self.galil.top_position,
         )
 
     def pre_exposure_tasks(self, settings):
         """Move X, Y, and Focus stages to exposure positions"""
         defocus_um = settings["Relative focus position (um)"]
-        visitech_offsets = config_dict["galil"]["coord_systems"]["visitech"]
         x_offset = settings.get("Image x offset (um)", self.default_x_offset)
         y_offset = settings.get("Image y offset (um)", self.default_y_offset)
 
         # keyence correction
         keyence_measurement = self.keyence_measurement_list[f"{x_offset}, {y_offset}"]
-        z_focus = self.focused_position + defocus_um + keyence_measurement
+        z_focus = (
+            self.coord_systems["light_engine"]["visitech"]["Focus"]
+            + defocus_um
+            + keyence_measurement
+        )
 
         self.galil_threads = move_all_galil(
             self.galil,
-            x_offset + visitech_offsets["X"],
-            y_offset + visitech_offsets["Y"],
+            x_offset + self.coord_systems["light_engine"]["visitech"]["X"],
+            y_offset + self.coord_systems["light_engine"]["visitech"]["Y"],
             z_focus,
             None,
             join=False,
