@@ -11,48 +11,53 @@
     {% for sensor in hardware['keyence']['sensors'] %}
 
     <!-- Distance -->
-    <div class="container" aria-label="Distance">
+    <div class="container" aria-label="{{sensor}}">
         <div class="row">
-            <div class="col-4">
+            <div class="col-2">
                 <h5>{{ sensor|capitalize}}</h5>
             </div>
-            <div class="col-6">
-                <h5 class="col text-right" id='keyence-{sensor}-state'>Readout: {{
+            <div class="col-3 text-right">
+                <h5>Current Value:</h5>
+            </div>
+            <div class="col-3">
+                <h5 class="col text-left" id='{{ sensor }}-value'>{{
                     hardware['keyence']['readings'][sensor] }} um
                 </h5>
             </div>
         </div>
-    </div>
-
-    <!-- <div class="row">
+        <div class="row">
+            <div class="col-2"></div>
+            <div class="col-3 text-right">
+                <h5>Focus Setpoint:</h5>
+            </div>
+            <div class="col-3">
+                <h5 class="col text-left" id='{{ sensor }}-focus'>{{
+                    hardware['keyence']['focus'][sensor] }} um
+                </h5>
+            </div>
             <div class="col-4">
-                <h5>Distance</h5>
-            </div>
-            <div class="col-2">
-                <h5 class="col text-right" id='dist-state'>{{ hardware['keyence']['readings'][sensor] }}</h5>
-            </div>
-            <div class="col-6">
-                <input class="form-control kdc-cntrl-txt" type="text" id="distance-txt" placeholder="Position (um)">
+                <input class="form-control {{ sensor }}-cntrl-txt" type="text" id="{{ sensor }}-txt"
+                    placeholder="Position (um)">
             </div>
         </div>
         <div class="row">
-            <div class="col-4 text-left">
-            </div>
+            <div class="col-4"></div>
             <div class="col-8 text-right">
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-info kdc-cntrl-btn">-1000</button>
-                    <button type="button" class="btn btn-outline-info kdc-cntrl-btn">-100</button>
-                    <button type="button" class="btn btn-outline-info kdc-cntrl-btn">-10</button>
-                    <button type="button" class="btn btn-outline-info kdc-cntrl-btn">-1</button>
-                    <button type="button" class="btn btn-outline-info kdc-cntrl-btn">1</button>
-                    <button type="button" class="btn btn-outline-info kdc-cntrl-btn">10</button>
-                    <button type="button" class="btn btn-outline-info kdc-cntrl-btn">100</button>
-                    <button type="button" class="btn btn-outline-info kdc-cntrl-btn">1000</button>
+                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">-1000</button>
+                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">1000</button>
                 </div>
             </div>
         </div>
-    </div> -->
-    {% endfor %}
+    </div>
+</div>
+{% endfor %}
 </div>
 
 <script src="{{ url_for('manual_controls.static', filename='keyence/keyence_snip.js') }}"></script>

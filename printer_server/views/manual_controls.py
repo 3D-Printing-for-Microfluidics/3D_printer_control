@@ -93,10 +93,14 @@ def index():
             sensors = list(config_dict["keyence"]["sensors"].keys())
             hardware["keyence"]["sensors"] = sensors
             hardware["keyence"]["readings"] = {}
+            hardware["keyence"]["focus"] = {}
             for sensor in sensors:
                 sensor_reading = printer_server.drivers.keyence.keyence_snip.read_sensor(
                     config_dict["keyence"]["sensors"][sensor]["measurement_index"]
                 )
+                hardware["keyence"]["focus"][sensor] = calibration_positions[
+                    f"keyence_{sensor}"
+                ]
                 hardware["keyence"]["readings"][sensor] = sensor_reading
 
         if "loadcell" in config_dict.keys():
