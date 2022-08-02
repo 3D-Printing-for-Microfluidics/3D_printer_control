@@ -291,6 +291,14 @@
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881850"
         },
+        "keyence": {
+            "dummy": false,
+            "sensors": {
+                "visitech": {
+                    "measurement_index": 0
+                }
+            }
+        },
         "gpio": {
             "dummy": false
         },
@@ -314,14 +322,6 @@
                 2560,
                 1600
             ]
-        },
-        "keyence": {
-            "dummy": false,
-            "sensors": {
-                "visitech": {
-                    "measurement_index": 0
-                }
-            }
         }
     }
 }
