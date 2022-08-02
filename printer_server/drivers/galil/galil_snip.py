@@ -67,17 +67,6 @@ def galil_move(message):
         galil.absMove(mm=distance, speed=speed, acceleration=acceleration, axis=axis)
     elif mode == "relative":
         galil.relMove(mm=distance, speed=speed, acceleration=acceleration, axis=axis)
-    if galil.getCommonName(axis) == "Focus":
-        if message["log"] == True:
-            printer_server.views.manual_controls.write_to_position_log(
-                get_galil_focus_positions()
-            )
-        socketio.emit(
-            "calibration_focus_position",
-            get_galil_focus_positions(),
-            namespace="/manual",
-            broadcast=True,
-        )
     socketio.emit(
         "galil_done", galil_get_positions(), namespace="/manual", broadcast=True
     )
@@ -110,14 +99,6 @@ def galil_get_positions():
         position *= 1000
         positions[axis] = f"{position:.1f}"
     return positions
-
-
-def get_galil_focus_positions():
-    last_positions = printer_server.views.manual_controls.get_last_calibration_positions()
-    last_positions["distance"] = (
-        galil.cntsToMm(galil.getPosition(axis="Focus"), axis="Focus") * 1000
-    )
-    return last_positions
 
 
 @socketio.on("galil_get_position", namespace="/manual")
