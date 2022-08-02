@@ -295,75 +295,147 @@ class HR4_PrintControl(PrintControl):
         return super().pre_exposure_joins()
 
 
-class MR1v1_PrintControl(PrintControl):
+class MR1v1_PrintControl(HR4_PrintControl):
     def __init__(self):
         """Create wintech handle"""
         super().__init__()
         self.wintech_thread = None
         self.wintech = driver_handles.wintech
-        self.keyence = driver_handles.keyence
-
-    def get_focus(self):
-        """Return galil 'Focus' axis position"""
-        return int(
-            self.galil.cntsToMm(self.galil.getPosition(axis="Focus"), axis="Focus") * 1000
-        )
+        self.default_light_engine = None
+        self.coord_systems = {
+            "keyence": {
+                "visitech": config_dict["galil"]["coord_systems"]["keyence_visitech"],
+                "wintech": config_dict["galil"]["coord_systems"]["keyence_wintech"],
+            },
+            "light_engine": {
+                "visitech": config_dict["galil"]["coord_systems"]["visitech"],
+                "wintech": config_dict["galil"]["coord_systems"]["wintech"],
+            },
+        }
 
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=True):
-        """Initialize wintech sensor"""
         if self.state == "uninitialized":
             self.wintech_thread = threading.Thread(target=self.wintech.connect, args=[])
-            keyence_thread = threading.Thread(target=self.keyence.connect, args=[])
             self.wintech_thread.start()
-            keyence_thread.start()
             super().initialize(run_in_thread=False)
-            keyence_thread.join()
             self.wintech_thread.join()
             log.info("Printer initialized, all hardware ready.")
 
-    def galil_setup_thread(self):
-        """Initialize and home Galil controller"""
-        self.galil.connect()
-        self.galil.initialize()
-        self.galil.home()
-
-        galil_X_thread = threading.Thread(target=self.galil_x_thread, args=[])
-        galil_Y_thread = threading.Thread(target=self.galil_y_thread, args=[])
-        galil_Z_thread = threading.Thread(target=self.galil_z_thread, args=[])
-        galil_BP_thread = threading.Thread(target=self.galil_bp_thread, args=[])
-
-        galil_X_thread.start()
-        galil_Y_thread.start()
-        galil_Z_thread.start()
-        galil_BP_thread.start()
-
-        galil_X_thread.join()
-        galil_Y_thread.join()
-        galil_Z_thread.join()
-        galil_BP_thread.join()
-
-    def galil_x_thread(self):
-        pos = config_dict["galil"]["coord_systems"]["visitech"]["X"]
-        self.galil.absMove(mm=pos, speed=200, acceleration=800, axis="X")
-        # self.galil.absMove(cnts=-6750000, speed=100, axis="X")  # Visitech
-        # self.galil.absMove(cnts=7232000, speed=100, axis="X") # Wintech?
-        # self.galil.absMove(cnts=-500000, speed=100, axis="X") # Keyence?
-
-    def galil_y_thread(self):
-        pos = config_dict["galil"]["coord_systems"]["visitech"]["Y"]
-        self.galil.absMove(mm=pos, speed=200, acceleration=800, axis="Y")
-        # self.galil.absMove(cnts=-1350000, speed=50, axis="Y")
-
-    def galil_z_thread(self):
-        self.galil.absMove(mm=self.focused_position / 1000, speed=50, axis="Focus")
-
-    def galil_bp_thread(self):
-        self.galil.goToZmax()
-
     def pre_print_tasks(self):
+        """Move keyence sensor to all exposure positions and get focus offsets"""
         defaults_layer_settings = self.print_settings.get("Default layer settings")
+        default_image_settings = defaults_layer_settings.get("Image settings")
         self.default_position_settings = defaults_layer_settings.get("Position settings")
+        self.default_x_offset = default_image_settings.get("Image x offset (um)", 0)
+        self.default_y_offset = default_image_settings.get("Image y offset (um)", 0)
+        self.default_light_engine = default_image_settings.get("Light engine", "visitech")
+
+        keyence_indexes = config_dict["keyence"]["sensors"]
+        self.keyence_measurement_list = {}
+
+        self.move_build_platform_up(self.default_position_settings)
+        time.sleep(1.0)
+
+        # move focus stage around a little to settle better
+        for light_engine in config_dict["screen"]["light_engines"]:
+            move_all_galil(
+                self.galil,
+                None,
+                None,
+                self.coord_systems["keyence"][light_engine]["Focus"],
+                None,
+            )
+            time.sleep(1.0)
+
+        for light_engine in config_dict["screen"]["light_engines"]:
+            # load keyence focal position
+            start_position = get_keyence_position(light_engine)
+            self.write_to_event_log(
+                f"{light_engine.capitalize()} Keyence Target Focus Position: {start_position}"
+            )
+            # goto position
+            move_all_galil(
+                self.galil,
+                self.default_x_offset + self.coord_systems["keyence"][light_engine]["X"],
+                self.default_y_offset + self.coord_systems["keyence"][light_engine]["Y"],
+                self.coord_systems["keyence"][light_engine]["Focus"],
+                None,
+            )
+            time.sleep(1.0)
+            # get keyence reading
+            temp_position = float(
+                self.keyence.read_all()[
+                    keyence_indexes[light_engine]["measurement_index"] + 1
+                ]
+            )
+            move_all_galil(
+                self.galil,
+                None,
+                None,
+                self.coord_systems["keyence"][light_engine]["Focus"]
+                + (start_position - temp_position),
+                None,
+            )
+            time.sleep(1.0)
+            temp_position = float(
+                self.keyence.read_all()[
+                    keyence_indexes[light_engine]["measurement_index"] + 1
+                ]
+            )
+            current_position = (
+                self.galil.cntsToMm(self.galil.getPosition(axis="Focus"), axis="Focus")
+                * 1000
+            )
+            focus_drift = (
+                self.coord_systems["keyence"][light_engine]["Focus"] - current_position
+            )
+            print(f"Drift: {focus_drift}")
+            self.write_to_event_log(
+                f"{light_engine.capitalize()} Keyence Actual Focus Position: {temp_position}"
+            )
+
+            self.coord_systems["keyence"][light_engine]["Focus"] = current_position
+            self.coord_systems["light_engine"][light_engine]["Focus"] = (
+                self.coord_systems["light_engine"][light_engine]["Focus"] - focus_drift
+            )
+
+            # get keyence offsets
+            for i, layer in enumerate(self.layer_map):
+                current_layer_settings = self.print_settings["Layers"][layer[0]]
+                image_settings_list = self.get_image_settings(current_layer_settings)
+                for j, settings in enumerate(image_settings_list):
+                    x_offset = settings.get("Image x offset (um)", self.default_x_offset)
+                    y_offset = settings.get("Image y offset (um)", self.default_y_offset)
+                    layer_light_engine = settings.get(
+                        "Light engine", self.default_light_engine
+                    )
+                    if layer_light_engine == light_engine:
+                        if (
+                            f"{light_engine} {x_offset}, {y_offset}"
+                            not in self.keyence_measurement_list
+                        ):
+                            move_all_galil(
+                                self.galil,
+                                x_offset
+                                + self.coord_systems["keyence"][light_engine]["X"],
+                                y_offset
+                                + self.coord_systems["keyence"][light_engine]["Y"],
+                                None,
+                                None,
+                            )
+                            time.sleep(1.0)
+                            keyence_position = float(
+                                self.keyence.read_all()[
+                                    keyence_indexes[light_engine]["measurement_index"] + 1
+                                ]
+                            )
+                            self.keyence_measurement_list[
+                                f"{light_engine} {x_offset}, {y_offset}"
+                            ] = (start_position - keyence_position)
+
+        self.write_to_event_log(f"Keyence Focus Offsets: {self.keyence_measurement_list}")
+        self.move_build_platform_down(self.default_position_settings)
 
     def post_print_tasks(self):
         """Move all galil stages to their starting positions"""
