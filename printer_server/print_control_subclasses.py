@@ -396,6 +396,7 @@ class MR1v1_PrintControl(HR4_PrintControl):
                 None,
                 self.coord_systems["keyence"][light_engine]["Focus"],
                 None,
+                speed_x=25,
             )
             time.sleep(1.0)
 
@@ -412,6 +413,7 @@ class MR1v1_PrintControl(HR4_PrintControl):
                 self.default_y_offset + self.coord_systems["keyence"][light_engine]["Y"],
                 self.coord_systems["keyence"][light_engine]["Focus"],
                 None,
+                speed_x=25,
             )
             time.sleep(1.0)
             # get keyence reading
@@ -427,6 +429,7 @@ class MR1v1_PrintControl(HR4_PrintControl):
                 self.coord_systems["keyence"][light_engine]["Focus"]
                 + (start_position - temp_position),
                 None,
+                speed_x=25,
             )
             time.sleep(1.0)
             temp_position = float(
@@ -474,6 +477,7 @@ class MR1v1_PrintControl(HR4_PrintControl):
                                 + self.coord_systems["keyence"][light_engine]["Y"],
                                 None,
                                 None,
+                                speed_x=25,
                             )
                             time.sleep(1.0)
                             keyence_position = float(
@@ -493,7 +497,18 @@ class MR1v1_PrintControl(HR4_PrintControl):
         self.wintech.stop_sequencer()
         home.update_wintech_led_status(False)
         self.screen.clear(screen=config_dict["screen"]["light_engines"].index("wintech"))
-        super().post_print_tasks()
+
+        self.move_build_platform_up(self.default_position_settings)
+        move_all_galil(
+            self.galil,
+            self.coord_systems["light_engine"]["visitech"]["X"],
+            self.coord_systems["light_engine"]["visitech"]["Y"],
+            self.coord_systems["light_engine"]["visitech"]["Focus"],
+            self.galil.top_position,
+            speed_x=25
+        )
+
+        super().super().post_print_tasks()
 
         # keyence_indexes = config_dict["keyence"]["sensors"]
         # for light_engine in config_dict["screen"]["light_engines"]:
@@ -530,6 +545,7 @@ class MR1v1_PrintControl(HR4_PrintControl):
             z_focus,
             None,
             join=False,
+            speed_x=25,
         )
 
         # screen thread
