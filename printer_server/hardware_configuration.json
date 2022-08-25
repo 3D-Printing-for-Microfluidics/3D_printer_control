@@ -157,27 +157,27 @@
                     "Build Platform": 0
                 },
                 "visitech": {
-                    "X": -131836,
-                    "Y": -26367,
-                    "Focus": 47695,
+                    "X": -121096,
+                    "Y": -15307,
+                    "Focus": 46475,
                     "Build Platform": 0
                 },
                 "wintech": {
-                    "X": 127052,
-                    "Y": -19567,
-                    "Focus": 47951,
+                    "X": 138906,
+                    "Y": -7726,
+                    "Focus": 46343,
                     "Build Platform": 0
                 },
                 "keyence_visitech": {
-                    "X": -79936,
-                    "Y": -22590,
-                    "Focus": 47268,
+                    "X": -70855,
+                    "Y": 1624,
+                    "Focus": 45537,
                     "Build Platform": 0
                 },
                 "keyence_wintech": {
-                    "X": 90648,
-                    "Y": -16641,
-                    "Focus": 49098,
+                    "X": 102758,
+                    "Y": -4811,
+                    "Focus": 49314,
                     "Build Platform": 0
                 }
             }
@@ -276,13 +276,13 @@
                 "visitech": {
                     "X": 0,
                     "Y": 8000,
-                    "Focus": 3114,
+                    "Focus": 2189,
                     "Build Platform": 0
                 },
                 "keyence_visitech": {
-                    "X": -5777,
-                    "Y": -24169,
-                    "Focus": 2364,
+                    "X": 47,
+                    "Y": -24424,
+                    "Focus": -211,
                     "Build Platform": 0
                 }
             }
