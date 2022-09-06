@@ -438,12 +438,12 @@ $(document).ready(function () {
 
     $("#init-btn").click(function () {
         $("#print-alert-title").text("Initialize");
-        $("#print-alert-body").text("WARNING: Is the bluid platform taken off? Initializing with the platform on can seriously damage the printer!");
+        $("#print-alert-body").text("WARNING: Is the build platform taken off? Initializing with the platform on can seriously damage the printer!");
     });
 
     $("#plana1-btn").click(function () {
         $("#print-alert-title").text("Planarization Step 1");
-        $("#print-alert-body").text("Is bluid platform mounted? (Make sure the previous print has been removed if applicable)");
+        $("#print-alert-body").text("Is build platform mounted? (Make sure the previous print has been removed if applicable)");
     });
 
     $("#plana2-btn").click(function () {
