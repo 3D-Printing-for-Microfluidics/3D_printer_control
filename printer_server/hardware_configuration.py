@@ -42,7 +42,7 @@ class Printer3D:
             if config_dict["gpio"]["dummy"]:
                 self.gpio = GPIO_dummy()
             else:
-                self.gpio = GPIO()
+                self.gpio = GPIO(config_dict=config_dict["gpio"])
 
         if "loadcell" in config_dict.keys():
             from printer_server.drivers.loadcell import LoadCell, Loadcell_dummy

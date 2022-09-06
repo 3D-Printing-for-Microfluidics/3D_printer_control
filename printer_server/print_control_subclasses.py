@@ -332,6 +332,7 @@ class MR1v1_PrintControl(HR4_PrintControl):
     def __init__(self):
         """Create wintech handle"""
         super().__init__()
+        self.gpio = driver_handles.gpio
         self.wintech_thread = None
         self.wintech = driver_handles.wintech
         self.default_light_engine = None
@@ -349,9 +350,12 @@ class MR1v1_PrintControl(HR4_PrintControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=True):
         if self.state == "uninitialized":
+            gpio_thread = threading.Thread(target=self.gpio.initialize, args=[])
+            gpio_thread.start()
             self.wintech_thread = threading.Thread(target=self.wintech.connect, args=[])
             self.wintech_thread.start()
             super().initialize(run_in_thread=False)
+            gpio_thread.join()
             self.wintech_thread.join()
             log.info("Printer initialized, all hardware ready.")
 
@@ -400,6 +404,7 @@ class MR1v1_PrintControl(HR4_PrintControl):
             )
             time.sleep(1.0)
 
+        self.gpio.fan_relay_on()
         for light_engine in config_dict["screen"]["light_engines"]:
             # load keyence focal position
             start_position = get_keyence_position(light_engine)
@@ -489,6 +494,8 @@ class MR1v1_PrintControl(HR4_PrintControl):
                                 f"{light_engine} {x_offset}, {y_offset}"
                             ] = (start_position - keyence_position)
 
+        self.gpio.fan_relay_off()
+
         self.write_to_event_log(f"Keyence Focus Offsets: {self.keyence_measurement_list}")
         self.move_build_platform_down(self.default_position_settings)
 
@@ -496,6 +503,7 @@ class MR1v1_PrintControl(HR4_PrintControl):
         # always turn off the Visitech
         self.wintech.stop_sequencer()
         home.update_wintech_led_status(False)
+        self.gpio.fan_relay_off()
         self.screen.clear(screen=config_dict["screen"]["light_engines"].index("wintech"))
 
         self.move_build_platform_up(self.default_position_settings)
@@ -505,10 +513,10 @@ class MR1v1_PrintControl(HR4_PrintControl):
             self.coord_systems["light_engine"]["visitech"]["Y"],
             self.coord_systems["light_engine"]["visitech"]["Focus"],
             self.galil.top_position,
-            speed_x=25
+            speed_x=25,
         )
 
-        super().super().post_print_tasks()
+        PrintControl.post_print_tasks(self)
 
         # keyence_indexes = config_dict["keyence"]["sensors"]
         # for light_engine in config_dict["screen"]["light_engines"]:
@@ -564,6 +572,9 @@ class MR1v1_PrintControl(HR4_PrintControl):
                 args=[self.exposure_time_ms, self.power],
             )
             self.wintech_thread.start()
+
+            if self.gpio.fan_relay_state == False:
+                self.gpio.fan_relay_on()
         else:
             # visitech setup thread
             self.visitech_thread = threading.Thread(
@@ -571,6 +582,9 @@ class MR1v1_PrintControl(HR4_PrintControl):
                 args=[self.exposure_time_ms, self.power],
             )
             self.visitech_thread.start()
+
+            if self.gpio.fan_relay_state == True:
+                self.gpio.fan_relay_off()
 
     def pre_exposure_joins(self, light_engine):
         """Join X, Y, and Focus threads"""

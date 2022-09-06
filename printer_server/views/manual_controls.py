@@ -84,9 +84,14 @@ def index():
             if "coord_systems" in config_dict["galil"]:
                 hardware["galil"]["coord_systems"] = config_dict["galil"]["coord_systems"]
         if "gpio" in config_dict.keys():
-            hardware["gpio"][
-                "film"
-            ] = printer_server.drivers.gpio.gpio_snip.getFilmRelayState()
+            if "fan_pin" in config_dict["gpio"].keys():
+                hardware["gpio"][
+                    "fan_state"
+                ] = printer_server.drivers.gpio.gpio_snip.getFanRelayState()
+            if "film_pin" in config_dict["gpio"].keys():
+                hardware["gpio"][
+                    "film_state"
+                ] = printer_server.drivers.gpio.gpio_snip.getFilmRelayState()
         if "kdc101" in config_dict.keys():
             hardware["kdc101"]["distance"] = calibration_positions["distance"]
         if "keyence" in config_dict.keys():
