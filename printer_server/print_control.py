@@ -475,7 +475,7 @@ class PrintControl:
                 log.debug("Loadcell force: %s", force)
                 count += 1
                 forces.append(force)
-                if len(forces) <= 10:
+                if len(forces) <= 33:
                     continue
                 forces.pop(0)
 
