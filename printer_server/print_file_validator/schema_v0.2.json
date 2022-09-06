@@ -246,11 +246,15 @@
                             "maximum": 10000,
                             "description": "Default time to expose a single image layer for."
                         },
+                        "Light engine": {
+                            "type": "string",
+                            "description": "Default light engine for exposure."
+                        },
                         "Light engine power setting": {
                             "type": "integer",
                             "minimum": 0,
                             "default": 100,
-                            "maximum": 200,
+                            "maximum": 300,
                             "description": "Default power to expose an image at."
                         },
                         "Relative focus position (um)": {
@@ -421,11 +425,16 @@
                                     "maximum": 10000,
                                     "description": "Default time to expose a single image layer for."
                                 },
+                                "Light engine": {
+                                    "type": "string",
+                                    "default": "visitech",
+                                    "description": "Default light engine for exposure."
+                                },
                                 "Light engine power setting": {
                                     "type": "integer",
                                     "minimum": 0,
                                     "default": 100,
-                                    "maximum": 200,
+                                    "maximum": 300,
                                     "description": "Default power to expose an image at."
                                 },
                                 "Relative focus position (um)": {

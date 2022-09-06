@@ -32,7 +32,8 @@
             "hwid": "PID=16C0:0483 SER=5800580"
         },
         "gpio": {
-            "dummy": false
+            "dummy": false,
+            "film_pin": 7
         },
         "loadcell": {
             "dummy": false,
@@ -157,27 +158,27 @@
                     "Build Platform": 0
                 },
                 "visitech": {
-                    "X": -131836,
-                    "Y": -26367,
-                    "Focus": 48325,
+                    "X": -121096,
+                    "Y": -15307,
+                    "Focus": 46475,
                     "Build Platform": 0
                 },
                 "wintech": {
-                    "X": 121417,
-                    "Y": -23759,
-                    "Focus": 49717,
+                    "X": 138860,
+                    "Y": -7772,
+                    "Focus": 46317,
                     "Build Platform": 0
                 },
                 "keyence_visitech": {
-                    "X": -80006,
-                    "Y": -21950,
-                    "Focus": 48337,
+                    "X": -70855,
+                    "Y": 1624,
+                    "Focus": 46416,
                     "Build Platform": 0
                 },
                 "keyence_wintech": {
-                    "X": 85056,
-                    "Y": -20621,
-                    "Focus": 50000,
+                    "X": 102758,
+                    "Y": -4811,
+                    "Focus": 49314,
                     "Build Platform": 0
                 }
             }
@@ -185,6 +186,21 @@
         "tiptilt": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=3794660"
+        },
+        "keyence": {
+            "dummy": false,
+            "sensors": {
+                "visitech": {
+                    "measurement_index": 1
+                },
+                "wintech": {
+                    "measurement_index": 0
+                }
+            }
+        },
+        "gpio": {
+            "dummy": false,
+            "fan_pin": 5
         },
         "loadcell": {
             "dummy": false,
@@ -214,17 +230,6 @@
                 1920,
                 1080
             ]
-        },
-        "keyence": {
-            "dummy": false,
-            "sensors": {
-                "visitech": {
-                    "measurement_index": 0
-                },
-                "wintech": {
-                    "measurement_index": 1
-                }
-            }
         }
     },
     "HR4": {
@@ -276,13 +281,13 @@
                 "visitech": {
                     "X": 0,
                     "Y": 8000,
-                    "Focus": 3114,
+                    "Focus": 2189,
                     "Build Platform": 0
                 },
                 "keyence_visitech": {
-                    "X": -5777,
-                    "Y": -24169,
-                    "Focus": 2364,
+                    "X": 47,
+                    "Y": -24424,
+                    "Focus": -211,
                     "Build Platform": 0
                 }
             }
@@ -291,8 +296,17 @@
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881850"
         },
+        "keyence": {
+            "dummy": false,
+            "sensors": {
+                "visitech": {
+                    "measurement_index": 0
+                }
+            }
+        },
         "gpio": {
-            "dummy": false
+            "dummy": false,
+            "film_pin": 7
         },
         "loadcell": {
             "dummy": false,
@@ -314,14 +328,6 @@
                 2560,
                 1600
             ]
-        },
-        "keyence": {
-            "dummy": false,
-            "sensors": {
-                "visitech": {
-                    "measurement_index": 0
-                }
-            }
         }
     }
 }

@@ -23,6 +23,7 @@ def validate_v02(print_file):
             validate_against_schema(print_settings, "schema_v0.2.json")
             check_slices_folder_exists(zip_file_handle, print_settings)
             check_referenced_images_exist(print_settings, temp_dir)
+            check_referenced_light_engines(print_settings)
             return print_settings
     except BadZipFile:
         msg = "File is not a .zip file."
@@ -113,6 +114,32 @@ def check_referenced_images_exist(print_settings, temp_dir):
                         msg = f"Missing image: '{img}' could not be found."
                         raise ValueError(msg)
                     check_image_format(img_path)
+
+
+def check_referenced_light_engines(print_settings):
+    """Ensure that all light engines referenced in the print settings are
+    available. Uses the default light engine if no override is
+    provided.
+    """
+    le_list = ["visitech", "wintech"]
+
+    if "Light engine" in print_settings["Default layer settings"]["Image settings"]:
+        le = print_settings["Default layer settings"]["Image settings"]["Light engine"]
+
+        if le not in le_list:
+            msg = f"Default light engine {le} could not be found.\n"
+            msg += (
+                "  Check 'Default layer settings' -> 'Image settings' -> 'Light engine'"
+            )
+            raise ValueError(msg)
+    for layer in print_settings["Layers"]:
+        if "Image settings list" in layer:
+            for image_setting in layer["Image settings list"]:
+                if "Light engine" in image_setting:
+                    le = image_setting["Light engine"]
+                    if le not in le_list:
+                        msg = f"Light engine '{le}' could not be found."
+                        raise ValueError(msg)
 
 
 if __name__ == "__main__":
