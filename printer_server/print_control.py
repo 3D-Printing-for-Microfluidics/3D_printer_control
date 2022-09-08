@@ -190,6 +190,8 @@ class PrintControl:
         self.power = None
         self.layer_map = []
         self.next_layer = 0
+        self.exposure_count = 0
+        self.exposure_index = 0
         self.paused_position = None
         self.print_thread = None  # will be initialized later on start
         self.printing_stopped = threading.Event()
@@ -341,6 +343,22 @@ class PrintControl:
             for j in range(dups):
                 layers.append((i, j))
         return layers
+
+    def exposures_in_layer(self, layer):
+        """Return the total number of exposures including duplicates"""
+        default_dups = self.print_settings["Default layer settings"][
+            "Number of duplications"
+        ]
+        dups = layer.get("Number of duplications", default_dups)
+        image_settings_list = self.get_image_settings(layer)
+        return dups * len(image_settings_list)
+
+    def total_number_of_exposures(self):
+        """Return the total number of exposures including duplicates"""
+        count = 0
+        for i, layer in enumerate(self.print_settings["Layers"]):
+            count += self.exposures_in_layer(layer)
+        return count
 
     def write_to_event_log(self, msg):
         async_file_hander.write(
@@ -668,7 +686,7 @@ class PrintControl:
         # update fontend
         self.state = "printing"
         msg = {
-            "percent": int(100 * (self.next_layer - 1) / len(self.layer_map)),
+            "percent": int(100 * self.exposure_index / self.exposure_count),
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
             "text": "Resume Printing",
         }
@@ -722,6 +740,8 @@ class PrintControl:
 
         # generate layer map
         self.layer_map = self.generate_layer_map()
+        self.exposure_index = 0
+        self.exposure_count = self.total_number_of_exposures()
 
         self.pre_print_tasks()
 
@@ -732,6 +752,7 @@ class PrintControl:
         # iterate over layers
         for i, layer in enumerate(self.layer_map):
             if i < self.next_layer:
+                self.exposure_index += self.exposures_in_layer(layer)
                 continue  # skip previous layers if print was paused
             if self.printing_paused.is_set():
                 self.loadcell.pause()
@@ -778,7 +799,7 @@ class PrintControl:
         # do exposures
         exposure_data = {}
         for j, settings in enumerate(image_settings_list):
-            self.exposure_worker(j, settings, exposure_data)
+            self.exposure_worker(j, settings, exposure_data, msg)
 
         # log exposure data
         async_file_hander.write(self.exposure_log, f"layer {layer}:\n")
@@ -787,14 +808,6 @@ class PrintControl:
                 self.exposure_log,
                 f"{json.dumps({x: exposure_data[x]}, indent=2)}\n",
             )
-
-        # update frontend message pane and progress bar
-        msg = {
-            "percent": int(100 * i / len(self.layer_map)),
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-            "text": msg,
-        }
-        home.update_printer_state("print progress", msg)
 
     def pre_exposure_tasks(self, settings):
         # screen thread
@@ -815,10 +828,18 @@ class PrintControl:
         self.screen_thread.join()
         self.visitech_thread.join()
 
-    def post_exposure_tasks(self):
-        return
+    def post_exposure_tasks(self, msg):
+        self.exposure_index += 1
 
-    def exposure_worker(self, j, settings, exposure_data):
+        # update frontend message pane and progress bar
+        msg = {
+            "percent": int(100 * self.exposure_index / self.exposure_count),
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+            "text": msg,
+        }
+        home.update_printer_state("print progress", msg)
+
+    def exposure_worker(self, j, settings, exposure_data, msg):
         """Process a single exposure of the 3D print.
 
         This method should only be called from inside layer_worker.
@@ -845,7 +866,7 @@ class PrintControl:
         self.write_to_event_log("Finish Exposure")
         time.sleep(settings["Wait after exposure (ms)"] / 1000)
 
-        self.post_exposure_tasks()
+        self.post_exposure_tasks(msg)
 
         # Suppress the first Visitech OCP error. This appears to always be
         # triggered on the first exposure of each print job. It would be better
