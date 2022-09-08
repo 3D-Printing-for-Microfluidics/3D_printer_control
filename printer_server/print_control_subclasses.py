@@ -421,7 +421,7 @@ class MR1v1_PrintControl(HR4_PrintControl):
                 None,
                 speed_x=25,
             )
-            time.sleep(1.0)
+            time.sleep(3.0)
             # get keyence reading
             temp_position = float(
                 self.keyence.read_all()[
