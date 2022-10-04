@@ -16,7 +16,7 @@ import printer_server.views.home as home
 from printer_server.extensions import db
 from printer_server.settings import Config
 from printer_server.models import PrintQueue, PrintRecord
-from printer_server.print_file_validator import validate_schema
+from printer_server.print_file_validator import validate_schema, read_json, expand_json
 from printer_server.hardware_configuration import config_dict
 from printer_server.async_file_handler import async_file_hander
 from printer_server.hardware_configuration import driver_handles
@@ -590,8 +590,9 @@ class PrintControl:
         self.move_job_to_print_history(job_id)
 
         # parse and save print_settings
-        with open(next(self.current_job.rglob("*.json")), "r") as file_handle:
-            self.print_settings = json.load(file_handle)
+        self.print_settings = read_json(next(self.current_job.rglob("*.json")))
+        expand_json(self.print_settings)
+
         self.next_layer = 0
 
         # Start async_file_handler
