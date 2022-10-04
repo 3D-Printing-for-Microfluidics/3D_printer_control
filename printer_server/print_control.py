@@ -281,8 +281,7 @@ class PrintControl:
 
     def create_logs(self):
         # create logs and overwrite any pre-existing data
-        log_data = self.print_settings.get("Header").get("Log data", True)
-        async_file_hander.set_enabled(log_data)
+        async_file_hander.set_enabled(True)
         async_file_hander.write(
             self.position_log,
             "layer,duplicate,start_time,end_time,loadcell_start_index,",
@@ -419,8 +418,6 @@ class PrintControl:
     def squeeze_resin(self, position_settings, layer):
         squeeze_target = position_settings["Squeeze force (N)"]
         squeeze_wait = position_settings["Squeeze wait (ms)"] / 1000
-        use_relax_force = position_settings.get("Use relaxed force", True)
-        relax_target = position_settings.get("Relaxed force (N)", 0)
 
         first_count = self.move_bp_to_force(squeeze_target - 5, speed=0.5)
         second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
@@ -436,23 +433,11 @@ class PrintControl:
 
         time.sleep(squeeze_wait)
 
-        if use_relax_force:
-            first_count = self.move_bp_to_force(relax_target + 5, speed=-0.5)
-            second_count = self.move_bp_to_force(relax_target + 0.5, speed=-0.05)
-            third_count = self.move_bp_to_force(relax_target, speed=-0.005)
-            count = first_count + second_count + third_count
-
-            log.info("Relax force reached %s steps", count)
-            log.info("Relax force: %s", self.loadcell.get_current_force())
-            log.info("Relax position: %s", self.galil.getPosition())
-            if self.loadcell.get_current_force() < relax_target * 0.90:
-                log.warning("Move_to_force overshot target value.")
-        else:
-            self.galil.absMove(
-                mm=self.print_position,
-                speed=50,
-                acceleration=5,
-            )
+        self.galil.absMove(
+            mm=self.print_position,
+            speed=50,
+            acceleration=5,
+        )
 
     def move_bp_to_force(
         self, target_force, speed, acceleration=100, error_threshold=None

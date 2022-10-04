@@ -20,11 +20,6 @@
                     "default": "slices",
                     "description": "Directory relative to the json print job file where the images are saved."
                 },
-                "Log data": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Should the printer log data during a print (position,loadcell,etc)"
-                },
                 "Comment": {
                     "type": "string",
                     "default": "",
@@ -192,17 +187,6 @@
                             "default": 100,
                             "description": "Time to squeeze"
                         },
-                        "Use relaxed force": {
-                            "type": "boolean",
-                            "default": false,
-                            "description": "Should the use a force to determine final position"
-                        },
-                        "Relaxed force (N)": {
-                            "type": "number",
-                            "minimum": 0,
-                            "default": 0,
-                            "description": "Force to relax to"
-                        },
                         "Final wait (ms)": {
                             "type": "number",
                             "minimum": 0,
@@ -228,17 +212,8 @@
                     "properties": {
                         "Image file": {
                             "type": "string",
+                            "default": "png",
                             "description": "Default image file"
-                        },
-                        "Image x offset (um)": {
-                            "type": "integer",
-                            "default": 0,
-                            "description": "Default x position for layer."
-                        },
-                        "Image y offset (um)": {
-                            "type": "integer",
-                            "default": 0,
-                            "description": "Default y position for layer."
                         },
                         "Layer exposure time (ms)": {
                             "type": "number",
@@ -246,15 +221,11 @@
                             "maximum": 10000,
                             "description": "Default time to expose a single image layer for."
                         },
-                        "Light engine": {
-                            "type": "string",
-                            "description": "Default light engine for exposure."
-                        },
                         "Light engine power setting": {
                             "type": "integer",
                             "minimum": 0,
                             "default": 100,
-                            "maximum": 300,
+                            "maximum": 200,
                             "description": "Default power to expose an image at."
                         },
                         "Relative focus position (um)": {
@@ -379,17 +350,6 @@
                                 "default": 100,
                                 "description": "Time to squeeze"
                             },
-                            "Use relaxed force": {
-                                "type": "boolean",
-                                "default": false,
-                                "description": "Should the use a force to determine final position"
-                            },
-                            "Relaxed force (N)": {
-                                "type": "number",
-                                "minimum": 0,
-                                "default": 0,
-                                "description": "Force to relax to"
-                            },
                             "Final wait (ms)": {
                                 "type": "number",
                                 "minimum": 0,
@@ -409,32 +369,17 @@
                                     "default": "png",
                                     "description": "Default image file"
                                 },
-                                "Image x offset (um)": {
-                                    "type": "integer",
-                                    "default": 0,
-                                    "description": "Default x position for layer."
-                                },
-                                "Image y offset (um)": {
-                                    "type": "integer",
-                                    "default": 0,
-                                    "description": "Default y position for layer."
-                                },
                                 "Layer exposure time (ms)": {
                                     "type": "number",
                                     "minimum": 0,
                                     "maximum": 10000,
                                     "description": "Default time to expose a single image layer for."
                                 },
-                                "Light engine": {
-                                    "type": "string",
-                                    "default": "visitech",
-                                    "description": "Default light engine for exposure."
-                                },
                                 "Light engine power setting": {
                                     "type": "integer",
                                     "minimum": 0,
                                     "default": 100,
-                                    "maximum": 300,
+                                    "maximum": 200,
                                     "description": "Default power to expose an image at."
                                 },
                                 "Relative focus position (um)": {
