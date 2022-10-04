@@ -8,7 +8,7 @@ from jsonschema.exceptions import ValidationError
 from PIL import Image
 
 
-def validate_v02(print_file):
+def validate_schema(print_file):
     """Validate a version 0.2 print file and return the print settings
     as JSON. If an error is detected, a ValueError is raised with
     appropriate information.
@@ -20,12 +20,12 @@ def validate_v02(print_file):
             temp_dir = Path(temp_dir)
             zip_file_handle.extractall(temp_dir)
             print_settings = check_for_unique_print_settings(temp_dir)
-            check_version(print_settings)
-            validate_against_schema(print_settings, "schema_v0.2.json")
+            version = check_version(print_settings)
+            validate_against_schema(print_settings, f"schema_{version}.json")
             check_slices_folder_exists(zip_file_handle, print_settings)
             check_referenced_images_exist(print_settings, temp_dir)
             check_referenced_light_engines(print_settings)
-            return print_settings
+            return print_settings, version
     except BadZipFile:
         msg = "File is not a .zip file."
         raise ValueError(msg)
@@ -169,7 +169,7 @@ def check_referenced_light_engines(print_settings):
 if __name__ == "__main__":
     for print_job in Path("test_print_files_v2").glob("*.zip"):
         try:
-            validate_v02(print_job)
-            print(f"{print_job} is good")
+            print_settings, schema_ver = validate_schema(print_job)
+            print(f"{schema_ver}: {print_job} is good")
         except ValueError as e:
             print(f"Error in {print_job}:\n {e}")

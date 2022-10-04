@@ -16,7 +16,7 @@ import printer_server.views.home as home
 from printer_server.extensions import db
 from printer_server.settings import Config
 from printer_server.models import PrintQueue, PrintRecord
-from printer_server.print_file_validator import validate_v02
+from printer_server.print_file_validator import validate_schema
 from printer_server.hardware_configuration import config_dict
 from printer_server.async_file_handler import async_file_hander
 from printer_server.hardware_configuration import driver_handles
@@ -941,7 +941,11 @@ class PrintControl:
                 log.debug("Removing hiden '__MACOSX' folder from %s ...", f.filename)
                 clean_uploaded_file(filename_on_disk)
             try:
-                validate_v02(filename_on_disk)
+                _, schema_ver = validate_schema(filename_on_disk)
+                if schema_ver not in config_dict["valid_schema_versions"]:
+                    raise ValueError(
+                        f"Printer does not support v{schema_ver} JSON format"
+                    )
                 log.info("Print job %s uploaded successfully.", f.filename)
                 new_print_job = PrintQueue(
                     original_filename=f.filename,
