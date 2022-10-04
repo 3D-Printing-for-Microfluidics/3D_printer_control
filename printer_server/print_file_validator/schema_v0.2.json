@@ -261,9 +261,145 @@
                 "Image settings"
             ]
         },
-        "Layers": {
-            "type": "array",
-            "items": {
+        "Named position settings": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "Using named position settings": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Use alternitive defaults for position settings"
+                    },
+                    "Layer thickness (um)": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 10,
+                        "description": "Custom layer thickness"
+                    },
+                    "Distance up (mm)": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "description": "Distance to move the build up after completing a layer."
+                    },
+                    "Initial wait (ms)": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 0,
+                        "description": "Time to wait between exposures."
+                    },
+                    "BP up speed (mm/sec)": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 20,
+                        "description": "Specify the velocity of the build platform when moving up"
+                    },
+                    "BP up acceleration (mm/sec^2)": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 20,
+                        "description": "Specify the acceleration of the build platform when moving up"
+                    },
+                    "Up wait (ms)": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 0,
+                        "description": "How long to wait after the build platform has been moved up to start moving back down."
+                    },
+                    "BP down speed (mm/sec)": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 20,
+                        "description": "Specify the velocity of the build platform when moving down"
+                    },
+                    "BP down acceleration (mm/sec^2)": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 20,
+                        "description": "Specify the acceleration of the build platform when moving down"
+                    },
+                    "Enable force squeeze": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Should the printer squeeze out resin before a layer"
+                    },
+                    "Squeeze count": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 0,
+                        "description": "How many times is the printer squeezing out resin."
+                    },
+                    "Squeeze force (N)": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 40,
+                        "description": "Force to squeeze with"
+                    },
+                    "Squeeze wait (ms)": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 100,
+                        "description": "Time to squeeze"
+                    },
+                    "Final wait (ms)": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 0,
+                        "description": "Time to wait after final exposure on a layer"
+                    }
+                },
+                "additionalProperties": false
+            }
+        },
+        "Named image settings": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "Using named image settings": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Use alternitive defaults for image settings"
+                    },
+                    "Image file": {
+                        "type": "string",
+                        "default": "png",
+                        "description": "Default image file"
+                    },
+                    "Layer exposure time (ms)": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 10000,
+                        "description": "Default time to expose a single image layer for."
+                    },
+                    "Light engine power setting": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 100,
+                        "maximum": 200,
+                        "description": "Default power to expose an image at."
+                    },
+                    "Relative focus position (um)": {
+                        "type": "number",
+                        "description": "Default realtive focus position for this layer."
+                    },
+                    "Wait before exposure (ms)": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "Wait time before exposure"
+                    },
+                    "Wait after exposure (ms)": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "Wait time after exposure"
+                    }
+                },
+                "additionalProperties": false
+            }
+        },
+        "Templates": {
+            "type": "object",
+            "additionalProperties": {
                 "type": "object",
                 "properties": {
                     "Comment": {
@@ -280,6 +416,11 @@
                     "Position settings": {
                         "type": "object",
                         "properties": {
+                            "Using named position settings": {
+                                "type": "string",
+                                "default": "",
+                                "description": "Use alternitive defaults for position settings"
+                            },
                             "Layer thickness (um)": {
                                 "type": "number",
                                 "minimum": 0,
@@ -364,6 +505,174 @@
                         "items": {
                             "type": "object",
                             "properties": {
+                                "Using named image settings": {
+                                    "type": "string",
+                                    "default": "",
+                                    "description": "Use alternitive defaults for image settings"
+                                },
+                                "Image file": {
+                                    "type": "string",
+                                    "default": "png",
+                                    "description": "Default image file"
+                                },
+                                "Layer exposure time (ms)": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 10000,
+                                    "description": "Default time to expose a single image layer for."
+                                },
+                                "Light engine power setting": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "default": 100,
+                                    "maximum": 200,
+                                    "description": "Default power to expose an image at."
+                                },
+                                "Relative focus position (um)": {
+                                    "type": "number",
+                                    "description": "Default realtive focus position for this layer."
+                                },
+                                "Wait before exposure (ms)": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "description": "Wait time before exposure"
+                                },
+                                "Wait after exposure (ms)": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "description": "Wait time after exposure"
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "additionalProperties": false
+            }
+        },
+        "Layers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "Comment": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Layer comments"
+                    },
+                    "Using templates": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "default": "",
+                            "description": "Use templates as defaults for layer. For multiple templates: 'Image settings lists' are appended. 'Position settings' and 'Number of duplicates' must match."
+                        },
+                        "additionalProperties": false
+                    },
+                    "Number of duplications": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "default": 1,
+                        "description": "Custom number of times to duplicate a layer"
+                    },
+                    "Position settings": {
+                        "type": "object",
+                        "properties": {
+                            "Using named position settings": {
+                                "type": "string",
+                                "default": "",
+                                "description": "Use alternitive defaults for position settings"
+                            },
+                            "Layer thickness (um)": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 10,
+                                "description": "Custom layer thickness"
+                            },
+                            "Distance up (mm)": {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "description": "Distance to move the build up after completing a layer."
+                            },
+                            "Initial wait (ms)": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 0,
+                                "description": "Time to wait between exposures."
+                            },
+                            "BP up speed (mm/sec)": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 20,
+                                "description": "Specify the velocity of the build platform when moving up"
+                            },
+                            "BP up acceleration (mm/sec^2)": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 20,
+                                "description": "Specify the acceleration of the build platform when moving up"
+                            },
+                            "Up wait (ms)": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 0,
+                                "description": "How long to wait after the build platform has been moved up to start moving back down."
+                            },
+                            "BP down speed (mm/sec)": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 20,
+                                "description": "Specify the velocity of the build platform when moving down"
+                            },
+                            "BP down acceleration (mm/sec^2)": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 20,
+                                "description": "Specify the acceleration of the build platform when moving down"
+                            },
+                            "Enable force squeeze": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Should the printer squeeze out resin before a layer"
+                            },
+                            "Squeeze count": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 0,
+                                "description": "How many times is the printer squeezing out resin."
+                            },
+                            "Squeeze force (N)": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 40,
+                                "description": "Force to squeeze with"
+                            },
+                            "Squeeze wait (ms)": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 100,
+                                "description": "Time to squeeze"
+                            },
+                            "Final wait (ms)": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 0,
+                                "description": "Time to wait after final exposure on a layer"
+                            }
+                        },
+                        "additionalProperties": false
+                    },
+                    "Image settings list": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "Using named image settings": {
+                                    "type": "string",
+                                    "default": "",
+                                    "description": "Use alternitive defaults for image settings"
+                                },
                                 "Image file": {
                                     "type": "string",
                                     "default": "png",
