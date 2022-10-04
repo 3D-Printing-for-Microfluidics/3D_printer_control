@@ -1,3 +1,4 @@
+import re
 import json
 from pathlib import Path
 from zipfile import ZipFile, BadZipFile
@@ -58,7 +59,7 @@ def check_slices_folder_exists(zip_file_handle, print_settings):
 
 
 def check_version(print_settings):
-    """Check the version of print settings file. Should be '0.2'."""
+    """Check the version of print settings file. Should be '0.2 or 2.x.x-4.x.x'."""
     if "Header" not in print_settings:
         msg = "'Header' missing from json file."
         raise ValueError(msg)
@@ -66,9 +67,32 @@ def check_version(print_settings):
         msg = f"Missing schema version.\n"
         msg += "  Check 'Header' -> 'Schema Version'"
         raise ValueError(msg)
-    if print_settings["Header"]["Schema version"] != "0.2":
-        msg = "File is not version 0.2. Use converter to convert to version 0.2"
+
+    is_semver = False
+    is_major_minor = False
+    schema_version = print_settings["Header"]["Schema version"]
+    ver = schema_version.split(".")
+
+    is_semver = re.search("\d+\.\d+\.\d+", schema_version) != None
+    if not is_semver:  #
+        is_major_minor = re.search("\d+\.\d+", schema_version) != None
+        if is_major_minor:
+            ver = [ver[1], 0, 0]
+        else:
+            msg = "Invalid version format. Must be 'x.x' or 'x.x.x'."
+            msg += "  Check 'Header' -> 'Schema Version'"
+            raise ValueError(msg)
+
+    if int(ver[0]) < 2:
+        msg = "File is version 0.1. Use converter to convert to version 0.2"
+        msg += "  Check 'Header' -> 'Schema Version'"
         raise ValueError(msg)
+    elif int(ver[0]) > 4:
+        msg = "Invalid major version number."
+        msg += "  Check 'Header' -> 'Schema Version'"
+        raise ValueError(msg)
+    else:
+        return f"v{ver[0]}"
 
 
 def validate_against_schema(print_settings, schema):
