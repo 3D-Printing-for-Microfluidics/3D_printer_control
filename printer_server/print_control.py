@@ -944,9 +944,7 @@ class PrintControl:
             try:
                 _, schema_ver = validate_schema(filename_on_disk)
                 if schema_ver not in config_dict["valid_schema_versions"]:
-                    raise ValueError(
-                        f"Printer does not support v{schema_ver} JSON format"
-                    )
+                    raise ValueError(f"Printer does not support {schema_ver} JSON format")
                 log.info("Print job %s uploaded successfully.", f.filename)
                 new_print_job = PrintQueue(
                     original_filename=f.filename,

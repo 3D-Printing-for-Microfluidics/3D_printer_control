@@ -22,15 +22,18 @@ def validate_schema(print_file):
             print_settings = check_for_unique_print_settings(temp_dir)
             version = check_version(print_settings)
             validate_against_schema(print_settings, f"schema_{version}.json")
-            if version == "v4":
-                check_referenced_templates_exist(print_settings)
-                check_referenced_named_position_settings_exist(print_settings)
-                check_referenced_named_image_settings_exist(print_settings)
-                expand_templates(print_settings)
-                check_templates_compatibility(print_settings)
+
+            # check named settings and templates
+            check_referenced_templates_exist(print_settings)
+            check_referenced_named_position_settings_exist(print_settings)
+            check_referenced_named_image_settings_exist(print_settings)
+            expand_templates(print_settings)
+            check_templates_compatibility(print_settings)
+            expand_json(print_settings)
+
             check_slices_folder_exists(zip_file_handle, print_settings)
             check_referenced_images_exist(print_settings, temp_dir)
-            expand_json(print_settings)
+
             return print_settings, version
     except BadZipFile:
         msg = "File is not a .zip file."
@@ -149,15 +152,15 @@ def check_referenced_images_exist(print_settings, temp_dir):
 def check_referenced_templates_exist(print_settings):
     """Check that all templates referenced in JSON exist."""
     if "Templates" in print_settings:
-        templates = print_settings["Templates"].keys()
+        templates = print_settings["Templates"]
     else:
-        templates = []
+        templates = {}
 
     "'Templates[]'->'Parent template'"
-    for template in print_settings["Templates"].values():
+    for template in templates.values():
         if "Parent template" in template:
             parent_template = template["Parent template"]
-            if parent_template not in templates:
+            if parent_template not in templates.keys():
                 msg = f"Referenced template '{parent_template}' could not be found."
                 raise ValueError(msg)
 
@@ -165,7 +168,7 @@ def check_referenced_templates_exist(print_settings):
     for layer in print_settings["Layers"]:
         if "Using templates" in layer:
             for template in layer["Using templates"]:
-                if template not in templates:
+                if template not in templates.keys():
                     msg = f"Referenced template '{template}' could not be found."
                     raise ValueError(msg)
 
@@ -173,18 +176,18 @@ def check_referenced_templates_exist(print_settings):
 def check_referenced_named_position_settings_exist(print_settings):
     """Check that all named position settings referenced in JSON exist."""
     if "Named position settings" in print_settings:
-        named_position_settings = print_settings["Named position settings"].keys()
+        named_position_settings = print_settings["Named position settings"]
     else:
-        named_position_settings = []
+        named_position_settings = {}
 
     "'Named position settings[]'->'Using named position settings'"
     if "Named position settings" in print_settings:
-        for named_position_setting in print_settings["Named position settings"].values():
+        for named_position_setting in named_position_settings.values():
             if "Using named position settings" in named_position_setting:
                 parent_named_position_setting = named_position_setting[
                     "Using named position settings"
                 ]
-                if parent_named_position_setting not in named_position_settings:
+                if parent_named_position_setting not in named_position_settings.keys():
                     msg = f"Referenced position settings '{parent_named_position_setting}' could not be found."
                     raise ValueError(msg)
 
@@ -197,7 +200,7 @@ def check_referenced_named_position_settings_exist(print_settings):
                     named_position_setting = position_settings[
                         "Using named position settings"
                     ]
-                    if named_position_setting not in named_position_settings:
+                    if named_position_setting not in named_position_settings.keys():
                         msg = f"Referenced position settings '{named_position_setting}' could not be found."
                         raise ValueError(msg)
 
@@ -209,7 +212,7 @@ def check_referenced_named_position_settings_exist(print_settings):
                 named_position_setting = position_settings[
                     "Using named position settings"
                 ]
-                if named_position_setting not in named_position_settings:
+                if named_position_setting not in named_position_settings.keys():
                     msg = f"Referenced position settings '{named_position_setting}' could not be found."
                     raise ValueError(msg)
 
@@ -217,18 +220,18 @@ def check_referenced_named_position_settings_exist(print_settings):
 def check_referenced_named_image_settings_exist(print_settings):
     """Check that all named image settings referenced in JSON exist."""
     if "Named image settings" in print_settings:
-        named_image_settings = print_settings["Named image settings"].keys()
+        named_image_settings = print_settings["Named image settings"]
     else:
-        named_image_settings = []
+        named_image_settings = {}
 
     "'Named image settings[]'->'Using named image settings'"
     if "Named image settings" in print_settings:
-        for named_image_setting in print_settings["Named image settings"].values():
+        for named_image_setting in named_image_settings.values():
             if "Using named image settings" in named_image_setting:
                 parent_named_image_setting = named_image_setting[
                     "Using named image settings"
                 ]
-                if parent_named_image_setting not in named_image_settings:
+                if parent_named_image_setting not in named_image_settings.keys():
                     msg = f"Referenced image settings '{parent_named_image_setting}' could not be found."
                     raise ValueError(msg)
 
@@ -239,7 +242,7 @@ def check_referenced_named_image_settings_exist(print_settings):
                 for image_settings in template["Image settings list"]:
                     if "Using named image settings" in image_settings:
                         named_image_setting = image_settings["Using named image settings"]
-                        if named_image_setting not in named_image_settings:
+                        if named_image_setting not in named_image_settings.keys():
                             msg = f"Referenced image settings '{named_image_setting}' could not be found."
                             raise ValueError(msg)
 
@@ -249,7 +252,7 @@ def check_referenced_named_image_settings_exist(print_settings):
             for image_settings in layer["Image settings list"]:
                 if "Using named image settings" in image_settings:
                     named_image_setting = image_settings["Using named image settings"]
-                    if named_image_setting not in named_image_settings:
+                    if named_image_setting not in named_image_settings.keys():
                         msg = f"Referenced image settings '{named_image_setting}' could not be found."
                         raise ValueError(msg)
 

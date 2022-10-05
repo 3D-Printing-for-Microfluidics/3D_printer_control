@@ -1,6 +1,8 @@
 {
     "HR3v3": {
-        "valid_schema_versions": ["v2"],
+        "valid_schema_versions": [
+            "v2"
+        ],
         "external_control": {},
         "galil": {
             "dummy": false,
@@ -59,7 +61,9 @@
         }
     },
     "HR3v3u": {
-        "valid_schema_versions": ["v2"],
+        "valid_schema_versions": [
+            "v2"
+        ],
         "external_control": {},
         "galil": {
             "dummy": false,
@@ -114,7 +118,11 @@
         }
     },
     "MR1v1": {
-        "valid_schema_versions": ["v4, v3, v2"],
+        "valid_schema_versions": [
+            "v4",
+            "v3",
+            "v2"
+        ],
         "external_control": {},
         "galil": {
             "dummy": false,
@@ -236,7 +244,10 @@
         }
     },
     "HR4": {
-        "valid_schema_versions": ["v3, v2"],
+        "valid_schema_versions": [
+            "v3",
+            "v2"
+        ],
         "external_control": {},
         "galil": {
             "dummy": false,
