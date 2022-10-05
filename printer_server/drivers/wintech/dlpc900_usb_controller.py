@@ -339,7 +339,43 @@ class DLPC900_USB_Controller:
         self.set_IT6535_power_mode("HDMI")
         self.set_display_mode("Video pattern mode")
         self.led_from_sequencer()
+        self.set_long_axis_flip(False)
+        self.set_short_axis_flip(True)
         self.log.info("Setup complete")
+
+    def get_long_axis_flip(self):
+        "Returns whether the long axis is flipped"
+        self.log.debug("Get long axis flip")
+        result = self._DLPC900_command("r", 0x1008)[0]
+        cur_flip = _get_bits(result, 0, 0)
+        self.log.debug("Long axis flip is set to %s", bool(cur_flip))
+
+    def set_long_axis_flip(self, flip):
+        """Set the long axis mirroring in the DLPC900"""
+        self.log.info("Set long axis mirroring to %s", flip)
+
+        cur_flip = self.get_long_axis_flip()
+        if flip == cur_flip:
+            return
+        self._DLPC900_command("w", 0x1008, [int(flip)])
+        self.get_long_axis_flip()
+
+    def get_short_axis_flip(self):
+        "Returns whether the short axis is flipped"
+        self.log.debug("Get short axis flip")
+        result = self._DLPC900_command("r", 0x1009)[0]
+        cur_flip = _get_bits(result, 0, 0)
+        self.log.debug("Short axis flip is set to %s", bool(cur_flip))
+
+    def set_short_axis_flip(self, flip):
+        """Set the long axis mirroring in the DLPC900"""
+        self.log.info("Set short axis mirroring to %s", flip)
+
+        cur_flip = self.get_short_axis_flip()
+        if flip == cur_flip:
+            return
+        self._DLPC900_command("w", 0x1009, [int(flip)])
+        self.get_short_axis_flip()
 
     def get_input_source_configuration(self):
         """Return the current input source configuration."""

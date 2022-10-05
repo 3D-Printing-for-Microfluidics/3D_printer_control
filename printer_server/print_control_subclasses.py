@@ -146,11 +146,12 @@ class HR3v3u_PrintControl(PrintControl):
             self.kdc_thread.join()
         return super().pre_exposure_joins()
 
-    def post_exposure_tasks(self):
+    def post_exposure_tasks(self, msg):
         """If layer is defocused, return KDC to focus position"""
         # fix focus if this exposure was defocused
         if self.defocus_um != 0:
             self.change_focus(self.focused_position)
+        super().post_exposure_tasks(msg)
 
 
 class HR4_PrintControl(PrintControl):
@@ -420,7 +421,7 @@ class MR1v1_PrintControl(HR4_PrintControl):
                 None,
                 speed_x=25,
             )
-            time.sleep(1.0)
+            time.sleep(3.0)
             # get keyence reading
             temp_position = float(
                 self.keyence.read_all()[
@@ -601,7 +602,7 @@ class MR1v1_PrintControl(HR4_PrintControl):
         else:
             self.visitech_thread.join()
 
-    def exposure_worker(self, j, settings, exposure_data):
+    def exposure_worker(self, j, settings, exposure_data, msg):
         """Process a single exposure of the 3D print.
 
         This method should only be called from inside layer_worker.
@@ -629,7 +630,7 @@ class MR1v1_PrintControl(HR4_PrintControl):
             self.write_to_event_log("Finish Exposure")
             time.sleep(settings["Wait after exposure (ms)"] / 1000)
 
-            self.post_exposure_tasks()
+            self.post_exposure_tasks(msg)
             post_exposure_status = ""
 
         else:
@@ -644,7 +645,7 @@ class MR1v1_PrintControl(HR4_PrintControl):
             self.write_to_event_log("Finish Exposure")
             time.sleep(settings["Wait after exposure (ms)"] / 1000)
 
-            self.post_exposure_tasks()
+            self.post_exposure_tasks(msg)
 
             # Suppress the first Visitech OCP error. This appears to always be
             # triggered on the first exposure of each print job. It would be better
