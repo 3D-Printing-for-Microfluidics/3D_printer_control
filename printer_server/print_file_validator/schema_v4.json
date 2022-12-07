@@ -33,6 +33,11 @@
         "Design": {
             "type": "object",
             "properties": {
+                "User": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Name of person who designed this device."
+                },
                 "Purpose": {
                     "type": "string",
                     "default": "",
@@ -295,15 +300,15 @@
             "additionalProperties": {
                 "type": "object",
                 "properties": {
-                    "Parent template": {
-                        "type": "string",
-                        "default": "",
-                        "description": "Use template as defaults for layer."
-                    },
                     "Comment": {
                         "type": "string",
                         "default": "",
                         "description": "Layer comments"
+                    },
+                    "Parent template": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Use template as defaults for layer."
                     },
                     "Number of duplications": {
                         "type": "integer",
@@ -374,68 +379,6 @@
         "Default layer settings"
     ],
     "$defs": {
-        "IMAGE_SETTINGS": {
-            "type": "object",
-            "properties": {
-                "Using named image settings": {
-                    "type": "string",
-                    "default": "",
-                    "description": "Use alternitive defaults for image settings"
-                },
-                "Image file": {
-                    "type": "string",
-                    "default": "png",
-                    "description": "Default image file"
-                },
-                "Image x offset (um)": {
-                    "type": "number",
-                    "default": 0,
-                    "description": "Default x position for layer."
-                },
-                "Image y offset (um)": {
-                    "type": "number",
-                    "default": 0,
-                    "description": "Default y position for layer."
-                },
-                "Layer exposure time (ms)": {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 10000,
-                    "description": "Default time to expose a single image layer for."
-                },
-                "Light engine": {
-                    "type": "string",
-                    "default": "visitech",
-                    "enum": [
-                        "visitech",
-                        "wintech"
-                    ],
-                    "description": "Default light engine for exposure."
-                },
-                "Light engine power setting": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "default": 100,
-                    "maximum": 300,
-                    "description": "Default power to expose an image at."
-                },
-                "Relative focus position (um)": {
-                    "type": "number",
-                    "description": "Default realtive focus position for this layer."
-                },
-                "Wait before exposure (ms)": {
-                    "type": "number",
-                    "minimum": 0,
-                    "description": "Wait time before exposure"
-                },
-                "Wait after exposure (ms)": {
-                    "type": "number",
-                    "minimum": 0,
-                    "description": "Wait time after exposure"
-                }
-            },
-            "additionalProperties": false
-        },
         "POSITION_SETTINGS": {
             "type": "object",
             "properties": {
@@ -519,6 +462,68 @@
                     "minimum": 0,
                     "default": 0,
                     "description": "Time to wait after final exposure on a layer"
+                }
+            },
+            "additionalProperties": false
+        },
+        "IMAGE_SETTINGS": {
+            "type": "object",
+            "properties": {
+                "Using named image settings": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Use alternitive defaults for image settings"
+                },
+                "Image file": {
+                    "type": "string",
+                    "default": "png",
+                    "description": "Default image file"
+                },
+                "Image x offset (um)": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Default x position for layer."
+                },
+                "Image y offset (um)": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Default y position for layer."
+                },
+                "Layer exposure time (ms)": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10000,
+                    "description": "Default time to expose a single image layer for."
+                },
+                "Light engine": {
+                    "type": "string",
+                    "default": "visitech",
+                    "enum": [
+                        "visitech",
+                        "wintech"
+                    ],
+                    "description": "Default light engine for exposure."
+                },
+                "Light engine power setting": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 100,
+                    "maximum": 300,
+                    "description": "Default power to expose an image at."
+                },
+                "Relative focus position (um)": {
+                    "type": "number",
+                    "description": "Default realtive focus position for this layer."
+                },
+                "Wait before exposure (ms)": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Wait time before exposure"
+                },
+                "Wait after exposure (ms)": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Wait time after exposure"
                 }
             },
             "additionalProperties": false
