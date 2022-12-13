@@ -16,7 +16,7 @@ import printer_server.views.home as home
 from printer_server.extensions import db
 from printer_server.settings import Config
 from printer_server.models import PrintQueue, PrintRecord
-from printer_server.print_file_validator import validate_v02
+from printer_server.print_file_validator import validate_schema, read_json, expand_json
 from printer_server.hardware_configuration import config_dict
 from printer_server.async_file_handler import async_file_hander
 from printer_server.hardware_configuration import driver_handles
@@ -283,8 +283,7 @@ class PrintControl:
 
     def create_logs(self):
         # create logs and overwrite any pre-existing data
-        log_data = self.print_settings.get("Header").get("Log data", True)
-        async_file_hander.set_enabled(log_data)
+        async_file_hander.set_enabled(True)
         async_file_hander.write(
             self.position_log,
             "layer,duplicate,start_time,end_time,loadcell_start_index,",
@@ -437,8 +436,6 @@ class PrintControl:
     def squeeze_resin(self, position_settings, layer):
         squeeze_target = position_settings["Squeeze force (N)"]
         squeeze_wait = position_settings["Squeeze wait (ms)"] / 1000
-        use_relax_force = position_settings.get("Use relaxed force", True)
-        relax_target = position_settings.get("Relaxed force (N)", 0)
 
         first_count = self.move_bp_to_force(squeeze_target - 5, speed=0.5)
         second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
@@ -454,23 +451,11 @@ class PrintControl:
 
         time.sleep(squeeze_wait)
 
-        if use_relax_force:
-            first_count = self.move_bp_to_force(relax_target + 5, speed=-0.5)
-            second_count = self.move_bp_to_force(relax_target + 0.5, speed=-0.05)
-            third_count = self.move_bp_to_force(relax_target, speed=-0.005)
-            count = first_count + second_count + third_count
-
-            log.info("Relax force reached %s steps", count)
-            log.info("Relax force: %s", self.loadcell.get_current_force())
-            log.info("Relax position: %s", self.galil.getPosition())
-            if self.loadcell.get_current_force() < relax_target * 0.90:
-                log.warning("Move_to_force overshot target value.")
-        else:
-            self.galil.absMove(
-                mm=self.print_position,
-                speed=50,
-                acceleration=5,
-            )
+        self.galil.absMove(
+            mm=self.print_position,
+            speed=50,
+            acceleration=5,
+        )
 
     def move_bp_to_force(
         self, target_force, speed, acceleration=100, error_threshold=None
@@ -551,21 +536,24 @@ class PrintControl:
                 home.clear_loadcell_graph()
                 self.loadcell_thread = threading.Thread(target=self.loadcell_graph_loop)
                 self.loadcell_thread.start()
-            log.debug(
-                "Loadcell force (pre-step 1): %s", self.loadcell.get_current_force()
-            )
+            loadcell_start_force = self.loadcell.get_current_force()
             self.galil.goToZmin()
-            target_force = config_dict["loadcell"]["loadcell_planarization_force"]
-            if (
-                self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.25)
-                is None
-            ):
-                log.error("Did not reach target planarization force.")
-                return
-            time.sleep(0.5)
-            log.info(
-                "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
-            )
+            if config_dict["loadcell"]["loadcell_planarization_enabled"]:
+                log.debug("Loadcell force (pre-step 1): %s", loadcell_start_force)
+                target_force = config_dict["loadcell"]["loadcell_planarization_force"]
+                if (
+                    self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.25)
+                    is None
+                ):
+                    log.error("Did not reach target planarization force.")
+                    return
+                time.sleep(0.5)
+                log.info(
+                    "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
+                )
+            else:
+                # estimate a 1mm movement for planarization
+                self.galil.relMove(mm=2.0, speed=2.5)
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
@@ -623,8 +611,9 @@ class PrintControl:
         self.move_job_to_print_history(job_id)
 
         # parse and save print_settings
-        with open(next(self.current_job.rglob("*.json")), "r") as file_handle:
-            self.print_settings = json.load(file_handle)
+        self.print_settings = read_json(next(self.current_job.rglob("*.json")))
+        expand_json(self.print_settings)
+
         self.next_layer = 0
 
         # Start async_file_handler
@@ -977,7 +966,9 @@ class PrintControl:
                 log.debug("Removing hiden '__MACOSX' folder from %s ...", f.filename)
                 clean_uploaded_file(filename_on_disk)
             try:
-                validate_v02(filename_on_disk)
+                _, schema_ver = validate_schema(filename_on_disk)
+                if schema_ver not in config_dict["valid_schema_versions"]:
+                    raise ValueError(f"Printer does not support {schema_ver} JSON format")
                 log.info("Print job %s uploaded successfully.", f.filename)
                 new_print_job = PrintQueue(
                     original_filename=f.filename,

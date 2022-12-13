@@ -1,5 +1,8 @@
 {
     "HR3v3": {
+        "valid_schema_versions": [
+            "v2"
+        ],
         "external_control": {},
         "galil": {
             "dummy": false,
@@ -58,6 +61,9 @@
         }
     },
     "HR3v3u": {
+        "valid_schema_versions": [
+            "v2"
+        ],
         "external_control": {},
         "galil": {
             "dummy": false,
@@ -112,6 +118,11 @@
         }
     },
     "MR1v1": {
+        "valid_schema_versions": [
+            "v4",
+            "v3",
+            "v2"
+        ],
         "external_control": {},
         "galil": {
             "dummy": false,
@@ -158,27 +169,27 @@
                     "Build Platform": 0
                 },
                 "visitech": {
-                    "X": -121096,
-                    "Y": -15307,
-                    "Focus": 46475,
+                    "X": -120677,
+                    "Y": -15483,
+                    "Focus": 47164,
                     "Build Platform": 0
                 },
                 "wintech": {
-                    "X": 138860,
-                    "Y": -7772,
-                    "Focus": 46317,
+                    "X": 139340,
+                    "Y": -7935,
+                    "Focus": 46984,
                     "Build Platform": 0
                 },
                 "keyence_visitech": {
-                    "X": -70855,
-                    "Y": 1624,
-                    "Focus": 46416,
+                    "X": -69770,
+                    "Y": -1090,
+                    "Focus": 46799,
                     "Build Platform": 0
                 },
                 "keyence_wintech": {
-                    "X": 102758,
-                    "Y": -4811,
-                    "Focus": 49314,
+                    "X": 102728,
+                    "Y": -4836,
+                    "Focus": 49566,
                     "Build Platform": 0
                 }
             }
@@ -233,6 +244,10 @@
         }
     },
     "HR4": {
+        "valid_schema_versions": [
+            "v3",
+            "v2"
+        ],
         "external_control": {},
         "galil": {
             "dummy": false,

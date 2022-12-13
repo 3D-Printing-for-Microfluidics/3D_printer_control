@@ -1,3 +1,4 @@
+import re
 import json
 from pathlib import Path
 from zipfile import ZipFile, BadZipFile
@@ -7,7 +8,7 @@ from jsonschema.exceptions import ValidationError
 from PIL import Image
 
 
-def validate_v02(print_file):
+def validate_schema(print_file):
     """Validate a version 0.2 print file and return the print settings
     as JSON. If an error is detected, a ValueError is raised with
     appropriate information.
@@ -19,12 +20,21 @@ def validate_v02(print_file):
             temp_dir = Path(temp_dir)
             zip_file_handle.extractall(temp_dir)
             print_settings = check_for_unique_print_settings(temp_dir)
-            check_version(print_settings)
-            validate_against_schema(print_settings, "schema_v0.2.json")
+            version = check_version(print_settings)
+            validate_against_schema(print_settings, f"schema_{version}.json")
+
+            # check named settings and templates
+            check_referenced_templates_exist(print_settings)
+            check_referenced_named_position_settings_exist(print_settings)
+            check_referenced_named_image_settings_exist(print_settings)
+            expand_templates(print_settings)
+            check_templates_compatibility(print_settings)
+            expand_json(print_settings)
+
             check_slices_folder_exists(zip_file_handle, print_settings)
             check_referenced_images_exist(print_settings, temp_dir)
-            check_referenced_light_engines(print_settings)
-            return print_settings
+
+            return print_settings, version
     except BadZipFile:
         msg = "File is not a .zip file."
         raise ValueError(msg)
@@ -58,7 +68,7 @@ def check_slices_folder_exists(zip_file_handle, print_settings):
 
 
 def check_version(print_settings):
-    """Check the version of print settings file. Should be '0.2'."""
+    """Check the version of print settings file. Should be '0.2 or 2.x.x-4.x.x'."""
     if "Header" not in print_settings:
         msg = "'Header' missing from json file."
         raise ValueError(msg)
@@ -66,9 +76,32 @@ def check_version(print_settings):
         msg = f"Missing schema version.\n"
         msg += "  Check 'Header' -> 'Schema Version'"
         raise ValueError(msg)
-    if print_settings["Header"]["Schema version"] != "0.2":
-        msg = "File is not version 0.2. Use converter to convert to version 0.2"
+
+    is_semver = False
+    is_major_minor = False
+    schema_version = print_settings["Header"]["Schema version"]
+    ver = schema_version.split(".")
+
+    is_semver = re.search("\d+\.\d+\.\d+", schema_version) != None
+    if not is_semver:  #
+        is_major_minor = re.search("\d+\.\d+", schema_version) != None
+        if is_major_minor:
+            ver = [ver[1], 0, 0]
+        else:
+            msg = "Invalid version format. Must be 'x.x' or 'x.x.x'."
+            msg += "  Check 'Header' -> 'Schema Version'"
+            raise ValueError(msg)
+
+    if int(ver[0]) < 2:
+        msg = "File is version 0.1. Use converter to convert to version 0.2"
+        msg += "  Check 'Header' -> 'Schema Version'"
         raise ValueError(msg)
+    elif int(ver[0]) > 4:
+        msg = "Invalid major version number."
+        msg += "  Check 'Header' -> 'Schema Version'"
+        raise ValueError(msg)
+    else:
+        return f"v{ver[0]}"
 
 
 def validate_against_schema(print_settings, schema):
@@ -116,36 +149,340 @@ def check_referenced_images_exist(print_settings, temp_dir):
                     check_image_format(img_path)
 
 
-def check_referenced_light_engines(print_settings):
-    """Ensure that all light engines referenced in the print settings are
-    available. Uses the default light engine if no override is
-    provided.
-    """
-    le_list = ["visitech", "wintech"]
+def check_referenced_templates_exist(print_settings):
+    """Check that all templates referenced in JSON exist."""
+    if "Templates" in print_settings:
+        templates = print_settings["Templates"]
+    else:
+        templates = {}
 
-    if "Light engine" in print_settings["Default layer settings"]["Image settings"]:
-        le = print_settings["Default layer settings"]["Image settings"]["Light engine"]
+    "'Templates[]'->'Parent template'"
+    for template in templates.values():
+        if "Parent template" in template:
+            parent_template = template["Parent template"]
+            if parent_template not in templates.keys():
+                msg = f"Referenced template '{parent_template}' could not be found."
+                raise ValueError(msg)
 
-        if le not in le_list:
-            msg = f"Default light engine {le} could not be found.\n"
-            msg += (
-                "  Check 'Default layer settings' -> 'Image settings' -> 'Light engine'"
-            )
-            raise ValueError(msg)
+    "'Layers[]'->'Using templates'"
+    for layer in print_settings["Layers"]:
+        if "Using templates" in layer:
+            for template in layer["Using templates"]:
+                if template not in templates.keys():
+                    msg = f"Referenced template '{template}' could not be found."
+                    raise ValueError(msg)
+
+
+def check_referenced_named_position_settings_exist(print_settings):
+    """Check that all named position settings referenced in JSON exist."""
+    if "Named position settings" in print_settings:
+        named_position_settings = print_settings["Named position settings"]
+    else:
+        named_position_settings = {}
+
+    "'Named position settings[]'->'Using named position settings'"
+    if "Named position settings" in print_settings:
+        for named_position_setting in named_position_settings.values():
+            if "Using named position settings" in named_position_setting:
+                parent_named_position_setting = named_position_setting[
+                    "Using named position settings"
+                ]
+                if parent_named_position_setting not in named_position_settings.keys():
+                    msg = f"Referenced position settings '{parent_named_position_setting}' could not be found."
+                    raise ValueError(msg)
+
+    "'Templates[]'->'Position settings'->'Using named position settings'"
+    if "Templates" in print_settings:
+        for template in print_settings["Templates"].values():
+            if "Position settings" in template:
+                position_settings = template["Position settings"]
+                if "Using named position settings" in position_settings:
+                    named_position_setting = position_settings[
+                        "Using named position settings"
+                    ]
+                    if named_position_setting not in named_position_settings.keys():
+                        msg = f"Referenced position settings '{named_position_setting}' could not be found."
+                        raise ValueError(msg)
+
+    "'Layers[]'->'Position settings'->'Using named position settings'"
+    for layer in print_settings["Layers"]:
+        if "Position settings" in layer:
+            position_settings = layer["Position settings"]
+            if "Using named position settings" in position_settings:
+                named_position_setting = position_settings[
+                    "Using named position settings"
+                ]
+                if named_position_setting not in named_position_settings.keys():
+                    msg = f"Referenced position settings '{named_position_setting}' could not be found."
+                    raise ValueError(msg)
+
+
+def check_referenced_named_image_settings_exist(print_settings):
+    """Check that all named image settings referenced in JSON exist."""
+    if "Named image settings" in print_settings:
+        named_image_settings = print_settings["Named image settings"]
+    else:
+        named_image_settings = {}
+
+    "'Named image settings[]'->'Using named image settings'"
+    if "Named image settings" in print_settings:
+        for named_image_setting in named_image_settings.values():
+            if "Using named image settings" in named_image_setting:
+                parent_named_image_setting = named_image_setting[
+                    "Using named image settings"
+                ]
+                if parent_named_image_setting not in named_image_settings.keys():
+                    msg = f"Referenced image settings '{parent_named_image_setting}' could not be found."
+                    raise ValueError(msg)
+
+    "'Templates[]'->'Image settings list[]'->'Using named image settings'"
+    if "Templates" in print_settings:
+        for template in print_settings["Templates"].values():
+            if "Image settings list" in template:
+                for image_settings in template["Image settings list"]:
+                    if "Using named image settings" in image_settings:
+                        named_image_setting = image_settings["Using named image settings"]
+                        if named_image_setting not in named_image_settings.keys():
+                            msg = f"Referenced image settings '{named_image_setting}' could not be found."
+                            raise ValueError(msg)
+
+    "'Layers[]'->'Image settings list[]'->'Using named image settings'"
     for layer in print_settings["Layers"]:
         if "Image settings list" in layer:
-            for image_setting in layer["Image settings list"]:
-                if "Light engine" in image_setting:
-                    le = image_setting["Light engine"]
-                    if le not in le_list:
-                        msg = f"Light engine '{le}' could not be found."
+            for image_settings in layer["Image settings list"]:
+                if "Using named image settings" in image_settings:
+                    named_image_setting = image_settings["Using named image settings"]
+                    if named_image_setting not in named_image_settings.keys():
+                        msg = f"Referenced image settings '{named_image_setting}' could not be found."
                         raise ValueError(msg)
+
+
+# Expand templates before calling
+def check_templates_compatibility(print_settings):
+    "Check template compatibility in Layers"
+    for layer_num, layer in enumerate(print_settings["Layers"]):
+        if "Using templates" in layer:
+            len_image_settings_list = 0
+            position_settings = None
+            num_dups = None
+            first_ittr = True
+            for template_key in layer["Using templates"]:
+                template = print_settings["Templates"][template_key]
+                if first_ittr:
+                    position_settings = template.get("Position settings", None)
+                    num_dups = template.get("Number of duplications", None)
+                    first_ittr = False
+                elif template.get("Position settings", None) != position_settings:
+                    msg = f"Template conflict found in layer {layer_num}. Insure templates have the same position settings!"
+                    raise ValueError(msg)
+                elif template.get("Number of duplications", None) != num_dups:
+                    msg = f"Template conflict found in layer {layer_num}. Insure templates have same number of duplication!"
+                    raise ValueError(msg)
+                len_image_settings_list += len(template.get("Image settings list", [{}]))
+            if len_image_settings_list != len(layer.get("Image settings list", [{}])):
+                msg = f"Incorrect number of image settings for given templates in layer {layer_num}! Needs {len_image_settings_list} image settings."
+                raise ValueError(msg)
+
+
+def update_json(overrides, defaults):
+    """Return the position settings for the layer."""
+    final_settings = defaults.copy()
+    if overrides is not None:
+        final_settings.update(overrides)
+    return final_settings
+
+
+def update_layer_json(overrides, defaults):
+    new_layer = {}
+
+    # Override top level parameters
+    for key in ["Comment", "Number of duplications"]:
+        val = overrides.get(key, defaults.get(key, None))
+        if val != None:
+            new_layer[key] = val
+
+    # Override position settings
+    d_position_settings = defaults.get("Position settings", {})
+    position_settings = overrides.get("Position settings", {})
+    new_position_settings = update_json(position_settings, d_position_settings)
+    if len(new_position_settings.keys()) > 0:
+        new_layer["Position settings"] = new_position_settings
+
+    # Override image settings list
+    new_image_settings_list = []
+    d_image_settings_list = defaults.get("Image settings list", [])
+    image_settings_list = overrides.get("Image settings list", [])
+    for i in range(max(len(d_image_settings_list), len(image_settings_list))):
+        d_image_settings = {}
+        image_settings = {}
+        if i < len(d_image_settings_list):
+            d_image_settings = d_image_settings_list[i]
+        if i < len(image_settings_list):
+            image_settings = image_settings_list[i]
+        new_image_settings = update_json(image_settings, d_image_settings)
+        new_image_settings_list.append(new_image_settings)
+    new_layer["Image settings list"] = new_image_settings_list
+
+    return new_layer
+
+
+def expand_named_position_settings(print_settings):
+    # RESOLVE POSITION SETTINGS INHERITANCE
+    if "Named position settings" in print_settings:
+        root_position_settings = []
+        position_setting_keys = print_settings["Named position settings"].keys()
+        last_pass_length = len(root_position_settings)
+        while len(root_position_settings) < len(position_setting_keys):
+            for position_setting_key in position_setting_keys:
+                position_settings = print_settings["Named position settings"][
+                    position_setting_key
+                ]
+                parent_position_settings_key = position_settings.get(
+                    "Using named position settings", None
+                )
+                if (position_setting_key not in root_position_settings) and (
+                    parent_position_settings_key == None
+                ):
+                    root_position_settings.append(position_setting_key)
+                elif parent_position_settings_key in root_position_settings:
+                    parent_position_settings = print_settings["Named position settings"][
+                        parent_position_settings_key
+                    ]
+                    # expand named position settings
+                    position_settings.pop("Using named position settings")
+                    position_settings.update(
+                        update_json(position_settings, parent_position_settings)
+                    )
+            if last_pass_length == len(root_position_settings):
+                msg = f"Circular dependency in 'Named position settings'!"
+                raise ValueError(msg)
+            else:
+                last_pass_length = len(root_position_settings)
+
+
+def expand_named_image_settings(print_settings):
+    # RESOLVE IMAGE SETTINGS INHERITANCE
+    if "Named image settings" in print_settings:
+        root_image_settings = []
+        image_setting_keys = print_settings["Named image settings"].keys()
+        last_pass_length = len(root_image_settings)
+        while len(root_image_settings) < len(image_setting_keys):
+            for image_setting_key in image_setting_keys:
+                image_settings = print_settings["Named image settings"][image_setting_key]
+                parent_image_settings_key = image_settings.get(
+                    "Using named image settings", None
+                )
+                if (image_setting_key not in root_image_settings) and (
+                    parent_image_settings_key == None
+                ):
+                    root_image_settings.append(image_setting_key)
+                elif parent_image_settings_key in root_image_settings:
+                    parent_image_settings = print_settings["Named image settings"][
+                        parent_image_settings_key
+                    ]
+                    # expand image settings
+                    image_settings.pop("Using named image settings")
+                    image_settings.update(
+                        update_json(image_settings, parent_image_settings)
+                    )
+            if last_pass_length == len(root_image_settings):
+                msg = f"Circular dependency in 'Named image settings'!"
+                raise ValueError(msg)
+            else:
+                last_pass_length = len(root_image_settings)
+
+
+def expand_templates(print_settings):
+    # RESOLVE TEMPLATE INHERITANCE
+    if "Templates" in print_settings:
+        root_templates = []
+        template_keys = print_settings["Templates"].keys()
+        last_pass_length = len(root_templates)
+        while len(root_templates) < len(template_keys):
+            for template_key in template_keys:
+                template = print_settings["Templates"][template_key]
+                parent_template_key = template.get("Parent template", None)
+                if (template_key not in root_templates) and (parent_template_key == None):
+                    root_templates.append(template_key)
+                elif parent_template_key in root_templates:
+                    parent_template = print_settings["Templates"][parent_template_key]
+                    # expand templates
+                    print_settings["Templates"][template_key] = update_layer_json(
+                        template, parent_template
+                    )
+            if last_pass_length == len(root_templates):
+                msg = f"Circular dependency in 'Templates'!"
+                raise ValueError(msg)
+            else:
+                last_pass_length = len(root_templates)
+
+
+def replace_templates_in_layer(print_settings, layer):
+    # REPLACE TEMPLATES IN LAYERS
+    if "Using templates" in layer:
+        number_of_image_settings = 0
+        for parent_template_key in layer["Using templates"]:
+            parent_template = print_settings["Templates"][parent_template_key]
+            parent_template_copy = parent_template.copy()
+            parent_template_copy["Image settings list"] = parent_template[
+                "Image settings list"
+            ].copy()
+            for i in range(number_of_image_settings):
+                parent_template_copy["Image settings list"].insert(0, {})
+            number_of_image_settings = len(parent_template_copy["Image settings list"])
+            layer.update(update_layer_json(layer, parent_template_copy))
+        layer.pop("Using templates")
+
+
+def replace_named_position_settings_in_layer(print_settings, layer):
+    # REPLACE NAMED POSITION SETTINGS IN LAYERs
+    if "Position settings" in layer:
+        position_settings = layer["Position settings"]
+        if "Using named position settings" in position_settings:
+            parent_position_settings_key = position_settings[
+                "Using named position settings"
+            ]
+            parent_position_settings = print_settings["Named position settings"][
+                parent_position_settings_key
+            ]
+            # expand named position settings
+            position_settings.update(
+                update_json(position_settings, parent_position_settings)
+            )
+            position_settings.pop("Using named position settings")
+
+
+def replace_named_image_settings_in_layer(print_settings, layer):
+    # REPLACE NAMED IMAGE SETTINGS IN LAYERS
+    if "Image settings list" in layer:
+        for image_settings in layer["Image settings list"]:
+            if "Using named image settings" in image_settings:
+                parent_image_settings_key = image_settings["Using named image settings"]
+                parent_image_settings = print_settings["Named image settings"][
+                    parent_image_settings_key
+                ]
+                # expand named image settings
+                image_settings.update(update_json(image_settings, parent_image_settings))
+                image_settings.pop("Using named image settings")
+
+
+def expand_json(print_settings):
+    """Expands the JSON to remove all named image/position settings and templates"""
+    expand_named_position_settings(print_settings)
+    expand_named_image_settings(print_settings)
+    expand_templates(print_settings)
+
+    # EXPAND LAYERS
+    for layer in print_settings["Layers"]:
+        replace_templates_in_layer(print_settings, layer)
+        replace_named_position_settings_in_layer(print_settings, layer)
+        replace_named_image_settings_in_layer(print_settings, layer)
 
 
 if __name__ == "__main__":
     for print_job in Path("test_print_files_v2").glob("*.zip"):
         try:
-            validate_v02(print_job)
-            print(f"{print_job} is good")
+            print_settings, schema_ver = validate_schema(print_job)
+            print(f"{schema_ver}: {print_job} is good")
         except ValueError as e:
             print(f"Error in {print_job}:\n {e}")

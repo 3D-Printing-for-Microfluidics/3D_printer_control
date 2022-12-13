@@ -7,7 +7,8 @@ from flask import Blueprint, request, render_template, flash, send_file
 from printer_server.models import PrintRecord, PrintQueue
 from printer_server.settings import Config
 from printer_server.extensions import socketio
-from printer_server.print_file_validator import validate_v02
+from printer_server.hardware_configuration import config_dict
+from printer_server.print_file_validator import validate_schema
 
 blueprint = Blueprint(
     "print_history", __name__, url_prefix="/", static_folder="../static"
@@ -98,7 +99,9 @@ def add_to_queue(job_id):
     shutil.copyfile(old_filename, new_filename)
 
     try:
-        validate_v02(new_filename)
+        _, schema_ver = validate_schema(new_filename)
+        if schema_ver not in config_dict["valid_schema_versions"]:
+            raise ValueError(f"Printer does not support v{schema_ver} JSON format")
         msg = f"{job.original_filename} added to print queue."
         log.info(msg)
         print_job = PrintQueue(
