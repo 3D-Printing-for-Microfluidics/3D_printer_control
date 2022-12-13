@@ -536,21 +536,24 @@ class PrintControl:
                 home.clear_loadcell_graph()
                 self.loadcell_thread = threading.Thread(target=self.loadcell_graph_loop)
                 self.loadcell_thread.start()
-            log.debug(
-                "Loadcell force (pre-step 1): %s", self.loadcell.get_current_force()
-            )
+            loadcell_start_force = self.loadcell.get_current_force()
             self.galil.goToZmin()
-            target_force = config_dict["loadcell"]["loadcell_planarization_force"]
-            if (
-                self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.25)
-                is None
-            ):
-                log.error("Did not reach target planarization force.")
-                return
-            time.sleep(0.5)
-            log.info(
-                "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
-            )
+            if config_dict["loadcell"]["loadcell_planarization_enabled"]:
+                log.debug("Loadcell force (pre-step 1): %s", loadcell_start_force)
+                target_force = config_dict["loadcell"]["loadcell_planarization_force"]
+                if (
+                    self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.25)
+                    is None
+                ):
+                    log.error("Did not reach target planarization force.")
+                    return
+                time.sleep(0.5)
+                log.info(
+                    "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
+                )
+            else:
+                # estimate a 1mm movement for planarization
+                self.galil.relMove(mm=2.0, speed=2.5)
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
