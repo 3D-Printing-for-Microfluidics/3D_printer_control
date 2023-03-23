@@ -97,7 +97,7 @@
         },
         "tiptilt": {
             "dummy": false,
-            "hwid": "PID=16C0:0483 SER=9881650"
+            "hwid": "PID=16C0:0483 SER=9881850"
         },
         "loadcell": {
             "dummy": false,
