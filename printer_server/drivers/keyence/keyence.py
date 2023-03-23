@@ -50,12 +50,10 @@ class Keyence:
         try:
             self.sensor_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sensor_socket.connect((self.sensor_address, self.sensor_port))
-            # print(f"Connection established @ {self.sensor_address} in port {self.sensor_port}")
             self.log.info(
                 f"Connection established @ {self.sensor_address} in port {self.sensor_port}"
             )
         except Exception as ex:
-            # print(f"Connection attempt failed due to {ex}")
             self.log.error(f"Connection attempt failed due to {ex}")
             return False
         else:
@@ -87,13 +85,10 @@ class Keyence:
         try:
             self.sensor_socket.sendall(encoded_message)
         except Exception as ex:
-            # print(f"Failed to send message to sensor due to {ex}")
             self.log.error(f"Failed to send message to sensor due to {ex}")
         else:
-            # print(f"Command sent: {message}")
             self.log.debug(f"Command sent: {message}")
         response = self.sensor_socket.recv(1024).decode()
-        # print(f"Feedback: {response}")
         self.log.debug(f"Feedback: {response}")
         return response
 
