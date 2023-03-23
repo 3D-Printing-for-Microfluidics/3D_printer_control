@@ -38,7 +38,7 @@ $(document).ready(function () {
             // Parse button content and construct message
             var microns = $(this).val();
             var axis = $(this).closest(".container").attr('aria-label');
-            var fast = document.getElementById(`${axis}_quick_move`).checked;
+            var fast = document.getElementById(`${axis}_quick_move`).classList.contains("active");
             console.log(fast)
             var message = { "axis": axis, "microns": microns, "mode": "absolute", "fast": fast, "log": true };
             // Emit control message with parsed values
@@ -52,8 +52,9 @@ $(document).ready(function () {
             // Parse button content and construct message
             var microns = $(this).text();
             var axis = $(this).closest(".container").attr('aria-label');
-            var fast = document.getElementById(`${axis}_quick_move`).checked;
+            var fast = document.getElementById(`${axis}_quick_move`).classList.contains("active");
             console.log(fast)
+            console.log(document.getElementById(`${axis}_quick_move`).classList.contains("active"))
             var message = { "axis": axis, "microns": microns, "mode": "relative", "fast": fast, "log": true };
             // Emit control message with parsed values
             socket.emit("tiptilt_motor_move", message);
