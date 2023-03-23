@@ -8,7 +8,9 @@ kdc = driver_handles.kdc
 
 
 def get_kdc_positions():
-    last_positions = printer_server.views.manual_controls.get_last_calibration_positions()
+    last_positions = (
+        printer_server.views.manual_controls.get_last_calibration_positions_from_logs()
+    )
     last_positions["distance"] = kdc.getCurrentPos()
     return last_positions
 

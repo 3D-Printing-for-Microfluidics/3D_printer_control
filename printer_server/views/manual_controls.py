@@ -69,7 +69,7 @@ def index():
         hardware["external_control"]["enabled"] = enabled
 
     if initialized:
-        calibration_positions = get_last_calibration_positions()
+        calibration_positions = get_last_calibration_positions_from_logs()
         if "galil" in config_dict.keys():
             galil_positions = (
                 printer_server.drivers.galil.galil_snip.galil_get_positions()
@@ -156,7 +156,7 @@ def write_to_position_log(message):
         )
 
 
-def get_last_calibration_positions():
+def get_last_calibration_positions_from_logs():
     """Return the last focused position for the distance axis from the
     position log file.
     """

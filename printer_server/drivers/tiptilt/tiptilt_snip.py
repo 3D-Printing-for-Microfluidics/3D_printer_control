@@ -8,7 +8,9 @@ tiptilt = driver_handles.tiptilt
 
 
 def get_tiptilt_positions():
-    last_positions = printer_server.views.manual_controls.get_last_calibration_positions()
+    last_positions = (
+        printer_server.views.manual_controls.get_last_calibration_positions_from_logs()
+    )
 
     new_tip = tiptilt.get_position("tip")
     new_tilt = tiptilt.get_position("tilt")

@@ -12,7 +12,9 @@ def updateSetpoint(message):
     mode = message["mode"]
     mode = mode != "absolute"
 
-    last_positions = printer_server.views.manual_controls.get_last_calibration_positions()
+    last_positions = (
+        printer_server.views.manual_controls.get_last_calibration_positions_from_logs()
+    )
 
     if mode:
         last_positions[f"keyence_{sensor}"] = (
