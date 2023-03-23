@@ -27,6 +27,7 @@ class Wintech:
         Turn the sequencer off.
         """
         self.dmd_controller.stop_sequence()
+        self.led_on = False
 
     def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1):
         """
@@ -70,6 +71,7 @@ class Wintech:
             if self.repeats == 0:
                 self.dmd_controller.start_sequence()
             else:
+                self.log.info("Exposing for %s ms", self.exposure_time)
                 self.dmd_controller.start_sequence()
                 time.sleep(self.exposure_time * 0.001 + 0.1)
                 self.led_on = False
