@@ -130,7 +130,7 @@ def check_referenced_images_exist(print_settings, temp_dir):
     provided.
     """
     slices_folder = Path(print_settings["Header"]["Image directory"])
-    slices = list(temp_dir.glob(f"{slices_folder}/*.png"))
+    slices = list(temp_dir.glob(f"{slices_folder}/**/*.png"))
     img = print_settings["Default layer settings"]["Image settings"]["Image file"]
 
     if temp_dir / slices_folder / Path(img) not in slices:
@@ -235,9 +235,14 @@ def check_referenced_named_image_settings_exist(print_settings):
                     msg = f"Referenced image settings '{parent_named_image_setting}' could not be found."
                     raise ValueError(msg)
 
-    "'Templates[]'->'Image settings list[]'->'Using named image settings'"
+    "'Templates'->'Using named default image settings' and 'Templates[]'->'Image settings list[]'->'Using named image settings'"
     if "Templates" in print_settings:
         for template in print_settings["Templates"].values():
+            if "Using named default image settings" in template:
+                named_image_setting = template["Using named default image settings"]
+                if named_image_setting not in named_image_settings.keys():
+                    msg = f"Referenced image settings '{named_image_setting}' could not be found."
+                    raise ValueError(msg)
             if "Image settings list" in template:
                 for image_settings in template["Image settings list"]:
                     if "Using named image settings" in image_settings:
@@ -246,8 +251,13 @@ def check_referenced_named_image_settings_exist(print_settings):
                             msg = f"Referenced image settings '{named_image_setting}' could not be found."
                             raise ValueError(msg)
 
-    "'Layers[]'->'Image settings list[]'->'Using named image settings'"
+    "'Layers[]'->'Using named default image settings' and 'Layers[]'->'Image settings list[]'->'Using named image settings'"
     for layer in print_settings["Layers"]:
+        if "Using named default image settings" in layer:
+            named_image_setting = layer["Using named default image settings"]
+            if named_image_setting not in named_image_settings.keys():
+                msg = f"Referenced image settings '{named_image_setting}' could not be found."
+                raise ValueError(msg)
         if "Image settings list" in layer:
             for image_settings in layer["Image settings list"]:
                 if "Using named image settings" in image_settings:
@@ -279,7 +289,10 @@ def check_templates_compatibility(print_settings):
                     msg = f"Template conflict found in layer {layer_num}. Insure templates have same number of duplication!"
                     raise ValueError(msg)
                 len_image_settings_list += len(template.get("Image settings list", [{}]))
-            if len_image_settings_list != len(layer.get("Image settings list", [{}])):
+
+            if (len(layer.get("Image settings list", [])) > 0) and (
+                len(layer.get("Image settings list", [])) != len_image_settings_list
+            ):
                 msg = f"Incorrect number of image settings for given templates in layer {layer_num}! Needs {len_image_settings_list} image settings."
                 raise ValueError(msg)
 
@@ -296,7 +309,11 @@ def update_layer_json(overrides, defaults):
     new_layer = {}
 
     # Override top level parameters
-    for key in ["Comment", "Number of duplications"]:
+    for key in [
+        "Comment",
+        "Number of duplications",
+        "Using named default image settings",
+    ]:
         val = overrides.get(key, defaults.get(key, None))
         if val != None:
             new_layer[key] = val
@@ -454,6 +471,19 @@ def replace_named_position_settings_in_layer(print_settings, layer):
 
 def replace_named_image_settings_in_layer(print_settings, layer):
     # REPLACE NAMED IMAGE SETTINGS IN LAYERS
+    if "Using named default image settings" in layer:
+        if "Image settings list" not in layer:
+            layer["Image settings list"] = [{}]
+        if len(layer["Image settings list"]) == 0:
+            layer["Image settings list"].append({})
+        for image_settings in layer["Image settings list"]:
+            parent_image_settings_key = layer["Using named default image settings"]
+            parent_image_settings = print_settings["Named image settings"][
+                parent_image_settings_key
+            ]
+            # expand named image settings
+            image_settings.update(update_json(image_settings, parent_image_settings))
+        layer.pop("Using named default image settings")
     if "Image settings list" in layer:
         for image_settings in layer["Image settings list"]:
             if "Using named image settings" in image_settings:

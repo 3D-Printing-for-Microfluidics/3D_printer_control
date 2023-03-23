@@ -321,6 +321,11 @@
                     "Position settings": {
                         "$ref": "#/$defs/POSITION_SETTINGS"
                     },
+                    "Using named default image settings": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Updates all image settings with this default"
+                    },
                     "Image settings list": {
                         "type": "array",
                         "items": {
@@ -359,6 +364,11 @@
                     },
                     "Position settings": {
                         "$ref": "#/$defs/POSITION_SETTINGS"
+                    },
+                    "Using named default image settings": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Updates all image settings with this default"
                     },
                     "Image settings list": {
                         "type": "array",
@@ -502,6 +512,8 @@
                     "default": "visitech",
                     "enum": [
                         "visitech",
+                        "visitech (365nm)",
+                        "visitech (405nm)",
                         "wintech"
                     ],
                     "description": "Default light engine for exposure."

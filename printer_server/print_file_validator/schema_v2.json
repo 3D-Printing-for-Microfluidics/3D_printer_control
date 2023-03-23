@@ -300,6 +300,11 @@
                     "Position settings": {
                         "$ref": "#/$defs/POSITION_SETTINGS"
                     },
+                    "Using named default image settings": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Updates all image settings with this default"
+                    },
                     "Image settings list": {
                         "type": "array",
                         "items": {
@@ -338,6 +343,11 @@
                     },
                     "Position settings": {
                         "$ref": "#/$defs/POSITION_SETTINGS"
+                    },
+                    "Using named default image settings": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Updates all image settings with this default"
                     },
                     "Image settings list": {
                         "type": "array",
