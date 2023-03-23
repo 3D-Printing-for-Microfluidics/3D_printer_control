@@ -4,8 +4,6 @@ import json
 import shutil
 import logging
 import threading
-import numpy as np
-from PIL import Image
 from pathlib import Path
 from flask import request
 from functools import wraps
@@ -20,28 +18,97 @@ from printer_server.print_file_validator import validate_schema, read_json, expa
 from printer_server.hardware_configuration import config_dict
 from printer_server.async_file_handler import async_file_hander
 from printer_server.hardware_configuration import driver_handles
-from printer_server.views.manual_controls import get_last_calibration_positions
+from printer_server.views.manual_controls import (
+    get_last_calibration_positions_from_logs,
+)
 
 # from printer_server.drivers.kdc101.kdc101_snip import get_kdc_positions
 # from printer_server.drivers.tiptilt.tiptilt_snip import get_tiptilt_positions
-
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-def door_is_open(visitech_sticky_errors):
-    """Return true if the door is open, else return false."""
-    if "open" in visitech_sticky_errors.capitalize():
-        return True
-    return False
+def move_all_galil(
+    galil,
+    x,
+    y,
+    z,
+    bp,
+    join=True,
+    speed_x=50,
+    speed_y=50,
+    speed_z=25,
+    speed_bp=25,
+    acceleration_x=50,
+    acceleration_y=50,
+    acceleration_z=50,
+    acceleration_bp=50,
+):
+    """
+    Starts multithreaded movement on all of the galil axes. If any axis is set to none, it will not move.
+    If join is set to true, the movements will join before returning
+    """
+    threads = [None, None, None, None]
+    if x is not None:
+        threads[0] = threading.Thread(
+            target=galil.absMove,
+            kwargs={
+                "mm": x / 1000,
+                "speed": speed_x,
+                "acceleration": acceleration_x,
+                "axis": "X",
+            },
+        )
+        threads[0].start()
+    if y is not None:
+        threads[1] = threading.Thread(
+            target=galil.absMove,
+            kwargs={
+                "mm": y / 1000,
+                "speed": speed_y,
+                "acceleration": acceleration_y,
+                "axis": "Y",
+            },
+        )
+        threads[1].start()
+    if z is not None:
+        threads[2] = threading.Thread(
+            target=galil.absMove,
+            kwargs={
+                "mm": z / 1000,
+                "speed": speed_z,
+                "acceleration": acceleration_z,
+                "axis": "Focus",
+            },
+        )
+        threads[2].start()
+
+    if bp is not None:
+        threads[3] = threading.Thread(
+            target=galil.absMove,
+            kwargs={
+                "mm": bp / 1000,
+                "speed": speed_bp,
+                "acceleration": acceleration_bp,
+                "axis": "Build Platform",
+            },
+        )
+        threads[3].start()
+
+    if join:
+        for thread in threads:
+            if thread is not None:
+                thread.join()
+    else:
+        return threads
 
 
-def get_last_focused_position():
+def get_last_focused_position_from_logs():
     """Return the last focused position for the distance axis from the
     position log file.
     """
-    return get_last_calibration_positions()["distance"]
+    return get_last_calibration_positions_from_logs()["distance"]
 
 
 def has_bad_metadata(filename):
@@ -65,43 +132,6 @@ def clean_uploaded_file(filename):
             if not str(item.filename).startswith("__MACOSX/"):
                 new_file.writestr(item, buffer)
     shutil.move(temp_filename, filename)
-
-
-def um_to_px(um):
-    """Return the number of pixels corresponding to the length 'um' by
-    rounding 'um' to the nearest 'pixel_pitch' increment.
-    """
-    pixel_pitch = 7.6
-    return int(round(um / pixel_pitch))
-
-
-def shift_image(img, x=0, y=0):
-    """Shift the image by the specified number of pixels in x and y.
-    Pixels that get shifted out of the image on one side disappear and
-    the new pixels on the opposite side are copied from the original
-    edge. This is accomplished by converting the image to a numpy array
-    and building a list of row and column indicies to slice it with.
-    """
-    new_filename = img.parent / f"{img.stem}_shifted_{x}x_{y}y.png"
-    img = np.array(Image.open(img))
-    idx = [[], []]
-    for axis, shift_by in enumerate((y, -x)):
-        if shift_by > 0:
-            idx[axis] = list(range(shift_by, img.shape[axis]))
-            for _ in range(shift_by):
-                idx[axis].append(img.shape[axis] - 1)
-        elif shift_by < 0:
-            idx[axis] = list(range(0, img.shape[axis] + shift_by))
-            for _ in range(-shift_by):
-                idx[axis].insert(0, 0)
-    if idx[0]:
-        img = img[idx[0], :]
-    if idx[1]:
-        img = img[:, idx[1]]
-    img = Image.fromarray(img).convert("L")
-    log.info("Saving new defocused image %s", new_filename)
-    img.save(new_filename)
-    return Path(new_filename)
 
 
 def run_in_thread(state, text):
@@ -154,10 +184,8 @@ class PrintControl:
 
         # hardware handles
         self.galil = driver_handles.galil
-        self.visitech = driver_handles.visitech
         self.tiptilt = driver_handles.tiptilt
         self.loadcell = driver_handles.loadcell
-        self.screen = driver_handles.screen
 
         # loadcell graph variables
         self.loadcell_running = False
@@ -177,8 +205,6 @@ class PrintControl:
 
         # threads
         self.galil_thread = None
-        self.screen_thread = None
-        self.visitech_thread = None
 
         # values used during printing
         self.image = None
@@ -319,6 +345,7 @@ class PrintControl:
         """Return a list of the image settings for the layer."""
         defaults = self.print_settings.get("Default layer settings").get("Image settings")
         layer_specific_settings = layer.get("Image settings list")
+
         final_settings = []
         if layer_specific_settings is not None:
             for settings in layer_specific_settings:
@@ -501,27 +528,26 @@ class PrintControl:
         """Put all hardware into starting configuration."""
         if self.state == "uninitialized":
             self.state = "busy"
-            self.focused_position = get_last_focused_position()
             self.tiptilt.connect()
             self.loadcell.connect()
 
             self.galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
-            self.screen_thread = threading.Thread(
-                target=driver_handles.screen.start, args=[]
-            )
-            self.visitech_thread = threading.Thread(target=self.visitech.connect, args=[])
             self.galil_thread.start()
-            self.screen_thread.start()
-            self.visitech_thread.start()
             self.galil_thread.join()
-            self.screen_thread.join()
-            self.visitech_thread.join()
+
+            self.galil_thread = threading.Thread(
+                target=self.galil_finalize_setup_thread, args=[]
+            )
+            self.galil_thread.start()
+            self.galil_thread.join()
 
     def galil_setup_thread(self):
         """Initialize and home Galil controller"""
         self.galil.connect()
         self.galil.initialize()
         self.galil.home()
+
+    def galil_finalize_setup_thread(self):
         self.galil.goToZmax()
 
     @run_in_thread("planarizing", "Planarization Step 1")
@@ -619,7 +645,7 @@ class PrintControl:
         # Start async_file_handler
         self.create_logs()
 
-        position = get_last_calibration_positions()
+        position = get_last_calibration_positions_from_logs()
         # position = get_kdc_positions()
         dist = position["distance"]
         self.write_to_event_log(f"Distance: {dist}")
@@ -705,10 +731,7 @@ class PrintControl:
         return
 
     def post_print_tasks(self):
-        # always turn off the Visitech
-        self.visitech.stop_sequencer()
-        home.update_visitech_led_status(False)
-        self.screen.clear()
+        return
 
     def print_worker(self):
         """Do a 3D print.
@@ -722,10 +745,6 @@ class PrintControl:
         # clear old flags
         self.printing_stopped.clear()
         self.printing_paused.clear()
-
-        # clear visitech overcurrent error
-        self.visitech.get_sticky_errors(warn=False)
-        self.suppress_visitech_ocp_error = True
 
         # generate layer map
         self.layer_map = self.generate_layer_map()
@@ -798,24 +817,19 @@ class PrintControl:
                 f"{json.dumps({x: exposure_data[x]}, indent=2)}\n",
             )
 
-    def pre_exposure_tasks(self, settings):
-        # screen thread
-        self.screen_thread = threading.Thread(target=self.screen.draw, args=[self.image])
-        self.screen_thread.start()
+    def pre_exposure_tasks(self, settings, light_engine):
+        return
 
-        # visitech setup thread
-        self.write_to_event_log("Setup Exposure")
-        self.visitech_thread = threading.Thread(
-            target=self.visitech.setup_exposure, args=[self.exposure_time_ms, self.power]
-        )
-        self.visitech_thread.start()
-
-    def pre_exposure_joins(self):
+    def pre_exposure_joins(self, settings, light_engine):
         # wait for all hardware to be ready for exposure
         if not self.next_layer == 1:
             self.galil_thread.join()
-        self.screen_thread.join()
-        self.visitech_thread.join()
+
+    def exposure(self, settings, light_engine):
+        return
+
+    def get_le_status(self, settings, light_engine):
+        return {}
 
     def post_exposure_tasks(self, msg):
         self.exposure_index += 1
@@ -839,33 +853,26 @@ class PrintControl:
         self.exposure_time_ms = settings["Layer exposure time (ms)"]
         self.power = settings["Light engine power setting"]
         layer_start_position = self.get_focus()
+        light_engine = settings.get(
+            "Light engine", config_dict["screen"]["light_engines"][0]
+        )
 
         # run pre-exposure tasks
-        self.pre_exposure_tasks(settings)
-        self.pre_exposure_joins()
+        self.write_to_event_log("Setup Exposure")
+        self.pre_exposure_tasks(settings, light_engine)
+        self.pre_exposure_joins(settings, light_engine)
 
         # do the exposure
         position_during_exposure = self.get_focus()
-        pre_exposure_status = self.visitech.read_all_status()
+        pre_exposure_status = self.get_le_status(settings, light_engine)
         time.sleep(settings["Wait before exposure (ms)"] / 1000)
         self.write_to_event_log("Start Exposure")
-        home.update_visitech_led_status(True)
-        self.visitech.perform_exposure()
-        home.update_visitech_led_status(False)
+        self.exposure(settings, light_engine)
         self.write_to_event_log("Finish Exposure")
         time.sleep(settings["Wait after exposure (ms)"] / 1000)
 
         self.post_exposure_tasks(msg)
-
-        # Suppress the first Visitech OCP error. This appears to always be
-        # triggered on the first exposure of each print job. It would be better
-        # to figure out why this happens in the hardware and fix it there.
-        if self.suppress_visitech_ocp_error:
-            self.suppress_visitech_ocp_error = False  # only do this once per print
-            for e in self.visitech.get_sticky_errors(warn=False):
-                if e and e.lower() != "led over current protection triggered":
-                    log.warning("Visitech error: %s", e)  # report other errors
-        post_exposure_status = self.visitech.read_all_status()
+        post_exposure_status = self.get_le_status(settings, light_engine)
 
         # save expoure data
         exposure_data[j] = {
