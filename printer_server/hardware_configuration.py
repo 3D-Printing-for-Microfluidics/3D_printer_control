@@ -87,7 +87,11 @@ class Printer3D:
             if config_dict["visitech"]["dummy"]:
                 self.visitech = Visitech_dummy()
             else:
-                self.visitech = Visitech(log_level=default_log_level)
+                self.visitech = Visitech(
+                    config_dict["visitech"]["leds"],
+                    log_level=default_log_level,
+                    dual_led=config_dict["visitech"]["dual_led"],
+                )
 
         if "wintech" in config_dict.keys():
             from printer_server.drivers.wintech import Wintech, Wintech_dummy

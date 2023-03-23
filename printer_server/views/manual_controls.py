@@ -124,6 +124,8 @@ def index():
             hardware["visitech"][
                 "status"
             ] = printer_server.drivers.visitech.visitech_snip.getLedStatus()
+            hardware["visitech"]["dual_led"] = config_dict["visitech"]["dual_led"]
+            hardware["visitech"]["leds"] = config_dict["visitech"]["leds"]
         if "wintech" in config_dict.keys():
             hardware["wintech"][
                 "status"

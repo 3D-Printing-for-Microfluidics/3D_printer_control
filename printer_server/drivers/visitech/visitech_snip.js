@@ -69,7 +69,15 @@ $(document).ready(function () {
                 exposure = 1
             }
         }
-        socket.emit("visitech_start", { "repeat": repeat, "exposure": exposure, "ledPower": ledPower });
+
+        var led_1_element = document.getElementById(`led_1`);
+        var led_1_checked = false;
+        if (led_1_element != null) {
+            led_1_checked = led_1_element.classList.contains("active");
+        }
+
+        console.log({ "repeat": repeat, "exposure": exposure, "ledPower": ledPower, "led": led_1_checked })
+        socket.emit("visitech_start", { "repeat": repeat, "exposure": exposure, "ledPower": ledPower, "led": led_1_checked });
     });
 
     socket.on("update_visitech_led_status", function (message) {

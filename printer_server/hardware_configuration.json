@@ -54,6 +54,10 @@
         },
         "visitech": {
             "dummy": false,
+            "dual_led": false,
+            "leds": [
+                "365nm"
+            ],
             "resolution": [
                 2560,
                 1600
@@ -111,6 +115,10 @@
         },
         "visitech": {
             "dummy": false,
+            "dual_led": false,
+            "leds": [
+                "365nm"
+            ],
             "resolution": [
                 2560,
                 1600
@@ -230,6 +238,11 @@
         },
         "visitech": {
             "dummy": false,
+            "dual_led": true,
+            "leds": [
+                "405nm",
+                "365nm"
+            ],
             "resolution": [
                 2560,
                 1600
@@ -339,6 +352,10 @@
         },
         "visitech": {
             "dummy": false,
+            "dual_led": false,
+            "leds": [
+                "365nm"
+            ],
             "resolution": [
                 2560,
                 1600

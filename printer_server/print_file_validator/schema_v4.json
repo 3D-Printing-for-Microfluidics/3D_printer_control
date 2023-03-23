@@ -239,6 +239,8 @@
                             "default": "visitech",
                             "enum": [
                                 "visitech",
+                                "visitech (365nm)",
+                                "visitech (405nm)",
                                 "wintech"
                             ],
                             "description": "Default light engine for exposure."

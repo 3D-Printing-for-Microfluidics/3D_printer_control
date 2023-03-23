@@ -6,6 +6,23 @@
         </div>
     </div>
 
+    {% if hardware['visitech']['dual_led'] %}
+    <!-- LED section (dual led) -->
+    <div class="row">
+        <div class="col-4">
+            <h5>LED</h5>
+        </div>
+        <div class="col-6">
+            <div class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                <label class="btn btn-outline-info btn-fixed-width shadow-none active"><input type="radio">{{
+                    hardware['visitech']['leds'][0] }}</label>
+                <label class="btn btn-outline-info btn-fixed-width shadow-none" id="led_1"><input type="radio">{{
+                    hardware['visitech']['leds'][1] }}</label>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- LED Power -->
     <div class="row">
         <h5 class="col-3 text-left">LED Power</h5>

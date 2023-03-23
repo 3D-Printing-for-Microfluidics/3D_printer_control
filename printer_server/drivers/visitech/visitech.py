@@ -72,7 +72,7 @@ class Visitech:
     SET LBREG
     """
 
-    def __init__(self, log_level=logging.DEBUG):
+    def __init__(self, leds, log_level=logging.DEBUG, dual_led=False):
         self.max_exp_time = 10000  # max single projection time in ms
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
@@ -86,6 +86,8 @@ class Visitech:
 
         self.exposure_time = 0
         self.led_on = False
+        self.dual_led = dual_led
+        self.leds = leds
 
         # register exit handlers
         atexit.register(self.disconnect)  # close the TCP conenction on exit
@@ -115,7 +117,11 @@ class Visitech:
         # set default state for light engine and clear previous errors
         self.get_sticky_errors(warn=False)
         self.set_video_source("HDMI")
-        self.set_led_driver_regulation_mode("LIGHT")
+        if self.dual_led:
+            self.set_led_driver_regulation_mode("LIGHT", led_num=0)
+            self.set_led_driver_regulation_mode("LIGHT", led_num=1)
+        else:
+            self.set_led_driver_regulation_mode("LIGHT")
         self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
 
         self.log.info("Light engine connected.")
@@ -183,7 +189,7 @@ class Visitech:
         """
         return self.send("GET VERSION")
 
-    def led_driver_enable(self):
+    def led_driver_enable(self, led_num=0):
         """
         Turns on the LED driver. When on the LED driver will output
         current to the LED when a trigger pulse is received from the
@@ -191,9 +197,12 @@ class Visitech:
 
         Return type +OK
         """
-        return self.send("SET LIGHT ON")
+        cmd = "SET LIGHT ON"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return self.send(cmd)
 
-    def led_driver_disable(self):
+    def led_driver_disable(self, led_num=0):
         """
         Turns off the LED driver. When off the LED driver will not
         output current to the LED, even when a trigger pulse is
@@ -201,18 +210,24 @@ class Visitech:
 
         Return type +OK
         """
-        return self.send("SET LIGHT OFF")
+        cmd = "SET LIGHT OFF"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return self.send(cmd)
 
-    def get_led_driver_status(self):
+    def get_led_driver_status(self, led_num=0):
         """
         Get the status of the LED on/off switch.
 
         Return type +OK
         <status>
         """
-        return self.send("GET LIGHT STATUS")
+        cmd = "GET LIGHT STATUS"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return self.send(cmd)
 
-    def get_led_state(self):
+    def get_led_state(self, led_num=0):
         """
         Get the status of the light output. If the LED driver and the
         sequencer are turned on this command will wait for a few msec to
@@ -223,33 +238,47 @@ class Visitech:
 
         Return type +OK and ON or OFF
         """
-        return self.send("GET LIGHT OUTPUT STATUS")
+        cmd = "GET LIGHT OUTPUT STATUS"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return self.send(cmd)
 
-    def set_led_amplitude(self, amplitude):
+    def set_led_amplitude(self, amplitude, led_num=0):
         """
         Set the amplitude value for the LED.
 
         Return type +OK and ON or OFF
         """
-        return self.send(f"SET AMPLITUDE {amplitude}")
+        cmd = "SET AMPLITUDE"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        cmd += f" {amplitude}"
+        return self.send(cmd)
 
-    def get_led_amplitude(self):
+    def get_led_amplitude(self, led_num=0):
         """
         Get the current set amplitude value for the LED.
 
         Return type +OK and set value
         """
-        return self.send("GET AMPLITUDE")
+        cmd = "GET AMPLITUDE"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return self.send(cmd)
 
-    def set_led_driver_ocp(self, value):
+    def set_led_driver_ocp(self, value, led_num=0):
         """
         Set the LED driver over-current protection value in Amps.
 
         Return type +OK
         """
-        return self.send(f"SET OCP {value}")
+        cmd = "SET OCP"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        cmd += f" {value}"
+        return self.send(cmd)
 
-    def get_led_driver_ocp(self):
+    def get_led_driver_ocp(self, led_num=0):
         """
         Get the OCP value for the LED in Amps. Not recommended to adjust
         higher than default settings as this will lower the usable
@@ -257,9 +286,12 @@ class Visitech:
 
         Return type +OK and set value
         """
-        return self.send("GET OCP")
+        cmd = "GET OCP"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return self.send(cmd)
 
-    def set_led_driver_regulation_mode(self, mode):
+    def set_led_driver_regulation_mode(self, mode, led_num=0):
         """
         Set the regulation mode to be used for controlling light output
         from LED. LIGHT is recommended. To be able to readout feedback
@@ -270,27 +302,37 @@ class Visitech:
 
         Return type +OK
         """
-        return self.send(f"SET REG MODE {mode}")
+        cmd = "SET REG MODE"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        cmd += f" {mode}"
+        return self.send(cmd)
 
-    def get_led_driver_regulation_mode(self):
+    def get_led_driver_regulation_mode(self, led_num=0):
         """
         Get the regulation mode to be used for controlling light output
         from the LED.
 
         Return type +OK and current set mode: CURRENT/LIGHT/COMBINED
         """
-        return self.send("GET REG MODE")
+        cmd = "GET REG MODE"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return self.send(cmd)
 
-    def get_led_driver_current(self):
+    def get_led_driver_current(self, led_num=0):
         """
         Get current passing through the LED driver on the last strobe in
         Amps.
 
         Return type +OK and feedback value as a floating point number
         """
-        return self.send("GET CURRENT FEEDBACK")
+        cmd = "GET CURRENT FEEDBACK"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return self.send(cmd)
 
-    def get_led_intensity(self):
+    def get_led_intensity(self, led_num=0):
         """
         Get the recorded light feedback value of the last strobe from
         the light sensors. This should correspond to the current
@@ -298,25 +340,34 @@ class Visitech:
 
         Return type +OK and feedback value.
         """
-        return float(self.send("GET LIGHT FEEDBACK"))
+        cmd = "GET LIGHT FEEDBACK"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return float(self.send(cmd))
 
-    def get_led_temp(self):
+    def get_led_temp(self, led_num=0):
         """
         Get the LED temperature from the LED driver.
 
         Return type +OK and temperature value.
         """
-        return float(self.send("GET LED TEMP"))
+        cmd = "GET LED TEMP"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return float(self.send(cmd))
 
-    def get_led_driver_board_temp(self):
+    def get_led_driver_board_temp(self, led_num=0):
         """
         Get the temperature of the LED driver board from the LED driver.
 
         Return type +OK and temperature value.
         """
-        return float(self.send("GET BOARD TEMP"))
+        cmd = "GET BOARD TEMP"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return float(self.send(cmd))
 
-    def set_led_driver_board_temp_limit(self, temperature):
+    def set_led_driver_board_temp_limit(self, temperature, led_num=0):
         """
         Set the temperature limit for the LED driver in Celsius. It is
         not recommended to exceed the default values as this will
@@ -326,17 +377,24 @@ class Visitech:
 
         Return type +OK
         """
-        return self.send(f"SET BOARD TEMP LIMIT {temperature}")
+        cmd = "SET BOARD TEMP LIMIT"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        cmd += f" {temperature}"
+        return self.send(cmd)
 
-    def get_led_driver_board_temp_limit(self):
+    def get_led_driver_board_temp_limit(self, led_num=0):
         """
         Get the temperature limit for the LED driver in Celsius.
 
         Return type +OK and board temperature limit in Celsius
         """
-        return float(self.send("GET BOARD TEMP LIMIT"))
+        cmd = "GET BOARD TEMP LIMIT"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return float(self.send(cmd))
 
-    def set_led_temp_limit(self, temperature):
+    def set_led_temp_limit(self, temperature, led_num=0):
         """
         Set the temperature limit for the LED in Celsius. It is not
         recommended to exceed the default values as this will shorten
@@ -345,15 +403,22 @@ class Visitech:
 
         Return type +OK
         """
-        return self.send(f"SET LED TEMP LIMIT {temperature}")
+        cmd = "SET LED TEMP LIMIT"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        cmd += f" {temperature}"
+        return self.send(cmd)
 
-    def get_led_temp_limit(self):
+    def get_led_temp_limit(self, led_num=0):
         """
         Get the temperature limit for the LED in Celsius.
 
         Return type +OK and board temperature limit in Celsius
         """
-        return self.send("GET LED TEMP LIMIT")
+        cmd = "GET LED TEMP LIMIT"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return self.send(cmd)
 
     def start_sequencer(self):
         """
@@ -660,7 +725,7 @@ class Visitech:
         """
         Return commonly queried status.
         """
-        return {
+        dict = {
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
             "led_feedback": self.get_led_intensity(),
             "led_temp": self.get_led_temp(),
@@ -668,8 +733,14 @@ class Visitech:
             "led_sticky_errors": self.get_sticky_errors(),
             "led_driver_status": self.get_led_driver_status(),
         }
+        if self.dual_led:
+            dict["led_feedback2"] = self.get_led_intensity(led_num=1)
+            dict["led_temp2"] = self.get_led_temp(led_num=1)
+            dict["led_driver_temp2"] = self.get_led_driver_board_temp(led_num=1)
+            dict["led_driver_status2"] = self.get_led_driver_status(led_num=1)
+        return dict
 
-    def setup_exposure(self, t, p, r=1):
+    def setup_exposure(self, t, p, r=1, led_num=0):
         """
         Setup an exposure.
             t - exposure time in milliseconds
@@ -678,10 +749,22 @@ class Visitech:
         """
         self.exposure_time = t
 
+        if self.dual_led:
+            if led_num == 0:
+                self.led_driver_enable(led_num=0)
+                self.led_driver_disable(led_num=1)
+            else:
+                self.led_driver_enable(led_num=1)
+                self.led_driver_disable(led_num=0)
+
         min_t = 4.046
         max_t = 10000
         self.log.info(
-            "Setting up exposure for %s ms at power setting %s. Repeat %s", t, p, r
+            "Setting up exposure at %s for %s ms at power setting %s. Repeat %s",
+            self.leds[led_num],
+            t,
+            p,
+            r,
         )
         if t == 0:
             return
@@ -697,8 +780,8 @@ class Visitech:
             self.log.warning(msg)
             t = min_t
             self.exposure_time = min_t
-        self.set_led_amplitude(p)
-        self.set_sequencer_lut_definition(exposure=t * 1000)
+        self.set_led_amplitude(p, led_num=led_num)
+        self.set_sequencer_lut_definition(exposure=int(t * 1000))
         self.set_sequencer_lut_config(repeats=r)
 
     def perform_exposure(self):
@@ -712,18 +795,29 @@ class Visitech:
             time.sleep(self.exposure_time * 1e-3)
         self.led_on = False
 
-    def project(self, exposure, power, repeats=1):
+    def project(self, exposure, power, repeats=1, led_num=0):
         """
         Call all of the necessary methods to project an image, and block
         until projection is complete.
         """
+
         self.log.info(
-            "Exposing for %s ms at power setting %s. Repeat %s",
+            "Exposing %s for %s ms at power setting %s. Repeat %s",
+            self.leds[led_num],
             exposure,
             power,
             repeats,
         )
-        self.set_led_amplitude(power)
+
+        if self.dual_led:
+            if led_num == 0:
+                self.led_driver_enable(led_num=0)
+                self.led_driver_disable(led_num=1)
+            else:
+                self.led_driver_enable(led_num=1)
+                self.led_driver_disable(led_num=0)
+
+        self.set_led_amplitude(power, led_num=led_num)
         self.led_on = True
         if repeats == 0:  # if continuous display is desired
             # this provides the minimum blanking of 233 us of the full 33333 us cycle
@@ -734,7 +828,7 @@ class Visitech:
         else:  # normal display is desired
             for t in self.split_exposure_time(exposure):
                 # the TI board expects exposure in microseconds
-                self.set_sequencer_lut_definition(exposure=t * 1000)
+                self.set_sequencer_lut_definition(exposure=int(t * 1000))
                 self.set_sequencer_lut_config(repeats=repeats)
                 self.start_sequencer()
                 time.sleep(t * 1e-3)
