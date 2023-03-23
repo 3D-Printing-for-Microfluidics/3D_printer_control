@@ -170,3 +170,7 @@ def get_last_calibration_positions():
     last_line = last_line.replace("'", '"')
     temp = json.loads(last_line)
     return temp
+
+
+def update_le_led_status(le, state):
+    socketio.emit(f"update_{le}_led_status", state, namespace="/manual")

@@ -52,14 +52,6 @@ def index():
     )
 
 
-def update_visitech_led_status(state):
-    socketio.emit("update_visitech_led_status", state, namespace="/manual")
-
-
-def update_wintech_led_status(state):
-    socketio.emit("update_wintech_led_status", state, namespace="/manual")
-
-
 def update_printer_state(state, msg):
     socketio.emit(state, msg, namespace="/printing", broadcast=True)
 
