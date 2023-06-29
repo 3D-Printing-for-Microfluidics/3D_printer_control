@@ -56,17 +56,15 @@ def home():
 def galil_move(message):
     """Move the main Z stage. All units in mm."""
     mode = message["mode"]
-    speed = float(message["speed"])
     distance = float(message["distance"]) / 1000
-    acceleration = float(message["acceleration"])
     axis = message["axis"]
     if mode == "absolute":
         global coord_system
         if coord_system is not None:
             distance += coord_system[galil.getCommonName(axis)] / 1000
-        galil.absMove(mm=distance, speed=speed, acceleration=acceleration, axis=axis)
+        galil.absMove(mm=distance, speed=galil.getDefaultSpeed(axis), acceleration=galil.getDefaultAcceleration(axis), axis=axis)
     elif mode == "relative":
-        galil.relMove(mm=distance, speed=speed, acceleration=acceleration, axis=axis)
+        galil.relMove(mm=distance, speed=galil.getDefaultSpeed(axis), acceleration=galil.getDefaultAcceleration(axis), axis=axis)
     socketio.emit(
         "galil_done", galil_get_positions(), namespace="/manual", broadcast=True
     )
@@ -76,7 +74,7 @@ def galil_move(message):
 def galil_startJog(message):
     """Start jogging the main Z stage."""
     speed = float(message["speed"])
-    galil.startJog(speed=speed, acceleration=50)
+    galil.startJog(speed=speed, acceleration=galil.getDefaultAcceleration())
 
 
 @socketio.on("galil_stop_jog", namespace="/manual")

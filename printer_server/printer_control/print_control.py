@@ -36,14 +36,14 @@ def move_all_galil(
     z,
     bp,
     join=True,
-    speed_x=50,
-    speed_y=50,
-    speed_z=25,
-    speed_bp=25,
-    acceleration_x=50,
-    acceleration_y=50,
-    acceleration_z=50,
-    acceleration_bp=50,
+    speed_x=None,
+    speed_y=None,
+    speed_z=None,
+    speed_bp=None,
+    acceleration_x=None,
+    acceleration_y=None,
+    acceleration_z=None,
+    acceleration_bp=None
 ):
     """
     Starts multithreaded movement on all of the galil axes. If any axis is set to none, it will not move.
@@ -543,6 +543,10 @@ class PrintControl:
         self.galil.connect()
         self.galil.initialize()
         self.galil.home()
+
+        for a in self.galil.axes:
+            self.galil.setSpeed(self.galil.getDefaultSpeed(a), axis=a)
+            self.galil.setAcceleration(self.galil.getDefaultAcceleration(a), axis=a)
 
     def galil_finalize_setup_thread(self):
         self.galil.goToZmax()

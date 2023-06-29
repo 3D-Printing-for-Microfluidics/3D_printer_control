@@ -52,9 +52,10 @@ class KeyenceControl(PrintControl):
                 self.default_y_offset + self.coord_systems["keyence"][light_engine]["Y"],
                 self.coord_systems["keyence"][light_engine]["Focus"],
                 None,
-                speed_x=25,
+                # speed_x=25,
             )
-            time.sleep(10.0)
+            # time.sleep(10.0)
+            time.sleep(5.0)
             # get keyence reading
             temp_position = float(
                 self.keyence.read_all()[
@@ -68,9 +69,10 @@ class KeyenceControl(PrintControl):
                 self.coord_systems["keyence"][light_engine]["Focus"]
                 + (start_position - temp_position),
                 None,
-                speed_x=25,
+                # speed_x=25,
             )
-            time.sleep(2.5)
+            # time.sleep(2.5)
+            time.sleep(1.0)
             temp_position = float(
                 self.keyence.read_all()[
                     keyence_indexes[light_engine]["measurement_index"] + 1
@@ -120,9 +122,9 @@ class KeyenceControl(PrintControl):
                                 + self.coord_systems["keyence"][light_engine]["Y"],
                                 None,
                                 None,
-                                speed_x=25,
+                                # speed_x=25,
                             )
-                            time.sleep(2.5)
+                            time.sleep(5.0)
                             keyence_position = float(
                                 self.keyence.read_all()[
                                     keyence_indexes[light_engine]["measurement_index"] + 1
@@ -165,7 +167,7 @@ class KeyenceControl(PrintControl):
             z_focus,
             None,
             join=False,
-            speed_x=25,
+            # speed_x=25,
         )
 
         super().pre_exposure_tasks(settings, light_engine)

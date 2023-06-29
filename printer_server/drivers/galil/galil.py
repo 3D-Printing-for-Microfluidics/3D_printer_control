@@ -33,6 +33,8 @@ class Galil:
         self.axes_common_names = config_dict["axes_common_names"]
         self.max_travel_mm = config_dict["axes_travel"]
         self.ctspmm = config_dict["axes_ctspmm"]
+        self.default_speed = config_dict["axes_speed"]
+        self.default_acceleration = config_dict["axes_acceleration"]
         self.calibration_position = config_dict["calibration_position"]
         self.bottom_position = config_dict["bottom_position"]
         self.top_position = config_dict["top_position"]
@@ -99,20 +101,28 @@ class Galil:
                 return self.axes_common_names[i]
         raise ValueError("Invalid axis supplied")
 
+    def getDefaultSpeed(self, axis=None):
+        a = self.convertAxis(axis)
+        return self.default_speed[a]
+
+    def getDefaultAcceleration(self, axis=None):
+        a = self.convertAxis(axis)
+        return self.default_acceleration[a]
+
     def initialize(self):
         for axis in self.axes:
             self.motorOn(axis)
 
     def goToZcalibration(self):
-        self.absMove(speed=25, cnts=self.calibration_position)
+        self.absMove(speed=self.getDefaultSpeed("Build Platform"), cnts=self.calibration_position)
         return self.getPosition()
 
     def goToZmax(self):
-        self.absMove(speed=25, cnts=self.top_position)
+        self.absMove(speed=self.getDefaultSpeed("Build Platform"), cnts=self.top_position)
         return self.getPosition()
 
     def goToZmin(self):
-        self.absMove(speed=25, cnts=self.bottom_position)
+        self.absMove(speed=self.getDefaultSpeed("Build Platform"), cnts=self.bottom_position)
         return self.getPosition()
 
     def connect(self):

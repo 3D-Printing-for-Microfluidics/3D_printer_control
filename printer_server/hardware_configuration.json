@@ -23,6 +23,12 @@
             "axes_tolerance": {
                 "A": 0.125
             },
+            "axes_speed": {
+                "A": 25
+            },
+            "axes_acceleration": {
+                "A": 50
+            },
             "calibration_position": 34000,
             "bottom_position": 323913,
             "top_position": -400000
@@ -87,6 +93,12 @@
             },
             "axes_tolerance": {
                 "A": 0.125
+            },
+            "axes_speed": {
+                "A": 25
+            },
+            "axes_acceleration": {
+                "A": 50
             },
             "calibration_position": 75041,
             "bottom_position": 322272,
@@ -166,6 +178,18 @@
                 "C": 0.125,
                 "D": 0.125
             },
+            "axes_speed": {
+                "A": 125,
+                "B": 125,
+                "C": 25,
+                "D": 25
+            },
+            "axes_acceleration": {
+                "A": 250,
+                "B": 250,
+                "C": 50,
+                "D": 50
+            },
             "calibration_position": 2315000,
             "bottom_position": 2400000,
             "top_position": -2600000,
@@ -183,8 +207,8 @@
                     "Build Platform": 0
                 },
                 "wintech": {
-                    "X": 139365,
-                    "Y": -7837,
+                    "X": 139410,
+                    "Y": -7820,
                     "Focus": 47714,
                     "Build Platform": 0
                 },
@@ -295,6 +319,18 @@
                 "B": 0.125,
                 "C": 0.125,
                 "D": 0.125
+            },
+            "axes_speed": {
+                "A": 50,
+                "B": 50,
+                "C": 25,
+                "D": 25
+            },
+            "axes_acceleration": {
+                "A": 50,
+                "B": 50,
+                "C": 50,
+                "D": 50
             },
             "calibration_position": 1491842,
             "bottom_position": 2234317,

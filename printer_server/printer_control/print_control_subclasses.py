@@ -56,12 +56,6 @@ class HR4_PrintControl(VisitechControl, KeyenceControl):
             self.galil.cntsToMm(self.galil.getPosition(axis="Focus"), axis="Focus") * 1000
         )
 
-    def galil_setup_thread(self):
-        """Initialize and home Galil controller"""
-        self.galil.connect()
-        self.galil.initialize()
-        self.galil.home()
-
     def galil_finalize_setup_thread(self):
         move_all_galil(
             self.galil,
@@ -194,9 +188,6 @@ class MR1v1_PrintControl(HR4_PrintControl, WintechControl, VisitechFanGPIOContro
     def galil_setup_thread(self):
         """Initialize and home Galil controller"""
         super().galil_setup_thread()
-
-        self.galil.setSpeed(25, axis="X")
-        self.galil.setSpeed(25, axis="Y")
 
         # self.galil_keyence_alignment()
 
