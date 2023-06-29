@@ -371,18 +371,15 @@ class PrintControl:
         return layers
 
     def exposures_in_layer(self, layer):
-        """Return the total number of exposures including duplicates"""
-        default_dups = self.print_settings["Default layer settings"][
-            "Number of duplications"
-        ]
-        dups = layer.get("Number of duplications", default_dups)
-        image_settings_list = self.get_image_settings(layer)
-        return dups * len(image_settings_list)
+        """Return the total number of exposures in layer"""
+        current_layer_settings = self.print_settings["Layers"][layer[0]]
+        image_settings_list = self.get_image_settings(current_layer_settings)
+        return len(image_settings_list)
 
     def total_number_of_exposures(self):
         """Return the total number of exposures including duplicates"""
         count = 0
-        for i, layer in enumerate(self.print_settings["Layers"]):
+        for i, layer in enumerate(self.layer_map):
             count += self.exposures_in_layer(layer)
         return count
 
