@@ -95,3 +95,4 @@ def cleanup_db():
     PrintRecord().remove_orphaned_entries()
     PrintRecord().remove_orphaned_files()
     PrintRecord().remove_old_jobs()
+    PrintRecord().remove_old_logs()

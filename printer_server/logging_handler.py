@@ -44,7 +44,7 @@ def dummy_log(f):
 def log_namer(default_filename):
     """Define how log files will be named. Keep extension at end."""
     parts = default_filename.split(".")
-    return f"{parts[0]}_{parts[2]}.{parts[1]}"
+    return f"{parts[0]}.{parts[2]}.{parts[1]}"
 
 
 class SQLAlchemyHandler(logging.Handler):

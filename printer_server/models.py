@@ -1,5 +1,6 @@
 """Database models"""
 import os
+import glob
 import logging
 from pathlib import Path
 from datetime import datetime
@@ -201,7 +202,7 @@ class PrintRecord(SurrogatePK, Model):
                 log.warn("Error: Failed to remove zip")
 
     def remove_old_jobs(self):
-        MAX_ENTRIES = 750
+        MAX_ENTRIES = 500
         print_history_path = Path(Config.UPLOAD_FOLDER) / "print_history"
         entries_count = len(self.query.order_by(self.id).all())
         num_entries_to_delete = entries_count - MAX_ENTRIES
@@ -222,6 +223,24 @@ class PrintRecord(SurrogatePK, Model):
             except FileNotFoundError:
                 pass
             entry.delete()
+
+    def remove_old_logs(self):
+        MAX_ENTRIES = 14
+        host = Config.HOSTNAME
+        log_list = glob.glob(f"logs/{host}_log*.txt")
+        log_list.sort(key=os.path.getmtime)
+        entries_count = len(log_list)
+        num_entries_to_delete = entries_count - MAX_ENTRIES
+        if num_entries_to_delete <= 0:
+            num_entries_to_delete = 0
+        else:
+            log.info("Removing old logs")
+
+        for i in range(num_entries_to_delete):
+            try:
+                os.remove(Path(Config.PROJECT_ROOT) / log_list[i])
+            except FileNotFoundError:
+                pass
 
 
 class ServerLog(SurrogatePK, Model):
