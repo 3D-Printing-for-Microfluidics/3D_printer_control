@@ -198,7 +198,7 @@ class PrintControl:
 
         # log files
         self.position_log = str(self.current_job / "position_data.csv")
-        self.exposure_log = str(self.current_job / "exposure_data.txt")
+        self.exposure_log = str(self.current_job / "exposure_data.log")
         self.loadcell_log = str(self.current_job / "loadcell_data.csv")
         self.movement_log = str(self.current_job / "movement_data.csv")
         self.event_log = str(self.current_job / "event_log.csv")
@@ -278,7 +278,11 @@ class PrintControl:
         # extract zip from self.queue to self.current_job
         try:
             with ZipFile(zipped_job_file, "r") as f:
-                f.extractall(self.current_job)
+                namelist = f.namelist()
+                for name in list(namelist):
+                    if (".csv" in name) or (".log" in name) or ("exposure_data" in name):
+                        namelist.remove(name)
+                f.extractall(self.current_job, members=namelist)
         except FileNotFoundError:
             self.delete_job({"job": job_id})
             return False
