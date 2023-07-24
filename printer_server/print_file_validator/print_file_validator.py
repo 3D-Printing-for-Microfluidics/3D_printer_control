@@ -19,7 +19,11 @@ def validate_schema(print_file):
             print_file, "r"
         ) as zip_file_handle, TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)
-            zip_file_handle.extractall(temp_dir)
+            namelist = zip_file_handle.namelist()
+            for name in list(namelist):
+                if (".csv" in name) or (".log" in name) or ("exposure_data" in name):
+                    namelist.remove(name)
+            zip_file_handle.extractall(temp_dir, members=namelist)
             print_settings = check_for_unique_print_settings(temp_dir)
             version = check_version(print_settings)
             validate_against_schema(print_settings, f"schema_{version}.json")
