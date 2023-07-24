@@ -485,12 +485,13 @@ def replace_named_image_settings_in_layer(print_settings, layer):
         if len(layer["Image settings list"]) == 0:
             layer["Image settings list"].append({})
         for image_settings in layer["Image settings list"]:
-            parent_image_settings_key = layer["Using named default image settings"]
-            parent_image_settings = print_settings["Named image settings"][
-                parent_image_settings_key
-            ]
-            # expand named image settings
-            image_settings.update(update_json(image_settings, parent_image_settings))
+            if "Using named image settings" not in image_settings:
+                parent_image_settings_key = layer["Using named default image settings"]
+                parent_image_settings = print_settings["Named image settings"][
+                    parent_image_settings_key
+                ]
+                # expand named image settings
+                image_settings.update(update_json(image_settings, parent_image_settings))
         layer.pop("Using named default image settings")
     if "Image settings list" in layer:
         for image_settings in layer["Image settings list"]:
