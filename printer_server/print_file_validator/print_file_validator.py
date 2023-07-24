@@ -1,5 +1,6 @@
 import re
 import json
+from printer_server.settings import Config
 from pathlib import Path
 from zipfile import ZipFile, BadZipFile
 from tempfile import TemporaryDirectory
@@ -34,6 +35,8 @@ def validate_schema(print_file):
             check_slices_folder_exists(zip_file_handle, print_settings)
             check_referenced_images_exist(print_settings, temp_dir)
 
+            write_json(Path(Config.PROJECT_ROOT) / "logs" / "last_validation.json", print_settings)
+
             return print_settings, version
     except BadZipFile:
         msg = "File is not a .zip file."
@@ -45,6 +48,11 @@ def read_json(path_to_file):
     with open(path_to_file, "r") as file_handle:
         return json.load(file_handle)
 
+
+def write_json(path_to_file, print_settings):
+    """Helper function to write the json data from a file."""
+    with open(path_to_file, "w") as file_handle:
+        return json.dump(print_settings, file_handle)
 
 def check_for_unique_print_settings(unzipped_dir):
     """Return the print settings as JSON, checking that there is only 1
