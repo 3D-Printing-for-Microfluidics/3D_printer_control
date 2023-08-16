@@ -71,7 +71,7 @@ class KDCControl(PrintControl):
         """Start KDC setup thread"""
         if self.state == "uninitialized":
             self.focused_position = get_last_focused_position_from_logs()
-            self.kdc_thread = threading.Thread(target=self.kdc_setup_thread, args=[])
+            self.kdc_thread = Thread(log, name="kdc_control_init_thread", target=self.kdc_setup_thread, args=[])
             self.kdc_thread.start()
             super().initialize(run_in_thread=run_in_thread)
             self.kdc_thread.join()
@@ -80,7 +80,9 @@ class KDCControl(PrintControl):
         """If layer is defocused, move KDC and shift image"""
         self.defocus_um = settings["Relative focus position (um)"]
         if self.defocus_um != 0:
-            self.kdc_thread = threading.Thread(
+            self.kdc_thread = Thread(
+                log, 
+                name="kdc_control_change_focus_thread",
                 target=self.change_focus,
                 args=[self.focused_position + self.defocus_um],
             )

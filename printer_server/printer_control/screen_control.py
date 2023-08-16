@@ -10,8 +10,8 @@ class ScreenControl(PrintControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=True):
         if self.state == "uninitialized":
-            self.screen_thread = threading.Thread(
-                target=driver_handles.screen.start, args=[]
+            self.screen_thread = Thread(
+                log, name="screen_control_init_thread", target=driver_handles.screen.start, args=[]
             )
             self.screen_thread.start()
             super().initialize(run_in_thread=run_in_thread)
@@ -29,8 +29,8 @@ class ScreenControl(PrintControl):
                 screen_index = i
                 break
 
-        self.screen_thread = threading.Thread(
-            target=self.screen.draw, args=[self.image], kwargs={"screen": screen_index}
+        self.screen_thread = Thread(
+            log, name="screen_control_draw_thread", target=self.screen.draw, args=[self.image], kwargs={"screen": screen_index}
         )
         self.screen_thread.start()
         super().pre_exposure_tasks(settings, light_engine)

@@ -15,7 +15,7 @@ class WintechControl(ScreenControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=True):
         if self.state == "uninitialized":
-            self.wintech_thread = threading.Thread(target=self.wintech.connect, args=[])
+            self.wintech_thread = Thread(log, name="wintech_control_init_thread", target=self.wintech.connect, args=[])
             self.wintech_thread.start()
             super().initialize(run_in_thread=run_in_thread)
             self.wintech_thread.join()
@@ -29,7 +29,9 @@ class WintechControl(ScreenControl):
     def pre_exposure_tasks(self, settings, light_engine):
         if "wintech" in light_engine:
             # wintech setup thread
-            self.wintech_thread = threading.Thread(
+            self.wintech_thread = Thread(
+                log, 
+                name="wintech_control_setup_thread",
                 target=self.wintech.setup_exposure,
                 args=[self.exposure_time_ms, self.power],
             )

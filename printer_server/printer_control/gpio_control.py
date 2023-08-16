@@ -9,7 +9,7 @@ class GPIOControl(PrintControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=True):
         if self.state == "uninitialized":
-            gpio_thread = threading.Thread(target=self.gpio.initialize, args=[])
+            gpio_thread = Thread(log, name="gpio_control_init_thread", target=self.gpio.initialize, args=[])
             gpio_thread.start()
             super().initialize(run_in_thread=run_in_thread)
             gpio_thread.join()

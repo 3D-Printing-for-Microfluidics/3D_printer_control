@@ -17,7 +17,7 @@ class KeyenceControl(PrintControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=True):
         if self.state == "uninitialized":
-            keyence_thread = threading.Thread(target=self.keyence.connect, args=[])
+            keyence_thread = Thread(log, name="keyence_control_init_thread", target=self.keyence.connect, args=[])
             keyence_thread.start()
             super().initialize(run_in_thread=run_in_thread)
             keyence_thread.join()
@@ -47,6 +47,7 @@ class KeyenceControl(PrintControl):
             )
             # goto position
             move_all_galil(
+                log,
                 self.galil,
                 self.default_x_offset + self.coord_systems["keyence"][light_engine]["X"],
                 self.default_y_offset + self.coord_systems["keyence"][light_engine]["Y"],
@@ -63,6 +64,7 @@ class KeyenceControl(PrintControl):
                 ]
             )
             move_all_galil(
+                log,
                 self.galil,
                 None,
                 None,
@@ -161,6 +163,7 @@ class KeyenceControl(PrintControl):
         ]
         z_focus = base_focus + defocus_um + keyence_measurement
         self.galil_threads = move_all_galil(
+            log,
             self.galil,
             x_offset + self.coord_systems["light_engine"][screen_light_engine]["X"],
             y_offset + self.coord_systems["light_engine"][screen_light_engine]["Y"],

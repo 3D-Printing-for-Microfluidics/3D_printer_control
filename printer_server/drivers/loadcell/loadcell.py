@@ -2,6 +2,7 @@ import atexit
 import logging
 import datetime
 import threading
+from printer_server.threading_wrapper import Thread
 import serial
 import serial.tools.list_ports
 import serial.serialutil
@@ -36,7 +37,7 @@ class LoadCell(serial.Serial):
 
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
-        self.thread = threading.Thread(target=self.loop)
+        self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
         self.log_file = None
 
     def findUsbPort(self, hwid):
@@ -130,7 +131,7 @@ class LoadCell(serial.Serial):
         if self.running:
             self.running = False
             self.thread.join()
-            self.thread = threading.Thread(target=self.loop)
+            self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
 
         self.receiveAll()
 
@@ -148,7 +149,7 @@ class LoadCell(serial.Serial):
         if self.running:
             self.running = False
             self.thread.join()
-            self.thread = threading.Thread(target=self.loop)
+            self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
 
         self.receiveAll()
 

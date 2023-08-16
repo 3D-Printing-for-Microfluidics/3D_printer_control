@@ -7,6 +7,7 @@ import logging
 from datetime import datetime
 import gclib
 from printer_server.async_file_handler import async_file_hander
+from printer_server.threading_wrapper import Thread
 
 
 class Galil:
@@ -23,7 +24,7 @@ class Galil:
         self.gclib_error = gclib.GclibError
         self.sendLock = threading.Lock()
 
-        self.thread = threading.Thread(target=self.loop)
+        self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
         self.thread_running = False
         self.logging_running = False
 

@@ -20,7 +20,7 @@ class VisitechControl(ScreenControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=True):
         if self.state == "uninitialized":
-            self.visitech_thread = threading.Thread(target=self.visitech.connect, args=[])
+            self.visitech_thread = Thread(log, name="visitech_control_init_thread", target=self.visitech.connect, args=[])
             self.visitech_thread.start()
             super().initialize(run_in_thread=run_in_thread)
             self.visitech_thread.join()
@@ -49,7 +49,9 @@ class VisitechControl(ScreenControl):
                         break
 
             # visitech setup thread
-            self.visitech_thread = threading.Thread(
+            self.visitech_thread = Thread(
+                log, 
+                name="visitech_control_setup_thread",
                 target=self.visitech.setup_exposure,
                 args=[self.exposure_time_ms, self.power],
                 kwargs={"led_num": led},

@@ -4,6 +4,7 @@ import json
 import shutil
 import logging
 import threading
+from printer_server.threading_wrapper import Thread
 from pathlib import Path
 from flask import request
 from functools import wraps
@@ -30,6 +31,7 @@ log.setLevel(logging.INFO)
 
 
 def move_all_galil(
+    logger,
     galil,
     x,
     y,
@@ -51,7 +53,9 @@ def move_all_galil(
     """
     threads = [None, None, None, None]
     if x is not None:
-        threads[0] = threading.Thread(
+        threads[0] = Thread(
+            logger, 
+            name="print_control_galil_x_thread,
             target=galil.absMove,
             kwargs={
                 "mm": x / 1000,
@@ -62,7 +66,9 @@ def move_all_galil(
         )
         threads[0].start()
     if y is not None:
-        threads[1] = threading.Thread(
+        threads[1] = Thread(
+            logger, 
+            name="print_control_galil_y_thread",
             target=galil.absMove,
             kwargs={
                 "mm": y / 1000,
@@ -73,7 +79,9 @@ def move_all_galil(
         )
         threads[1].start()
     if z is not None:
-        threads[2] = threading.Thread(
+        threads[2] = Thread(
+            logger, 
+            name="print_control_galil_z_thread",
             target=galil.absMove,
             kwargs={
                 "mm": z / 1000,
@@ -85,7 +93,9 @@ def move_all_galil(
         threads[2].start()
 
     if bp is not None:
-        threads[3] = threading.Thread(
+        threads[3] = Thread(
+            logger, 
+            name="print_control_galil_bp_thread",
             target=galil.absMove,
             kwargs={
                 "mm": bp / 1000,
@@ -146,25 +156,30 @@ def run_in_thread(state, text):
     def decorator(f):
         @wraps(f)
         def decorated_function(self, *args, **kwargs):
-            if kwargs.get("run_in_thread", True):
+            run_in_thread = kwargs.get("run_in_thread", True)
+            top_level = kwargs.get("top_level", True)
 
-                def func(self, *args, **kwargs):
-                    f(self, *args, **kwargs)
+            def func(self, *args, **kwargs):
+                f(self, *args, **kwargs)
+                if top_level:
                     self.state = state
                     home.update_printer_state(self.state, dict())
 
+            if top_level:
                 msg = {
                     "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
                     "text": text,
                 }
                 log.info(msg["text"])
                 home.update_printer_state("busy", msg)
-                _thread = threading.Thread(
-                    target=func, args=(self, *args), kwargs={**kwargs}
+
+            if run_in_thread:
+                _thread = Thread(
+                    log, name=f"print_control_'{text}'_thread", target=func, args=(self, *args), kwargs={**kwargs}
                 )
                 _thread.start()
             else:
-                f(self, *args, **kwargs)
+                func(self, *args, **kwargs)
 
         return decorated_function
 
@@ -525,7 +540,7 @@ class PrintControl:
         return 0
 
     @run_in_thread("initialized", "Initialize")
-    def initialize(self, run_in_thread=True):
+    def initialize(self, run_in_thread=False, top_level=False):
         """Put all hardware into starting configuration."""
         if self.state == "uninitialized":
             self.state = "busy"
@@ -565,7 +580,7 @@ class PrintControl:
             time.sleep(0.5)
             if self.loadcell_thread is None:
                 home.clear_loadcell_graph()
-                self.loadcell_thread = threading.Thread(target=self.loadcell_graph_loop)
+                self.loadcell_thread = Thread(log, name="print_control_loadcell_graph_thread", target=self.loadcell_graph_loop)
                 self.loadcell_thread.start()
             loadcell_start_force = self.loadcell.get_current_force()
             self.galil.goToZmin()
@@ -676,7 +691,7 @@ class PrintControl:
 
         # start printing process in a new thread
         self.app = db.get_app()
-        self.print_thread = threading.Thread(target=self.print_worker)
+        self.print_thread = Thread(log, name="print_control_print_worker_thread", target=self.print_worker)
         self.print_thread.start()
 
     @run_in_thread("paused", "Pause Printing")
@@ -714,7 +729,7 @@ class PrintControl:
         home.update_printer_state(self.state, msg)
         # resume printing in a new thread
         self.app = db.get_app()
-        self.print_thread = threading.Thread(target=self.print_worker)
+        self.print_thread = Thread(log, name="print_control_print_worker_thread", target=self.print_worker)
         self.print_thread.start()
 
     @run_in_thread("stopped", "Stop Printing")
@@ -803,8 +818,8 @@ class PrintControl:
         self.write_to_event_log(msg)
 
         # move build platform
-        self.galil_thread = threading.Thread(
-            target=self.move_build_platform, args=[position_settings, layer]
+        self.galil_thread = Thread(
+            log, name="print_control_move_bp_thread", target=self.move_build_platform, args=[position_settings, layer]
         )
         if not self.next_layer == 1:
             self.galil_thread.start()

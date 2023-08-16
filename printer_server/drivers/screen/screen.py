@@ -3,6 +3,7 @@ import atexit
 import tkinter
 import logging
 import threading
+from printer_server.threading_wrapper import Thread
 from PIL import Image, ImageTk
 
 
@@ -61,16 +62,16 @@ class Screen:
         self.window.update()
 
 
-class ScreenThread(threading.Thread):
+class ScreenThread(Thread):
     """Create and manage a thread to control the Tk windows."""
 
     def __init__(
         self, config_dict=None, resolutions=((2560, 1600), None), log_level=logging.DEBUG
     ):
-        super().__init__(daemon=True)
-        self.light_engines = config_dict["light_engines"]
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
+        super().__init__(self.log, name="ScreenThread", daemon=True)
+        self.light_engines = config_dict["light_engines"]
         self.resolutions = resolutions
         self.total_offset = None
         self.screens = None

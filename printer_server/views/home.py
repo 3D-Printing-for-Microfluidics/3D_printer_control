@@ -91,7 +91,7 @@ def disconnect():
 @socketio.on("initialize", namespace="/printing")
 # pylint: disable=unused-argument
 def initialize(message):
-    print_control.initialize()
+    print_control.initialize(run_in_thread=False, top_level=True)
 
 
 @socketio.on("planarization step 1", namespace="/printing")
