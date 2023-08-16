@@ -343,6 +343,11 @@ $(document).ready(function () {
     socket.on("uninitialized", function (message) {
         $("#printer-state").text("Uninitialized");
         show_btn("#init-btn, #shutdown-btn");
+        var content = '3D printer has been shutdown';
+        if (document.getElementById('base-body').innerHTML == content) {
+            location.reload()
+        }
+
     });
 
     socket.on("initialized", function (message) {
@@ -400,7 +405,10 @@ $(document).ready(function () {
     });
 
     socket.on("shutdown completed", function (message) {
-        $("html").text("3D printer has been shutdown");
+        $(".navbar").prop("disabled", true).addClass("d-none");
+        var content = '3D printer has been shutdown';
+        document.getElementById('base-body').innerHTML = content;
+
     });
 
     socket.on("shutdown failed", function (message) {

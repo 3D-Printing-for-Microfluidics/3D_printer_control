@@ -18,7 +18,7 @@ class VisitechControl(ScreenControl):
         self.visitech_thread = None
 
     def connect_hardware(self):
-        self.visitech_thread = Thread(log, name="visitech_control_connect_thread", target=self.visitech.connect, args=[])
+        self.visitech_thread = Thread(log, name="visitech_control_connect_thread", target=self.visitech.connect, args=[self.shutdown])
         self.visitech_thread.start()
         super().connect_hardware()
         self.visitech_thread.join()

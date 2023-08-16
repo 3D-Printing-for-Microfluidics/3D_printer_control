@@ -16,9 +16,8 @@ from printer_server.extensions import db
 from printer_server.settings import Config
 from printer_server.models import PrintQueue, PrintRecord
 from printer_server.print_file_validator import validate_schema, read_json, expand_json
-from printer_server.hardware_configuration import config_dict
+from printer_server.hardware_configuration import config_dict, driver_handles
 from printer_server.async_file_handler import async_file_hander
-from printer_server.hardware_configuration import driver_handles
 from printer_server.views.manual_controls import (
     get_last_calibration_positions_from_logs,
 )
@@ -256,6 +255,7 @@ class PrintControl:
             "stopped",
             "completed",
             "busy",
+            "shutting down"
         ]:
             self._state = state
         else:
@@ -547,6 +547,7 @@ class PrintControl:
             self.all_hardware_connected = True
             self.connect_hardware()
             if not self.all_hardware_connected:
+                self.shutdown(is_critical=True)
                 return False
             self.initalize_hardware()
             return True
@@ -559,7 +560,7 @@ class PrintControl:
         ret = self.loadcell.connect()
         if not ret:
             self.all_hardware_connected = False
-        ret = self.galil.connect()
+        ret = self.galil.connect(self.shutdown)
         if not ret:
             self.all_hardware_connected = False
 
@@ -962,24 +963,30 @@ class PrintControl:
         """boolean -- whether the printer is printing"""
         return self.print_thread.isAlive()
 
-    def shutdown(self):
-        if self.state not in ["busy", "printing"]:
-            msg = {
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-                "text": "Shutting down",
-            }
-            log.info(msg["text"])
-            home.update_printer_state("shutting down", msg)
+    def shutdown(self, is_critical=False):
+        if is_critical or self.state not in ["busy", "printing"]:
+            if self.state not in ["shutting down", "shutdown completed"]:
+                self.state = "shutting down"
+                msg = {
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                    "text": "Shutting down",
+                }
+                log.info(msg["text"])
+                home.update_printer_state(self.state, msg)
 
-            func = request.environ.get("werkzeug.server.shutdown")
-            if func is None:
-                raise RuntimeError("Not running with the Werkzeug Server")
+                driver_handles.disconnect()
 
-            msg = "Shutdown completed"
-            log.info(msg)
-            home.update_printer_state(msg, dict())
-            time.sleep(1)
-            func()
+                time.sleep(0.5)
+
+                msg = {
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                    "text": "Shutdown completed",
+                }
+                log.info(msg["text"])
+                home.update_printer_state("shutdown completed", msg)
+                
+                time.sleep(0.5)
+                home.shutdown_handle()
 
         else:
             msg = {

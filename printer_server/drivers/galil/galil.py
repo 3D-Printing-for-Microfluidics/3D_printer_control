@@ -126,7 +126,7 @@ class Galil:
         self.absMove(speed=self.getDefaultSpeed("Build Platform"), cnts=self.bottom_position)
         return self.getPosition()
 
-    def connect(self):
+    def connect(self, shutdown):
         """Find the first Galil controller and connect to it."""
         self.log.info("Searching for %s controller...", self.controller_name)
         available = self.g.GAddresses()
@@ -146,6 +146,7 @@ class Galil:
                 self.thread.start()
                 atexit.register(self.disconnect)
                 self.log.info("Connected to Galil controller")
+                self.shutdown = shutdown
                 return True
         msg = f"Galil controller not found! ({self.controller_name})"
         self.log.critical(msg)
@@ -203,11 +204,18 @@ class Galil:
                     self.log.debug("Reply: '%s'", response)
                 return response
             except self.gclib_error as error:
-                error_code = self.g.GCommand("TC 1")
-                if error_code not in ("", "0"):
-                    error = error_code
-                self.log.error("Last command '%s' returned error '%s'", command, error)
-                return error
+                if str(error) == "device timed out":
+                    msg = "Galil controller timed out!"
+                    self.log.critical(msg)
+                    # Thread(self.log, self.shutdown, kwargs={"is_critical": True}).start()
+                    self.shutdown(is_critical = True)
+                    sys.exit(msg)
+                else:
+                    error_code = self.g.GCommand("TC 1")
+                    if error_code not in ("", "0"):
+                        error = error_code
+                    self.log.error("Last command '%s' returned error '%s'", command, error)
+                    return error
 
     def checkLimits(self, axis=None):
         """Return a tuple the state of the limit switches for the
@@ -345,8 +353,8 @@ class Galil:
         a = self.convertAxis(axis)
         if not self.homed[a]:
             msg = "Must home before using absolute movements!"
-            self.log.critical(msg)
-            sys.exit(msg)
+            self.log.error(msg)
+            return self.getPosition(axis=a)
         old_speed = None
         old_acceleration = None
         if speed is not None:

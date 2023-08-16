@@ -90,7 +90,7 @@ class Visitech:
         self.dual_led = dual_led
         self.leds = leds
 
-    def connect(self, attempts=10, timeout=1):
+    def connect(self, shutdown, attempts=10, timeout=1):
         self.log.info("Connecting to light engine, this may take up to 1 minute...")
 
         # start TCP connection
@@ -102,7 +102,8 @@ class Visitech:
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect((self.host, self.port))
                 self.connected = True
-            except OSError as e:
+                self.shutdown = shutdown
+            except (OSError, socket.timeout) as e:
                 self.log.info("%s. Retrying in %s second(s)", e, timeout)
                 self.socket = None  # get rid of handle to bad socket
                 time.sleep(timeout)  # wait to try again
@@ -156,7 +157,13 @@ class Visitech:
         data = data.encode()
         self.log.debug("Sent:  '%s'", data.decode().rstrip())
         self.socket.sendall(data)
-        reply = self.socket.recv(1024)
+        try:
+            reply = self.socket.recv(1024)
+        except (OSError, socket.timeout):
+            msg = "Visitech timed out!"
+            self.log.critical(msg)
+            self.shutdown(is_critical=True)
+            sys.exit(msg)
         reply = reply.decode().split("\r\n")
         if "OK" not in reply[0]:
             raise RuntimeError(f"Error returned by light engine ({reply[1]}) {reply[2]}")

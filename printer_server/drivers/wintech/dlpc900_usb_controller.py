@@ -210,7 +210,6 @@ class DLPC900_USB_Controller:
                     except usb.core.USBError as e:
                         msg = f"Couldn't detach kernel driver from interface {n}: {e}"
                         self.log.critical(msg)
-                        sys.exit(msg)
 
     def _HID_io_wrapper(self, fn, *args, **kwargs):
         """Wrap HID read and write methods so they have a greater
@@ -831,9 +830,11 @@ class DLPC900_USB_Controller:
         exposure_time_us = int(exposure_time_ms * 1000)
         min_exp_time_us = [105, 304, 394, 823, 1215, 1487, 1998, 4046]
         if exposure_time_us < min_exp_time_us[bit_depth - 1]:
-            sys.exit("Too small of exposure passed to define_pattern()")
+            msg = "Too small of exposure passed to define_pattern()"
+            self.log.error(msg)
         if exposure_time_us > 0xFFFFFF:
-            sys.exit("Too large of exposure passed to define_pattern()")
+            msg = "Too large of exposure passed to define_pattern()"
+            self.log.error(msg)
 
         payload = list(range(12))
         payload[0] = index & 0xFF
