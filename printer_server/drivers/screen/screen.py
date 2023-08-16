@@ -91,9 +91,11 @@ class ScreenThread(Thread):
 
     def stop(self):
         """Stop the thread."""
-        self.log.info("Stopping screen thread")
-        for screen in self.screens:
-            screen.window.quit()
+        if self.screens is not None:
+            self.log.info("Stopping screen thread")
+            for screen in self.screens:
+                screen.window.quit()
+            self.screens = None
 
     def draw(self, img_path, screen=0):
         """Draw an image to the specified screen."""

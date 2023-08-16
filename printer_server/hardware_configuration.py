@@ -106,5 +106,24 @@ class Printer3D:
 
             self.keyence = Keyence()
 
-
+    def disconnect(self):
+        if hasattr(self, "galil"):
+            self.galil.disconnect()
+        if hasattr(self, "kdc"):
+            self.kdc.disconnect()
+        if hasattr(self, "gpio"):
+            self.gpio.disconnect()
+        if hasattr(self, "loadcell"):
+            self.loadcell.disconnect()
+        if hasattr(self, "screen"):
+            self.screen.stop()
+        if hasattr(self, "tiptilt"):
+            self.tiptilt.disconnect()
+        if hasattr(self, "visitech"):
+            self.visitech.disconnect()
+        if hasattr(self, "wintech"):
+            self.wintech.disconnect()
+        if hasattr(self, "keyence"):
+            self.keyence.disconnect()
+            
 driver_handles = Printer3D()

@@ -25,6 +25,7 @@ class Galil:
         self.sendLock = threading.Lock()
 
         self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
+        self.thread.daemon = True
         self.thread_running = False
         self.logging_running = False
 
@@ -67,7 +68,6 @@ class Galil:
         self.connected = False
 
         self.g = gclib.py()
-        atexit.register(self.disconnect)
 
     def parseResponseString(self, string, axis):
         """Return an integer representing the value for the specified axis.
@@ -144,10 +144,27 @@ class Galil:
                 self.connected = True
                 self.thread_running = True
                 self.thread.start()
-                return
-        msg = f"{self.controller_name} not found."
+                atexit.register(self.disconnect)
         self.log.critical(msg)
         sys.exit(msg)
+
+    def disconnect(self):
+        """Disconnect form the Galil controller."""
+        if self.connected is not False:
+            self.thread_running = False
+            try:
+                self.thread.join()
+            except RuntimeError:
+                pass
+            self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
+            self.thread.daemon = True
+            try:
+                self.connected = False
+                self.g.GClose()
+                self.log.info("Disconnected from Galil controller (%s)", self.controller_name)
+            except self.gclib_error as e:
+                self.log.error("Unexpected GclibError on disconnect: %s", e)
+
 
     def write_to_disk(self, *args):
         """Write data to disk using the async file handler class.
@@ -474,19 +491,6 @@ class Galil:
                         self.logging_move_status[a] = -1
                 self.write_to_disk(tmp)
                 time.sleep(0.01)
-
-    def disconnect(self):
-        """Disconnect form the Galil controller."""
-        if self.connected is not False:
-            self.thread_running = False
-            self.thread.join()
-            self.thread = threading.Thread(target=self.loop)
-            try:
-                self.connected = False
-                self.g.GClose()
-                self.log.info("Disconnected from %s", self.controller_name)
-            except self.gclib_error as e:
-                self.log.error("Unexpected GclibError on disconnect: %s", e)
 
     def downloadProgram(self, filename):
         """Download a DMC file to the Galil controller."""

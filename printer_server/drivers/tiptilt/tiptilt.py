@@ -24,8 +24,8 @@ class TipTilt(serial.Serial):
         self.log.setLevel(log_level)
         self.hwid = config_dict["hwid"]
         self.port = None  # start with no port
+        self.connected = False
         self.r = re.compile(r"\d*\.?\d*$")  # regex for getter functions
-        atexit.register(self.close)
 
     def findUsbPort(self, hwid):
         ports = list(serial.tools.list_ports.comports())
@@ -46,8 +46,16 @@ class TipTilt(serial.Serial):
         self.open()
         self.reset_input_buffer()
         self.reset_output_buffer()
+        self.connected = True
         self.log.info("Connected to %s", self.port)
         self.initialize()
+        atexit.register(self.disconnect)
+    
+    def disconnect(self):
+        if self.connected:
+            self.close()
+            self.connected = False
+            self.log.info("Disconnected from Tip/tilt stage")
 
     def send(self, cmd):
         self.log.debug("Sent: '%s'", cmd)

@@ -46,8 +46,14 @@ class KDC101:
         )
         self.getHardwareInfo()
         self.enableStage(enable=True)
-        atexit.register(self.serial_handle.close)
-        atexit.register(self.enableStage, enable=False)
+        atexit.register(self.disconnect)
+
+    def disconnect(self):
+        if self.serial_handle is not None:
+            self.enableStage(enable=False)
+            self.serial_handle.close()
+            self.serial_handle = None
+            self.log.info("Disconnected from Thor Labs stage")
 
     def home(self):
         # Home Stage; MGMSG_MOT_MOVE_HOME

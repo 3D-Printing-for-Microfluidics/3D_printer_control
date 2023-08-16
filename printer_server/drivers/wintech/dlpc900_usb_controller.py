@@ -331,8 +331,7 @@ class DLPC900_USB_Controller:
             sys.exit("DLPC900 not found. Is it connected and turned on?")
         self._free_USB_driver()
         self.dev.set_configuration()
-        atexit.register(self.stop_sequence)
-        atexit.register(self.led_off)
+        atexit.register(self.disconnect)
         self.get_firmware_version()
         self.get_hardware_configuration_and_firmware_tag()
         self.led_off()
@@ -342,6 +341,17 @@ class DLPC900_USB_Controller:
         self.set_long_axis_flip(False)
         self.set_short_axis_flip(True)
         self.log.info("Setup complete")
+
+    def disconnect(self):
+        if self.dev is not None:
+            try:
+                self.stop_sequence()
+                self.led_off()
+                self. dev = None
+                self.log.info("Disconnected from Wintech light engine")
+            except:
+                self. dev = None
+                self.log.info("Unable to disconnect from Wintech!")
 
     def get_long_axis_flip(self):
         "Returns whether the long axis is flipped"

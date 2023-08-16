@@ -39,6 +39,7 @@ class LoadCell(serial.Serial):
         self.log.setLevel(log_level)
         self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
         self.log_file = None
+        self.connected = False
 
     def findUsbPort(self, hwid):
         """
@@ -81,15 +82,21 @@ class LoadCell(serial.Serial):
         if self.is_open:
             self.close()
         self.open()
+        self.connected = True
 
         self.loadcell_stop()
         self.receiveAll()
 
         self.log.debug("Connected to '%s'", self.port)
         self.log.debug("%s", self.set_sample_frequency(int(self.freq)))
-        self.log.info("Connected to loadcell")
 
-        atexit.register(self.close)
+        atexit.register(self.disconnect)
+
+    def disconnect(self):
+        if self.connected:
+            self.close()
+            self.connected = False
+            self.log.info("Disconnected from Loadcell")
 
     def start(self):
         """

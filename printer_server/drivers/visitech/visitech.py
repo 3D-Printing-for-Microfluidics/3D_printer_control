@@ -84,36 +84,36 @@ class Visitech:
             None  # start as None so we can tell if a connection has been attempted
         )
 
+        self.connected = False
         self.exposure_time = 0
         self.led_on = False
         self.dual_led = dual_led
         self.leds = leds
-
-        # register exit handlers
-        atexit.register(self.disconnect)  # close the TCP conenction on exit
-        atexit.register(self.stop_sequencer)  # make sure DMD is stopped on exit
 
     def connect(self, attempts=10, timeout=1):
         self.log.info("Connecting to light engine, this may take up to 1 minute...")
 
         # start TCP connection
         i = 0
-        connected = False
+        self.connected = False
         while i < attempts:  # try up to attempts number of times to create a connection
             i += 1
             try:  # attempt a new connection
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect((self.host, self.port))
-                connected = True
+                self.connected = True
             except OSError as e:
                 self.log.info("%s. Retrying in %s second(s)", e, timeout)
                 self.socket = None  # get rid of handle to bad socket
                 time.sleep(timeout)  # wait to try again
-        if not connected:  # connection failed every time, notify user
+        if not self.connected:  # connection failed every time, notify user
             msg = "Light engine not found. Is it plugged in and powered on?"
             self.log.critical(msg)
             sys.exit(msg)
 
+        # register exit handlers
+        atexit.register(self.disconnect)
+        self.log.info("Connected to Visitech light engine")
         # set default state for light engine and clear previous errors
         self.get_sticky_errors(warn=False)
         self.set_video_source("HDMI")
@@ -125,11 +125,19 @@ class Visitech:
         self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
 
         self.log.info("Light engine connected.")
-
     def disconnect(self):
-        if self.socket is not None:
-            self.socket.close()
-            self.log.info("Light engine disconnected.")
+        if self.connected and self.socket is not None:
+            try:
+                self.stop_sequencer()  # make sure DMD is stopped on exit
+                self.socket.close() # close the TCP conenction on exit
+                self.connected = False
+                self.socket = None
+                self.log.info("Disconnected from Visitech light engine")
+            except:
+                self.connected = False
+                self.socket = None
+                self.log.info("Unable to disconnect from Visitech!")
+            
 
     def send(self, data):
         """

@@ -20,8 +20,9 @@ class Wintech:
     def connect(self):
         """Start the screen thread and connect to the DMD controller."""
         self.dmd_controller = DLPC900_USB_Controller(log_level=self.log_level)
-        self.dmd_controller.connect()
-
+    def disconnect(self):
+        self.dmd_controller.disconnect()
+        
     def stop_sequencer(self):
         """
         Turn the sequencer off.
