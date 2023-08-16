@@ -544,22 +544,38 @@ class PrintControl:
         """Put all hardware into starting configuration."""
         if self.state == "uninitialized":
             self.state = "busy"
-            self.tiptilt.connect()
-            self.loadcell.connect()
+            self.all_hardware_connected = True
+            self.connect_hardware()
+            if not self.all_hardware_connected:
+                return False
+            self.initalize_hardware()
+            return True
+        return False
+            
+    def connect_hardware(self):
+        ret = self.tiptilt.connect()
+        if not ret:
+            self.all_hardware_connected = False
+        ret = self.loadcell.connect()
+        if not ret:
+            self.all_hardware_connected = False
+        ret = self.galil.connect()
+        if not ret:
+            self.all_hardware_connected = False
 
-            self.galil_thread = threading.Thread(target=self.galil_setup_thread, args=[])
-            self.galil_thread.start()
-            self.galil_thread.join()
+    def initalize_hardware(self):
+        self.galil_thread = Thread(log, name="print_control_galil_setup_thread", target=self.galil_setup_thread, args=[])
+        self.galil_thread.start()
+        self.galil_thread.join()
 
-            self.galil_thread = threading.Thread(
-                target=self.galil_finalize_setup_thread, args=[]
-            )
-            self.galil_thread.start()
-            self.galil_thread.join()
+        self.galil_thread = Thread(
+            log, name="print_control_galil_setup_done_thread", target=self.galil_finalize_setup_thread, args=[]
+        )
+        self.galil_thread.start()
+        self.galil_thread.join()
 
     def galil_setup_thread(self):
         """Initialize and home Galil controller"""
-        self.galil.connect()
         self.galil.initialize()
         self.galil.home()
 

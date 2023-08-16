@@ -33,9 +33,9 @@ class KDC101:
     def connect(self):
         self.port = self.find_device()
         if self.port is None:
-            msg = "Thor Labs stage not found"
+            msg = "Thor Labs stage not found!"
             self.log.critical(msg)
-            raise RuntimeError(msg)
+            return False
         self.serial_handle = serial.Serial(
             port=self.port,
             baudrate=115200,
@@ -47,6 +47,8 @@ class KDC101:
         self.getHardwareInfo()
         self.enableStage(enable=True)
         atexit.register(self.disconnect)
+        self.log.info("Connected to Thor Labs stage")
+        return True
 
     def disconnect(self):
         if self.serial_handle is not None:

@@ -107,13 +107,17 @@ class Visitech:
                 self.socket = None  # get rid of handle to bad socket
                 time.sleep(timeout)  # wait to try again
         if not self.connected:  # connection failed every time, notify user
-            msg = "Light engine not found. Is it plugged in and powered on?"
+            msg = "Visitech light engine not found!"
             self.log.critical(msg)
-            sys.exit(msg)
+            return False
 
         # register exit handlers
+        self.socket.settimeout(6)
         atexit.register(self.disconnect)
         self.log.info("Connected to Visitech light engine")
+        return True
+
+    def initalize(self):
         # set default state for light engine and clear previous errors
         self.get_sticky_errors(warn=False)
         self.set_video_source("HDMI")
@@ -123,8 +127,8 @@ class Visitech:
         else:
             self.set_led_driver_regulation_mode("LIGHT")
         self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
+        self.log.info("Visitech light engine initialized")
 
-        self.log.info("Light engine connected.")
     def disconnect(self):
         if self.connected and self.socket is not None:
             try:

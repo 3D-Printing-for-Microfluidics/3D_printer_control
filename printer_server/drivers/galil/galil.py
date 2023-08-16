@@ -133,7 +133,7 @@ class Galil:
         self.address = None
         for address in sorted(available.keys()):
             if self.controller_name in available[address]:
-                self.address = address.strip("()")
+                self.address = address.strip("()").strip("-d")
                 self.controller_name = available[address]
                 self.log.debug("Found %s at %s", available[address], self.address)
                 self.log.info(
@@ -145,8 +145,11 @@ class Galil:
                 self.thread_running = True
                 self.thread.start()
                 atexit.register(self.disconnect)
+                self.log.info("Connected to Galil controller")
+                return True
+        msg = f"Galil controller not found! ({self.controller_name})"
         self.log.critical(msg)
-        sys.exit(msg)
+        return False
 
     def disconnect(self):
         """Disconnect form the Galil controller."""

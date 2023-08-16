@@ -76,9 +76,9 @@ class LoadCell(serial.Serial):
 
         self.port = self.findUsbPort(self.hwid)
         if self.port is None:
-            msg = "Load cell not found"
+            msg = "Loadcell not found!"
             self.log.critical(msg)
-            raise RuntimeError(msg)
+            return False
         if self.is_open:
             self.close()
         self.open()
@@ -87,10 +87,11 @@ class LoadCell(serial.Serial):
         self.loadcell_stop()
         self.receiveAll()
 
-        self.log.debug("Connected to '%s'", self.port)
         self.log.debug("%s", self.set_sample_frequency(int(self.freq)))
+        self.log.info("Connected to loadcell (%s)", self.port)
 
         atexit.register(self.disconnect)
+        return True
 
     def disconnect(self):
         if self.connected:

@@ -14,13 +14,16 @@ class KeyenceControl(PrintControl):
         self.keyence = driver_handles.keyence
         self.keyence_measurement_list = None
 
-    @run_in_thread("initialized", "Initialize")
-    def initialize(self, run_in_thread=True):
-        if self.state == "uninitialized":
-            keyence_thread = Thread(log, name="keyence_control_init_thread", target=self.keyence.connect, args=[])
-            keyence_thread.start()
-            super().initialize(run_in_thread=run_in_thread)
-            keyence_thread.join()
+    def connect_hardware(self):
+        keyence_thread = Thread(log, name="keyence_control_setup_thread", target=self.keyence.connect, args=[])
+        keyence_thread.start()
+        super().connect_hardware()
+        keyence_thread.join()
+        if not self.keyence.connected:
+            self.all_hardware_connected = False
+
+    def initalize_hardware(self):
+        super().initalize_hardware()
 
     def pre_print_tasks(self):
         """Move keyence sensor to all exposure positions and get focus offsets"""

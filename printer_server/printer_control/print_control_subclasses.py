@@ -11,9 +11,11 @@ class HR3v3u_PrintControl(KDCControl, VisitechControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=False, top_level=False):
         if self.state == "uninitialized":
-            super().initialize(run_in_thread=False, top_level=False)
-            if top_level:
+            ret = super().initialize(run_in_thread=False, top_level=False)
+            if top_level and ret:
                 log.info("Printer initialized, all hardware ready.")
+            return ret
+        return False
 
     def post_print_tasks(self):
         """Move BP stage up 'Distance up (mm)'' then to top"""
@@ -25,14 +27,15 @@ class HR3v3u_PrintControl(KDCControl, VisitechControl):
         self.galil.goToZmax()
         time.sleep(1.0)
 
-
 class HR4_PrintControl(VisitechControl, KeyenceControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=False, top_level=False):
         if self.state == "uninitialized":
-            super().initialize(run_in_thread=False, top_level=False)
-            if top_level:
+            ret = super().initialize(run_in_thread=False, top_level=False)
+            if top_level and ret:
                 log.info("Printer initialized, all hardware ready.")
+            return ret
+        return False
 
     def __init__(self):
         super().__init__()
@@ -80,14 +83,15 @@ class HR4_PrintControl(VisitechControl, KeyenceControl):
             self.galil.top_position,
         )
 
-
-class MR1v1_PrintControl(HR4_PrintControl, WintechControl, VisitechFanGPIOControl):
+class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=False, top_level=False):
         if self.state == "uninitialized":
-            super().initialize(run_in_thread=False, top_level=False)
-            if top_level:
+            ret = super().initialize(run_in_thread=False, top_level=False)
+            if top_level and ret:
                 log.info("Printer initialized, all hardware ready.")
+            return ret
+        return False
 
     def __init__(self):
         super().__init__()
@@ -211,16 +215,19 @@ class HR3v3_PrintControl(HR3v3u_PrintControl, FilmGPIOControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=False, top_level=False):
         if self.state == "uninitialized":
-            super().initialize(run_in_thread=False, top_level=False)
-            if top_level:
+            ret = super().initialize(run_in_thread=False, top_level=False)
+            if top_level and ret:
                 log.info("Printer initialized, all hardware ready.")
-
+            return ret
+        return False
 
 
 class HR4Film_PrintControl(HR4_PrintControl, FilmGPIOControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=False, top_level=False):
         if self.state == "uninitialized":
-            super().initialize(run_in_thread=False, top_level=False)
-            if top_level:
+            ret = super().initialize(run_in_thread=False, top_level=False)
+            if top_level and ret:
                 log.info("Printer initialized, all hardware ready.")
+            return ret
+        return False

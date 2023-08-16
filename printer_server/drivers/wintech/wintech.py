@@ -17,9 +17,17 @@ class Wintech:
         self.exposure_time = 0
         self.led_on = False
 
-    def connect(self):
-        """Start the screen thread and connect to the DMD controller."""
         self.dmd_controller = DLPC900_USB_Controller(log_level=self.log_level)
+
+    def connect(self):
+        """Connect to the DMD controller."""
+        self.connected = self.dmd_controller.connect()
+        return self.connected
+
+    def initalize(self):
+        """Initalize the DMD controller."""
+        self.dmd_controller.initalize()
+
     def disconnect(self):
         self.dmd_controller.disconnect()
         

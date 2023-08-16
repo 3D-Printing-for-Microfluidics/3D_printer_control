@@ -40,16 +40,17 @@ class TipTilt(serial.Serial):
         if self.port is None:
             msg = "Tip/Tilt stage not found!"
             self.log.critical(msg)
-            raise RuntimeError(msg)
+            return False
         if self.is_open:
             self.close()
         self.open()
         self.reset_input_buffer()
         self.reset_output_buffer()
         self.connected = True
-        self.log.info("Connected to %s", self.port)
+        self.log.info("Connected to tip/tilt stage (%s)", self.port)
         self.initialize()
         atexit.register(self.disconnect)
+        return True
     
     def disconnect(self):
         if self.connected:

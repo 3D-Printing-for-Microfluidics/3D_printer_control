@@ -61,20 +61,23 @@ class KDCControl(PrintControl):
 
     def kdc_setup_thread(self):
         """Initialize and home ThorLabs stage"""
-        self.kdc.connect()
         if not self.kdc.homed:
             self.kdc.home()
+            self.focused_position = get_last_focused_position_from_logs()
             self.kdc.move(self.focused_position, relative=False)
 
-    @run_in_thread("initialized", "Initialize")
-    def initialize(self, run_in_thread=True):
-        """Start KDC setup thread"""
-        if self.state == "uninitialized":
-            self.focused_position = get_last_focused_position_from_logs()
-            self.kdc_thread = Thread(log, name="kdc_control_init_thread", target=self.kdc_setup_thread, args=[])
-            self.kdc_thread.start()
-            super().initialize(run_in_thread=run_in_thread)
-            self.kdc_thread.join()
+    def connect_hardware(self):
+        self.kdc.connect()
+        if self.kdc.port is None:
+            self.all_hardware_connected = False
+        super().connect_hardware()
+        
+
+    def initalize_hardware(self):
+        self.kdc_thread = Thread(log, name="kdc_control_setup_thread", target=self.kdc_setup_thread, args=[])
+        self.kdc_thread.start()
+        super().initalize_hardware()
+        self.kdc_thread.join()
 
     def pre_exposure_tasks(self, settings, light_engine):
         """If layer is defocused, move KDC and shift image"""

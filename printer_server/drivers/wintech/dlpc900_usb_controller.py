@@ -318,17 +318,28 @@ class DLPC900_USB_Controller:
         return data[4 : 4 + payload_length]
 
     def connect(self):
-        """Find and connect to the DLPC900 and perform associated setup.
+        """Find the DLPC900.
 
-        First the VID and PID combination representing the DLPC900
-        controller is found. The driver is then freed and the USB
-        configuration is set. Finally, a series of commands are issued
-        to ready the system for normal 3D printing operation.
+        The VID and PID combination representing the DLPC900
+        controller is found.
         """
         self.log.info("Connecting to DLPC900 via USB")
         self.dev = usb.core.find(idVendor=0x0451, idProduct=0xC900)
         if self.dev is None:
-            sys.exit("DLPC900 not found. Is it connected and turned on?")
+            msg = "Wintech light engine not found!"
+            self.log.critical(msg)
+            return False
+        self.log.info("Connected to Wintech light engine")
+        return True
+
+    def initalize(self):
+        """Connect to the DLPC900 and perform associated setup.
+
+        The driver is freed and the USB
+        configuration is set. Then, a series of commands are issued
+        to ready the system for normal 3D printing operation.
+        """
+
         self._free_USB_driver()
         self.dev.set_configuration()
         atexit.register(self.disconnect)
@@ -340,7 +351,7 @@ class DLPC900_USB_Controller:
         self.led_from_sequencer()
         self.set_long_axis_flip(False)
         self.set_short_axis_flip(True)
-        self.log.info("Setup complete")
+        self.log.info("Wintech light engine initialized")
 
     def disconnect(self):
         if self.dev is not None:
