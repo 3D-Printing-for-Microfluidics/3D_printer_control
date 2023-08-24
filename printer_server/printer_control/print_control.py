@@ -54,7 +54,7 @@ def move_all_galil(
     if x is not None:
         threads[0] = Thread(
             logger, 
-            name="print_control_galil_x_thread,
+            name="print_control_galil_x_thread",
             target=galil.absMove,
             kwargs={
                 "mm": x / 1000,
