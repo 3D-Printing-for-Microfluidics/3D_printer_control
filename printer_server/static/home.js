@@ -92,9 +92,18 @@ var show_btn = function (btn) {
 };
 
 var write_to_message_box = function (message) {
+    const message_box = document.getElementById("print-message")
+    // allow 1px inaccuracy by adding 1
+    const isScrolledToBottom = message_box.scrollHeight - message_box.clientHeight <= message_box.scrollTop + 1
+
     if (!$.isEmptyObject(message)) {
         var new_text = `<div class='log-message'>${message}</div>`;
         $("#print-message").append(new_text);
+    }
+
+    // scroll to bottom if isScrolledToBottom is true
+    if (isScrolledToBottom) {
+        message_box.scrollTop = message_box.scrollHeight - message_box.clientHeight
     }
 }
 
