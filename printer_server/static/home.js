@@ -80,7 +80,7 @@ function update_loop(message) {
                         y: [[force]],
                         x: [[time]]
                     },
-                    [0], 400)
+                    [0], 800)
             }
         )
     }
