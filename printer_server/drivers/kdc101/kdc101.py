@@ -52,11 +52,16 @@ class KDC101:
 
     def disconnect(self):
         if self.serial_handle is not None:
-            self.enableStage(enable=False)
-            self.serial_handle.close()
-            self.serial_handle = None
-            self.log.info("Disconnected from Thor Labs stage")
-
+            try:
+                self.enableStage(enable=False)
+                self.serial_handle.close()
+                self.serial_handle = None
+                self.log.info("Disconnected from Thor Labs stage")
+            except:
+                self.serial_handle.close()
+                self.serial_handle = None
+                self.log.info("Unable to disconnect from Thor Labs stage!")
+            
     def home(self):
         # Home Stage; MGMSG_MOT_MOVE_HOME
         self.serial_handle.write(

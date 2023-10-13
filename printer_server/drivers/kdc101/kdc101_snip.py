@@ -7,8 +7,8 @@ import printer_server.views.manual_controls
 
 kdc = driver_handles.kdc
 
-log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+# log = logging.getLogger(__name__)
+# log.setLevel(logging.INFO)
 
 def get_kdc_positions():
     last_positions = (
