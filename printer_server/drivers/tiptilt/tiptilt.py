@@ -47,8 +47,15 @@ class TipTilt(serial.Serial):
         self.reset_input_buffer()
         self.reset_output_buffer()
         self.connected = True
+        try:
+            self.initialize()
+        except serial.serialutil.SerialException:
+            msg = "Tip/Tilt failed to connect!"
+            self.log.critical(msg)
+            if self.is_open:
+                self.close()
+            return False
         self.log.info("Connected to tip/tilt stage (%s)", self.port)
-        self.initialize()
         atexit.register(self.disconnect)
         return True
     
