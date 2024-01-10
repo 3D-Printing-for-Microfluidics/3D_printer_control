@@ -63,6 +63,8 @@ class VisitechControl(ScreenControl):
                 kwargs={"led_num": led},
             )
             self.visitech_thread.start()
+        else:
+            self.suppress_visitech_ocp_error = True
         super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, settings, light_engine):
