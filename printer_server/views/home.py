@@ -1,4 +1,5 @@
 import logging
+import signal
 from flask import Blueprint, request, render_template
 from flask_socketio import join_room, leave_room
 
@@ -9,6 +10,8 @@ from printer_server.extensions import socketio
 blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static")
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
+
+shutdown_handle = None
 
 # Dynamically import PrintControl
 if Config.HOSTNAME == "HR3v3test":
@@ -44,6 +47,12 @@ else:
 @blueprint.route("/")
 def index():
     allJobs = PrintQueue.query.all()
+
+    global shutdown_handle
+    shutdown_handle = request.environ.get("werkzeug.server.shutdown")
+    if shutdown_handle is None:
+        raise RuntimeError("Not running with the Werkzeug Server")
+
     return render_template(
         "home.html",
         allJobs=allJobs,
@@ -91,7 +100,7 @@ def disconnect():
 @socketio.on("initialize", namespace="/printing")
 # pylint: disable=unused-argument
 def initialize(message):
-    print_control.initialize()
+    print_control.initialize(run_in_thread=False, top_level=True)
 
 
 @socketio.on("planarization step 1", namespace="/printing")
@@ -133,7 +142,15 @@ def stop(message):
 @socketio.on("shutdown", namespace="/printing")
 # pylint: disable=unused-argument
 def shutdown(message):
-    print_control.shutdown()
+    is_critical = False
+    if message == "critical":
+        is_critical = True
+    print_control.shutdown(is_critical)
+    
+
+def shutdown_exception(exception, trace):
+    shutdown("critical")
+signal.signal(signal.SIGINT, shutdown_exception)
 
 
 @socketio.on("request_loadcell_data", namespace="/printing")

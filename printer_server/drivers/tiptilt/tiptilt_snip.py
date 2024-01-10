@@ -1,10 +1,15 @@
 import threading
+import logging
 
 from printer_server.hardware_configuration import driver_handles
 from printer_server.extensions import socketio
+from printer_server.threading_wrapper import Thread
 import printer_server.views.manual_controls
 
 tiptilt = driver_handles.tiptilt
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 
 def get_tiptilt_positions():
@@ -66,5 +71,5 @@ def homeTipTiltMotor():
         tiptilt.home()
         emit_tiptilt_positions(log=True)
 
-    t = threading.Thread(target=func)
+    t = Thread(log, name="tiptilt_snip_home_thread", target=func)
     t.start()

@@ -7,6 +7,7 @@ import logging
 from datetime import datetime
 import gclib
 from printer_server.async_file_handler import async_file_hander
+from printer_server.threading_wrapper import Thread
 
 
 class Galil:
@@ -23,7 +24,8 @@ class Galil:
         self.gclib_error = gclib.GclibError
         self.sendLock = threading.Lock()
 
-        self.thread = threading.Thread(target=self.loop)
+        self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
+        self.thread.daemon = True
         self.thread_running = False
         self.logging_running = False
 
@@ -66,7 +68,6 @@ class Galil:
         self.connected = False
 
         self.g = gclib.py()
-        atexit.register(self.disconnect)
 
     def parseResponseString(self, string, axis):
         """Return an integer representing the value for the specified axis.
@@ -125,14 +126,14 @@ class Galil:
         self.absMove(speed=self.getDefaultSpeed("Build Platform"), cnts=self.bottom_position)
         return self.getPosition()
 
-    def connect(self):
+    def connect(self, shutdown):
         """Find the first Galil controller and connect to it."""
         self.log.info("Searching for %s controller...", self.controller_name)
         available = self.g.GAddresses()
         self.address = None
         for address in sorted(available.keys()):
             if self.controller_name in available[address]:
-                self.address = address.strip("()")
+                self.address = address.strip("()").strip("-d")
                 self.controller_name = available[address]
                 self.log.debug("Found %s at %s", available[address], self.address)
                 self.log.info(
@@ -143,10 +144,31 @@ class Galil:
                 self.connected = True
                 self.thread_running = True
                 self.thread.start()
-                return
-        msg = f"{self.controller_name} not found."
+                atexit.register(self.disconnect)
+                self.log.info("Connected to Galil controller")
+                self.shutdown = shutdown
+                return True
+        msg = f"Galil controller not found! ({self.controller_name})"
         self.log.critical(msg)
-        sys.exit(msg)
+        return False
+
+    def disconnect(self):
+        """Disconnect form the Galil controller."""
+        if self.connected is not False:
+            self.thread_running = False
+            try:
+                self.thread.join()
+            except RuntimeError:
+                pass
+            self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
+            self.thread.daemon = True
+            try:
+                self.connected = False
+                self.g.GClose()
+                self.log.info("Disconnected from Galil controller (%s)", self.controller_name)
+            except self.gclib_error as e:
+                self.log.error("Unexpected GclibError on disconnect: %s", e)
+
 
     def write_to_disk(self, *args):
         """Write data to disk using the async file handler class.
@@ -182,11 +204,18 @@ class Galil:
                     self.log.debug("Reply: '%s'", response)
                 return response
             except self.gclib_error as error:
-                error_code = self.g.GCommand("TC 1")
-                if error_code not in ("", "0"):
-                    error = error_code
-                self.log.error("Last command '%s' returned error '%s'", command, error)
-                return error
+                if str(error) == "device timed out":
+                    msg = "Galil controller timed out!"
+                    self.log.critical(msg)
+                    # Thread(self.log, self.shutdown, kwargs={"is_critical": True}).start()
+                    self.shutdown(is_critical = True)
+                    sys.exit(msg)
+                else:
+                    error_code = self.g.GCommand("TC 1")
+                    if error_code not in ("", "0"):
+                        error = error_code
+                    self.log.error("Last command '%s' returned error '%s'", command, error)
+                    return error
 
     def checkLimits(self, axis=None):
         """Return a tuple the state of the limit switches for the
@@ -324,8 +353,8 @@ class Galil:
         a = self.convertAxis(axis)
         if not self.homed[a]:
             msg = "Must home before using absolute movements!"
-            self.log.critical(msg)
-            sys.exit(msg)
+            self.log.error(msg)
+            return self.getPosition(axis=a)
         old_speed = None
         old_acceleration = None
         if speed is not None:
@@ -473,19 +502,6 @@ class Galil:
                         self.logging_move_status[a] = -1
                 self.write_to_disk(tmp)
                 time.sleep(0.01)
-
-    def disconnect(self):
-        """Disconnect form the Galil controller."""
-        if self.connected is not False:
-            self.thread_running = False
-            self.thread.join()
-            self.thread = threading.Thread(target=self.loop)
-            try:
-                self.connected = False
-                self.g.GClose()
-                self.log.info("Disconnected from %s", self.controller_name)
-            except self.gclib_error as e:
-                self.log.error("Unexpected GclibError on disconnect: %s", e)
 
     def downloadProgram(self, filename):
         """Download a DMC file to the Galil controller."""

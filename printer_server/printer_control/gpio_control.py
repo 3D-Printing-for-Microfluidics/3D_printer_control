@@ -6,13 +6,11 @@ class GPIOControl(PrintControl):
         super().__init__()
         self.gpio = driver_handles.gpio
 
-    @run_in_thread("initialized", "Initialize")
-    def initialize(self, run_in_thread=True):
-        if self.state == "uninitialized":
-            gpio_thread = threading.Thread(target=self.gpio.initialize, args=[])
-            gpio_thread.start()
-            super().initialize(run_in_thread=run_in_thread)
-            gpio_thread.join()
+    def initalize_hardware(self):
+        gpio_thread = Thread(log, name="gpio_control_init_thread", target=self.gpio.initialize, args=[])
+        gpio_thread.start()
+        super().initalize_hardware()
+        gpio_thread.join()
 
 
 class FilmGPIOControl(GPIOControl):

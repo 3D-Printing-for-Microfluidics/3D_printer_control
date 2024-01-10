@@ -1,9 +1,9 @@
 import atexit
 import RPi.GPIO
 
-
 class GPIO:
     def __init__(self, config_dict):
+        self.connected = False
         self.fan_relay = False
         self.film_relay = False
         if "fan_pin" in config_dict.keys():
@@ -25,7 +25,13 @@ class GPIO:
             RPi.GPIO.setup(self.film_relay_pin, RPi.GPIO.OUT)
             self.film_relay_state = False
             RPi.GPIO.output(self.film_relay_pin, RPi.GPIO.LOW)
-        atexit.register(RPi.GPIO.cleanup)
+        self.connected = True
+        atexit.register(self.disconnect)
+
+    def disconnect(self):
+        if self.connected:
+            RPi.GPIO.cleanup()
+            self.connected = False
 
     def fan_relay_on(self):
         self.fan_relay_state = True

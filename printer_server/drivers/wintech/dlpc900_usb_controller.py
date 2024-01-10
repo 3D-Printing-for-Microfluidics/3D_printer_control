@@ -210,7 +210,6 @@ class DLPC900_USB_Controller:
                     except usb.core.USBError as e:
                         msg = f"Couldn't detach kernel driver from interface {n}: {e}"
                         self.log.critical(msg)
-                        sys.exit(msg)
 
     def _HID_io_wrapper(self, fn, *args, **kwargs):
         """Wrap HID read and write methods so they have a greater
@@ -318,21 +317,31 @@ class DLPC900_USB_Controller:
         return data[4 : 4 + payload_length]
 
     def connect(self):
-        """Find and connect to the DLPC900 and perform associated setup.
+        """Find the DLPC900.
 
-        First the VID and PID combination representing the DLPC900
-        controller is found. The driver is then freed and the USB
-        configuration is set. Finally, a series of commands are issued
-        to ready the system for normal 3D printing operation.
+        The VID and PID combination representing the DLPC900
+        controller is found.
         """
         self.log.info("Connecting to DLPC900 via USB")
         self.dev = usb.core.find(idVendor=0x0451, idProduct=0xC900)
         if self.dev is None:
-            sys.exit("DLPC900 not found. Is it connected and turned on?")
+            msg = "Wintech light engine not found!"
+            self.log.critical(msg)
+            return False
+        self.log.info("Connected to Wintech light engine")
+        return True
+
+    def initalize(self):
+        """Connect to the DLPC900 and perform associated setup.
+
+        The driver is freed and the USB
+        configuration is set. Then, a series of commands are issued
+        to ready the system for normal 3D printing operation.
+        """
+
         self._free_USB_driver()
         self.dev.set_configuration()
-        atexit.register(self.stop_sequence)
-        atexit.register(self.led_off)
+        atexit.register(self.disconnect)
         self.get_firmware_version()
         self.get_hardware_configuration_and_firmware_tag()
         self.led_off()
@@ -341,7 +350,18 @@ class DLPC900_USB_Controller:
         self.led_from_sequencer()
         self.set_long_axis_flip(False)
         self.set_short_axis_flip(True)
-        self.log.info("Setup complete")
+        self.log.info("Wintech light engine initialized")
+
+    def disconnect(self):
+        if self.dev is not None:
+            try:
+                self.stop_sequence()
+                self.led_off()
+                self. dev = None
+                self.log.info("Disconnected from Wintech light engine")
+            except:
+                self. dev = None
+                self.log.info("Unable to disconnect from Wintech!")
 
     def get_long_axis_flip(self):
         "Returns whether the long axis is flipped"
@@ -810,9 +830,11 @@ class DLPC900_USB_Controller:
         exposure_time_us = int(exposure_time_ms * 1000)
         min_exp_time_us = [105, 304, 394, 823, 1215, 1487, 1998, 4046]
         if exposure_time_us < min_exp_time_us[bit_depth - 1]:
-            sys.exit("Too small of exposure passed to define_pattern()")
+            msg = "Too small of exposure passed to define_pattern()"
+            self.log.error(msg)
         if exposure_time_us > 0xFFFFFF:
-            sys.exit("Too large of exposure passed to define_pattern()")
+            msg = "Too large of exposure passed to define_pattern()"
+            self.log.error(msg)
 
         payload = list(range(12))
         payload[0] = index & 0xFF

@@ -5,15 +5,13 @@ Keyence Confocal Displacement Sensor
 
 import logging
 import json
+import atexit
 import socket
 
-DEFAULT_SENSOR_IP = "192.168.0.15"
-DEFAULT_SENSOR_PORT = 24685
-LOG_FORMAT = "%(asctime)s: %(levelname)s: %(name)s: %(message)s"
+DEFAULT_HOST = "192.168.0.15"
+DEFAULT_PORT = 24685
 
 READ_ALL_VALUES = "MA,0"
-# READ_ALL_VALUES = "MA,2"
-
 
 class Keyence:
     """
@@ -22,64 +20,44 @@ class Keyence:
 
     def __init__(
         self,
-        sensor_ip=DEFAULT_SENSOR_IP,
-        sensor_port=DEFAULT_SENSOR_PORT,
+        sensor_ip=DEFAULT_HOST,
+        port=DEFAULT_PORT,
         log_level=logging.INFO,
     ):
-        self.sensor_socket = None
-        self.sensor_address = sensor_ip
-        self.sensor_port = sensor_port
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        # ---------------------------------------------------------------------------------
-        # formatter = logging.Formatter("%(asctime)s: %(levelname)s: %(name)s: %(message)s")
-        # stream_handler = logging.StreamHandler()
-        # stream_handler.setFormatter(formatter)
-        # self.log.addHandler(stream_handler)
-        # ---------------------------------------------------------------------------------
 
-        # self.connected = self.connect()
-
-    def connect(self) -> bool:
-        """[summary]
-
-        Returns:
-            bool: [description]
-        """
+        self.connected = False
+        self.sensor_socket = None
+        self.host = sensor_ip
+        self.port = port
+        
+    def connect(self):
+        self.connected = False
         try:
             self.sensor_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sensor_socket.connect((self.sensor_address, self.sensor_port))
+            self.sensor_socket.settimeout(5)
+            self.sensor_socket.connect((self.host, self.port))
             self.log.info(
-                f"Connection established @ {self.sensor_address} in port {self.sensor_port}"
+                "Connected to Keyence sensor"
             )
-        except Exception as ex:
-            self.log.error(f"Connection attempt failed due to {ex}")
+            self.connected = True
+            atexit.register(self.disconnect)
+        except (OSError, socket.timeout):
+            self.log.critical(f"Keyence sensor not found! (CL-3000)")
             return False
         else:
             return True
 
-    def disconnect(self) -> bool:
-        """[summary]
-
-        Returns:
-            bool: [description]
-        """
-        if self.sensor_socket is not None:
+    def disconnect(self):
+        if self.connected and self.sensor_socket is not None:
             self.sensor_socket.close()
-            self.log.info("Keyence sensor disconnected.")
-            return True
-        return False
+            self.connected = False
+            self.sensor_socket = None
+            self.log.info("Disconnected from Keyence sensor")
 
-    def send_command(self, message: str) -> list:
-        """[summary]
-
-        Args:
-            message (str): [description]
-
-        Returns:
-            list: [description]
-        """
+    def send_command(self, message):
         message += "\r"
         encoded_message = message.encode()
         try:
@@ -94,7 +72,6 @@ class Keyence:
 
     def read_all(self):
         data = self.send_command(READ_ALL_VALUES).split(",")
-        # print(f"data type: {type(data)}, data: {data}")
         return data
 
     def read_sensor(self, index):

@@ -249,7 +249,7 @@
                             "type": "integer",
                             "minimum": 0,
                             "default": 100,
-                            "maximum": 300,
+                            "maximum": 1000,
                             "description": "Default power to expose an image at."
                         },
                         "Relative focus position (um)": {
@@ -522,7 +522,7 @@
                     "type": "integer",
                     "minimum": 0,
                     "default": 100,
-                    "maximum": 300,
+                    "maximum": 1000,
                     "description": "Default power to expose an image at."
                 },
                 "Relative focus position (um)": {

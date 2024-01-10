@@ -2,6 +2,7 @@ import atexit
 import logging
 import datetime
 import threading
+from printer_server.threading_wrapper import Thread
 import serial
 import serial.tools.list_ports
 import serial.serialutil
@@ -36,8 +37,9 @@ class LoadCell(serial.Serial):
 
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
-        self.thread = threading.Thread(target=self.loop)
+        self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
         self.log_file = None
+        self.connected = False
 
     def findUsbPort(self, hwid):
         """
@@ -74,21 +76,28 @@ class LoadCell(serial.Serial):
 
         self.port = self.findUsbPort(self.hwid)
         if self.port is None:
-            msg = "Load cell not found"
+            msg = "Loadcell not found!"
             self.log.critical(msg)
-            raise RuntimeError(msg)
+            return False
         if self.is_open:
             self.close()
         self.open()
+        self.connected = True
 
         self.loadcell_stop()
         self.receiveAll()
 
-        self.log.debug("Connected to '%s'", self.port)
         self.log.debug("%s", self.set_sample_frequency(int(self.freq)))
-        self.log.info("Connected to loadcell")
+        self.log.info("Connected to loadcell (%s)", self.port)
 
-        atexit.register(self.close)
+        atexit.register(self.disconnect)
+        return True
+
+    def disconnect(self):
+        if self.connected:
+            self.close()
+            self.connected = False
+            self.log.info("Disconnected from Loadcell")
 
     def start(self):
         """
@@ -130,7 +139,7 @@ class LoadCell(serial.Serial):
         if self.running:
             self.running = False
             self.thread.join()
-            self.thread = threading.Thread(target=self.loop)
+            self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
 
         self.receiveAll()
 
@@ -148,7 +157,7 @@ class LoadCell(serial.Serial):
         if self.running:
             self.running = False
             self.thread.join()
-            self.thread = threading.Thread(target=self.loop)
+            self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
 
         self.receiveAll()
 

@@ -17,13 +17,19 @@ class VisitechControl(ScreenControl):
         self.visitech = driver_handles.visitech
         self.visitech_thread = None
 
-    @run_in_thread("initialized", "Initialize")
-    def initialize(self, run_in_thread=True):
-        if self.state == "uninitialized":
-            self.visitech_thread = threading.Thread(target=self.visitech.connect, args=[])
-            self.visitech_thread.start()
-            super().initialize(run_in_thread=run_in_thread)
-            self.visitech_thread.join()
+    def connect_hardware(self):
+        self.visitech_thread = Thread(log, name="visitech_control_connect_thread", target=self.visitech.connect, args=[self.shutdown])
+        self.visitech_thread.start()
+        super().connect_hardware()
+        self.visitech_thread.join()
+        if not self.visitech.connected:
+            self.all_hardware_connected = False
+
+    def initalize_hardware(self):
+        self.visitech_thread = Thread(log, name="visitech_control_init_thread", target=self.visitech.initalize, args=[])
+        self.visitech_thread.start()
+        super().initalize_hardware()
+        self.visitech_thread.join()
 
     def post_print_tasks(self):
         # always turn off the Visitech
@@ -49,7 +55,9 @@ class VisitechControl(ScreenControl):
                         break
 
             # visitech setup thread
-            self.visitech_thread = threading.Thread(
+            self.visitech_thread = Thread(
+                log, 
+                name="visitech_control_setup_thread",
                 target=self.visitech.setup_exposure,
                 args=[self.exposure_time_ms, self.power],
                 kwargs={"led_num": led},

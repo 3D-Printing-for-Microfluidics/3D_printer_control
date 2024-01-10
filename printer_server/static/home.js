@@ -80,7 +80,7 @@ function update_loop(message) {
                         y: [[force]],
                         x: [[time]]
                     },
-                    [0], 400)
+                    [0], 800)
             }
         )
     }
@@ -92,9 +92,18 @@ var show_btn = function (btn) {
 };
 
 var write_to_message_box = function (message) {
+    const message_box = document.getElementById("print-message")
+    // allow 1px inaccuracy by adding 1
+    const isScrolledToBottom = message_box.scrollHeight - message_box.clientHeight <= message_box.scrollTop + 1
+
     if (!$.isEmptyObject(message)) {
         var new_text = `<div class='log-message'>${message}</div>`;
         $("#print-message").append(new_text);
+    }
+
+    // scroll to bottom if isScrolledToBottom is true
+    if (isScrolledToBottom) {
+        message_box.scrollTop = message_box.scrollHeight - message_box.clientHeight
     }
 }
 
@@ -343,6 +352,11 @@ $(document).ready(function () {
     socket.on("uninitialized", function (message) {
         $("#printer-state").text("Uninitialized");
         show_btn("#init-btn, #shutdown-btn");
+        var content = '3D printer has been shutdown';
+        if (document.getElementById('base-body').innerHTML == content) {
+            location.reload()
+        }
+
     });
 
     socket.on("initialized", function (message) {
@@ -400,7 +414,10 @@ $(document).ready(function () {
     });
 
     socket.on("shutdown completed", function (message) {
-        $("html").text("3D printer has been shutdown");
+        $(".navbar").prop("disabled", true).addClass("d-none");
+        var content = '3D printer has been shutdown';
+        document.getElementById('base-body').innerHTML = content;
+
     });
 
     socket.on("shutdown failed", function (message) {

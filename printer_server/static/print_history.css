@@ -6,32 +6,35 @@ a:hover {
     color: #375a7f;
 }
 
-.container {
+/* .container {
     max-width: 1000px;
-}
+} */
 
 /* Date picker formatting  */
 
 [type="date"] {
-    background:#fff url(calendar.png)  97% 50% no-repeat ;
+    background: #fff url(calendar.png) 97% 50% no-repeat;
 }
+
 [type="date"]::-webkit-inner-spin-button {
     display: none;
 }
+
 [type="date"]::-webkit-calendar-picker-indicator {
     opacity: 0;
 }
 
 label {
     margin-top: 8px;
-    float:left;
+    float: left;
 }
+
 input {
     border: 1px solid #c4c4c4;
     border-radius: 5px;
     background-color: #fff;
     padding: 3px 5px;
-    box-shadow: inset 0 3px 6px rgba(0,0,0,0.1);
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.1);
     width: 190px;
     height: 32px;
     margin-left: 10px;
@@ -48,7 +51,7 @@ form {
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
     padding: 0px;
-    text-align:center;
+    text-align: center;
 }
 
 /* Pagination navbar formatting */
@@ -68,40 +71,40 @@ hr {
 }
 
 .page-link {
-    color:#3498DB;
-    background-color:transparent;
-    border-color:#3498DB
+    color: #3498DB;
+    background-color: transparent;
+    border-color: #3498DB
 }
 
 .page-link:hover {
-    color:#375a7f;
-    background-color:transparent;
-    border-color:#375a7f
+    color: #375a7f;
+    background-color: transparent;
+    border-color: #375a7f
 }
 
 
 .page-item.active .page-link {
-    color:#3498DB;
-    background-color:transparent;
-    background-image:none;
-    border-color:#3498DB;
+    color: #3498DB;
+    background-color: transparent;
+    background-image: none;
+    border-color: #3498DB;
     border-width: 1px;
     border-radius: 4px;
 }
 
 .page-item.disabled .page-link {
-    color:#3498DB;
-    background-color:transparent;
-    border-color:#3498DB
+    color: #3498DB;
+    background-color: transparent;
+    border-color: #3498DB
 }
 
 .justify-center {
     text-align: center;
- }
+}
 
- pre {
+pre {
     font-family: "Lato";
-    --font-family-sans-serif:"Lato";
+    --font-family-sans-serif: "Lato";
     font-size: 1rem;
     margin-bottom: 0;
 }

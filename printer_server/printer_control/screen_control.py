@@ -7,15 +7,13 @@ class ScreenControl(PrintControl):
         self.screen = driver_handles.screen
         self.screen_thread = None
 
-    @run_in_thread("initialized", "Initialize")
-    def initialize(self, run_in_thread=True):
-        if self.state == "uninitialized":
-            self.screen_thread = threading.Thread(
-                target=driver_handles.screen.start, args=[]
-            )
-            self.screen_thread.start()
-            super().initialize(run_in_thread=run_in_thread)
-            self.screen_thread.join()
+    def connect_hardware(self):
+        self.screen_thread = Thread(
+            log, name="screen_control_start_thread", target=driver_handles.screen.start, args=[]
+        )
+        self.screen_thread.start()
+        super().connect_hardware()
+        self.screen_thread.join()
 
     def post_print_tasks(self):
         for i in range(len(config_dict["screen"]["light_engines"])):
@@ -29,8 +27,8 @@ class ScreenControl(PrintControl):
                 screen_index = i
                 break
 
-        self.screen_thread = threading.Thread(
-            target=self.screen.draw, args=[self.image], kwargs={"screen": screen_index}
+        self.screen_thread = Thread(
+            log, name="screen_control_draw_thread", target=self.screen.draw, args=[self.image], kwargs={"screen": screen_index}
         )
         self.screen_thread.start()
         super().pre_exposure_tasks(settings, light_engine)

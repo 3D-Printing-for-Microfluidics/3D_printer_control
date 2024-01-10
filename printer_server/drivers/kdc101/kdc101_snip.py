@@ -2,10 +2,13 @@ import threading
 
 from printer_server.hardware_configuration import driver_handles
 from printer_server.extensions import socketio
+from printer_server.threading_wrapper import Thread
 import printer_server.views.manual_controls
 
 kdc = driver_handles.kdc
 
+# log = logging.getLogger(__name__)
+# log.setLevel(logging.INFO)
 
 def get_kdc_positions():
     last_positions = (
@@ -59,5 +62,5 @@ def homeKDCMotor(message):
         kdc.home()
         emit_kdc_positions(log=True)
 
-    t = threading.Thread(target=func, args=[axis])
+    t = Thread(name="kdc101_snip_home_thread", target=func, args=[axis])
     t.start()

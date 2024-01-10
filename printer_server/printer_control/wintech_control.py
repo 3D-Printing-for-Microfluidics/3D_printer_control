@@ -12,13 +12,19 @@ class WintechControl(ScreenControl):
         self.wintech = driver_handles.wintech
         self.wintech_thread = None
 
-    @run_in_thread("initialized", "Initialize")
-    def initialize(self, run_in_thread=True):
-        if self.state == "uninitialized":
-            self.wintech_thread = threading.Thread(target=self.wintech.connect, args=[])
-            self.wintech_thread.start()
-            super().initialize(run_in_thread=run_in_thread)
-            self.wintech_thread.join()
+    def connect_hardware(self):
+        self.wintech_thread = Thread(log, name="wintech_control_connect_thread", target=self.wintech.connect, args=[])
+        self.wintech_thread.start()
+        super().connect_hardware()
+        self.wintech_thread.join()
+        if not self.wintech.connected:
+            self.all_hardware_connected = False
+
+    def initalize_hardware(self):
+        self.wintech_thread = Thread(log, name="wintech_control_init_thread", target=self.wintech.initalize, args=[])
+        self.wintech_thread.start()
+        super().initalize_hardware()
+        self.wintech_thread.join()
 
     def post_print_tasks(self):
         # always turn off the Wintech
@@ -29,7 +35,9 @@ class WintechControl(ScreenControl):
     def pre_exposure_tasks(self, settings, light_engine):
         if "wintech" in light_engine:
             # wintech setup thread
-            self.wintech_thread = threading.Thread(
+            self.wintech_thread = Thread(
+                log, 
+                name="wintech_control_setup_thread",
                 target=self.wintech.setup_exposure,
                 args=[self.exposure_time_ms, self.power],
             )
