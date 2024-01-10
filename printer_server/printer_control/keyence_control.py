@@ -118,8 +118,7 @@ class KeyenceControl(PrintControl):
                 ]
             )
             current_position = (
-                self.galil.cntsToMm(self.galil.getPosition(axis="Focus"), axis="Focus")
-                * 1000
+                self.galil.getPosition(in_mm=True, axis="Focus")* 1000
             )
             focus_drift = (
                 self.coord_systems["keyence"][light_engine]["Focus"] - current_position

@@ -37,9 +37,9 @@ class Galil:
         self.ctspmm = config_dict["axes_ctspmm"]
         self.default_speed = config_dict["axes_speed"]
         self.default_acceleration = config_dict["axes_acceleration"]
-        self.calibration_position = config_dict["calibration_position"]
-        self.bottom_position = config_dict["bottom_position"]
-        self.top_position = config_dict["top_position"]
+        self.calibration_position = self.cntsToMm(config_dict["calibration_position"], axis="Build Platform")
+        self.bottom_position = self.cntsToMm(config_dict["bottom_position"], axis="Build Platform")
+        self.top_position = self.cntsToMm(config_dict["top_position"], axis="Build Platform")
         self.tolerence = config_dict["axes_tolerance"]
 
         self.homed = {}
@@ -115,16 +115,16 @@ class Galil:
             self.motorOn(axis)
 
     def goToZcalibration(self):
-        self.absMove(speed=self.getDefaultSpeed("Build Platform"), cnts=self.calibration_position)
-        return self.getPosition()
+        self.absMove(speed=self.getDefaultSpeed("Build Platform"), mm=self.calibration_position, axis="Build Platform")
+        return self.getPosition(in_mm=True)
 
     def goToZmax(self):
-        self.absMove(speed=self.getDefaultSpeed("Build Platform"), cnts=self.top_position)
-        return self.getPosition()
+        self.absMove(speed=self.getDefaultSpeed("Build Platform"), mm=self.top_position, axis="Build Platform")
+        return self.getPosition(in_mm=True)
 
     def goToZmin(self):
-        self.absMove(speed=self.getDefaultSpeed("Build Platform"), cnts=self.bottom_position)
-        return self.getPosition()
+        self.absMove(speed=self.getDefaultSpeed("Build Platform"), mm=self.bottom_position, axis="Build Platform")
+        return self.getPosition(in_mm=True)
 
     def connect(self, shutdown):
         """Find the first Galil controller and connect to it."""
@@ -226,10 +226,13 @@ class Galil:
         lr = self.send(f"MG _LR{a}", notify=False)
         return bool(lf == "0.0000"), bool(lr == "0.0000")
 
-    def getPosition(self, axis=None, notify=True):
+    def getPosition(self, in_mm, axis=None, notify=True):
         """Return the position of the specified encoder."""
         pos = self.send(f"TP{self.convertAxis(axis)}", notify=notify)
-        return int(pos)
+        if not in_mm:
+            return int(pos)
+        else:
+            return self.cntsToMm(int(pos), axis=axis)
 
     def motorOn(self, axis=None):
         """Turn on the specified axis."""
@@ -304,7 +307,7 @@ class Galil:
             self.log.info("Homing complete.")
 
     # pylint: disable=too-many-arguments
-    def relMove(self, mm=None, cnts=None, speed=None, acceleration=None, axis=None):
+    def relMove(self, mm=None, cnts=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
         """Perform a relative movement.
 
         Blocks execution until movement is complete. All units are in mm
@@ -322,17 +325,17 @@ class Galil:
         if mm is not None:
             cnts = self.mmToCnts(mm, axis=a)
         if cnts is not None:
-            start_position = self.getPosition(axis=a)
+            start_position = self.getPosition(in_mm=False, axis=a)
             self.log.info("Move axis %s to relative position %s", a, cnts)
             self.send(f"PR{a}={cnts}")
             self.send(f"BG{a}")
             self.logging_move_status[a] = 0
-            self.waitForMotionComplete(start_position + cnts, axis=a)
+            self.waitForMotionComplete(start_position + cnts, wait_for_settling=wait_for_settling, axis=a)
         if speed is not None:
             self.setSpeed(old_speed, axis=a)
         if acceleration is not None:
             self.setAcceleration(old_acceleration, axis=a)
-        return self.getPosition(axis=a)
+        return self.getPosition(in_mm=True, axis=a)
 
     # pylint: disable=too-many-arguments
     def absMove(
@@ -354,7 +357,7 @@ class Galil:
         if not self.homed[a]:
             msg = "Must home before using absolute movements!"
             self.log.error(msg)
-            return self.getPosition(axis=a)
+            return self.getPosition(in_mm=True, axis=a)
         old_speed = None
         old_acceleration = None
         if speed is not None:
@@ -375,7 +378,7 @@ class Galil:
             self.setSpeed(old_speed, axis=a)
         if acceleration is not None:
             self.setAcceleration(old_acceleration, axis=a)
-        return self.getPosition(axis=a)
+        return self.getPosition(in_mm=True, axis=a)
 
     def startJog(self, speed=None, acceleration=None, axis=None):
         """Start a jog, non-blocking."""
@@ -433,7 +436,7 @@ class Galil:
             ):
                 limit_switch_triggered = True
                 wait_for_settling = False
-                self.log.info("Axis %s limit switch triggered", a)
+                self.log.info("Axis %s limit switch triggered during motion", a)
 
         # self.logging_profile_complete = True
         self.logging_move_status[a] = 1
@@ -444,7 +447,7 @@ class Galil:
                 time.sleep(0.01)
                 position = self.current_position[a]
                 if any(self.checkLimits(axis=a)):
-                    self.log.info("Axis %s limit switch triggered", a)
+                    self.log.info("Axis %s limit switch triggered during settling", a)
                     # self.logging_move_complete = True
                     self.logging_move_status[a] = 3
                     return
@@ -491,7 +494,7 @@ class Galil:
     def loop(self):
         while self.thread_running:
             for a in self.axes:
-                self.current_position[a] = self.getPosition(notify=False, axis=a)
+                self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
             if self.logging_running:
                 tmp = ""
                 for a in self.axes:

@@ -90,7 +90,7 @@ def galil_get_positions():
     """Get the position the main Z stage."""
     positions = {}
     for axis in galil.axes:
-        position = galil.cntsToMm(galil.getPosition(axis=axis), axis=axis)
+        position = galil.getPosition(in_mm=True, axis=axis)
         global coord_system
         if coord_system is not None:
             position -= coord_system[galil.getCommonName(axis)] / 1000
@@ -104,6 +104,6 @@ def galil_get_position(axis, notify=True):
     """Get the position the main Z stage."""
     a = galil.convertAxis(axis)
     if notify:
-        message = {"position": galil.cntsToMm(galil.getPosition())}
+        message = {"position": galil.getPosition(in_mm=True)}
         socketio.emit("galil_position", message, namespace="/manual", broadcast=True)
-    return galil.cntsToMm(galil.getPosition(axis=a), axis=a)
+    return galil.getPosition(in_mm=True, axis=a)

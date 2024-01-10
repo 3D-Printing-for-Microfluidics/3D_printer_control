@@ -446,7 +446,7 @@ class PrintControl:
         final_wait = position_settings["Final wait (ms)"] / 1000
         layer_thickness = position_settings["Layer thickness (um)"] / 1000
 
-        start_position = self.galil.getPosition()
+        start_position = self.galil.getPosition(in_mm=True)
         start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         start_index = self.loadcell.get_current_loadcell_index()
         self.move_build_platform_up(position_settings)
@@ -463,10 +463,10 @@ class PrintControl:
                 time.sleep(final_wait)
         else:
             time.sleep(final_wait)
-        end_position = self.galil.getPosition()
+        end_position = self.galil.getPosition(in_mm=True)
         end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         end_index = self.loadcell.get_current_loadcell_index()
-        thickness = self.galil.cntsToMm(abs(end_position - start_position) * 1000)
+        thickness = (end_position - start_position) * 1000
         async_file_hander.write(
             self.position_log,
             f"{layer[0]},{layer[1]},{start_time},{end_time},{start_index},",
@@ -487,7 +487,7 @@ class PrintControl:
 
         log.info("Squeeze force reached %s steps", count)
         log.info("Squeeze force: %s", self.loadcell.get_current_force())
-        log.info("Squeeze position: %s", self.galil.getPosition())
+        log.info("Squeeze position: %s", self.galil.getPosition(in_mm=True))
 
         if self.loadcell.get_current_force() > squeeze_target * 1.10:
             log.warning("Move_to_force overshot target value.")
@@ -615,13 +615,13 @@ class PrintControl:
                     "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
                 )
             else:
-                # estimate a 1mm movement for planarization
+                # estimate a 2mm movement for planarization
                 self.galil.relMove(mm=2.0, speed=2.5)
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
-        self.planarized_position = self.galil.getPosition()
-        self.print_position = self.galil.cntsToMm(self.planarized_position)
+        self.planarized_position = self.galil.getPosition(in_mm=True)
+        self.print_position = self.planarized_position
         """Raise the build platform to begin printing."""
         if config_dict["loadcell"]["loadcell_planarization_enabled"]:
             if self.state == "planarizing":
@@ -650,8 +650,8 @@ class PrintControl:
             "Loadcell force post planarization: %s", self.loadcell.get_current_force()
         )
         log.debug("Loadcell position: %s", self.planarized_position)
-        self.planarized_position = self.galil.getPosition()
-        self.print_position = self.galil.cntsToMm(self.planarized_position)
+        self.planarized_position = self.galil.getPosition(in_mm=True)
+        self.print_position = self.planarized_position
         log.info("Loadcell planarized %s steps", count)
         log.info("Loadcell force (post-step 2): %s", self.loadcell.get_current_force())
         log.info("Loadcell position (post-step 2): %s", self.planarized_position)
@@ -731,9 +731,24 @@ class PrintControl:
         if self.state != "paused":
             return
         log.info("Resuming print...")
-        self.galil.absMove(cnts=self.paused_position)
-        self.print_position = self.galil.cntsToMm(self.paused_position)
+
+        layer = self.layer_map[self.next_layer-1]
+        current_layer_settings = self.print_settings["Layers"][layer[0]]
+        position_settings = self.get_position_settings(current_layer_settings)
+        layer_thickness = position_settings["Layer thickness (um)"] / 1000
+        down_speed = position_settings["BP down speed (mm/sec)"]
+        down_acceleration = position_settings["BP down acceleration (mm/sec^2)"]
+
+        self.print_position = self.paused_position
         self.paused_position = None
+
+        self.galil.absMove(speed=self.galil.getDefaultSpeed("Build Platform"), mm=self.print_position-layer_thickness)
+        self.galil.absMove(
+            mm=self.print_position,
+            speed=down_speed,
+            acceleration=down_acceleration,
+        )
+        
         self.loadcell.start()
         # update fontend
         self.state = "printing"
@@ -792,7 +807,7 @@ class PrintControl:
 
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
-            self.galil.absMove(cnts=self.planarized_position)
+            self.galil.absMove(mm=self.planarized_position)
 
         # update frontend message pane and progress bar
         msg = {
@@ -818,7 +833,7 @@ class PrintControl:
 
         # set paused position
         if self.printing_paused.is_set():
-            self.paused_position = self.galil.getPosition()
+            self.paused_position = self.galil.getPosition(in_mm=True)
 
         self.post_print_tasks()
 

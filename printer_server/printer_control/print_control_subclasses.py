@@ -56,7 +56,7 @@ class HR4_PrintControl(VisitechControl, KeyenceControl):
     def get_focus(self):
         """Return galil 'Focus' axis position"""
         return int(
-            self.galil.cntsToMm(self.galil.getPosition(axis="Focus"), axis="Focus") * 1000
+            self.galil.getPosition(in_mm=True, axis="Focus") * 1000
         )
 
     def galil_finalize_setup_thread(self):
@@ -66,7 +66,7 @@ class HR4_PrintControl(VisitechControl, KeyenceControl):
             self.coord_systems["light_engine"]["visitech"]["X"],
             self.coord_systems["light_engine"]["visitech"]["Y"],
             self.coord_systems["light_engine"]["visitech"]["Focus"],
-            self.galil.cntsToMm(self.galil.top_position, axis="Focus") * 1000,
+            self.galil.top_position * 1000,
         )
 
     def post_print_tasks(self):
@@ -80,7 +80,7 @@ class HR4_PrintControl(VisitechControl, KeyenceControl):
             self.coord_systems["light_engine"]["visitech"]["X"],
             self.coord_systems["light_engine"]["visitech"]["Y"],
             self.coord_systems["light_engine"]["visitech"]["Focus"],
-            self.galil.top_position,
+            self.galil.top_position * 1000,
         )
 
 class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
@@ -171,7 +171,7 @@ class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
 
     #                 # save resin tray edge
     #                 edges[light_engine][axis][direction_indx] = (
-    #                     self.galil.cntsToMm(self.galil.getPosition(axis=axis), axis=axis)
+    #                     self.galil.getPosition(in_mm=True, axis=axis)
     #                     * 1000
     #                     - self.coord_systems["keyence"][light_engine][axis]
     #                 )
