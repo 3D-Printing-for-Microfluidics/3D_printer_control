@@ -29,7 +29,7 @@
             "axes_acceleration": {
                 "A": 50
             },
-            "calibration_position": 34000,
+            "calibration_position": 23200,
             "bottom_position": 323913,
             "top_position": -400000
         },
@@ -179,14 +179,14 @@
                 "D": 0.125
             },
             "axes_speed": {
-                "A": 125,
-                "B": 125,
+                "A": 12.5,
+                "B": 12.5,
                 "C": 25,
                 "D": 25
             },
             "axes_acceleration": {
-                "A": 250,
-                "B": 250,
+                "A": 25,
+                "B": 25,
                 "C": 50,
                 "D": 50
             },
@@ -201,27 +201,27 @@
                     "Build Platform": 0
                 },
                 "visitech": {
-                    "X": -120245,
-                    "Y": -15333,
-                    "Focus": 47534,
+                    "X": -120268,
+                    "Y": -14440,
+                    "Focus": 47385,
                     "Build Platform": 0
                 },
                 "wintech": {
-                    "X": 139410,
-                    "Y": -7820,
-                    "Focus": 47714,
+                    "X": 139680,
+                    "Y": -8000,
+                    "Focus": 47385,
                     "Build Platform": 0
                 },
                 "keyence_visitech": {
-                    "X": -69541,
-                    "Y": -1111,
-                    "Focus": 46311,
+                    "X": -69181,
+                    "Y": -1701,
+                    "Focus": 46131,
                     "Build Platform": 0
                 },
                 "keyence_wintech": {
-                    "X": 103717,
-                    "Y": -4269,
-                    "Focus": 46745,
+                    "X": 103485,
+                    "Y": -4255,
+                    "Focus": 46597,
                     "Build Platform": 0
                 }
             }
@@ -241,14 +241,10 @@
                 }
             }
         },
-        "gpio": {
-            "dummy": false,
-            "fan_pin": 5
-        },
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881820",
-            "calibration_intercept": 32800.37,
+            "calibration_intercept": 32750.37,
             "calibration_slope": -1.24,
             "loadcell_planarization_enabled": true,
             "loadcell_planarization_force": 35.0,
