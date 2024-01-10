@@ -794,6 +794,13 @@ class PrintControl:
         if self.next_layer == 0:
             self.galil.absMove(cnts=self.planarized_position)
 
+        # update frontend message pane and progress bar
+        msg = {
+            "percent": int(100 * self.exposure_index / self.exposure_count),
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+        }
+        home.update_printer_state("print progress", msg)
+
         # iterate over layers
         for i, layer in enumerate(self.layer_map):
             if i < self.next_layer:

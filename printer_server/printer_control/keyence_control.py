@@ -25,6 +25,15 @@ class KeyenceControl(PrintControl):
     def initalize_hardware(self):
         super().initalize_hardware()
 
+    def update_measurement_progress(self):
+        msg = {
+            "percent": int(100 * self.measurement_index / self.measurement_count),
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+            "text": f"Measurement {self.measurement_index+1}/{self.measurement_count}",
+        }
+        home.update_printer_state("print progress", msg)
+        self.measurement_index += 1
+
     def pre_print_tasks(self):
         """Move keyence sensor to all exposure positions and get focus offsets"""
         defaults_layer_settings = self.print_settings.get("Default layer settings")
@@ -39,10 +48,36 @@ class KeyenceControl(PrintControl):
         keyence_indexes = config_dict["keyence"]["sensors"]
         self.keyence_measurement_list = {}
 
+        # List all exposure positions
+        self.measurement_index = 0
+        self.measurement_count = 0
+        for light_engine in config_dict["screen"]["light_engines"]:
+            self.measurement_count += 2
+            self.keyence_measurement_list[light_engine] = {}
+            for i, layer in enumerate(self.layer_map):
+                image_settings_list = self.get_image_settings(self.print_settings["Layers"][layer[0]])
+                for j, settings in enumerate(image_settings_list):
+                    x_offset = float(settings.get("Image x offset (um)", self.default_x_offset))
+                    y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
+                    layer_light_engine = settings.get(
+                        "Light engine", self.default_light_engine
+                    )
+                    if (layer_light_engine == light_engine) or (
+                        light_engine in layer_light_engine
+                    ):
+                        if (
+                            f"{x_offset}, {y_offset}"
+                            not in self.keyence_measurement_list[light_engine]
+                        ):
+                            self.keyence_measurement_list[light_engine][f"{x_offset}, {y_offset}"] = None
+                            self.measurement_count += 1
+
         self.move_build_platform_up(self.default_position_settings)
         time.sleep(1.0)
 
         for light_engine in config_dict["screen"]["light_engines"]:
+            self.update_measurement_progress()
+
             # load keyence focal position
             start_position = get_keyence_set_position(light_engine)
             self.write_to_event_log(
@@ -56,9 +91,7 @@ class KeyenceControl(PrintControl):
                 self.default_y_offset + self.coord_systems["keyence"][light_engine]["Y"],
                 self.coord_systems["keyence"][light_engine]["Focus"],
                 None,
-                # speed_x=25,
             )
-            # time.sleep(10.0)
             time.sleep(5.0)
             # get keyence reading
             temp_position = float(
@@ -66,6 +99,9 @@ class KeyenceControl(PrintControl):
                     keyence_indexes[light_engine]["measurement_index"] + 1
                 ]
             )
+
+            self.update_measurement_progress()
+
             move_all_galil(
                 log,
                 self.galil,
@@ -74,9 +110,7 @@ class KeyenceControl(PrintControl):
                 self.coord_systems["keyence"][light_engine]["Focus"]
                 + (start_position - temp_position),
                 None,
-                # speed_x=25,
             )
-            # time.sleep(2.5)
             time.sleep(1.0)
             temp_position = float(
                 self.keyence.read_all()[
@@ -103,42 +137,35 @@ class KeyenceControl(PrintControl):
             )
 
             # get keyence offsets
-            for i, layer in enumerate(self.layer_map):
-                current_layer_settings = self.print_settings["Layers"][layer[0]]
-                image_settings_list = self.get_image_settings(current_layer_settings)
-                for j, settings in enumerate(image_settings_list):
-                    x_offset = settings.get("Image x offset (um)", self.default_x_offset)
-                    y_offset = settings.get("Image y offset (um)", self.default_y_offset)
-                    layer_light_engine = settings.get(
-                        "Light engine", self.default_light_engine
-                    )
-                    if (layer_light_engine == light_engine) or (
-                        light_engine in layer_light_engine
-                    ):
-                        if (
-                            f"{light_engine} {x_offset}, {y_offset}"
-                            not in self.keyence_measurement_list
-                        ):
-                            move_all_galil(
-                                self.galil,
-                                x_offset
-                                + self.coord_systems["keyence"][light_engine]["X"],
-                                y_offset
-                                + self.coord_systems["keyence"][light_engine]["Y"],
-                                None,
-                                None,
-                                # speed_x=25,
-                            )
-                            time.sleep(5.0)
-                            keyence_position = float(
-                                self.keyence.read_all()[
-                                    keyence_indexes[light_engine]["measurement_index"] + 1
-                                ]
-                            )
-                            self.keyence_measurement_list[
-                                f"{light_engine} {x_offset}, {y_offset}"
-                            ] = (start_position - keyence_position)
+            for measurement in list(self.keyence_measurement_list[light_engine]):
+                measurement = measurement.split(", ")
+                x_offset = float(measurement[0])
+                y_offset = float(measurement[1])
 
+                self.update_measurement_progress()
+
+                move_all_galil(
+                    log,
+                    self.galil,
+                    x_offset
+                    + self.coord_systems["keyence"][light_engine]["X"],
+                    y_offset
+                    + self.coord_systems["keyence"][light_engine]["Y"],
+                    None,
+                    None,
+                    # speed_x=25,
+                )
+                time.sleep(5.0)
+                keyence_position = float(
+                    self.keyence.read_all()[
+                        keyence_indexes[light_engine]["measurement_index"] + 1
+                    ]
+                )
+                self.keyence_measurement_list[light_engine][
+                    f"{x_offset}, {y_offset}"
+                ] = (start_position - keyence_position)
+
+        self.update_measurement_progress()
         self.write_to_event_log(f"Keyence Focus Offsets: {self.keyence_measurement_list}")
         self.move_build_platform_down(self.default_position_settings)
 
@@ -156,13 +183,13 @@ class KeyenceControl(PrintControl):
             )
 
         defocus_um = settings["Relative focus position (um)"]
-        x_offset = settings.get("Image x offset (um)", self.default_x_offset)
-        y_offset = settings.get("Image y offset (um)", self.default_y_offset)
+        x_offset = float(settings.get("Image x offset (um)", self.default_x_offset))
+        y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
 
         # keyence correction
         base_focus = self.coord_systems["light_engine"][screen_light_engine]["Focus"]
-        keyence_measurement = self.keyence_measurement_list[
-            f"{screen_light_engine} {x_offset}, {y_offset}"
+        keyence_measurement = self.keyence_measurement_list[screen_light_engine][
+            f"{x_offset}, {y_offset}"
         ]
         z_focus = base_focus + defocus_um + keyence_measurement
         self.galil_threads = move_all_galil(
