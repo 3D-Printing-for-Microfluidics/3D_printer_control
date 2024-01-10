@@ -104,18 +104,22 @@ class Wintech:
             repeat,
         )
         self.dmd_controller.set_led_power(led_power)
-        if exposure_time_ms > max_t:
-            self.log.warning("Exposure time is too high. Using maximum of 10 seconds.")
-            exposure_time_ms = max_t
-        elif min_t > exposure_time_ms:
-            self.log.warning("Exposure time is too low. Using minimum of 4 milliseconds.")
-            exposure_time_ms = min_t
-        self.led_on = True
+        
         if repeat == 0:
+            self.led_on = True
             self.dmd_controller.define_pattern(10000)
             self.dmd_controller.configure_pattern_LUT(repeat=repeat)
             self.dmd_controller.start_sequence()
         else:
+            if exposure_time_ms == 0:
+                return
+            if exposure_time_ms > max_t:
+                self.log.warning("Exposure time is too high. Using maximum of 10 seconds.")
+                exposure_time_ms = max_t
+            elif min_t > exposure_time_ms:
+                self.log.warning("Exposure time is too low. Using minimum of 4 milliseconds.")
+                exposure_time_ms = min_t
+            self.led_on = True
             self.dmd_controller.define_pattern(exposure_time_ms)
             self.dmd_controller.configure_pattern_LUT(repeat=repeat)
             self.dmd_controller.start_sequence()
