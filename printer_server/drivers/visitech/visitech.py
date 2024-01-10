@@ -100,6 +100,7 @@ class Visitech:
             i += 1
             try:  # attempt a new connection
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.socket.settimeout(10)
                 self.socket.connect((self.host, self.port))
                 self.connected = True
                 self.shutdown = shutdown
@@ -113,7 +114,6 @@ class Visitech:
             return False
 
         # register exit handlers
-        self.socket.settimeout(6)
         atexit.register(self.disconnect)
         self.log.info("Connected to Visitech light engine")
         return True
