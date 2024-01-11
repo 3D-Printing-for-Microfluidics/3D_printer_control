@@ -199,11 +199,6 @@ class PrintControl:
         # hardware handles
         self.galil = driver_handles.galil
         self.tiptilt = driver_handles.tiptilt
-        self.loadcell = driver_handles.loadcell
-
-        # loadcell graph variables
-        self.loadcell_running = False
-        self.loadcell_thread = None
 
         # folders relevant to printing
         self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
@@ -213,7 +208,6 @@ class PrintControl:
         # log files
         self.position_log = str(self.current_job / "position_data.csv")
         self.exposure_log = str(self.current_job / "exposure_data.log")
-        self.loadcell_log = str(self.current_job / "loadcell_data.csv")
         self.movement_log = str(self.current_job / "movement_data.csv")
         self.event_log = str(self.current_job / "event_log.csv")
 
@@ -260,14 +254,6 @@ class PrintControl:
             self._state = state
         else:
             raise ValueError(f"Invalid state: {state}")
-
-    def loadcell_graph_loop(self):
-        if not self.loadcell_running:
-            self.loadcell_running = True
-            while self.loadcell_running:
-                data = self.loadcell.get_current_data()
-                home.update_loadcell_graph({"data": data})
-                time.sleep(0.05)
 
     def load_print_job(self, job_id):
         """
@@ -331,11 +317,11 @@ class PrintControl:
         async_file_hander.set_enabled(True)
         async_file_hander.write(
             self.position_log,
-            "layer,duplicate,start_time,end_time,loadcell_start_index,",
+            "layer,duplicate,start_time,end_time,",
         )
         async_file_hander.write(
             self.position_log,
-            "loadcell_end_index,start_position,end_position,thickness_um,squeeze\n",
+            "start_position,end_position,thickness_um,squeeze\n",
         )
         async_file_hander.write(self.exposure_log, "")
         async_file_hander.write(self.event_log, "timestamp,event\n")
@@ -344,12 +330,7 @@ class PrintControl:
             async_file_hander.write(self.movement_log, f"{a} position_mm,")
             async_file_hander.write(self.movement_log, f"{a} status,")
         async_file_hander.write(self.movement_log, "\n")
-        async_file_hander.write(
-            self.loadcell_log, "system_time,loadcell_time,index,raw_data,newtons\n"
-        )
-        async_file_hander.start()
         self.galil.set_log_file(self.movement_log)
-        self.loadcell.set_log_file(self.loadcell_log)
 
     def get_position_settings(self, layer):
         """Return the position settings for the layer."""
@@ -448,92 +429,30 @@ class PrintControl:
 
         start_position = self.galil.getPosition(in_mm=True)
         start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        start_index = self.loadcell.get_current_loadcell_index()
         self.move_build_platform_up(position_settings)
         self.print_position -= layer_thickness
         self.move_build_platform_down(position_settings)
 
         force_squeeze = position_settings.get("Enable force squeeze", False)
-        squeeze_count = position_settings.get("Squeeze count", 1)
         if force_squeeze:
-            for _ in range(squeeze_count):
-                self.write_to_event_log("Start Force Squeeze")
-                self.squeeze_resin(position_settings, layer)
-                self.write_to_event_log("Finish Force Squeeze")
-                time.sleep(final_wait)
-        else:
-            time.sleep(final_wait)
+            self.force_squeeze(position_settings, layer)
+        time.sleep(final_wait)
+
         end_position = self.galil.getPosition(in_mm=True)
         end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        end_index = self.loadcell.get_current_loadcell_index()
         thickness = (end_position - start_position) * 1000
         async_file_hander.write(
             self.position_log,
-            f"{layer[0]},{layer[1]},{start_time},{end_time},{start_index},",
+            f"{layer[0]},{layer[1]},{start_time},{end_time},",
         )
         async_file_hander.write(
             self.position_log,
-            f"{end_index},{start_position},{end_position},{thickness},{force_squeeze}\n",
+            f"{start_position},{end_position},{thickness},{force_squeeze}\n",
         )
 
-    def squeeze_resin(self, position_settings, layer):
-        squeeze_target = position_settings["Squeeze force (N)"]
-        squeeze_wait = position_settings["Squeeze wait (ms)"] / 1000
-
-        first_count = self.move_bp_to_force(squeeze_target - 5, speed=0.5)
-        second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
-        third_count = self.move_bp_to_force(squeeze_target, speed=0.005)
-        count = first_count + second_count + third_count
-
-        log.info("Squeeze force reached %s steps", count)
-        log.info("Squeeze force: %s", self.loadcell.get_current_force())
-        log.info("Squeeze position: %s", self.galil.getPosition(in_mm=True))
-
-        if self.loadcell.get_current_force() > squeeze_target * 1.10:
-            log.warning("Move_to_force overshot target value.")
-
-        time.sleep(squeeze_wait)
-
-        self.galil.absMove(
-            mm=self.print_position,
-            speed=50,
-            acceleration=5,
-        )
-
-    def move_bp_to_force(
-        self, target_force, speed, acceleration=100, error_threshold=None
-    ):
-        """Move the build platform until the target force is achieved.
-
-        force - Target force.
-        speed - Speed in mm/sec. Negative speed means move up.
-        """
-        force = self.loadcell.get_current_force()
-        forces = []
-        count = 0
-        if (speed < 0 and force > target_force) or (speed > 0 and force < target_force):
-            self.galil.startJog(speed=speed, acceleration=acceleration)
-            while (speed < 0 and force > target_force) or (
-                speed > 0 and force < target_force
-            ):
-                time.sleep(0.01)
-                force = self.loadcell.get_current_force()
-                log.debug("Loadcell force: %s", force)
-                count += 1
-                forces.append(force)
-                if len(forces) <= 33:
-                    continue
-                forces.pop(0)
-
-                if error_threshold is not None:
-                    # print(f"{abs(forces[0] - forces[-1])}, {error_threshold}")
-                    if abs(forces[0] - forces[-1]) < error_threshold:
-                        self.galil.stopJog()
-                        time.sleep(0.02)
-                        return None
-            self.galil.stopJog()
-            time.sleep(0.02)
-        return count
+    def force_squeeze(self, position_settings, layer):
+        log.warn("Missing loadcell_control. Cannot force_squeeze")
+        return 0
 
     def get_focus(self):
         log.warn("Base printer_control class does not have a defined focus stage")
@@ -555,9 +474,6 @@ class PrintControl:
             
     def connect_hardware(self):
         ret = self.tiptilt.connect()
-        if not ret:
-            self.all_hardware_connected = False
-        ret = self.loadcell.connect()
         if not ret:
             self.all_hardware_connected = False
         ret = self.galil.connect(self.shutdown)
@@ -588,75 +504,19 @@ class PrintControl:
         self.galil.goToZmax()
 
     @run_in_thread("planarizing", "Planarization Step 1")
-    def planarization_step_1(self):
+    def planarization_step_1(self, run_in_thread=True):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
-            self.loadcell.start()
             self.galil.logging_start()
-            time.sleep(0.5)
-            if self.loadcell_thread is None:
-                home.clear_loadcell_graph()
-                self.loadcell_thread = Thread(log, name="print_control_loadcell_graph_thread", target=self.loadcell_graph_loop)
-                self.loadcell_thread.start()
-            loadcell_start_force = self.loadcell.get_current_force()
-            self.galil.goToZmin()
-            if config_dict["loadcell"]["loadcell_planarization_enabled"]:
-                log.debug("Loadcell force (pre-step 1): %s", loadcell_start_force)
-                target_force = config_dict["loadcell"]["loadcell_planarization_force"]
-                if (
-                    self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.25)
-                    is None
-                ):
-                    log.error("Did not reach target planarization force.")
-                    return
-                time.sleep(0.5)
-                log.info(
-                    "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
-                )
-            else:
-                # estimate a 2mm movement for planarization
-                self.galil.relMove(mm=2.0, speed=2.5)
+            # self.galil.goToZmin()
+            self.galil.absMove(speed=self.galil.getDefaultSpeed("Build Platform"), mm=self.galil.bottom_position-12)
+            self.galil.absMove(speed=0.5, mm=self.galil.bottom_position)
 
     @run_in_thread("planarized", "Planarization Step 2")
-    def planarization_step_2(self):
+    def planarization_step_2(self, run_in_thread=True):
         self.planarized_position = self.galil.getPosition(in_mm=True)
         self.print_position = self.planarized_position
-        """Raise the build platform to begin printing."""
-        if config_dict["loadcell"]["loadcell_planarization_enabled"]:
-            if self.state == "planarizing":
-                self.planarization_step_3()
-
-    def planarization_step_3(self):
-        """Raise the build platform to its starting postion.
-
-        This is accomplished by first moving up quickly until the
-        measured force is within 5 newtons of the target force, then
-        moving up more slowly until the measured force reaches the
-        target force.
-        """
-        target_force = config_dict["loadcell"]["loadcell_print_start_force"]
-        first_count = self.move_bp_to_force(
-            target_force + 5, speed=-0.5, error_threshold=2.5
-        )
-        if first_count is None:
-            log.error("Loadcell planarization failed. Check build platform screw.")
-            return
-        second_count = self.move_bp_to_force(target_force + 0.5, speed=-0.05)
-        third_count = self.move_bp_to_force(target_force, speed=-0.005)
-        count = first_count + second_count + third_count
-
-        log.info(
-            "Loadcell force post planarization: %s", self.loadcell.get_current_force()
-        )
-        log.debug("Loadcell position: %s", self.planarized_position)
-        self.planarized_position = self.galil.getPosition(in_mm=True)
-        self.print_position = self.planarized_position
-        log.info("Loadcell planarized %s steps", count)
-        log.info("Loadcell force (post-step 2): %s", self.loadcell.get_current_force())
-        log.info("Loadcell position (post-step 2): %s", self.planarized_position)
-        if self.loadcell.get_current_force() < target_force * 0.90:
-            log.warning("Move_to_force overshot target value")
 
     def start(self, job_id):
         """Do all preparatory work for a print, then start the printing
@@ -681,6 +541,7 @@ class PrintControl:
 
         # Start async_file_handler
         self.create_logs()
+        async_file_hander.start()
 
         position = get_last_calibration_positions_from_logs()
         # position = get_kdc_positions()
@@ -749,7 +610,6 @@ class PrintControl:
             acceleration=down_acceleration,
         )
         
-        self.loadcell.start()
         # update fontend
         self.state = "printing"
         msg = {
@@ -822,7 +682,6 @@ class PrintControl:
                 self.exposure_index += self.exposures_in_layer(layer)
                 continue  # skip previous layers if print was paused
             if self.printing_paused.is_set():
-                self.loadcell.pause()
                 break  # pause, don't do anything else
             if self.printing_stopped.is_set():
                 break  # pause, don't do anything else
@@ -948,12 +807,6 @@ class PrintControl:
     def finish_print(self):
         self.galil.logging_stop()
         self.galil.set_log_file(None)
-
-        self.loadcell.stop()
-        self.loadcell_running = False
-        self.loadcell_thread = None
-        home.clear_loadcell_graph()
-        self.loadcell.set_log_file(None)
 
         # update fontend, zip logs into archive in print_history, and update db entrty
         self.print_duration = datetime.now() - self.print_start_time

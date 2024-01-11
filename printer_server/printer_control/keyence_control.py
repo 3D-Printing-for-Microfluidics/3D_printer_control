@@ -22,9 +22,6 @@ class KeyenceControl(PrintControl):
         if not self.keyence.connected:
             self.all_hardware_connected = False
 
-    def initalize_hardware(self):
-        super().initalize_hardware()
-
     def update_measurement_progress(self):
         msg = {
             "percent": int(100 * self.measurement_index / self.measurement_count),

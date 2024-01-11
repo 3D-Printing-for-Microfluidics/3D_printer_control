@@ -5,9 +5,10 @@ from printer_server.printer_control.gpio_control import *
 from printer_server.printer_control.keyence_control import *
 from printer_server.printer_control.screen_control import *
 from printer_server.printer_control.kdc_control import *
+from printer_server.printer_control.loadcell_control import *
 
 
-class HR3v3u_PrintControl(KDCControl, VisitechControl):
+class HR3v3u_PrintControl(KDCControl, VisitechControl, LoadcellControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=False, top_level=False):
         if self.state == "uninitialized":
@@ -27,7 +28,7 @@ class HR3v3u_PrintControl(KDCControl, VisitechControl):
         self.galil.goToZmax()
         time.sleep(1.0)
 
-class HR4_PrintControl(VisitechControl, KeyenceControl):
+class HR4_PrintControl(VisitechControl, KeyenceControl, LoadcellControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=False, top_level=False):
         if self.state == "uninitialized":

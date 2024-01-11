@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 import logging
 import signal
 from flask import Blueprint, request, render_template
@@ -6,6 +8,12 @@ from flask_socketio import join_room, leave_room
 from printer_server.settings import Config
 from printer_server.models import PrintQueue
 from printer_server.extensions import socketio
+
+# Dynamically get hardware components
+configuration_path = Path(Config.PRINT_SERVER_FOLDER).rglob("hardware_configuration.json")
+with open(next(configuration_path), "r") as file_handle:
+    config_dict = json.load(file_handle)
+config_dict = config_dict[Config.HOSTNAME]
 
 blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static")
 log = logging.getLogger(__name__)
@@ -53,24 +61,30 @@ def index():
     if shutdown_handle is None:
         raise RuntimeError("Not running with the Werkzeug Server")
 
-    return render_template(
-        "home.html",
-        allJobs=allJobs,
-        hostname=Config.HOSTNAME,
-        graph_autoscale=print_control.loadcell.graph_autoscale,
-    )
-
+    if "loadcell" in config_dict.keys():
+        return render_template(
+            "home.html",
+            allJobs=allJobs,
+            hostname=Config.HOSTNAME,
+            graph_autoscale=print_control.loadcell.graph_autoscale,
+        )
+    else:
+        return render_template(
+            "home.html",
+            allJobs=allJobs,
+            hostname=Config.HOSTNAME
+        )
 
 def update_printer_state(state, msg):
     socketio.emit(state, msg, namespace="/printing", broadcast=True)
 
+if "loadcell" in config_dict.keys():
+    def clear_loadcell_graph():
+        socketio.emit("loadcell_graph_clear", namespace="/printing")
 
-def clear_loadcell_graph():
-    socketio.emit("loadcell_graph_clear", namespace="/printing")
 
-
-def update_loadcell_graph(msg):
-    socketio.emit("loadcell_graph_data", msg, namespace="/printing", room="loadcell")
+    def update_loadcell_graph(msg):
+        socketio.emit("loadcell_graph_data", msg, namespace="/printing", room="loadcell")
 
 
 def send_bootstrap_alert(msg):
@@ -152,15 +166,15 @@ def shutdown_exception(exception, trace):
     shutdown("critical")
 signal.signal(signal.SIGINT, shutdown_exception)
 
+if "loadcell" in config_dict.keys():
+    @socketio.on("request_loadcell_data", namespace="/printing")
+    def join_loadcell_room():
+        join_room("loadcell")
 
-@socketio.on("request_loadcell_data", namespace="/printing")
-def join_loadcell_room():
-    join_room("loadcell")
 
-
-@socketio.on("unrequest_loadcell_data", namespace="/printing")
-def leave_loadcell_room():
-    leave_room("loadcell")
+    @socketio.on("unrequest_loadcell_data", namespace="/printing")
+    def leave_loadcell_room():
+        leave_room("loadcell")
 
 
 @blueprint.route("handle-upload", methods=["POST"])

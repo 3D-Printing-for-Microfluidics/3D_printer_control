@@ -4,85 +4,89 @@ var delete_job_id;
 // List of pending files to handle when the Upload button is finally clicked.
 var PENDING_FILES = [];
 
-let loadcell_trace = {
-    x: [new Date()],
-    y: [0],
-    mode: 'lines',
-    name: "1",
-    type: "scattergl",
-    line: {
-        shape: 'spline',
-        color: 'rgb(255, 255, 255)'
-    }
-};
-var loadcell_traces = [loadcell_trace];
+let loadcell_exists = ((typeof graph_autoscale) === "object");
 
-function draw_loadcell_graph() {
-    var defaultPlotlyConfiguration = {
-        displayModeBar: false,
-        displaylogo: false,
-        scrollZoom: true,
-        showTips: false
-    };
-
-    var layout = {
-        xaxis: {
-            linecolor: 'white',
-            linewidth: 1,
-            mirror: true,
-            showticklabels: false
-        },
-        yaxis: {
-            ticksuffix: "",
-            range: [-50, 50],
-            autorange: graph_autoscale,
-            linecolor: 'white',
-            linewidth: 1,
-            mirror: true
-        },
-        margin: {
-            l: 40,
-            r: 20,
-            b: 40,
-            t: 20,
-            pad: 0
-        },
-        legend: {
-            x: 0,
-            y: 1,
-            traceorder: 'normal',
-            borderwidth: 2
-        },
-        autosize: true,
-        height: 250,
-        paper_bgcolor: '#222',
-        plot_bgcolor: '#222',
-        font: {
-            color: '#999'
+if (loadcell_exists) {
+    let loadcell_trace = {
+        x: [new Date()],
+        y: [0],
+        mode: 'lines',
+        name: "1",
+        type: "scattergl",
+        line: {
+            shape: 'spline',
+            color: 'rgb(255, 255, 255)'
         }
-    }
-    Plotly.plot('loadcell-data',
-        loadcell_traces,
-        layout, defaultPlotlyConfiguration);
+    };
+    var loadcell_traces = [loadcell_trace];
 
-}
+    function draw_loadcell_graph() {
+        var defaultPlotlyConfiguration = {
+            displayModeBar: false,
+            displaylogo: false,
+            scrollZoom: true,
+            showTips: false
+        };
 
-function update_loop(message) {
-    let data = message.data;
-    if (data != 0) {
-        data.forEach(
-            element => {
-                let time = new Date(element.timestamp);
-                let force = element.force;
-
-                Plotly.extendTraces('loadcell-data',
-                    {
-                        y: [[force]],
-                        x: [[time]]
-                    },
-                    [0], 800)
+        var layout = {
+            xaxis: {
+                linecolor: 'white',
+                linewidth: 1,
+                mirror: true,
+                showticklabels: false
+            },
+            yaxis: {
+                ticksuffix: "",
+                range: [-50, 50],
+                autorange: graph_autoscale,
+                linecolor: 'white',
+                linewidth: 1,
+                mirror: true
+            },
+            margin: {
+                l: 40,
+                r: 20,
+                b: 40,
+                t: 20,
+                pad: 0
+            },
+            legend: {
+                x: 0,
+                y: 1,
+                traceorder: 'normal',
+                borderwidth: 2
+            },
+            autosize: true,
+            height: 250,
+            paper_bgcolor: '#222',
+            plot_bgcolor: '#222',
+            font: {
+                color: '#999'
             }
-        )
+        }
+        Plotly.plot('loadcell-data',
+            loadcell_traces,
+            layout, defaultPlotlyConfiguration);
+
+    }
+
+    function update_loop(message) {
+        let data = message.data;
+        if (data != 0) {
+            data.forEach(
+                element => {
+                    let time = new Date(element.timestamp);
+                    let force = element.force;
+
+                    Plotly.extendTraces('loadcell-data',
+                        {
+                            y: [[force]],
+                            x: [[time]]
+                        },
+                        [0], 800)
+                }
+            )
+        }
     }
 }
 
@@ -248,8 +252,10 @@ $(document).ready(function () {
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/printing");
     socket.emit("connect");
 
-    // Set up Loadcell graph
-    draw_loadcell_graph();
+    if (loadcell_exists) {
+        // Set up Loadcell graph
+        draw_loadcell_graph();
+    }
 
     // Set up the drag/drop zone.
     initDropbox();
@@ -309,25 +315,27 @@ $(document).ready(function () {
         this.value = null
     });
 
-    var show_loadcell = function (btn) {
-        $("#toggle-loadcell").text("Hide loadcell data");
-        $("#collapseLoadcell").addClass('show');
-        socket.emit("request_loadcell_data");
-    };
+    if (loadcell_exists) {
+        var show_loadcell = function (btn) {
+            $("#toggle-loadcell").text("Hide loadcell data");
+            $("#collapseLoadcell").addClass('show');
+            socket.emit("request_loadcell_data");
+        };
 
-    var hide_loadcell = function (btn) {
-        $("#toggle-loadcell").text("Show loadcell data");
-        $("#collapseLoadcell").removeClass('show');
-        socket.emit("unrequest_loadcell_data");
-    };
+        var hide_loadcell = function (btn) {
+            $("#toggle-loadcell").text("Show loadcell data");
+            $("#collapseLoadcell").removeClass('show');
+            socket.emit("unrequest_loadcell_data");
+        };
 
-    $("#toggle-loadcell").on("click", function () {
-        if ($("#collapseLoadcell").hasClass("show")) {
-            hide_loadcell();
-        } else {
-            show_loadcell();
-        }
-    });
+        $("#toggle-loadcell").on("click", function () {
+            if ($("#collapseLoadcell").hasClass("show")) {
+                hide_loadcell();
+            } else {
+                show_loadcell();
+            }
+        });
+    }
 
     // Handle the submit button.
     $("#upload-btn").on("click", function (e) {
@@ -398,14 +406,18 @@ $(document).ready(function () {
     socket.on("stopped", function (message) {
         $("#printer-state").text("Stopped");
         show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
-        hide_loadcell();
+        if (loadcell_exists) {
+            hide_loadcell();
+        }
         $("#print-progress").addClass("d-none");
     });
 
     socket.on("completed", function (message) {
         $("#printer-state").text("Completed");
         show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
-        hide_loadcell();
+        if (loadcell_exists) {
+            hide_loadcell();
+        }
         $("#print-progress").addClass("d-none");
     });
 
@@ -432,7 +444,7 @@ $(document).ready(function () {
         var operation = $("#print-alert-title").text();
         var msg;
 
-        if (operation === "Start" || operation === "Planarization Step 1" || operation === "Planarization Step 2" || operation === "Resume") {
+        if (loadcell_exists && (operation === "Start" || operation === "Planarization Step 1" || operation === "Planarization Step 2" || operation === "Resume")) {
             show_loadcell();
         }
 
@@ -531,14 +543,16 @@ $(document).ready(function () {
         $("#printer-controls").before(flash_msg);
     });
 
-    socket.on("loadcell_graph_data", function (message) {
-        update_loop(message)
-    });
+    if (loadcell_exists) {
+        socket.on("loadcell_graph_data", function (message) {
+            update_loop(message)
+        });
 
-    socket.on("loadcell_graph_clear", function (message) {
-        Plotly.deleteTraces('loadcell-data', 0);
-        loadcell_trace["x"] = [new Date() - 750];
-        loadcell_trace["y"] = [0];
-        Plotly.addTraces('loadcell-data', loadcell_trace);
-    });
+        socket.on("loadcell_graph_clear", function (message) {
+            Plotly.deleteTraces('loadcell-data', 0);
+            loadcell_trace["x"] = [new Date() - 750];
+            loadcell_trace["y"] = [0];
+            Plotly.addTraces('loadcell-data', loadcell_trace);
+        });
+    }
 });
