@@ -437,6 +437,8 @@ class Galil:
                 limit_switch_triggered = True
                 wait_for_settling = False
                 self.log.info("Axis %s limit switch triggered during motion", a)
+                self.logging_move_status[a] = 3
+                break
 
         # self.logging_profile_complete = True
         self.logging_move_status[a] = 1
