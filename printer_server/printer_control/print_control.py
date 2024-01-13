@@ -112,20 +112,12 @@ class PrintControl:
     def __init__(self):
         self._state = "uninitialized"
 
-        # hardware handles
-        self.xy_stage = driver_handles.xy_stage
-        self.bp_stage = driver_handles.bp_stage
-        self.focus_stage = driver_handles.focus_stage
-        self.ttr_stage = driver_handles.ttr_stage
-        self.tiptilt = driver_handles.tiptilt
-
         # folders relevant to printing
         self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
         self.current_job = Path(Config.UPLOAD_FOLDER) / Path("current_job")
         self.print_history = Path(Config.UPLOAD_FOLDER) / Path("print_history")
 
         # log files
-        self.position_log = str(self.current_job / "position_data.csv")
         self.exposure_log = str(self.current_job / "exposure_data.log")
         self.event_log = str(self.current_job / "event_log.csv")
 
@@ -235,19 +227,8 @@ class PrintControl:
     def create_logs(self):
         # create logs and overwrite any pre-existing data
         async_file_hander.set_enabled(True)
-        async_file_hander.write(
-            self.position_log,
-            "layer,duplicate,start_time,end_time,",
-        )
-        async_file_hander.write(
-            self.position_log,
-            "start_position,end_position,thickness_um,squeeze\n",
-        )
         async_file_hander.write(self.exposure_log, "")
         async_file_hander.write(self.event_log, "timestamp,event\n")
-        self.xy_stage.setup_log_file(str(self.current_job))
-        self.focus_stage.setup_log_file(str(self.current_job))
-        self.bp_stage.setup_log_file(str(self.current_job))
 
     def get_position_settings(self, layer):
         """Return the position settings for the layer."""
@@ -305,67 +286,9 @@ class PrintControl:
             self.event_log, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},{msg}\n"
         )
 
-    def move_build_platform_up(self, position_settings):
-        """Moves the build platform up according to the position_settings"""
-        inital_wait = position_settings["Initial wait (ms)"] / 1000
-        up_distance = position_settings["Distance up (mm)"]
-        up_speed = position_settings["BP up speed (mm/sec)"]
-        up_acceleration = position_settings["BP up acceleration (mm/sec^2)"]
-
-        time.sleep(inital_wait)
-        self.write_to_event_log("Start Up Movement")
-        self.bp_stage.absMoveBP(
-            mm=self.print_position - up_distance,
-            speed=up_speed,
-            acceleration=up_acceleration,
-            wait_for_settling=False
-        )
-        self.write_to_event_log("Finish Up Movement")
-
-    def move_build_platform_down(self, position_settings):
-        """Moves the build platform down according to the position_settings"""
-        up_wait = position_settings["Up wait (ms)"] / 1000
-        down_speed = position_settings["BP down speed (mm/sec)"]
-        down_acceleration = position_settings["BP down acceleration (mm/sec^2)"]
-
-        time.sleep(up_wait)
-        self.write_to_event_log("Start Down Movement")
-        self.bp_stage.absMoveBP(
-            mm=self.print_position,
-            speed=down_speed,
-            acceleration=down_acceleration,
-        )
-        self.write_to_event_log("Finish Down Movement")
-
     def move_build_platform(self, position_settings, layer):
-        """Perform the build platform movements for a layer according to
-        the position_settings.
-        """
-        final_wait = position_settings["Final wait (ms)"] / 1000
-        layer_thickness = position_settings["Layer thickness (um)"] / 1000
-
-        start_position = self.bp_stage.getBPPosition()
-        start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        self.move_build_platform_up(position_settings)
-        self.print_position -= layer_thickness
-        self.move_build_platform_down(position_settings)
-
-        force_squeeze = position_settings.get("Enable force squeeze", False)
-        if force_squeeze:
-            self.force_squeeze(position_settings, layer)
-        time.sleep(final_wait)
-
-        end_position = self.bp_stage.getBPPosition()
-        end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        thickness = (end_position - start_position) * 1000
-        async_file_hander.write(
-            self.position_log,
-            f"{layer[0]},{layer[1]},{start_time},{end_time},",
-        )
-        async_file_hander.write(
-            self.position_log,
-            f"{start_position},{end_position},{thickness},{force_squeeze}\n",
-        )
+        log.warn("Base printer_control class does not have a defined bp stage. Cannot move bp")
+        return 0
 
     def force_squeeze(self, position_settings, layer):
         log.warn("Missing loadcell_control. Cannot force_squeeze")
@@ -390,60 +313,19 @@ class PrintControl:
         return False
             
     def connect_hardware(self):
-        ret = self.tiptilt.connect()
-        if not ret:
-            self.all_hardware_connected = False
-        xy_thread = Thread(log, name="xy_control_setup_thread", target=self.xy_stage.connect, args=[self.shutdown])
-        focus_thread = Thread(log, name="focus_control_setup_thread", target=self.focus_stage.connect, args=[self.shutdown])
-        bp_thread = Thread(log, name="bp_control_setup_thread", target=self.bp_stage.connect, args=[self.shutdown])
-        xy_thread.start()
-        focus_thread.start()
-        bp_thread.start()
-        xy_thread.join()
-        if not self.xy_stage.connected:
-            self.all_hardware_connected = False
-        focus_thread.join()
-        if not self.focus_stage.connected:
-            self.all_hardware_connected = False
-        bp_thread.join()
-        if not self.bp_stage.connected:
-            self.all_hardware_connected = False
+        pass
 
     def initalize_hardware(self):
-        x_pos = self.coord_systems["visitech"]["X"]
-        y_pos = self.coord_systems["visitech"]["Y"]
-        focus_pos = self.coord_systems["visitech"]["Focus"]
-        bp_pos = self.bp_stage.top_position
-
-        xy_threads = self.xy_stage.initialize_and_positionXY(x_pos, y_pos, join=False)
-        focus_thread = self.focus_stage.initialize_and_positionFocus(focus_pos, join=False)
-        bp_thread = self.bp_stage.initialize_and_positionBP(bp_pos, join=False)
-        for thread in xy_threads:
-            if thread is not None:
-                thread.join()
-        if focus_thread is not None:
-            focus_thread.join()
-        if bp_thread is not None:
-            bp_thread.join()
-        self.xy_stage.initialized = True
-        self.focus_stage.initialized = True
-        self.bp_stage.initialized = True
+        pass
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarization_step_1(self, run_in_thread=True):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
-            self.xy_stage.logging_start()
-            self.focus_stage.logging_start()
-            self.bp_stage.logging_start()
-            # self.bp_stage.goToBPmin()
-            self.bp_stage.absMoveBP(mm=self.bp_stage.bottom_position-12)
-            self.bp_stage.absMoveBP(mm=self.bp_stage.bottom_position, speed=0.5)
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self, run_in_thread=True):
-        self.planarized_position = self.bp_stage.getBPPosition()
         self.print_position = self.planarized_position
 
     def start(self, job_id):
@@ -521,23 +403,6 @@ class PrintControl:
             return
         log.info("Resuming print...")
 
-        layer = self.layer_map[self.next_layer-1]
-        current_layer_settings = self.print_settings["Layers"][layer[0]]
-        position_settings = self.get_position_settings(current_layer_settings)
-        layer_thickness = position_settings["Layer thickness (um)"] / 1000
-        down_speed = position_settings["BP down speed (mm/sec)"]
-        down_acceleration = position_settings["BP down acceleration (mm/sec^2)"]
-
-        self.print_position = self.paused_position
-        self.paused_position = None
-
-        self.bp_stage.absMoveBP(mm=self.print_position-layer_thickness)
-        self.bp_stage.absMoveBP(
-            mm=self.print_position,
-            speed=down_speed,
-            acceleration=down_acceleration,
-        )
-        
         # update fontend
         self.state = "printing"
         msg = {
@@ -593,10 +458,6 @@ class PrintControl:
 
         self.pre_print_tasks()
 
-        # move build platform to the starting position if this is the first layer
-        if self.next_layer == 0:
-            self.bp_stage.absMoveBP(mm=self.planarized_position)
-
         # update frontend message pane and progress bar
         msg = {
             "percent": int(100 * self.exposure_index / self.exposure_count),
@@ -617,10 +478,6 @@ class PrintControl:
 
             # process layer
             self.layer_worker(i, layer)
-
-        # set paused position
-        if self.printing_paused.is_set():
-            self.paused_position = self.bp_stage.getBPPosition()
 
         self.post_print_tasks()
 
@@ -733,12 +590,6 @@ class PrintControl:
         }
 
     def finish_print(self):
-        self.xy_stage.logging_stop()
-        self.focus_stage.logging_stop()
-        self.bp_stage.logging_stop()
-        self.xy_stage.setup_log_file(None)
-        self.focus_stage.setup_log_file(None)
-        self.bp_stage.setup_log_file(None)
         # update fontend, zip logs into archive in print_history, and update db entrty
         self.print_duration = datetime.now() - self.print_start_time
         with self.app.app_context():

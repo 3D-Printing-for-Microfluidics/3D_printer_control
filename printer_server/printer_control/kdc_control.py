@@ -68,11 +68,10 @@ class KDCControl(PrintControl):
 
     def connect_hardware(self):
         self.kdc.connect()
+        super().connect_hardware()
         if self.kdc.port is None:
             self.all_hardware_connected = False
-        super().connect_hardware()
         
-
     def initalize_hardware(self):
         self.kdc_thread = Thread(log, name="kdc_control_setup_thread", target=self.kdc_setup_thread, args=[])
         self.kdc_thread.start()

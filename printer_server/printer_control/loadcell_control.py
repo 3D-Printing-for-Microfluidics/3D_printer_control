@@ -162,8 +162,8 @@ class LoadcellControl(GalilControl):
             log.warning("Move_to_force overshot target value")
 
     def connect_hardware(self):
-        super().connect_hardware()
         loadcell_ret = self.loadcell.connect()
+        super().connect_hardware()
         if not loadcell_ret:
             self.all_hardware_connected = False
 

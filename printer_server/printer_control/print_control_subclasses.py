@@ -16,16 +16,6 @@ class HR3v3u_PrintControl(KDCControl, VisitechControl, LoadcellControl):
             if top_level and self.all_hardware_connected:
                 log.info("Printer initialized, all hardware ready.")
 
-    def post_print_tasks(self):
-        """Move BP stage up 'Distance up (mm)'' then to top"""
-        super().post_print_tasks()
-        defaults_layer_settings = self.print_settings.get("Default layer settings")
-        default_position_settings = defaults_layer_settings.get("Position settings")
-
-        self.move_build_platform_up(default_position_settings)
-        self.bp_stage.goToBPmax()
-        time.sleep(1.0)
-
 class HR4_PrintControl(VisitechControl, KeyenceControl, LoadcellControl):
     @run_in_thread("initialized", "Initialize")
     def initialize(self, run_in_thread=False, top_level=False):
@@ -40,49 +30,6 @@ class HR4_PrintControl(VisitechControl, KeyenceControl, LoadcellControl):
         self.default_position_settings = None
         self.default_x_offset = None
         self.default_y_offset = None
-
-    def get_focus(self):
-        """Return 'Focus' axis position in um"""
-        return int(
-            self.focus_stage.getFocusPosition() * 1000
-        )
-
-    def galil_finalize_setup_thread(self):
-        x_pos = self.coord_systems["visitech"]["X"]
-        y_pos = self.coord_systems["visitech"]["Y"]
-        focus_pos = self.coord_systems["visitech"]["Focus"]
-        bp_pos = self.bp_stage.top_position
-        xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
-        focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False)
-        bp_thread = self.focus_stage.threadedBPMove(log, bp_pos, join=False)
-        for thread in xy_threads:
-            if thread is not None:
-                thread.join()
-        if focus_thread is not None:
-            focus_thread.join()
-        if bp_thread is not None:
-            bp_thread.join()
-
-    def post_print_tasks(self):
-        """Move all galil stages to their starting positions"""
-        super().post_print_tasks()
-
-        self.move_build_platform_up(self.default_position_settings)
-
-        x_pos = self.coord_systems["visitech"]["X"]
-        y_pos = self.coord_systems["visitech"]["Y"]
-        focus_pos = self.coord_systems["visitech"]["Focus"]
-        bp_pos = self.bp_stage.top_position
-        xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False, speed_x=None, speed_y=None, acceleration_x=None, acceleration_y=None)
-        focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False, speed=None, acceleration=None)
-        bp_thread = self.focus_stage.threadedBPMove(log, bp_pos, join=False, speed=None, acceleration=None)
-        for thread in xy_threads:
-            if thread is not None:
-                thread.join()
-        if focus_thread is not None:
-            focus_thread.join()
-        if bp_thread is not None:
-            bp_thread.join()
 
 class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
     @run_in_thread("initialized", "Initialize")
