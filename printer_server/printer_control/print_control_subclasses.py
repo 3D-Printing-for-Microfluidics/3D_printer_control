@@ -62,9 +62,9 @@ class HR4_PrintControl(VisitechControl, KeyenceControl, LoadcellControl):
         move_all_galil(
             log,
             self.galil,
-            self.coord_systems["light_engine"]["visitech"]["X"],
-            self.coord_systems["light_engine"]["visitech"]["Y"],
-            self.coord_systems["light_engine"]["visitech"]["Focus"],
+            self.coord_systems["light_engine"]["visitech"]["X"]*1000,
+            self.coord_systems["light_engine"]["visitech"]["Y"]*1000,
+            self.coord_systems["light_engine"]["visitech"]["Focus"]*1000,
             self.galil.top_position * 1000,
         )
 
@@ -76,9 +76,9 @@ class HR4_PrintControl(VisitechControl, KeyenceControl, LoadcellControl):
         move_all_galil(
             log,
             self.galil,
-            self.coord_systems["light_engine"]["visitech"]["X"],
-            self.coord_systems["light_engine"]["visitech"]["Y"],
-            self.coord_systems["light_engine"]["visitech"]["Focus"],
+            self.coord_systems["light_engine"]["visitech"]["X"]*1000,
+            self.coord_systems["light_engine"]["visitech"]["Y"]*1000,
+            self.coord_systems["light_engine"]["visitech"]["Focus"]*1000,
             self.galil.top_position * 1000,
         )
 
@@ -134,9 +134,9 @@ class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
     #                 time.sleep(0.1)
     #                 move_all_galil(
     #                     self.galil,
-    #                     self.coord_systems["keyence"][light_engine]["X"] + x_offset,
-    #                     self.coord_systems["keyence"][light_engine]["Y"] + y_offset,
-    #                     self.coord_systems["keyence"][light_engine]["Focus"],
+    #                     self.coord_systems[f"keyence_{light_engine}"]["X"] + x_offset,
+    #                     self.coord_systems[f"keyence_{light_engine}"]["Y"] + y_offset,
+    #                     self.coord_systems[f"keyence_{light_engine}"]["Focus"],
     #                     None,
     #                 )
     #                 if step_size == 1000.0:
@@ -170,7 +170,7 @@ class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
     #                 edges[light_engine][axis][direction_indx] = (
     #                     self.galil.getPosition(in_mm=True, axis=axis)
     #                     * 1000
-    #                     - self.coord_systems["keyence"][light_engine][axis]
+    #                     - self.coord_systems[f"keyence_{light_engine}"][axis]
     #                 )
 
     #                 self.galil.stopJog(axis=axis)
@@ -183,10 +183,10 @@ class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
     #                 - edges["wintech"][axis][direction_indx]
     #             )
 
-    #     self.coord_systems["keyence"]["visitech"]["X"] += edges["diff"]["X"][1]
-    #     self.coord_systems["keyence"]["visitech"]["Y"] += edges["diff"]["Y"][1]
-    #     self.coord_systems["light_engine"]["visitech"]["X"] += edges["diff"]["X"][1]
-    #     self.coord_systems["light_engine"]["visitech"]["Y"] += edges["diff"]["Y"][1]
+    #     self.coord_systems["keyence_visitech"]["X"] += edges["diff"]["X"][1]
+    #     self.coord_systems["keyence_visitech"]["Y"] += edges["diff"]["Y"][1]
+    #     self.coord_systems["visitech"]["X"] += edges["diff"]["X"][1]
+    #     self.coord_systems["visitech"]["Y"] += edges["diff"]["Y"][1]
 
     # def galil_setup_thread(self):
     #     """Initialize and home Galil controller"""
@@ -200,7 +200,7 @@ class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
                 self.galil,
                 None,
                 None,
-                self.coord_systems["keyence"][light_engine]["Focus"],
+                self.coord_systems["keyence"][light_engine]["Focus"]*1000,
                 None,
             )
             time.sleep(1.0)

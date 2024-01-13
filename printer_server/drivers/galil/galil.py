@@ -37,9 +37,9 @@ class Galil:
         self.ctspmm = config_dict["axes_ctspmm"]
         self.default_speed = config_dict["axes_speed"]
         self.default_acceleration = config_dict["axes_acceleration"]
-        self.calibration_position = self.cntsToMm(config_dict["calibration_position"], axis="Build Platform")
-        self.bottom_position = self.cntsToMm(config_dict["bottom_position"], axis="Build Platform")
-        self.top_position = self.cntsToMm(config_dict["top_position"], axis="Build Platform")
+        self.calibration_position = config_dict["calibration_position"]
+        self.bottom_position = config_dict["bottom_position"]
+        self.top_position = config_dict["top_position"]
         self.tolerence = config_dict["axes_tolerance"]
 
         self.homed = {}
@@ -115,15 +115,15 @@ class Galil:
             self.motorOn(axis)
 
     def goToZcalibration(self):
-        self.absMove(speed=self.getDefaultSpeed("Build Platform"), mm=self.calibration_position, axis="Build Platform")
+        self.absMove(mm=self.calibration_position, axis="Build Platform")
         return self.getPosition(in_mm=True)
 
     def goToZmax(self):
-        self.absMove(speed=self.getDefaultSpeed("Build Platform"), mm=self.top_position, axis="Build Platform")
+        self.absMove(mm=self.top_position, axis="Build Platform")
         return self.getPosition(in_mm=True)
 
     def goToZmin(self):
-        self.absMove(speed=self.getDefaultSpeed("Build Platform"), mm=self.bottom_position, axis="Build Platform")
+        self.absMove(mm=self.bottom_position, axis="Build Platform")
         return self.getPosition(in_mm=True)
 
     def connect(self, shutdown):

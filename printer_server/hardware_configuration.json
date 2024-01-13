@@ -29,9 +29,9 @@
             "axes_acceleration": {
                 "A": 50
             },
-            "calibration_position": 23200,
-            "bottom_position": 323913,
-            "top_position": -400000
+            "calibration_position": 2.9,
+            "bottom_position": 40.489125,
+            "top_position": -50
         },
         "kdc101": {
             "dummy": false
@@ -100,9 +100,9 @@
             "axes_acceleration": {
                 "A": 50
             },
-            "calibration_position": 75041,
-            "bottom_position": 322272,
-            "top_position": -400000
+            "calibration_position": 9.380125,
+            "bottom_position": 40.284,
+            "top_position": -50
         },
         "kdc101": {
             "dummy": false
@@ -190,9 +190,9 @@
                 "C": 50,
                 "D": 50
             },
-            "calibration_position": 2315000,
-            "bottom_position": 2400000,
-            "top_position": -2600000,
+            "calibration_position": 45.2148438,
+            "bottom_position": 46.875,
+            "top_position": -50,
             "coord_systems": {
                 "global": {
                     "X": 0,
@@ -201,27 +201,27 @@
                     "Build Platform": 0
                 },
                 "visitech": {
-                    "X": -120268,
-                    "Y": -14440,
-                    "Focus": 47385,
+                    "X": -120.268,
+                    "Y": -14.440,
+                    "Focus": 47.385,
                     "Build Platform": 0
                 },
                 "wintech": {
-                    "X": 139680,
-                    "Y": -8000,
-                    "Focus": 47385,
+                    "X": 139.680,
+                    "Y": -8.000,
+                    "Focus": 47.385,
                     "Build Platform": 0
                 },
                 "keyence_visitech": {
-                    "X": -69181,
-                    "Y": -1701,
-                    "Focus": 46131,
+                    "X": -69.181,
+                    "Y": -1.701,
+                    "Focus": 46.131,
                     "Build Platform": 0
                 },
                 "keyence_wintech": {
-                    "X": 103485,
-                    "Y": -4255,
-                    "Focus": 46597,
+                    "X": 103.485,
+                    "Y": -4.255,
+                    "Focus": 46.597,
                     "Build Platform": 0
                 }
             }
@@ -328,9 +328,9 @@
                 "C": 50,
                 "D": 50
             },
-            "calibration_position": 1491842,
-            "bottom_position": 2234317,
-            "top_position": -2600000,
+            "calibration_position": 29.1375391,
+            "bottom_position": 43.6390039,
+            "top_position": -50,
             "coord_systems": {
                 "global": {
                     "X": 0,
@@ -340,14 +340,14 @@
                 },
                 "visitech": {
                     "X": 0,
-                    "Y": 8000,
-                    "Focus": 2189,
+                    "Y": 8.000,
+                    "Focus": 2.189,
                     "Build Platform": 0
                 },
                 "keyence_visitech": {
-                    "X": 47,
-                    "Y": -24424,
-                    "Focus": -211,
+                    "X": 0.047,
+                    "Y": -24.424,
+                    "Focus": -0.211,
                     "Build Platform": 0
                 }
             }

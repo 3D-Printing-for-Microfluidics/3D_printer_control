@@ -84,12 +84,13 @@ class KeyenceControl(PrintControl):
             move_all_galil(
                 log,
                 self.galil,
-                self.default_x_offset + self.coord_systems["keyence"][light_engine]["X"],
-                self.default_y_offset + self.coord_systems["keyence"][light_engine]["Y"],
-                self.coord_systems["keyence"][light_engine]["Focus"],
+                self.default_x_offset + self.coord_systems["keyence"][light_engine]["X"]*1000,
+                self.default_y_offset + self.coord_systems["keyence"][light_engine]["Y"]*1000,
+                self.coord_systems["keyence"][light_engine]["Focus"]*1000,
                 None,
             )
             time.sleep(5.0)
+
             # get keyence reading
             temp_position = float(
                 self.keyence.read_all()[
@@ -104,7 +105,7 @@ class KeyenceControl(PrintControl):
                 self.galil,
                 None,
                 None,
-                self.coord_systems["keyence"][light_engine]["Focus"]
+                self.coord_systems["keyence"][light_engine]["Focus"]*1000
                 + (start_position - temp_position),
                 None,
             )
@@ -118,7 +119,7 @@ class KeyenceControl(PrintControl):
                 self.galil.getPosition(in_mm=True, axis="Focus")* 1000
             )
             focus_drift = (
-                self.coord_systems["keyence"][light_engine]["Focus"] - current_position
+                self.coord_systems[f"keyence_{light_engine}"]["Focus"] * 1000 - current_position
             )
             self.write_to_event_log(
                 f"{light_engine.capitalize()} Keyence Measured Position: {temp_position}"
@@ -127,9 +128,9 @@ class KeyenceControl(PrintControl):
                 f"{light_engine.capitalize()} Keyence Drift: {focus_drift}"
             )
 
-            self.coord_systems["keyence"][light_engine]["Focus"] = current_position
-            self.coord_systems["light_engine"][light_engine]["Focus"] = (
-                self.coord_systems["light_engine"][light_engine]["Focus"] - focus_drift
+            self.coord_systems[f"keyence_{light_engine}"]["Focus"] = current_position/1000
+            self.coord_systems[light_engine]["Focus"] = (
+                self.coord_systems[light_engine]["Focus"] - focus_drift/1000
             )
 
             # get keyence offsets
@@ -144,14 +145,15 @@ class KeyenceControl(PrintControl):
                     log,
                     self.galil,
                     x_offset
-                    + self.coord_systems["keyence"][light_engine]["X"],
+                    + self.coord_systems["keyence"][light_engine]["X"]*1000,
                     y_offset
-                    + self.coord_systems["keyence"][light_engine]["Y"],
+                    + self.coord_systems["keyence"][light_engine]["Y"]*1000,
                     None,
                     None,
                     # speed_x=25,
                 )
                 time.sleep(5.0)
+
                 keyence_position = float(
                     self.keyence.read_all()[
                         keyence_indexes[light_engine]["measurement_index"] + 1
@@ -183,7 +185,7 @@ class KeyenceControl(PrintControl):
         y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
 
         # keyence correction
-        base_focus = self.coord_systems["light_engine"][screen_light_engine]["Focus"]
+        base_focus = self.coord_systems[screen_light_engine]["Focus"] * 1000
         keyence_measurement = self.keyence_measurement_list[screen_light_engine][
             f"{x_offset}, {y_offset}"
         ]
@@ -191,8 +193,8 @@ class KeyenceControl(PrintControl):
         self.galil_threads = move_all_galil(
             log,
             self.galil,
-            x_offset + self.coord_systems["light_engine"][screen_light_engine]["X"],
-            y_offset + self.coord_systems["light_engine"][screen_light_engine]["Y"],
+            x_offset + self.coord_systems["light_engine"][screen_light_engine]["X"]*1000,
+            y_offset + self.coord_systems["light_engine"][screen_light_engine]["Y"]*1000,
             z_focus,
             None,
             join=False,
