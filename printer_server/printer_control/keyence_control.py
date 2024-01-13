@@ -8,7 +8,7 @@ def get_keyence_set_position(sensor):
     return get_last_calibration_positions_from_logs()[f"keyence_{sensor}"]
 
 
-class KeyenceControl(PrintControl):
+class KeyenceControl(GalilControl):
     def __init__(self):
         super().__init__()
         self.keyence = driver_handles.keyence
@@ -81,14 +81,16 @@ class KeyenceControl(PrintControl):
                 f"{light_engine.capitalize()} Keyence Target Position: {start_position}"
             )
             # goto position
-            move_all_galil(
-                log,
-                self.galil,
-                self.default_x_offset + self.coord_systems["keyence"][light_engine]["X"]*1000,
-                self.default_y_offset + self.coord_systems["keyence"][light_engine]["Y"]*1000,
-                self.coord_systems["keyence"][light_engine]["Focus"]*1000,
-                None,
-            )
+            x_pos = self.default_x_offset/1000 + self.coord_systems[f"keyence_{light_engine}"]["X"]
+            y_pos = self.default_y_offset/1000 + self.coord_systems[f"keyence_{light_engine}"]["Y"]
+            focus_pos = self.coord_systems[f"keyence_{light_engine}"]["Focus"]
+            xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
+            focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False)
+            for thread in xy_threads:
+                if thread is not None:
+                    thread.join()
+            if focus_thread is not None:
+                focus_thread.join()
             time.sleep(5.0)
 
             # get keyence reading
@@ -100,26 +102,20 @@ class KeyenceControl(PrintControl):
 
             self.update_measurement_progress()
 
-            move_all_galil(
-                log,
-                self.galil,
-                None,
-                None,
-                self.coord_systems["keyence"][light_engine]["Focus"]*1000
-                + (start_position - temp_position),
-                None,
-            )
+            focus_pos = self.coord_systems[f"keyence_{light_engine}"]["Focus"] + (start_position - temp_position)/1000
+            self.focus_stage.absMoveFocus(focus_pos):
             time.sleep(1.0)
+
             temp_position = float(
                 self.keyence.read_all()[
                     keyence_indexes[light_engine]["measurement_index"] + 1
                 ]
             )
             current_position = (
-                self.galil.getPosition(in_mm=True, axis="Focus")* 1000
+                self.focus_stage.getFocusPosition()
             )
             focus_drift = (
-                self.coord_systems[f"keyence_{light_engine}"]["Focus"] * 1000 - current_position
+                self.coord_systems[f"keyence_{light_engine}"]["Focus"] * 1000 - current_position * 1000
             )
             self.write_to_event_log(
                 f"{light_engine.capitalize()} Keyence Measured Position: {temp_position}"
@@ -128,7 +124,7 @@ class KeyenceControl(PrintControl):
                 f"{light_engine.capitalize()} Keyence Drift: {focus_drift}"
             )
 
-            self.coord_systems[f"keyence_{light_engine}"]["Focus"] = current_position/1000
+            self.coord_systems[f"keyence_{light_engine}"]["Focus"] = current_position
             self.coord_systems[light_engine]["Focus"] = (
                 self.coord_systems[light_engine]["Focus"] - focus_drift/1000
             )
@@ -141,17 +137,9 @@ class KeyenceControl(PrintControl):
 
                 self.update_measurement_progress()
 
-                move_all_galil(
-                    log,
-                    self.galil,
-                    x_offset
-                    + self.coord_systems["keyence"][light_engine]["X"]*1000,
-                    y_offset
-                    + self.coord_systems["keyence"][light_engine]["Y"]*1000,
-                    None,
-                    None,
-                    # speed_x=25,
-                )
+                x_pos = x_offset/1000 + self.coord_systems[f"keyence_{light_engine}"]["X"]
+                y_pos = y_offset/1000 + self.coord_systems[f"keyence_{light_engine}"]["Y"]
+                self.xy_stage.threadedXYMove(log, x_pos, y_pos)
                 time.sleep(5.0)
 
                 keyence_position = float(
@@ -190,22 +178,21 @@ class KeyenceControl(PrintControl):
             f"{x_offset}, {y_offset}"
         ]
         z_focus = base_focus + defocus_um + keyence_measurement
-        self.galil_threads = move_all_galil(
-            log,
-            self.galil,
-            x_offset + self.coord_systems["light_engine"][screen_light_engine]["X"]*1000,
-            y_offset + self.coord_systems["light_engine"][screen_light_engine]["Y"]*1000,
-            z_focus,
-            None,
-            join=False,
-            # speed_x=25,
-        )
+
+        x_pos = x_offset + self.coord_systems[screen_light_engine]["X"]
+        y_pos =  y_offset + self.coord_systems[screen_light_engine]["Y"]
+        focus_pos = z_focus/1000
+        self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
+        self.focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False)
 
         super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, settings, light_engine):
         """Join X, Y, and Focus threads"""
-        for thread in self.galil_threads:
+        for thread in self.xy_threads:
             if thread is not None:
                 thread.join()
+        if self.focus_thread is not None:
+            self.focus_thread.join()
+
         return super().pre_exposure_joins(settings, light_engine)

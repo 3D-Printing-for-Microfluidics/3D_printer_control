@@ -4,6 +4,7 @@ import threading
 import time
 import atexit
 import logging
+from pathlib import Path
 from datetime import datetime
 import gclib
 from printer_server.async_file_handler import async_file_hander
@@ -65,7 +66,8 @@ class Galil:
             self.logging_move_status[a] = -1
             self.current_position[a] = 0
 
-        self.connected = False
+        self.connected = None
+        self.initalized = None
 
         self.g = gclib.py()
 
@@ -128,33 +130,35 @@ class Galil:
 
     def connect(self, shutdown):
         """Find the first Galil controller and connect to it."""
-        self.log.info("Searching for %s controller...", self.controller_name)
-        available = self.g.GAddresses()
-        self.address = None
-        for address in sorted(available.keys()):
-            if self.controller_name in available[address]:
-                self.address = address.strip("()").strip("-d")
-                self.controller_name = available[address]
-                self.log.debug("Found %s at %s", available[address], self.address)
-                self.log.info(
-                    "Connecting to %s at %s", self.controller_name, self.address
-                )
-                self.g.GOpen(f"{self.address} --direct")
-                self.log.debug("GInfo returned: %s", self.g.GInfo())
-                self.connected = True
-                self.thread_running = True
-                self.thread.start()
-                atexit.register(self.disconnect)
-                self.log.info("Connected to Galil controller")
-                self.shutdown = shutdown
-                return True
-        msg = f"Galil controller not found! ({self.controller_name})"
-        self.log.critical(msg)
-        return False
+        if self.connected is None:
+            self.connected = False
+            self.log.info("Searching for %s controller...", self.controller_name)
+            available = self.g.GAddresses()
+            self.address = None
+            for address in sorted(available.keys()):
+                if self.controller_name in available[address]:
+                    self.address = address.strip("()").strip("-d")
+                    self.controller_name = available[address]
+                    self.log.debug("Found %s at %s", available[address], self.address)
+                    self.log.info(
+                        "Connecting to %s at %s", self.controller_name, self.address
+                    )
+                    self.g.GOpen(f"{self.address} --direct")
+                    self.log.debug("GInfo returned: %s", self.g.GInfo())
+                    self.connected = True
+                    self.thread_running = True
+                    self.thread.start()
+                    atexit.register(self.disconnect)
+                    self.log.info("Connected to Galil controller")
+                    self.shutdown = shutdown
+                    return True
+            msg = f"Galil controller not found! ({self.controller_name})"
+            self.log.critical(msg)
+            return False
 
     def disconnect(self):
         """Disconnect form the Galil controller."""
-        if self.connected is not False:
+        if self.connected is not None and self.connected is not False:
             self.thread_running = False
             try:
                 self.thread.join()
@@ -163,7 +167,8 @@ class Galil:
             self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
             self.thread.daemon = True
             try:
-                self.connected = False
+                self.connected = None
+                self.initialized = None
                 self.g.GClose()
                 self.log.info("Disconnected from Galil controller (%s)", self.controller_name)
             except self.gclib_error as e:
@@ -269,7 +274,7 @@ class Galil:
         a = self.convertAxis(axis)
         self.send(f"SP{a}={speed * self.ctspmm[a]}")
 
-    def home(self, axis=None):
+    def home(self):
         """Run the homing routine.
 
         The homing routine begins by jogging up until the limit switch
@@ -278,7 +283,7 @@ class Galil:
         """
         if "DMC31010" in self.controller_name:
             self.log.info("Start homing...")
-            a = self.convertAxis(axis)
+            a = self.convertAxis()
             self.setSpeed(10)
             self.motorOn()
             self.startJog(speed=-15, acceleration=50)
@@ -305,6 +310,10 @@ class Galil:
                 self.motionPlanningComplete(axis=a)
                 self.homed[a] = True  # update class homed status
             self.log.info("Homing complete.")
+
+        for a in self.axes:
+            self.setSpeed(self.getDefaultSpeed(a), axis=a)
+            self.setAcceleration(self.getDefaultAcceleration(a), axis=a)
 
     # pylint: disable=too-many-arguments
     def relMove(self, mm=None, cnts=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
@@ -472,9 +481,17 @@ class Galil:
         # self.logging_move_complete = True
         self.logging_move_status[a] = 2
 
-    def set_log_file(self, filename):
+    def setup_log_file(self, filename):
         """Set the log file."""
-        self.movement_log = filename
+        if self.movement_log is None and filename is not None:
+            self.movement_log = str(Path(filename) / "galil_movement_data.csv")
+            async_file_hander.write(self.movement_log, "timestamp,")
+            for a in self.galil.axes_common_names:
+                async_file_hander.write(self.movement_log, f"{a} position_mm,")
+                async_file_hander.write(self.movement_log, f"{a} status,")
+            async_file_hander.write(self.movement_log, "\n")
+        elif self.movement_log is not None and filename is None:
+            self.movement_log = None
 
     def logging_start(self):
         """
@@ -519,7 +536,7 @@ class Galil:
         This will leave you on a python prompt that forwards commands to
         the controller. Exits with KeyboardInterrupt.
         """
-        if not self.connected:
+        if self.connected is None or not self.connected:
             msg = "Must be connected to Galil controller to run interactive mode"
             self.log.critical(msg)
             sys.exit(msg)

@@ -3,6 +3,11 @@
         "valid_schema_versions": [
             "v2"
         ],
+        "stages": {
+            "bp": "galil",
+            "focus": "kdc101",
+            "t_t_r": "tiptilt"
+        },
         "external_control": {},
         "galil": {
             "dummy": false,
@@ -74,6 +79,11 @@
         "valid_schema_versions": [
             "v2"
         ],
+        "stages": {
+            "bp": "galil",
+            "focus": "kdc101",
+            "t_t_r": "tiptilt"
+        },
         "external_control": {},
         "galil": {
             "dummy": false,
@@ -143,6 +153,12 @@
             "v3",
             "v2"
         ],
+        "stages": {
+            "bp": "galil",
+            "focus": "galil",
+            "x_y": "galil",
+            "t_t_r": "tiptilt"
+        },
         "external_control": {},
         "galil": {
             "dummy": false,
@@ -281,6 +297,12 @@
             "v3",
             "v2"
         ],
+        "stages": {
+            "bp": "galil",
+            "focus": "galil",
+            "x_y": "galil",
+            "t_t_r": "tiptilt"
+        },
         "external_control": {},
         "galil": {
             "dummy": false,

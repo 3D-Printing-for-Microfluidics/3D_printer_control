@@ -1,6 +1,6 @@
 from printer_server.printer_control.print_control import *
 
-class LoadcellControl(PrintControl):
+class LoadcellControl(GalilControl):
     def __init__(self):
         super().__init__()
         self.loadcell = driver_handles.loadcell
@@ -49,18 +49,14 @@ class LoadcellControl(PrintControl):
 
         log.info("Squeeze force reached %s steps", count)
         log.info("Squeeze force: %s", self.loadcell.get_current_force())
-        log.info("Squeeze position: %s", self.galil.getPosition(in_mm=True))
+        log.info("Squeeze position: %s", self.bp_stage.getBPPosition())
 
         if self.loadcell.get_current_force() > squeeze_target * 1.10:
             log.warning("Move_to_force overshot target value.")
 
         time.sleep(squeeze_wait)
 
-        self.galil.absMove(
-            mm=self.print_position,
-            speed=50,
-            acceleration=5,
-        )
+        self.bp_stage.absMoveBP(mm=self.print_position, speed=50, acceleration=5)
 
     def move_bp_to_force(
         self, target_force, speed, acceleration=100, error_threshold=None
@@ -74,7 +70,7 @@ class LoadcellControl(PrintControl):
         forces = []
         count = 0
         if (speed < 0 and force > target_force) or (speed > 0 and force < target_force):
-            self.galil.startJog(speed=speed, acceleration=acceleration)
+            self.bp_stage.startBPJog(speed=speed, acceleration=acceleration)
             while (speed < 0 and force > target_force) or (
                 speed > 0 and force < target_force
             ):
@@ -90,10 +86,10 @@ class LoadcellControl(PrintControl):
                 if error_threshold is not None:
                     # print(f"{abs(forces[0] - forces[-1])}, {error_threshold}")
                     if abs(forces[0] - forces[-1]) < error_threshold:
-                        self.galil.stopJog()
+                        self.bp_stage.stopBPJog()
                         time.sleep(0.02)
                         return None
-            self.galil.stopJog()
+            self.bp_stage.stopBPJog()
             time.sleep(0.02)
         return count
 
@@ -124,7 +120,7 @@ class LoadcellControl(PrintControl):
                 )
             else:
                 # estimate a 2mm movement for planarization
-                self.galil.relMove(mm=2.0, speed=2.5)
+                self.bp_stage.relMoveBP(mm=2.0, speed=2.5)
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self, run_in_thread=True):
@@ -157,7 +153,7 @@ class LoadcellControl(PrintControl):
             "Loadcell force post planarization: %s", self.loadcell.get_current_force()
         )
         log.debug("Loadcell position: %s", self.planarized_position)
-        self.planarized_position = self.galil.getPosition(in_mm=True)
+        self.planarized_position = self.bp_stage.getBPPosition()
         self.print_position = self.planarized_position
         log.info("Loadcell planarized %s steps", count)
         log.info("Loadcell force (post-step 2): %s", self.loadcell.get_current_force())

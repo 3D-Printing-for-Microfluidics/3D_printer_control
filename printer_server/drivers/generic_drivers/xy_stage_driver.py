@@ -1,16 +1,57 @@
+import logging
+import time
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 class XYStageDriver:
     def __init__(self):
+        self.initialized = None
+
+    def setup_log_file(self, filename):
+        log.warn("Function not implemented. Using abstract XYStageDriver class")
+
+    def logging_start(self):
+        log.warn("Function not implemented. Using abstract XYStageDriver class")
+
+    def logging_stop(self):
+        log.warn("Function not implemented. Using abstract XYStageDriver class")
+
+    def connect(self, shutdown):
+        log.warn("Function not implemented. Using abstract XYStageDriver class")
+
+    def initialize(self):
+        log.warn("Function not implemented. Using abstract XYStageDriver class")
+
+    def home(self):
+        log.warn("Function not implemented. Using abstract XYStageDriver class")
+
+    def initialize_and_positionXY(self, x, y, join=True):
+        if self.initialized is None:
+            self.initialized = False
+            self.initialize()
+            self.home()
+            self.initialized = True
+
+        while not self.initialized:
+            time.sleep(0.1)
+
+        return self.threadedXYMove(log, x_pos, y_pos, join=join)
         
     def getXYPosition(self, axis=None, notify=True):
+        log.warn("Function not implemented. Using abstract XYStageDriver class")
 
     def absMoveXY( self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+        log.warn("Function not implemented. Using abstract XYStageDriver class")
 
     def relMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+        log.warn("Function not implemented. Using abstract XYStageDriver class")
 
     def startXYJog(self, speed=None, acceleration=None, axis=None):
+        log.warn("Function not implemented. Using abstract XYStageDriver class")
 
     def stopXYJog(self, axis=None):
+        log.warn("Function not implemented. Using abstract XYStageDriver class")
 
     def threadedXYMove(
         logger,
@@ -57,5 +98,6 @@ class XYStageDriver:
             for thread in threads:
                 if thread is not None:
                     thread.join()
+            return None
         else:
             return threads

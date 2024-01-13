@@ -106,6 +106,43 @@ class Printer3D:
 
             self.keyence = Keyence()
 
+        self.bp_stage = None
+        self.focus_stage = None
+        self.xy_stage = None
+        self.ttr_stage =None
+
+        if "bp" in config_dict["stages"]:
+            if hasattr(self, config_dict["stages"]["bp"]):
+                self.bp_stage = getattr(self, config_dict["stages"]["bp"])
+            else:
+                from printer_server.drivers.generic_drivers import BPStageDriver
+                self.bp_stage = BPStageDriver()
+
+
+        if "focus" in config_dict["stages"]:
+            if hasattr(self, config_dict["stages"]["focus"]):
+                self.focus_stage = getattr(self, config_dict["stages"]["focus"])
+            else:
+                from printer_server.drivers.generic_drivers import FocusStageDriver
+                self.focus_stage = FocusStageDriver()
+
+
+        if "x_y" in config_dict["stages"]:
+            if hasattr(self, config_dict["stages"]["x_y"]):
+                self.xy_stage = getattr(self, config_dict["stages"]["x_y"])
+            else:
+                from printer_server.drivers.generic_drivers import XYStageDriver
+                self.xy_stage = XYStageDriver()
+   
+
+        if "t_t_r" in config_dict["stages"]:
+            if hasattr(self, config_dict["stages"]["t_t_r"]):
+                self.ttr_stage = getattr(self, config_dict["stages"]["t_t_r"])
+            else:
+                from printer_server.drivers.generic_drivers import TTRStageDriver
+                self.ttr_stage = TTRStageDriver()
+
+
     def disconnect(self):
         if hasattr(self, "galil"):
             self.galil.disconnect()

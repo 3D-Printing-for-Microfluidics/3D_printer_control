@@ -29,90 +29,6 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-def move_all_galil(
-    logger,
-    galil,
-    x,
-    y,
-    z,
-    bp,
-    join=True,
-    speed_x=None,
-    speed_y=None,
-    speed_z=None,
-    speed_bp=None,
-    acceleration_x=None,
-    acceleration_y=None,
-    acceleration_z=None,
-    acceleration_bp=None
-):
-    """
-    Starts multithreaded movement on all of the galil axes. If any axis is set to none, it will not move.
-    If join is set to true, the movements will join before returning
-    """
-    threads = [None, None, None, None]
-    if x is not None:
-        threads[0] = Thread(
-            logger, 
-            name="print_control_galil_x_thread",
-            target=galil.absMove,
-            kwargs={
-                "mm": x / 1000,
-                "speed": speed_x,
-                "acceleration": acceleration_x,
-                "axis": "X",
-            },
-        )
-        threads[0].start()
-    if y is not None:
-        threads[1] = Thread(
-            logger, 
-            name="print_control_galil_y_thread",
-            target=galil.absMove,
-            kwargs={
-                "mm": y / 1000,
-                "speed": speed_y,
-                "acceleration": acceleration_y,
-                "axis": "Y",
-            },
-        )
-        threads[1].start()
-    if z is not None:
-        threads[2] = Thread(
-            logger, 
-            name="print_control_galil_z_thread",
-            target=galil.absMove,
-            kwargs={
-                "mm": z / 1000,
-                "speed": speed_z,
-                "acceleration": acceleration_z,
-                "axis": "Focus",
-            },
-        )
-        threads[2].start()
-
-    if bp is not None:
-        threads[3] = Thread(
-            logger, 
-            name="print_control_galil_bp_thread",
-            target=galil.absMove,
-            kwargs={
-                "mm": bp / 1000,
-                "speed": speed_bp,
-                "acceleration": acceleration_bp,
-                "axis": "Build Platform",
-            },
-        )
-        threads[3].start()
-
-    if join:
-        for thread in threads:
-            if thread is not None:
-                thread.join()
-    else:
-        return threads
-
-
 def get_last_focused_position_from_logs():
     """Return the last focused position for the distance axis from the
     position log file.
@@ -197,7 +113,10 @@ class PrintControl:
         self._state = "uninitialized"
 
         # hardware handles
-        self.galil = driver_handles.galil
+        self.xy_stage = driver_handles.xy_stage
+        self.bp_stage = driver_handles.bp_stage
+        self.focus_stage = driver_handles.focus_stage
+        self.ttr_stage = driver_handles.ttr_stage
         self.tiptilt = driver_handles.tiptilt
 
         # folders relevant to printing
@@ -208,11 +127,12 @@ class PrintControl:
         # log files
         self.position_log = str(self.current_job / "position_data.csv")
         self.exposure_log = str(self.current_job / "exposure_data.log")
-        self.movement_log = str(self.current_job / "movement_data.csv")
         self.event_log = str(self.current_job / "event_log.csv")
 
         # threads
-        self.galil_thread = None
+        self.bp_thread = None
+        self.focus_thread = None
+        self.xy_threads = None
 
         # values used during printing
         self.image = None
@@ -325,12 +245,9 @@ class PrintControl:
         )
         async_file_hander.write(self.exposure_log, "")
         async_file_hander.write(self.event_log, "timestamp,event\n")
-        async_file_hander.write(self.movement_log, "timestamp,")
-        for a in self.galil.axes_common_names:
-            async_file_hander.write(self.movement_log, f"{a} position_mm,")
-            async_file_hander.write(self.movement_log, f"{a} status,")
-        async_file_hander.write(self.movement_log, "\n")
-        self.galil.set_log_file(self.movement_log)
+        self.xy_stage.setup_log_file(str(self.current_job))
+        self.focus_stage.setup_log_file(str(self.current_job))
+        self.bp_stage.setup_log_file(str(self.current_job))
 
     def get_position_settings(self, layer):
         """Return the position settings for the layer."""
@@ -397,11 +314,11 @@ class PrintControl:
 
         time.sleep(inital_wait)
         self.write_to_event_log("Start Up Movement")
-        self.galil.absMove(
+        self.bp_stage.absMoveBP(
             mm=self.print_position - up_distance,
             speed=up_speed,
             acceleration=up_acceleration,
-            wait_for_settling=False,
+            wait_for_settling=False
         )
         self.write_to_event_log("Finish Up Movement")
 
@@ -413,7 +330,7 @@ class PrintControl:
 
         time.sleep(up_wait)
         self.write_to_event_log("Start Down Movement")
-        self.galil.absMove(
+        self.bp_stage.absMoveBP(
             mm=self.print_position,
             speed=down_speed,
             acceleration=down_acceleration,
@@ -427,7 +344,7 @@ class PrintControl:
         final_wait = position_settings["Final wait (ms)"] / 1000
         layer_thickness = position_settings["Layer thickness (um)"] / 1000
 
-        start_position = self.galil.getPosition(in_mm=True)
+        start_position = self.bp_stage.getBPPosition()
         start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         self.move_build_platform_up(position_settings)
         self.print_position -= layer_thickness
@@ -438,7 +355,7 @@ class PrintControl:
             self.force_squeeze(position_settings, layer)
         time.sleep(final_wait)
 
-        end_position = self.galil.getPosition(in_mm=True)
+        end_position = self.bp_stage.getBPPosition()
         end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         thickness = (end_position - start_position) * 1000
         async_file_hander.write(
@@ -476,46 +393,57 @@ class PrintControl:
         ret = self.tiptilt.connect()
         if not ret:
             self.all_hardware_connected = False
-        ret = self.galil.connect(self.shutdown)
-        if not ret:
+        xy_thread = Thread(log, name="xy_control_setup_thread", target=self.xy_stage.connect, args=[self.shutdown])
+        focus_thread = Thread(log, name="focus_control_setup_thread", target=self.focus_stage.connect, args=[self.shutdown])
+        bp_thread = Thread(log, name="bp_control_setup_thread", target=self.bp_stage.connect, args=[self.shutdown])
+        xy_thread.start()
+        focus_thread.start()
+        bp_thread.start()
+        xy_thread.join()
+        if not self.xy_stage.connected:
+            self.all_hardware_connected = False
+        focus_thread.join()
+        if not self.focus_stage.connected:
+            self.all_hardware_connected = False
+        bp_thread.join()
+        if not self.bp_stage.connected:
             self.all_hardware_connected = False
 
     def initalize_hardware(self):
-        self.galil_thread = Thread(log, name="print_control_galil_setup_thread", target=self.galil_setup_thread, args=[])
-        self.galil_thread.start()
-        self.galil_thread.join()
+        x_pos = self.coord_systems["visitech"]["X"]
+        y_pos = self.coord_systems["visitech"]["Y"]
+        focus_pos = self.coord_systems["visitech"]["Focus"]
+        bp_pos = self.bp_stage.top_position
 
-        self.galil_thread = Thread(
-            log, name="print_control_galil_setup_done_thread", target=self.galil_finalize_setup_thread, args=[]
-        )
-        self.galil_thread.start()
-        self.galil_thread.join()
-
-    def galil_setup_thread(self):
-        """Initialize and home Galil controller"""
-        self.galil.initialize()
-        self.galil.home()
-
-        for a in self.galil.axes:
-            self.galil.setSpeed(self.galil.getDefaultSpeed(a), axis=a)
-            self.galil.setAcceleration(self.galil.getDefaultAcceleration(a), axis=a)
-
-    def galil_finalize_setup_thread(self):
-        self.galil.goToZmax()
+        xy_threads = self.xy_stage.initialize_and_positionXY(x_pos, y_pos, join=False)
+        focus_thread = self.focus_stage.initialize_and_positionFocus(focus_pos, join=False)
+        bp_thread = self.bp_stage.initialize_and_positionBP(bp_pos, join=False)
+        for thread in xy_threads:
+            if thread is not None:
+                thread.join()
+        if focus_thread is not None:
+            focus_thread.join()
+        if bp_thread is not None:
+            bp_thread.join()
+        self.xy_stage.initialized = True
+        self.focus_stage.initialized = True
+        self.bp_stage.initialized = True
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarization_step_1(self, run_in_thread=True):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
-            self.galil.logging_start()
-            # self.galil.goToZmin()
-            self.galil.absMove(speed=self.galil.getDefaultSpeed("Build Platform"), mm=self.galil.bottom_position-12)
-            self.galil.absMove(speed=0.5, mm=self.galil.bottom_position)
+            self.xy_stage.logging_start()
+            self.focus_stage.logging_start()
+            self.bp_stage.logging_start()
+            # self.bp_stage.goToBPmin()
+            self.bp_stage.absMoveBP(mm=self.bp_stage.bottom_position-12)
+            self.bp_stage.absMoveBP(mm=self.bp_stage.bottom_position, speed=0.5)
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self, run_in_thread=True):
-        self.planarized_position = self.galil.getPosition(in_mm=True)
+        self.planarized_position = self.bp_stage.getBPPosition()
         self.print_position = self.planarized_position
 
     def start(self, job_id):
@@ -603,8 +531,8 @@ class PrintControl:
         self.print_position = self.paused_position
         self.paused_position = None
 
-        self.galil.absMove(speed=self.galil.getDefaultSpeed("Build Platform"), mm=self.print_position-layer_thickness)
-        self.galil.absMove(
+        self.bp_stage.absMoveBP(mm=self.print_position-layer_thickness)
+        self.bp_stage.absMoveBP(
             mm=self.print_position,
             speed=down_speed,
             acceleration=down_acceleration,
@@ -667,7 +595,7 @@ class PrintControl:
 
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
-            self.galil.absMove(mm=self.planarized_position)
+            self.bp_stage.absMoveBP(mm=self.planarized_position)
 
         # update frontend message pane and progress bar
         msg = {
@@ -692,7 +620,7 @@ class PrintControl:
 
         # set paused position
         if self.printing_paused.is_set():
-            self.paused_position = self.galil.getPosition(in_mm=True)
+            self.paused_position = self.bp_stage.getBPPosition()
 
         self.post_print_tasks()
 
@@ -716,11 +644,11 @@ class PrintControl:
         self.write_to_event_log(msg)
 
         # move build platform
-        self.galil_thread = Thread(
+        self.bp_thread = Thread(
             log, name="print_control_move_bp_thread", target=self.move_build_platform, args=[position_settings, layer]
         )
         if not self.next_layer == 1:
-            self.galil_thread.start()
+            self.bp_thread.start()
 
         # do exposures
         exposure_data = {}
@@ -741,7 +669,7 @@ class PrintControl:
     def pre_exposure_joins(self, settings, light_engine):
         # wait for all hardware to be ready for exposure
         if not self.next_layer == 1:
-            self.galil_thread.join()
+            self.bp_thread.join()
 
     def exposure(self, settings, light_engine):
         return
@@ -805,9 +733,12 @@ class PrintControl:
         }
 
     def finish_print(self):
-        self.galil.logging_stop()
-        self.galil.set_log_file(None)
-
+        self.xy_stage.logging_stop()
+        self.focus_stage.logging_stop()
+        self.bp_stage.logging_stop()
+        self.xy_stage.setup_log_file(None)
+        self.focus_stage.setup_log_file(None)
+        self.bp_stage.setup_log_file(None)
         # update fontend, zip logs into archive in print_history, and update db entrty
         self.print_duration = datetime.now() - self.print_start_time
         with self.app.app_context():

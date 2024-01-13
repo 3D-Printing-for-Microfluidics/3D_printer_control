@@ -15,8 +15,6 @@ class HR3v3u_PrintControl(KDCControl, VisitechControl, LoadcellControl):
             super().initialize(run_in_thread=False, top_level=False)
             if top_level and self.all_hardware_connected:
                 log.info("Printer initialized, all hardware ready.")
-        #     return ret
-        # return False
 
     def post_print_tasks(self):
         """Move BP stage up 'Distance up (mm)'' then to top"""
@@ -25,7 +23,7 @@ class HR3v3u_PrintControl(KDCControl, VisitechControl, LoadcellControl):
         default_position_settings = defaults_layer_settings.get("Position settings")
 
         self.move_build_platform_up(default_position_settings)
-        self.galil.goToZmax()
+        self.bp_stage.goToBPmax()
         time.sleep(1.0)
 
 class HR4_PrintControl(VisitechControl, KeyenceControl, LoadcellControl):
@@ -38,49 +36,53 @@ class HR4_PrintControl(VisitechControl, KeyenceControl, LoadcellControl):
 
     def __init__(self):
         super().__init__()
-        self.coord_systems = {
-            "keyence": {
-                "visitech": config_dict["galil"]["coord_systems"]["keyence_visitech"]
-            },
-            "light_engine": {
-                "visitech": config_dict["galil"]["coord_systems"]["visitech"]
-            },
-        }
+        self.coord_systems = config_dict["galil"]["coord_systems"]
         self.default_position_settings = None
         self.default_x_offset = None
         self.default_y_offset = None
 
-        self.galil_threads = None
-
     def get_focus(self):
-        """Return galil 'Focus' axis position"""
+        """Return 'Focus' axis position in um"""
         return int(
-            self.galil.getPosition(in_mm=True, axis="Focus") * 1000
+            self.focus_stage.getFocusPosition() * 1000
         )
 
     def galil_finalize_setup_thread(self):
-        move_all_galil(
-            log,
-            self.galil,
-            self.coord_systems["light_engine"]["visitech"]["X"]*1000,
-            self.coord_systems["light_engine"]["visitech"]["Y"]*1000,
-            self.coord_systems["light_engine"]["visitech"]["Focus"]*1000,
-            self.galil.top_position * 1000,
-        )
+        x_pos = self.coord_systems["visitech"]["X"]
+        y_pos = self.coord_systems["visitech"]["Y"]
+        focus_pos = self.coord_systems["visitech"]["Focus"]
+        bp_pos = self.bp_stage.top_position
+        xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
+        focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False)
+        bp_thread = self.focus_stage.threadedBPMove(log, bp_pos, join=False)
+        for thread in xy_threads:
+            if thread is not None:
+                thread.join()
+        if focus_thread is not None:
+            focus_thread.join()
+        if bp_thread is not None:
+            bp_thread.join()
 
     def post_print_tasks(self):
         """Move all galil stages to their starting positions"""
         super().post_print_tasks()
 
         self.move_build_platform_up(self.default_position_settings)
-        move_all_galil(
-            log,
-            self.galil,
-            self.coord_systems["light_engine"]["visitech"]["X"]*1000,
-            self.coord_systems["light_engine"]["visitech"]["Y"]*1000,
-            self.coord_systems["light_engine"]["visitech"]["Focus"]*1000,
-            self.galil.top_position * 1000,
-        )
+
+        x_pos = self.coord_systems["visitech"]["X"]
+        y_pos = self.coord_systems["visitech"]["Y"]
+        focus_pos = self.coord_systems["visitech"]["Focus"]
+        bp_pos = self.bp_stage.top_position
+        xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False, speed_x=None, speed_y=None, acceleration_x=None, acceleration_y=None)
+        focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False, speed=None, acceleration=None)
+        bp_thread = self.focus_stage.threadedBPMove(log, bp_pos, join=False, speed=None, acceleration=None)
+        for thread in xy_threads:
+            if thread is not None:
+                thread.join()
+        if focus_thread is not None:
+            focus_thread.join()
+        if bp_thread is not None:
+            bp_thread.join()
 
 class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
     @run_in_thread("initialized", "Initialize")
@@ -93,18 +95,9 @@ class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
     def __init__(self):
         super().__init__()
         self.default_light_engine = None
-        self.coord_systems = {
-            "keyence": {
-                "visitech": config_dict["galil"]["coord_systems"]["keyence_visitech"],
-                "wintech": config_dict["galil"]["coord_systems"]["keyence_wintech"],
-            },
-            "light_engine": {
-                "visitech": config_dict["galil"]["coord_systems"]["visitech"],
-                "wintech": config_dict["galil"]["coord_systems"]["wintech"],
-            },
-        }
+        self.coord_systems = config_dict["galil"]["coord_systems"]
 
-    # def galil_keyence_alignment(self):
+    # def xy_keyence_alignment(self):
     #     edges = {
     #         "visitech": {"X": [-45515, 42500], "Y": [-28871, 33500]},
     #         "wintech": {"X": [-45576, 42500], "Y": [-28800, 33500]},
@@ -122,7 +115,7 @@ class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
     #                 direction = direction[direction_indx]
     #                 step_size = step_size * direction
 
-    #                 # calculate galil positions
+    #                 # calculate xy positions
     #                 x_offset = 0
     #                 y_offset = 0
     #                 if axis == "X":
@@ -132,20 +125,24 @@ class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
 
     #                 # goto apx position
     #                 time.sleep(0.1)
-    #                 move_all_galil(
-    #                     self.galil,
-    #                     self.coord_systems[f"keyence_{light_engine}"]["X"] + x_offset,
-    #                     self.coord_systems[f"keyence_{light_engine}"]["Y"] + y_offset,
-    #                     self.coord_systems[f"keyence_{light_engine}"]["Focus"],
-    #                     None,
-    #                 )
+    #                 x_pos = self.coord_systems[f"keyence_{light_engine}"]["X"] + x_offset/1000
+    #                 y_pos = self.coord_systems[f"keyence_{light_engine}"]["Y"] + y_offset/1000
+    #                 focus_pos = self.coord_systems[f"keyence_{light_engine}"]["Focus"]
+    #                 xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False, speed_x=None, speed_y=None, acceleration_x=None, acceleration_y=None)
+    #                 focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False, speed=None, acceleration=None)
+    #                 for thread in xy_threads:
+    #                     if thread is not None:
+    #                         thread.join()
+    #                 if focus_thread is not None:
+    #                     focus_thread.join()
+
     #                 if step_size == 1000.0:
     #                     time.sleep(5)
     #                 else:
     #                     time.sleep(0.1)
 
     #                 # find resin tray edge
-    #                 self.galil.startJog(
+    #                 self.xy_stage.startXYJog(
     #                     speed=step_size / 1000.0, acceleration=50, axis=axis
     #                 )
     #                 last_keyence_position = float(
@@ -168,12 +165,12 @@ class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
 
     #                 # save resin tray edge
     #                 edges[light_engine][axis][direction_indx] = (
-    #                     self.galil.getPosition(in_mm=True, axis=axis)
+    #                     self.xy_stage.getXYPosition(axis=axis)
     #                     * 1000
     #                     - self.coord_systems[f"keyence_{light_engine}"][axis]
     #                 )
 
-    #                 self.galil.stopJog(axis=axis)
+    #                 self.xy_stage.stopXYJog(axis=axis)
     #                 time.sleep(0.1)
 
     #     for axis in ("X", "Y"):
@@ -188,21 +185,14 @@ class MR1v1_PrintControl(HR4_PrintControl, WintechControl):
     #     self.coord_systems["visitech"]["X"] += edges["diff"]["X"][1]
     #     self.coord_systems["visitech"]["Y"] += edges["diff"]["Y"][1]
 
-    # def galil_setup_thread(self):
-    #     """Initialize and home Galil controller"""
-    #     super().galil_setup_thread()
-    #     # self.galil_keyence_alignment()
+    # def initalize_hardware(self):
+    #     super().initalize_hardware()
+    #     # self.xy_keyence_alignment()
 
     def pre_print_tasks(self):
+    # Move focus around a little bit before print. Seems to help repeatablility
         for light_engine in config_dict["screen"]["light_engines"]:
-            move_all_galil(
-                log,
-                self.galil,
-                None,
-                None,
-                self.coord_systems["keyence"][light_engine]["Focus"]*1000,
-                None,
-            )
+            self.focus_stage.absMoveFocus(self.coord_systems[f"keyence_{light_engine}"]["Focus"])
             time.sleep(1.0)
         super().pre_print_tasks()
 
