@@ -1,6 +1,8 @@
 import logging
 import time
 
+from printer_server.threading_wrapper import Thread
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
@@ -53,18 +55,20 @@ class BPStageDriver:
     def goToBPbottom(self):
         log.warn("Function not implemented. Using abstract BPStageDriver class")
 
-    def initialize_and_positionBP(self, pos, join=True):
+    def initialize_and_positionBP(self, pos):
         if self.initialized is None:
             self.initialized = False
             self.initialize()
             self.home()
+            self.initialized = True
 
         while not self.initialized:
             time.sleep(0.1)
 
-        return self.threadedBPMove(log, pos, join=join)
+        return self.threadedBPMove(log, pos, join=False)
 
     def threadedBPMove(
+        self,
         logger,
         mm,
         join=True,
@@ -76,7 +80,7 @@ class BPStageDriver:
         If join is set to true, the movements will join before returning
         """
         thread = None
-        if bp is not None:
+        if mm is not None:
             thread = Thread(
                 logger, 
                 name="print_control_bp_thread",
@@ -88,9 +92,10 @@ class BPStageDriver:
                 },
             )
             thread.start()
-        if join:
-            if thread is not None:
-                thread.join()
-            return None
-        else:
-            return thread
+            if join:
+                if thread is not None:
+                    thread.join()
+                return None
+            else:
+                return thread
+        return None

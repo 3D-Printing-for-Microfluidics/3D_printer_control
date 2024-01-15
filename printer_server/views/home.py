@@ -51,9 +51,56 @@ shutdown_handle = None
 # else:
 #     log.error("Printer control module not found")
 
-from printer_server.printer_control.printer_control import PrintControl
-print_control = PrintControl()
+from printer_server.printer_control.print_control import *
+from printer_server.printer_control.bp_control import *
+from printer_server.printer_control.focus_control import *
+from printer_server.printer_control.gpio_control import *
+from printer_server.printer_control.keyence_control import *
+from printer_server.printer_control.loadcell_control import *
+from printer_server.printer_control.screen_control import *
+from printer_server.printer_control.ttr_control import *
+from printer_server.printer_control.visitech_control import *
+from printer_server.printer_control.wintech_control import *
+from printer_server.printer_control.xy_control import *
+from printer_server.printer_control.kdc_control import *
 
+parent_classes = []
+# if "kdc" in config_dict:
+#     parent_classes.append(KDCControl)
+
+if "visitech" in config_dict:
+    parent_classes.append(VisitechControl)
+
+if "keyence" in config_dict:
+    parent_classes.append(KeyenceControl)
+
+if "wintech" in config_dict:
+    parent_classes.append(WintechControl)
+
+if "loadcell" in config_dict:
+    parent_classes.append(LoadcellControl)
+
+if "gpio" in config_dict:
+    if film_pin in config_dict["gpio"]:
+        parent_classes.append(FilmGPIOControl)
+
+if "bp" in config_dict["stages"]:
+    parent_classes.append(BPControl)
+
+if "focus" in config_dict["stages"]:
+    parent_classes.append(FocusControl)
+
+if "x_y" in config_dict["stages"]:
+    parent_classes.append(XYControl)
+
+if "t_t_r" in config_dict["stages"]:
+    parent_classes.append(TTRControl)
+
+class ParentPrintControl(*parent_classes):
+    pass
+
+print_control = ParentPrintControl()
+# print(ParentPrintControl.__mro__)
 
 @blueprint.route("/")
 def index():

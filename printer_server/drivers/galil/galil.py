@@ -155,6 +155,9 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             msg = f"Galil controller not found! ({self.controller_name})"
             self.log.critical(msg)
             return False
+        else:
+            while self.connected is False:
+                time.sleep(0.1)
 
     def disconnect(self):
         """Disconnect form the Galil controller."""
@@ -318,7 +321,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     ################################# Parent class functions #######################################
 
     def getXYPosition(self, axis=None, notify=True):
-        return self.getPosition(in_mm=T, axis=axis)
+        return self.getPosition(in_mm=True, axis=axis)
 
     def absMoveXY( self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
@@ -330,10 +333,10 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.startJog(speed=speed, acceleration=acceleration, axis=axis)
 
     def stopXYJog(self, axis=None):
-        self.startJog(axis=axis)
+        self.stopJog(axis=axis)
 
     def getFocusPosition(self, notify=True):
-        return self.getPosition(in_mm=T, axis="Focus")
+        return self.getPosition(in_mm=True, axis="Focus")
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
@@ -345,10 +348,10 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.startJog(speed=speed, acceleration=acceleration, axis="Focus")
 
     def stopFocusJog(self):
-        self.startJog(axis="Focus")
+        self.stopJog(axis="Focus")
 
     def getBPPosition(self, notify=True):
-        return self.getPosition(in_mm=T, axis="Build Platform")
+        return self.getPosition(in_mm=True, axis="Build Platform")
 
     def absMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Build Platform")
@@ -360,7 +363,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.startJog(speed=speed, acceleration=acceleration, axis="Build Platform")
 
     def stopBPJog(self):
-        self.startJog(axis="Build Platform")
+        self.stopJog(axis="Build Platform")
 
     ################################# End parent class functions #######################################
 

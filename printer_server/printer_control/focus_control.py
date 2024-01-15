@@ -43,7 +43,7 @@ def shift_image(img, x=0, y=0):
     return Path(new_filename)
 
 class FocusControl(PrintControl):
-     def __init__(self):
+    def __init__(self):
         super().__init__()
         self.focus_stage = driver_handles.focus_stage
         self.defocus_um = None
@@ -71,7 +71,7 @@ class FocusControl(PrintControl):
             self.focused_position = self.coord_systems["visitech"]["Focus"]
         else:
             self.focused_position = get_last_calibration_positions_from_logs()["distance"]
-        focus_thread = self.focus_stage.initialize_and_positionFocus(focus_pos, join=False)
+        focus_thread = self.focus_stage.initialize_and_positionFocus(self.focused_position)
         super().initalize_hardware()
         if focus_thread is not None:
             focus_thread.join()

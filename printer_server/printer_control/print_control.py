@@ -11,14 +11,6 @@ from functools import wraps
 from datetime import datetime
 from zipfile import ZipFile, BadZipFile
 
-from printer_server.printer_control.visitech_control import *
-from printer_server.printer_control.wintech_control import *
-from printer_server.printer_control.gpio_control import *
-from printer_server.printer_control.keyence_control import *
-from printer_server.printer_control.screen_control import *
-from printer_server.printer_control.kdc_control import *
-from printer_server.printer_control.loadcell_control import *
-
 import printer_server.views.home as home
 from printer_server.extensions import db
 from printer_server.settings import Config
@@ -98,27 +90,7 @@ def run_in_thread(state, text):
 
     return decorator
 
-parent_classes = []
-if "kdc" in config_dict:
-    parent_classes.append(KDCControl)
-
-if "visitech" in config_dict:
-    parent_classes.append(VisitechControl)
-
-if "keyence" in config_dict:
-    parent_classes.append(KeyenceControl)
-
-if "wintech" in config_dict:
-    parent_classes.append(WintechControl)
-
-if "loadcell" in config_dict:
-    parent_classes.append(LoadcellControl)
-
-if "gpio" in config_dict:
-    if film_pin in config_dict["gpio"]
-        parent_classes.append(FilmGPIOControl)
-
-class PrintControl(*parent_classes):
+class PrintControl:
     """
     The PrintControl class contains all the 3D printer
     operations. It wraps the ``threading.Thread`` object such that

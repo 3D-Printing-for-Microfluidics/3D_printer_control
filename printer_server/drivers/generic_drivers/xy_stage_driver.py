@@ -1,6 +1,8 @@
 import logging
 import time
 
+from printer_server.threading_wrapper import Thread
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
@@ -41,7 +43,7 @@ class XYStageDriver:
     def stopXYJog(self, axis=None):
         log.warn("Function not implemented. Using abstract XYStageDriver class")
 
-    def initialize_and_positionXY(self, x, y, join=True):
+    def initialize_and_positionXY(self, x, y):
         if self.initialized is None:
             self.initialized = False
             self.initialize()
@@ -51,9 +53,10 @@ class XYStageDriver:
         while not self.initialized:
             time.sleep(0.1)
 
-        return self.threadedXYMove(log, x_pos, y_pos, join=join)
+        return self.threadedXYMove(log, x, y, join=False)
 
     def threadedXYMove(
+        self,
         logger,
         x,
         y,

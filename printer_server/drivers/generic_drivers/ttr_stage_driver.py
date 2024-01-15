@@ -1,5 +1,7 @@
 import logging
 
+from printer_server.threading_wrapper import Thread
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 

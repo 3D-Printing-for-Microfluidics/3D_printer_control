@@ -4,7 +4,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 class XYControl(PrintControl):
-     def __init__(self):
+    def __init__(self):
         super().__init__()
         self.xy_stage = driver_handles.xy_stage
         self.coord_systems = config_dict["coord_systems"]
@@ -24,7 +24,7 @@ class XYControl(PrintControl):
     def initalize_hardware(self):
         x_pos = self.coord_systems["visitech"]["X"]
         y_pos = self.coord_systems["visitech"]["Y"]
-        xy_threads = self.xy_stage.initialize_and_positionXY(x_pos, y_pos, join=False)
+        xy_threads = self.xy_stage.initialize_and_positionXY(x_pos, y_pos)
         super().initalize_hardware()
         for thread in xy_threads:
             if thread is not None:

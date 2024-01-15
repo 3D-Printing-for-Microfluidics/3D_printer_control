@@ -1,6 +1,8 @@
 import logging
 import time
 
+from printer_server.threading_wrapper import Thread
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
@@ -43,18 +45,20 @@ class FocusStageDriver:
     def stopFocusJog(self):
         log.warn("Function not implemented. Using abstract FocusStageDriver class")
 
-    def initialize_and_positionFocus(self, pos, join=True):
+    def initialize_and_positionFocus(self, pos):
         if self.initialized is None:
             self.initialized = False
             self.initialize()
             self.home()
+            self.initialized = True
 
         while not self.initialized:
             time.sleep(0.1)
 
-        return self.threadedFocusMove(log, pos, join=join)
+        return self.threadedFocusMove(log, pos, join=False)
 
     def threadedFocusMove(
+        self,
         logger,
         mm,
         join=True,
@@ -66,7 +70,7 @@ class FocusStageDriver:
         If join is set to true, the movements will join before returning
         """
         thread = None
-        if bp is not None:
+        if mm is not None:
             thread = Thread(
                 logger, 
                 name="print_control_focus_thread",
@@ -78,9 +82,10 @@ class FocusStageDriver:
                 },
             )
             thread.start()
-        if join:
-            if thread is not None:
-                thread.join()
-            return None
-        else:
-            return thread
+            if join:
+                if thread is not None:
+                    thread.join()
+                return None
+            else:
+                return thread
+        return None

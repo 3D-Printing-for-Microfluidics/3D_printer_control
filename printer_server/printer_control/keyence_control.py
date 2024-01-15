@@ -1,6 +1,9 @@
 from printer_server.printer_control.print_control import *
+# from printer_server.printer_control.xy_control import *
+# from printer_server.printer_control.focus_control import *
 
-class KeyenceControl(XYControl, FocusControl):
+# class KeyenceControl(XYControl, FocusControl):
+class KeyenceControl(PrintControl):
     def __init__(self):
         super().__init__()
         self.keyence = driver_handles.keyence
@@ -107,7 +110,7 @@ class KeyenceControl(XYControl, FocusControl):
             self.update_measurement_progress()
 
             focus_pos = self.coord_systems[f"keyence_{light_engine}"]["Focus"] + (start_position - temp_position)/1000
-            self.focus_stage.absMoveFocus(focus_pos):
+            self.focus_stage.absMoveFocus(focus_pos)
             time.sleep(1.0)
 
             temp_position = float(
@@ -159,7 +162,7 @@ class KeyenceControl(XYControl, FocusControl):
         self.write_to_event_log(f"Keyence Focus Offsets: {self.keyence_measurement_list}")
         self.move_build_platform_down(self.default_position_settings)
 
-    def convert_le_to_screen_le(self, light_engine)
+    def convert_le_to_screen_le(self, light_engine):
         # convert light engine to screen light engine
         screen_light_engine = None
         for temp in config_dict["screen"]["light_engines"]:

@@ -4,7 +4,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 class BPControl(PrintControl):
-     def __init__(self):
+    def __init__(self):
         super().__init__()
         self.bp_stage = driver_handles.bp_stage
 
@@ -96,7 +96,7 @@ class BPControl(PrintControl):
 
     def initalize_hardware(self):
         bp_pos = self.bp_stage.top_position
-        bp_thread = self.bp_stage.initialize_and_positionBP(bp_pos, join=False)
+        bp_thread = self.bp_stage.initialize_and_positionBP(bp_pos)
         super().initalize_hardware()
         if bp_thread is not None:
             bp_thread.join()

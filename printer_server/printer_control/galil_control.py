@@ -123,9 +123,9 @@ class GalilControl(PrintControl):
         focus_pos = self.coord_systems["visitech"]["Focus"]
         bp_pos = self.bp_stage.top_position
 
-        xy_threads = self.xy_stage.initialize_and_positionXY(x_pos, y_pos, join=False)
-        focus_thread = self.focus_stage.initialize_and_positionFocus(focus_pos, join=False)
-        bp_thread = self.bp_stage.initialize_and_positionBP(bp_pos, join=False)
+        xy_threads = self.xy_stage.initialize_and_positionXY(x_pos, y_pos)
+        focus_thread = self.focus_stage.initialize_and_positionFocus(focus_pos)
+        bp_thread = self.bp_stage.initialize_and_positionBP(bp_pos)
         super().initalize_hardware()
         for thread in xy_threads:
             if thread is not None:
