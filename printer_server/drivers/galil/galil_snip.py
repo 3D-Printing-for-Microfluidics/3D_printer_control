@@ -2,6 +2,8 @@ from printer_server.extensions import socketio
 from printer_server.hardware_configuration import driver_handles
 import printer_server.views.manual_controls
 
+import json
+
 galil = driver_handles.galil
 coord_system = None
 
@@ -10,7 +12,8 @@ coord_system = None
 def galil_set_coodinate_system(message):
     "Set coordinate system offsets"
     global coord_system
-    coord_system = galil.config_dict["coord_systems"][message]
+    # coord_system = galil.config_dict["coord_systems"][message]
+    coord_system = json.loads(message)
     socketio.emit(
         "galil_done", galil_get_positions(), namespace="/manual", broadcast=True
     )

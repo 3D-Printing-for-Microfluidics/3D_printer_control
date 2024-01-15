@@ -70,6 +70,8 @@ def index():
 
     if initialized:
         calibration_positions = get_last_calibration_positions_from_logs()
+        if "coord_systems" in config_dict:
+            hardware["coord_systems"] = config_dict["coord_systems"]
         if "galil" in config_dict.keys():
             galil_positions = (
                 printer_server.drivers.galil.galil_snip.galil_get_positions()
@@ -81,8 +83,6 @@ def index():
                     "common": config_dict["galil"]["axes_common_names"][i],
                     "position": galil_positions[axis],
                 }
-            if "coord_systems" in config_dict["galil"]:
-                hardware["galil"]["coord_systems"] = config_dict["galil"]["coord_systems"]
         if "gpio" in config_dict.keys():
             if "fan_pin" in config_dict["gpio"].keys():
                 hardware["gpio"][

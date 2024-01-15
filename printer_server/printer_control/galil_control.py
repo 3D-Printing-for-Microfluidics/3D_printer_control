@@ -14,7 +14,7 @@ class GalilControl(PrintControl):
         # log files
         self.position_log = str(self.current_job / "position_data.csv")
 
-        self.coord_systems = config_dict["galil"]["coord_systems"]
+        self.coord_systems = config_dict["coord_systems"]
 
     def create_logs(self):
         super().create_logs()
