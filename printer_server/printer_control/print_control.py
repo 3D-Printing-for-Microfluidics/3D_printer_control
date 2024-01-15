@@ -300,6 +300,7 @@ class PrintControl:
                 self.shutdown(is_critical=True)
                 return False
             self.initalize_hardware()
+            log.info("Printer initialized, all hardware ready.")
             return True
         return False
             
