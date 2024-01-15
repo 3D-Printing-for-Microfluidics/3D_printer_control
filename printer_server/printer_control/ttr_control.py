@@ -5,10 +5,21 @@ class TTRControl(PrintControl):
         super().__init__()
 
         # hardware handles
-        self.tiptilt = driver_handles.tiptilt
-        
+        self.ttr_stage = driver_handles.ttr_stage
+
     def connect_hardware(self):
-        ret = self.tiptilt.connect()
+        ttr_thread = Thread(log, name="ttr_control_setup_thread", target=self.ttr_stage.connect, args=[self.shutdown])
+        ttr_thread.start()
         super().connect_hardware()
-        if not self.tiptilt.connected:
+        ttr_thread.join()
+        if not self.ttr_stage.connected:
             self.all_hardware_connected = False
+
+    def initalize_hardware(self):
+        pass
+        # ttr_pos = 
+        # ttr_thread = self.focus_stage.initialize_and_positionTTR(ttr_pos, join=False)
+        # super().initalize_hardware()
+        # if ttr_thread is not None:
+        #     ttr_thread.join()
+        # self.ttr_thread.initialized = True

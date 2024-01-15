@@ -67,10 +67,10 @@ class VisitechControl(ScreenControl):
             self.suppress_visitech_ocp_error = True
         super().pre_exposure_tasks(settings, light_engine)
 
-    def pre_exposure_joins(self, settings, light_engine):
+    def pre_exposure_joins(self, light_engine):
         if "visitech" in light_engine:
             self.visitech_thread.join()
-        super().pre_exposure_joins(settings, light_engine)
+        return super().pre_exposure_joins(light_engine)
 
     def exposure(self, settings, light_engine):
         if "visitech" in light_engine:

@@ -44,10 +44,10 @@ class WintechControl(ScreenControl):
             self.wintech_thread.start()
         super().pre_exposure_tasks(settings, light_engine)
 
-    def pre_exposure_joins(self, settings, light_engine):
+    def pre_exposure_joins(self, light_engine):
         if "wintech" in light_engine:
             self.wintech_thread.join()
-        super().pre_exposure_joins(settings, light_engine)
+        return super().pre_exposure_joins(light_engine)
 
     def exposure(self, settings, light_engine):
         if "wintech" in light_engine:

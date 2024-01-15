@@ -1,6 +1,6 @@
 from printer_server.printer_control.print_control import *
 
-class LoadcellControl(GalilControl):
+class LoadcellControl(BPControl):
     def __init__(self):
         super().__init__()
         self.loadcell = driver_handles.loadcell

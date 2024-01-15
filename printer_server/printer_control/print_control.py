@@ -30,18 +30,8 @@ from printer_server.views.manual_controls import (
     get_last_calibration_positions_from_logs,
 )
 
-# from printer_server.drivers.kdc101.kdc101_snip import get_kdc_positions
-# from printer_server.drivers.tiptilt.tiptilt_snip import get_tiptilt_positions
-
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
-
-
-def get_last_focused_position_from_logs():
-    """Return the last focused position for the distance axis from the
-    position log file.
-    """
-    return get_last_calibration_positions_from_logs()["distance"]
 
 
 def has_bad_metadata(filename):
@@ -152,6 +142,8 @@ class PrintControl(*parent_classes):
         self.bp_thread = None
         self.focus_thread = None
         self.xy_threads = None
+
+        self.coord_systems = None
 
         # values used during printing
         self.image = None
@@ -381,16 +373,14 @@ class PrintControl(*parent_classes):
         async_file_hander.start()
 
         position = get_last_calibration_positions_from_logs()
-        # position = get_kdc_positions()
-        dist = position["distance"]
-        self.write_to_event_log(f"Distance: {dist}")
+        self.write_to_event_log(f"Calibration: {position}")
+        # dist = position["distance"]
+        # self.write_to_event_log(f"Distance: {dist}")
+        # tip = position["tip"]
+        # self.write_to_event_log(f"Tip: {tip}")
+        # tilt = position["tilt"]
+        # self.write_to_event_log(f"Tilt: {tilt}")
         self.focused_position = float(position["distance"])
-
-        # position = get_tiptilt_positions()
-        tip = position["tip"]
-        self.write_to_event_log(f"Tip: {tip}")
-        tilt = position["tilt"]
-        self.write_to_event_log(f"Tilt: {tilt}")
 
         # update frontend progress bar
         self.state = "printing"
@@ -462,6 +452,9 @@ class PrintControl(*parent_classes):
     def pre_print_tasks(self):
         return
 
+    def pre_print_joins(self):
+        return
+
     def post_print_tasks(self):
         return
 
@@ -484,6 +477,7 @@ class PrintControl(*parent_classes):
         self.exposure_count = self.total_number_of_exposures()
 
         self.pre_print_tasks()
+        self.pre_print_joins()
 
         # update frontend message pane and progress bar
         msg = {
@@ -502,6 +496,11 @@ class PrintControl(*parent_classes):
             if self.printing_stopped.is_set():
                 break  # pause, don't do anything else
             self.next_layer = i + 1
+            
+            # update layer log messages
+            msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
+            log.info(msg)
+            self.write_to_event_log(msg)
 
             # process layer
             self.layer_worker(i, layer)
@@ -511,6 +510,18 @@ class PrintControl(*parent_classes):
         # finish print
         if not self.printing_paused.is_set():
             self.finish_print()
+
+    def pre_layer_tasks(self, i, layer):
+        return
+
+    def pre_layer_joins(self):
+        return
+
+    def move_bp(self, settings, light_engine):
+        return
+
+    def post_layer_tasks(self):
+        return
 
     def layer_worker(self, i, layer):
         """Process a single layer of the 3D print.
@@ -522,17 +533,18 @@ class PrintControl(*parent_classes):
         position_settings = self.get_position_settings(current_layer_settings)
         image_settings_list = self.get_image_settings(current_layer_settings)
 
-        # update log messages
-        msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
-        log.info(msg)
-        self.write_to_event_log(msg)
-
         # move build platform
         self.bp_thread = Thread(
             log, name="print_control_move_bp_thread", target=self.move_build_platform, args=[position_settings, layer]
         )
         if not self.next_layer == 1:
             self.bp_thread.start()
+
+        self.pre_layer_tasks(i, layer)
+        self.pre_layer_joins()
+
+        if not self.next_layer == 1:
+            self.bp_thread.join()
 
         # do exposures
         exposure_data = {}
@@ -547,13 +559,16 @@ class PrintControl(*parent_classes):
                 f"{json.dumps({x: exposure_data[x]}, indent=2)}\n",
             )
 
-    def pre_exposure_tasks(self, settings, light_engine):
+    def get_exposure_defocus(self, settings, light_engine):
         return
 
-    def pre_exposure_joins(self, settings, light_engine):
-        # wait for all hardware to be ready for exposure
-        if not self.next_layer == 1:
-            self.bp_thread.join()
+    def pre_exposure_tasks(self, settings, light_engine):
+        if type(self.focus_stage) is KDC101:
+            self.image = shift_image(self.image, x=um_to_px(settings["Relative focus position (um)"]))
+        return
+
+    def pre_exposure_joins(self, light_engine):
+        return
 
     def exposure(self, settings, light_engine):
         return
@@ -590,7 +605,7 @@ class PrintControl(*parent_classes):
         # run pre-exposure tasks
         self.write_to_event_log("Setup Exposure")
         self.pre_exposure_tasks(settings, light_engine)
-        self.pre_exposure_joins(settings, light_engine)
+        self.pre_exposure_joins(light_engine)
 
         # do the exposure
         position_during_exposure = self.get_focus()

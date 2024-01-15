@@ -1,14 +1,6 @@
 from printer_server.printer_control.print_control import *
 
-
-def get_keyence_set_position(sensor):
-    """Return the last focused position for the keyence sensor from the
-    position log file.
-    """
-    return get_last_calibration_positions_from_logs()[f"keyence_{sensor}"]
-
-
-class KeyenceControl(GalilControl):
+class KeyenceControl(XYControl, FocusControl):
     def __init__(self):
         super().__init__()
         self.keyence = driver_handles.keyence
@@ -88,7 +80,7 @@ class KeyenceControl(GalilControl):
             self.update_measurement_progress()
 
             # load keyence focal position
-            start_position = get_keyence_set_position(light_engine)
+            start_position = get_last_calibration_positions_from_logs()[f"keyence_{sensor}"]
             self.write_to_event_log(
                 f"{light_engine.capitalize()} Keyence Target Position: {start_position}"
             )
@@ -167,8 +159,7 @@ class KeyenceControl(GalilControl):
         self.write_to_event_log(f"Keyence Focus Offsets: {self.keyence_measurement_list}")
         self.move_build_platform_down(self.default_position_settings)
 
-    def pre_exposure_tasks(self, settings, light_engine):
-        """Move X, Y, and Focus stages to exposure positions"""
+    def convert_le_to_screen_le(self, light_engine)
         # convert light engine to screen light engine
         screen_light_engine = None
         for temp in config_dict["screen"]["light_engines"]:
@@ -179,35 +170,45 @@ class KeyenceControl(GalilControl):
             log.error(
                 "No matching light engine found in coord systems: '%s'", light_engine
             )
+        return screen_light_engine
+
+    def get_exposure_defocus_position(self, settings, light_engine):
+        screen_light_engine = self.convert_le_to_screen_le(light_engine)
+        self.focused_position = self.coord_systems[screen_light_engine]["Focus"]
 
         defocus_um = settings["Relative focus position (um)"]
         x_offset = float(settings.get("Image x offset (um)", self.default_x_offset))
         y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
 
         # keyence correction
-        base_focus = self.coord_systems[screen_light_engine]["Focus"] * 1000
         keyence_measurement = self.keyence_measurement_list[screen_light_engine][
             f"{x_offset}, {y_offset}"
         ]
-        z_focus = base_focus + defocus_um + keyence_measurement
+
+        self.defocus_um = (defocus_um + keyence_measurement)/1000
+
+    def pre_exposure_tasks(self, settings, light_engine):
+        """Move X, Y, and Focus stages to exposure positions"""
+        x_offset = float(settings.get("Image x offset (um)", self.default_x_offset))
+        y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
+        screen_light_engine = self.convert_le_to_screen_le(light_engine)
 
         x_pos = x_offset + self.coord_systems[screen_light_engine]["X"]
         y_pos =  y_offset + self.coord_systems[screen_light_engine]["Y"]
-        focus_pos = z_focus/1000
         self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
-        self.focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False)
 
         super().pre_exposure_tasks(settings, light_engine)
 
-    def pre_exposure_joins(self, settings, light_engine):
+    def pre_exposure_joins(self, light_engine):
         """Join X, Y, and Focus threads"""
         for thread in self.xy_threads:
             if thread is not None:
                 thread.join()
-        if self.focus_thread is not None:
-            self.focus_thread.join()
+        return super().pre_exposure_joins(light_engine)
 
-        return super().pre_exposure_joins(settings, light_engine)
+    def post_print_tasks(self):
+        self.focused_position = self.coord_systems["visitech"]["Focus"]
+        super().post_print_tasks()
 
     # def xy_keyence_alignment(self):
     #     edges = {
