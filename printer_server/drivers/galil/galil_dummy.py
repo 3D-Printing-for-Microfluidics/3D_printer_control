@@ -57,15 +57,15 @@ class Galil_dummy:
         self.motorOn()
 
     @dummy_log
-    def goToZcalibration(self):
+    def goToBPcalibration(self):
         self.positions["A"] = self.calibration_position
 
     @dummy_log
-    def goToZmax(self):
+    def goToBPmax(self):
         self.positions["A"] = self.top_position
 
     @dummy_log
-    def goToZmin(self):
+    def goToBPmin(self):
         self.positions["A"] = self.bottom_position
 
     @dummy_log

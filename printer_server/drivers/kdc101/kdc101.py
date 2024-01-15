@@ -4,10 +4,10 @@ import logging
 from struct import pack, unpack
 import serial
 import serial.tools.list_ports
+from printer_server.drivers.generic_drivers import FocusStageDriver
 
-
-class KDC101:
-    def __init__(self, log_level=logging.DEBUG):
+class KDC101(FocusStageDriver):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.homed = False
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
@@ -20,6 +20,7 @@ class KDC101:
         self.relativeMode = True
         self.port = None
         self.serial_handle = None
+        self.initialized = None
 
     # helper function to find handle to K-Cube
     def find_device(self):
@@ -30,7 +31,7 @@ class KDC101:
                 return device.device
         return None
 
-    def connect(self):
+    def connect(self, shutdown):
         self.port = self.find_device()
         if self.port is None:
             msg = "Thor Labs stage not found!"
@@ -61,6 +62,38 @@ class KDC101:
                 self.serial_handle.close()
                 self.serial_handle = None
                 self.log.info("Unable to disconnect from Thor Labs stage!")
+
+
+    ############################# Parent class functions #####################################
+
+    def setup_log_file(self, filename):
+        pass
+
+    def logging_start(self):
+        pass
+
+    def logging_stop(self):
+        pass
+
+    def initialize(self):
+        pass
+
+    def getFocusPosition(self, notify=True):
+        return self.getCurrentPos()/1000
+
+    def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.move(pos, microns=False, relative=False)
+
+    def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.move(pos, microns=False, relative=True)
+
+    def startFocusJog(self, speed=None, acceleration=None):
+        log.warn("KDC Jogging not implemented")
+
+    def stopFocusJog(self):
+        log.warn("KDC Jogging not implemented")
+
+    ##############################################################################################
             
     def home(self):
         # Home Stage; MGMSG_MOT_MOVE_HOME

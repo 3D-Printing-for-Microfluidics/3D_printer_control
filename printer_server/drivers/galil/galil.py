@@ -9,9 +9,9 @@ from datetime import datetime
 import gclib
 from printer_server.async_file_handler import async_file_hander
 from printer_server.threading_wrapper import Thread
+from printer_server.drivers.generic_drivers import BPStageDriver, FocusStageDriver, XYStageDriver
 
-
-class Galil:
+class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def __init__(
         self,
         config_dict=None,
@@ -67,7 +67,7 @@ class Galil:
             self.current_position[a] = 0
 
         self.connected = None
-        self.initalized = None
+        self.initialized = None
 
         self.g = gclib.py()
 
@@ -116,15 +116,15 @@ class Galil:
         for axis in self.axes:
             self.motorOn(axis)
 
-    def goToZcalibration(self):
+    def goToBPcalibration(self):
         self.absMove(mm=self.calibration_position, axis="Build Platform")
         return self.getPosition(in_mm=True)
 
-    def goToZmax(self):
+    def goToBPmax(self):
         self.absMove(mm=self.top_position, axis="Build Platform")
         return self.getPosition(in_mm=True)
 
-    def goToZmin(self):
+    def goToBPmin(self):
         self.absMove(mm=self.bottom_position, axis="Build Platform")
         return self.getPosition(in_mm=True)
 
@@ -314,6 +314,55 @@ class Galil:
         for a in self.axes:
             self.setSpeed(self.getDefaultSpeed(a), axis=a)
             self.setAcceleration(self.getDefaultAcceleration(a), axis=a)
+
+    ################################# Parent class functions #######################################
+
+    def getXYPosition(self, axis=None, notify=True):
+        return self.getPosition(in_mm=T, axis=axis)
+
+    def absMoveXY( self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+        self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
+
+    def relMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+        self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
+
+    def startXYJog(self, speed=None, acceleration=None, axis=None):
+        self.startJog(speed=speed, acceleration=acceleration, axis=axis)
+
+    def stopXYJog(self, axis=None):
+        self.startJog(axis=axis)
+
+    def getFocusPosition(self, notify=True):
+        return self.getPosition(in_mm=T, axis="Focus")
+
+    def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
+
+    def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
+
+    def startFocusJog(self, speed=None, acceleration=None):
+        self.startJog(speed=speed, acceleration=acceleration, axis="Focus")
+
+    def stopFocusJog(self):
+        self.startJog(axis="Focus")
+
+    def getBPPosition(self, notify=True):
+        return self.getPosition(in_mm=T, axis="Build Platform")
+
+    def absMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Build Platform")
+
+    def relMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Build Platform")
+
+    def startBPJog(self, speed=None, acceleration=None):
+        self.startJog(speed=speed, acceleration=acceleration, axis="Build Platform")
+
+    def stopBPJog(self):
+        self.startJog(axis="Build Platform")
+
+    ################################# End parent class functions #######################################
 
     # pylint: disable=too-many-arguments
     def relMove(self, mm=None, cnts=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):

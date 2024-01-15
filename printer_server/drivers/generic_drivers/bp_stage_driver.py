@@ -5,7 +5,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 class BPStageDriver:
-    def __init__(self):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.initialized = None
         self.calibration_position = None
         self.bottom_position = None
@@ -28,17 +28,6 @@ class BPStageDriver:
 
     def home(self):
         log.warn("Function not implemented. Using abstract BPStageDriver class")
-
-    def initialize_and_positionBP(self, pos, join=True):
-        if self.initialized is None:
-            self.initialized = False
-            self.initialize()
-            self.home()
-
-        while not self.initialized:
-            time.sleep(0.1)
-
-        return self.threadedBPMove(log, pos, join=join)
 
     def getBPPosition(self, notify=True):
         log.warn("Function not implemented. Using abstract BPStageDriver class")
@@ -63,6 +52,17 @@ class BPStageDriver:
 
     def goToBPbottom(self):
         log.warn("Function not implemented. Using abstract BPStageDriver class")
+
+    def initialize_and_positionBP(self, pos, join=True):
+        if self.initialized is None:
+            self.initialized = False
+            self.initialize()
+            self.home()
+
+        while not self.initialized:
+            time.sleep(0.1)
+
+        return self.threadedBPMove(log, pos, join=join)
 
     def threadedBPMove(
         logger,

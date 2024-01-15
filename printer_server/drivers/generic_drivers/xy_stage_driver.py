@@ -5,7 +5,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 class XYStageDriver:
-    def __init__(self):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.initialized = None
 
     def setup_log_file(self, filename):
@@ -25,18 +25,6 @@ class XYStageDriver:
 
     def home(self):
         log.warn("Function not implemented. Using abstract XYStageDriver class")
-
-    def initialize_and_positionXY(self, x, y, join=True):
-        if self.initialized is None:
-            self.initialized = False
-            self.initialize()
-            self.home()
-            self.initialized = True
-
-        while not self.initialized:
-            time.sleep(0.1)
-
-        return self.threadedXYMove(log, x_pos, y_pos, join=join)
         
     def getXYPosition(self, axis=None, notify=True):
         log.warn("Function not implemented. Using abstract XYStageDriver class")
@@ -52,6 +40,18 @@ class XYStageDriver:
 
     def stopXYJog(self, axis=None):
         log.warn("Function not implemented. Using abstract XYStageDriver class")
+
+    def initialize_and_positionXY(self, x, y, join=True):
+        if self.initialized is None:
+            self.initialized = False
+            self.initialize()
+            self.home()
+            self.initialized = True
+
+        while not self.initialized:
+            time.sleep(0.1)
+
+        return self.threadedXYMove(log, x_pos, y_pos, join=join)
 
     def threadedXYMove(
         logger,

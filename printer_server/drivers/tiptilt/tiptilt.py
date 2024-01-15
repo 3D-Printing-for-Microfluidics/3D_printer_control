@@ -4,6 +4,7 @@ import logging
 import serial
 import serial.tools.list_ports
 import serial.serialutil
+from printer_server.drivers.generic_drivers import TTRStageDriver
 
 
 # helper function for converting axis name into index
@@ -13,8 +14,7 @@ def get_axis_index(axis):
         axis, 0
     )  # 0 is default if axis is invalid
 
-
-class TipTilt(serial.Serial):
+class TipTilt(serial.Serial, TTRStageDriver):
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         super().__init__(baudrate=115200, timeout=None)
 
@@ -26,6 +26,7 @@ class TipTilt(serial.Serial):
         self.port = None  # start with no port
         self.connected = False
         self.r = re.compile(r"\d*\.?\d*$")  # regex for getter functions
+        self.initialized = None
 
     def findUsbPort(self, hwid):
         ports = list(serial.tools.list_ports.comports())
@@ -35,7 +36,7 @@ class TipTilt(serial.Serial):
                 return p.device
         return None  # not found
 
-    def connect(self):
+    def connect(self, shutdown):
         self.port = self.findUsbPort(self.hwid)
         if self.port is None:
             msg = "Tip/Tilt stage not found!"

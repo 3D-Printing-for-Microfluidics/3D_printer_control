@@ -7,7 +7,7 @@ log.setLevel(logging.INFO)
 # FOCUS STAGE NEEDS TO RETURN POSITION IN UM
 
 class FocusStageDriver:
-    def __init__(self):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.initialized = None
 
     def setup_log_file(self, filename):
@@ -28,17 +28,6 @@ class FocusStageDriver:
     def home(self):
         log.warn("Function not implemented. Using abstract FocusStageDriver class")
 
-    def initialize_and_positionFocus(self, pos, join=True):
-        if self.initialized is None:
-            self.initialized = False
-            self.initialize()
-            self.home()
-
-        while not self.initialized:
-            time.sleep(0.1)
-
-        return self.threadedFocusMove(log, pos, join=join)
-
     def getFocusPosition(self, notify=True):
         log.warn("Function not implemented. Using abstract FocusStageDriver class")
 
@@ -53,6 +42,17 @@ class FocusStageDriver:
 
     def stopFocusJog(self):
         log.warn("Function not implemented. Using abstract FocusStageDriver class")
+
+    def initialize_and_positionFocus(self, pos, join=True):
+        if self.initialized is None:
+            self.initialized = False
+            self.initialize()
+            self.home()
+
+        while not self.initialized:
+            time.sleep(0.1)
+
+        return self.threadedFocusMove(log, pos, join=join)
 
     def threadedFocusMove(
         logger,
