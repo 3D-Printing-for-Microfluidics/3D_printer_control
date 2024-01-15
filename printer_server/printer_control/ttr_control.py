@@ -13,6 +13,7 @@ class TTRControl(PrintControl):
         super().connect_hardware()
         ttr_thread.join()
         if not self.ttr_stage.connected:
+            log.error("TTR stage failed to connect!")
             self.all_hardware_connected = False
 
     def initalize_hardware(self):

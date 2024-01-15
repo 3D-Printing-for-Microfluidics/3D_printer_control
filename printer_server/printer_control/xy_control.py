@@ -19,6 +19,7 @@ class XYControl(PrintControl):
         super().connect_hardware()
         xy_thread.join()
         if not self.xy_stage.connected:
+            log.error("XY stage failed to connect!")
             self.all_hardware_connected = False
 
     def initalize_hardware(self):

@@ -64,6 +64,7 @@ class FocusControl(PrintControl):
         super().connect_hardware()
         focus_thread.join()
         if not self.focus_stage.connected:
+            log.error("Focus stage failed to connect!")
             self.all_hardware_connected = False
 
     def initalize_hardware(self):

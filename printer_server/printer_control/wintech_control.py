@@ -18,6 +18,7 @@ class WintechControl(ScreenControl):
         super().connect_hardware()
         self.wintech_thread.join()
         if not self.wintech.connected:
+            log.error("Wintech failed to connect!")
             self.all_hardware_connected = False
 
     def initalize_hardware(self):

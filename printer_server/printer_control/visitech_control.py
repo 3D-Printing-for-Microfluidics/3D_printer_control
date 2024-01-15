@@ -23,6 +23,7 @@ class VisitechControl(ScreenControl):
         super().connect_hardware()
         self.visitech_thread.join()
         if not self.visitech.connected:
+            log.error("Visitech failed to connect!")
             self.all_hardware_connected = False
 
     def initalize_hardware(self):

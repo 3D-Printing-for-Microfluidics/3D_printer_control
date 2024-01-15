@@ -167,6 +167,7 @@ class LoadcellControl(PrintControl):
         loadcell_ret = self.loadcell.connect()
         super().connect_hardware()
         if not loadcell_ret:
+            log.error("Loadcell failed to connect!")
             self.all_hardware_connected = False
 
     def resume(self):

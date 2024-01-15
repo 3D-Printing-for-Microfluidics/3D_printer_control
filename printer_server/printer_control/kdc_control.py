@@ -70,6 +70,7 @@ class KDCControl(PrintControl):
         self.kdc.connect()
         super().connect_hardware()
         if self.kdc.port is None:
+            log.error("KDC101 failed to connect!")
             self.all_hardware_connected = False
         
     def initalize_hardware(self):
