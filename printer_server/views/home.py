@@ -164,19 +164,19 @@ def disconnect():
 @socketio.on("initialize", namespace="/printing")
 # pylint: disable=unused-argument
 def initialize(message):
-    print_control.initialize(run_in_thread=False, top_level=True)
+    print_control.initialize(run_in_thread=True, top_level=True)
 
 
 @socketio.on("planarization step 1", namespace="/printing")
 # pylint: disable=unused-argument
 def planarization_step_1(message):
-    print_control.planarization_step_1()
+    print_control.planarization_step_1(run_in_thread=True, top_level=True)
 
 
 @socketio.on("planarization step 2", namespace="/printing")
 # pylint: disable=unused-argument
 def planarization_step_2(message):
-    print_control.planarization_step_2()
+    print_control.planarization_step_2(run_in_thread=True, top_level=True)
 
 
 @socketio.on("start", namespace="/printing")
@@ -188,7 +188,7 @@ def start_print(message):
 @socketio.on("pause", namespace="/printing")
 # pylint: disable=unused-argument
 def pause_print(message):
-    print_control.pause()
+    print_control.pause(run_in_thread=True, top_level=True)
 
 
 @socketio.on("resume", namespace="/printing")
@@ -200,7 +200,7 @@ def resume_print(message):
 @socketio.on("stop", namespace="/printing")
 # pylint: disable=unused-argument
 def stop(message):
-    print_control.stop()
+    print_control.stop(run_in_thread=True, top_level=True)
 
 
 @socketio.on("shutdown", namespace="/printing")

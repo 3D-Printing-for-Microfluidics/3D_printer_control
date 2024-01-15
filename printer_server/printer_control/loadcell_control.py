@@ -96,7 +96,7 @@ class LoadcellControl(PrintControl):
         return count
 
     @run_in_thread("planarizing", "Planarization Step 1")
-    def planarization_step_1(self, run_in_thread=True):
+    def planarization_step_1(self):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.loadcell.start()   
@@ -106,7 +106,7 @@ class LoadcellControl(PrintControl):
                 self.loadcell_thread = Thread(log, name="print_control_loadcell_graph_thread", target=self.loadcell_graph_loop)
                 self.loadcell_thread.start()
             loadcell_start_force = self.loadcell.get_current_force()
-            super().planarization_step_1(run_in_thread=False)
+            super().planarization_step_1()
             if config_dict["loadcell"]["loadcell_planarization_enabled"]:
                 log.debug("Loadcell force (pre-step 1): %s", loadcell_start_force)
                 target_force = config_dict["loadcell"]["loadcell_planarization_force"]
@@ -125,8 +125,8 @@ class LoadcellControl(PrintControl):
                 self.bp_stage.relMoveBP(mm=2.0, speed=2.5)
 
     @run_in_thread("planarized", "Planarization Step 2")
-    def planarization_step_2(self, run_in_thread=True):
-        super().planarization_step_2(run_in_thread=False)
+    def planarization_step_2(self):
+        super().planarization_step_2()
         """Raise the build platform to begin printing."""
         if config_dict["loadcell"]["loadcell_planarization_enabled"]:
             if self.state == "planarizing":

@@ -60,9 +60,9 @@ def run_in_thread(state, text):
 
     def decorator(f):
         @wraps(f)
-        def decorated_function(self, *args, **kwargs):
-            run_in_thread = kwargs.get("run_in_thread", True)
-            top_level = kwargs.get("top_level", True)
+        def decorated_function(self, *args, run_in_thread=False, top_level=False, **kwargs):
+            run_in_thread = kwargs.get("run_in_thread", run_in_thread)
+            top_level = kwargs.get("top_level", top_level)
 
             def func(self, *args, **kwargs):
                 f(self, *args, **kwargs)
@@ -290,7 +290,7 @@ class PrintControl:
         return 0
 
     @run_in_thread("initialized", "Initialize")
-    def initialize(self, run_in_thread=False, top_level=False):
+    def initialize(self):
         """Put all hardware into starting configuration."""
         if self.state == "uninitialized":
             self.state = "busy"
@@ -310,13 +310,13 @@ class PrintControl:
         pass
 
     @run_in_thread("planarizing", "Planarization Step 1")
-    def planarization_step_1(self, run_in_thread=True):
+    def planarization_step_1(self):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
 
     @run_in_thread("planarized", "Planarization Step 2")
-    def planarization_step_2(self, run_in_thread=True):
+    def planarization_step_2(self):
         self.print_position = self.planarized_position
 
     def start(self, job_id):

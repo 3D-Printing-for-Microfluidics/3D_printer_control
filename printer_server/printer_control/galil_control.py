@@ -139,10 +139,10 @@ class GalilControl(PrintControl):
         self.bp_stage.initialized = True
 
     @run_in_thread("planarizing", "Planarization Step 1")
-    def planarization_step_1(self, run_in_thread=True):
+    def planarization_step_1(self):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
-            super().planarization_step_1(run_in_thread=False)
+            super().planarization_step_1()
             self.xy_stage.logging_start()
             self.focus_stage.logging_start()
             self.bp_stage.logging_start()
@@ -151,9 +151,9 @@ class GalilControl(PrintControl):
             self.bp_stage.absMoveBP(mm=self.bp_stage.bottom_position, speed=0.5)
 
     @run_in_thread("planarized", "Planarization Step 2")
-    def planarization_step_2(self, run_in_thread=True):
+    def planarization_step_2(self):
         self.planarized_position = self.bp_stage.getBPPosition()
-        super().planarization_step_2(run_in_thread=False)
+        super().planarization_step_2()
 
     
     def resume(self):

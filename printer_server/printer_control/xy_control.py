@@ -32,10 +32,10 @@ class XYControl(PrintControl):
         self.xy_stage.initialized = True
 
     @run_in_thread("planarizing", "Planarization Step 1")
-    def planarization_step_1(self, run_in_thread=True):
+    def planarization_step_1(self):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
-            super().planarization_step_1(run_in_thread=False)
+            super().planarization_step_1()
             self.xy_stage.logging_start()
 
     def post_print_tasks(self):
