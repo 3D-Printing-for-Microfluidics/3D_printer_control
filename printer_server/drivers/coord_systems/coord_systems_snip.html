@@ -3,13 +3,15 @@
     <div class="container">
         <div class="row">
             <div class="col-4">
-                <h5>Coordinate System</h5>
+                <h3>Coordinate System</h3>
             </div>
             <div class="col-8">
                 <div id="coord_systems" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
                     {% for coord in hardware['coord_systems'].keys() %}
+                    {% if 'path' not in coord %}
                     <label class="btn btn-outline-info shadow-none {% if coord == 'global' %} active {% endif %}">{{
                         coord|capitalize }}<input type="radio"></label>
+                    {% endif %}
                     {% endfor %}
                 </div>
             </div>

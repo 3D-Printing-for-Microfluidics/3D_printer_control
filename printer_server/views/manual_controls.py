@@ -71,7 +71,8 @@ def index():
     if initialized:
         calibration_positions = get_last_calibration_positions_from_logs()
         if "coord_systems" in config_dict:
-            hardware["coord_systems"] = config_dict["coord_systems"]
+            for key in config_dict["coord_systems"].keys():
+                hardware["coord_systems"][key] = config_dict["coord_systems"][key]
         if "galil" in config_dict.keys():
             galil_positions = (
                 printer_server.drivers.galil.galil_snip.galil_get_positions()
