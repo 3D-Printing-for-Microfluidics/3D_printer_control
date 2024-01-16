@@ -538,7 +538,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         if self.movement_log is None and filename is not None:
             self.movement_log = str(Path(filename) / "galil_movement_data.csv")
             async_file_hander.write(self.movement_log, "timestamp,")
-            for a in self.galil.axes_common_names:
+            for a in self.axes_common_names:
                 async_file_hander.write(self.movement_log, f"{a} position_mm,")
                 async_file_hander.write(self.movement_log, f"{a} status,")
             async_file_hander.write(self.movement_log, "\n")
