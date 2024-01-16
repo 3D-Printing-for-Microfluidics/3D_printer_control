@@ -476,7 +476,7 @@ class PrintControl:
             self.write_to_event_log(msg)
 
             # process layer
-            self.layer_worker(i, layer)
+            self.layer_worker(i, layer, msg)
 
         self.post_print_tasks()
 
@@ -504,7 +504,7 @@ class PrintControl:
     def post_layer_tasks(self):
         return
 
-    def layer_worker(self, i, layer):
+    def layer_worker(self, i, layer, msg):
         """Process a single layer of the 3D print.
 
         This method should only be called from inside print_worker.

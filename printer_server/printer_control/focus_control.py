@@ -95,10 +95,9 @@ class FocusControl(PrintControl):
         self.defocus_um = settings["Relative focus position (um)"]
 
     def pre_exposure_tasks(self, settings, light_engine):
-        self.get_exposure_defocus_position(settings, light_engine)
+        self.get_exposure_defocus(settings, light_engine)
         if self.defocus_um != 0:
             self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position + self.defocus_um, join=False)
-            self.focus_thread.start()
         return super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, light_engine):
