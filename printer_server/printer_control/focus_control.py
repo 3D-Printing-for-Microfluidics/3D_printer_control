@@ -59,10 +59,10 @@ class FocusControl(PrintControl):
         )
 
     def connect_hardware(self):
-        focus_thread = Thread(log, name="focus_control_setup_thread", target=self.focus_stage.connect, args=[self.shutdown])
-        focus_thread.start()
+        self.focus_thread = Thread(log, name="focus_control_setup_thread", target=self.focus_stage.connect, args=[self.shutdown])
+        self.focus_thread.start()
         super().connect_hardware()
-        focus_thread.join()
+        self.focus_thread.join()
         if not self.focus_stage.connected:
             log.error("Focus stage failed to connect!")
             self.all_hardware_connected = False
@@ -72,10 +72,10 @@ class FocusControl(PrintControl):
             self.focused_position = self.coord_systems["visitech"]["Focus"]
         else:
             self.focused_position = get_last_calibration_positions_from_logs()["distance"]
-        focus_thread = self.focus_stage.initialize_and_positionFocus(self.focused_position)
+        self.focus_thread = self.focus_stage.initialize_and_positionFocus(self.focused_position)
         super().initalize_hardware()
-        if focus_thread is not None:
-            focus_thread.join()
+        if self.focus_thread is not None:
+            self.focus_thread.join()
         self.focus_stage.initialized = True
 
     @run_in_thread("planarizing", "Planarization Step 1")
@@ -87,9 +87,9 @@ class FocusControl(PrintControl):
 
     def post_print_tasks(self):
         super().post_print_tasks()
-        self.focus_stage.threadedFocusMove(log, self.focused_position, join=False)
-        if focus_thread is not None:
-            focus_thread.join()
+        self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position, join=False)
+        if self.focus_thread is not None:
+            self.focus_thread.join()
 
     def get_exposure_defocus(self, settings, light_engine):
         self.defocus_um = settings["Relative focus position (um)"]

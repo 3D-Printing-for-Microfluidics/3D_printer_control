@@ -14,10 +14,10 @@ class XYControl(PrintControl):
         self.xy_stage.setup_log_file(str(self.current_job))
 
     def connect_hardware(self):
-        xy_thread = Thread(log, name="xy_control_setup_thread", target=self.xy_stage.connect, args=[self.shutdown])
-        xy_thread.start()
+        self.xy_thread = Thread(log, name="xy_control_setup_thread", target=self.xy_stage.connect, args=[self.shutdown])
+        self.xy_thread.start()
         super().connect_hardware()
-        xy_thread.join()
+        self.xy_thread.join()
         if not self.xy_stage.connected:
             log.error("XY stage failed to connect!")
             self.all_hardware_connected = False
@@ -25,9 +25,9 @@ class XYControl(PrintControl):
     def initalize_hardware(self):
         x_pos = self.coord_systems["visitech"]["X"]
         y_pos = self.coord_systems["visitech"]["Y"]
-        xy_threads = self.xy_stage.initialize_and_positionXY(x_pos, y_pos)
+        self.xy_threads = self.xy_stage.initialize_and_positionXY(x_pos, y_pos)
         super().initalize_hardware()
-        for thread in xy_threads:
+        for thread in self.xy_threads:
             if thread is not None:
                 thread.join()
         self.xy_stage.initialized = True
@@ -44,8 +44,8 @@ class XYControl(PrintControl):
         # set paused position
         x_pos = self.coord_systems["visitech"]["X"]
         y_pos = self.coord_systems["visitech"]["Y"]
-        xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False, speed_x=None, speed_y=None, acceleration_x=None, acceleration_y=None)
-        for thread in xy_threads:
+        self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False, speed_x=None, speed_y=None, acceleration_x=None, acceleration_y=None)
+        for thread in self.xy_threads:
             if thread is not None:
                 thread.join()
 

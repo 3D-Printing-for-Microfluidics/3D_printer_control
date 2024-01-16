@@ -92,13 +92,13 @@ class KeyenceControl(PrintControl):
             x_pos = self.default_x_offset/1000 + self.coord_systems[f"keyence_{light_engine}"]["X"]
             y_pos = self.default_y_offset/1000 + self.coord_systems[f"keyence_{light_engine}"]["Y"]
             focus_pos = self.coord_systems[f"keyence_{light_engine}"]["Focus"]
-            xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
-            focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False)
-            for thread in xy_threads:
+            self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
+            self.focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False)
+            for thread in self.xy_threads:
                 if thread is not None:
                     thread.join()
-            if focus_thread is not None:
-                focus_thread.join()
+            if self.focus_thread is not None:
+                self.focus_thread.join()
             time.sleep(5.0)
 
             # get keyence reading
@@ -245,13 +245,13 @@ class KeyenceControl(PrintControl):
     #                 x_pos = self.coord_systems[f"keyence_{light_engine}"]["X"] + x_offset/1000
     #                 y_pos = self.coord_systems[f"keyence_{light_engine}"]["Y"] + y_offset/1000
     #                 focus_pos = self.coord_systems[f"keyence_{light_engine}"]["Focus"]
-    #                 xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False, speed_x=None, speed_y=None, acceleration_x=None, acceleration_y=None)
-    #                 focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False, speed=None, acceleration=None)
-    #                 for thread in xy_threads:
+    #                 self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False, speed_x=None, speed_y=None, acceleration_x=None, acceleration_y=None)
+    #                 self.focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False, speed=None, acceleration=None)
+    #                 for thread in self.xy_threads:
     #                     if thread is not None:
     #                         thread.join()
-    #                 if focus_thread is not None:
-    #                     focus_thread.join()
+    #                 if self.focus_thread is not None:
+    #                     self.focus_thread.join()
 
     #                 if step_size == 1000.0:
     #                     time.sleep(5)

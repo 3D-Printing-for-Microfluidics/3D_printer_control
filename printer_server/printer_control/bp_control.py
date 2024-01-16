@@ -87,20 +87,20 @@ class BPControl(PrintControl):
         )
 
     def connect_hardware(self):
-        bp_thread = Thread(log, name="bp_control_setup_thread", target=self.bp_stage.connect, args=[self.shutdown])
-        bp_thread.start()
+        self.bp_thread = Thread(log, name="bp_control_setup_thread", target=self.bp_stage.connect, args=[self.shutdown])
+        self.bp_thread.start()
         super().connect_hardware()
-        bp_thread.join()
+        self.bp_thread.join()
         if not self.bp_stage.connected:
             log.error("Build platform stage failed to connect!")
             self.all_hardware_connected = False
 
     def initalize_hardware(self):
         bp_pos = self.bp_stage.top_position
-        bp_thread = self.bp_stage.initialize_and_positionBP(bp_pos)
+        self.bp_thread = self.bp_stage.initialize_and_positionBP(bp_pos)
         super().initalize_hardware()
-        if bp_thread is not None:
-            bp_thread.join()
+        if self.bp_thread is not None:
+            self.bp_thread.join()
         self.bp_stage.initialized = True
 
     @run_in_thread("planarizing", "Planarization Step 1")
@@ -159,9 +159,9 @@ class BPControl(PrintControl):
         self.move_build_platform_up(default_position_settings)
 
         bp_pos = self.bp_stage.top_position
-        bp_thread = self.bp_stage.threadedBPMove(log, bp_pos, join=False, speed=None, acceleration=None)
-        if bp_thread is not None:
-            bp_thread.join()
+        self.bp_thread = self.bp_stage.threadedBPMove(log, bp_pos, join=False, speed=None, acceleration=None)
+        if self.bp_thread is not None:
+            self.bp_thread.join()
 
     def finish_print(self):
         self.bp_stage.logging_stop()

@@ -8,10 +8,10 @@ class TTRControl(PrintControl):
         self.ttr_stage = driver_handles.ttr_stage
 
     def connect_hardware(self):
-        ttr_thread = Thread(log, name="ttr_control_setup_thread", target=self.ttr_stage.connect, args=[self.shutdown])
-        ttr_thread.start()
+        self.ttr_thread = Thread(log, name="ttr_control_setup_thread", target=self.ttr_stage.connect, args=[self.shutdown])
+        self.ttr_thread.start()
         super().connect_hardware()
-        ttr_thread.join()
+        self.ttr_thread.join()
         if not self.ttr_stage.connected:
             log.error("TTR stage failed to connect!")
             self.all_hardware_connected = False
@@ -19,8 +19,8 @@ class TTRControl(PrintControl):
     def initalize_hardware(self):
         pass
         # ttr_pos = 
-        # ttr_thread = self.focus_stage.initialize_and_positionTTR(ttr_pos, join=False)
+        # self.ttr_thread = self.focus_stage.initialize_and_positionTTR(ttr_pos, join=False)
         # super().initalize_hardware()
-        # if ttr_thread is not None:
-        #     ttr_thread.join()
-        # self.ttr_thread.initialized = True
+        # if self.ttr_thread is not None:
+        #     self.ttr_thread.join()
+        # self.ttr_stage.initialized = True
