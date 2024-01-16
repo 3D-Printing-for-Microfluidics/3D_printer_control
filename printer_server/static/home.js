@@ -4,7 +4,7 @@ var delete_job_id;
 // List of pending files to handle when the Upload button is finally clicked.
 var PENDING_FILES = [];
 
-let loadcell_exists = ((typeof graph_autoscale) === "object");
+let loadcell_exists = ((typeof graph_autoscale) === "boolean");
 
 if (loadcell_exists) {
     let loadcell_trace = {

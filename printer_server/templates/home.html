@@ -127,7 +127,7 @@
     </tbody>
 </table>
 
-{% if graph_autoscale %}
+{% if graph_autoscale is defined %}
 <div class="collapse" id="collapseLoadcell">
     <container>
         <div class="loadcell-data" id="loadcell-data"></div>
@@ -140,7 +140,7 @@
     <div class="col-auto mr-auto">
         <h5>Messages</h5>
     </div>
-    {% if graph_autoscale %}
+    {% if graph_autoscale is defined %}
     <div class="col-auto">
         <button class="btn btn-sm btn-outline-info" type="button" data-toggle="collapse" id="toggle-loadcell">Show
             loadcell data</button>
@@ -168,11 +168,10 @@
 {% block scripts %}
 {{super()}}
 <script>
-    let objType = typeof graph_autoscale;
-    if (objType === "object") {
-        var graph_autoscale = {{ graph_autoscale| lower
+    {% if graph_autoscale is defined %}
+    var graph_autoscale = {{ graph_autoscale| lower
     }}
-    }
+    {% endif %}
 </script>
 <script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
 <script src="{{ url_for('static', filename='lib/plotly-1.54.6.min.js') }}"></script>
