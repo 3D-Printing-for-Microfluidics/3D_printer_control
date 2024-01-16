@@ -21,6 +21,7 @@ class KDC101(FocusStageDriver):
         self.port = None
         self.serial_handle = None
         self.initialized = None
+        self.config_dict = config_dict
 
     # helper function to find handle to K-Cube
     def find_device(self):

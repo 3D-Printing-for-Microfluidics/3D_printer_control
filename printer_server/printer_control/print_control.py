@@ -533,7 +533,8 @@ class PrintControl:
         return
 
     def pre_exposure_tasks(self, settings, light_engine):
-        if type(self.focus_stage) is KDC101:
+        need_to_shift_image = self.focus_stage.config_dict.get("moving_shifts_image", False)
+        if need_to_shift_image:
             self.image = shift_image(self.image, x=um_to_px(settings["Relative focus position (um)"]))
         return
 
