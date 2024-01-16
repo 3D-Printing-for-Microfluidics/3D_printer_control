@@ -176,7 +176,7 @@ class KeyenceControl(PrintControl):
             )
         return screen_light_engine
 
-    def get_exposure_defocus_position(self, settings, light_engine):
+    def get_exposure_defocus(self, settings, light_engine):
         screen_light_engine = self.convert_le_to_screen_le(light_engine)
         self.focused_position = self.coord_systems[screen_light_engine]["Focus"]
 

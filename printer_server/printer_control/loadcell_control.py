@@ -181,7 +181,7 @@ class LoadcellControl(PrintControl):
             return
         super().print_worker()
         if self.printing_paused.is_set():
-                self.loadcell.pause()
+            self.loadcell.pause()
 
     def finish_print(self):
         self.loadcell.stop()

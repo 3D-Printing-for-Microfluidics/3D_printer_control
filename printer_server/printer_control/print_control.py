@@ -485,22 +485,6 @@ class PrintControl:
             self.finish_print()
 
     def pre_layer_tasks(self, i, layer):
-        return
-
-    def pre_layer_joins(self):
-        return
-
-    def move_bp(self, settings, light_engine):
-        return
-
-    def post_layer_tasks(self):
-        return
-
-    def layer_worker(self, i, layer):
-        """Process a single layer of the 3D print.
-
-        This method should only be called from inside print_worker.
-        """
         # read settings for this layer
         current_layer_settings = self.print_settings["Layers"][layer[0]]
         position_settings = self.get_position_settings(current_layer_settings)
@@ -513,12 +497,25 @@ class PrintControl:
         if not self.next_layer == 1:
             self.bp_thread.start()
 
-        self.pre_layer_tasks(i, layer)
-        self.pre_layer_joins()
-
+    def pre_layer_joins(self):
         if not self.next_layer == 1:
             self.bp_thread.join()
 
+    def post_layer_tasks(self):
+        return
+
+    def layer_worker(self, i, layer):
+        """Process a single layer of the 3D print.
+
+        This method should only be called from inside print_worker.
+        """
+        self.pre_layer_tasks(i, layer)
+        self.pre_layer_joins()
+
+        # read settings for this layer
+        current_layer_settings = self.print_settings["Layers"][layer[0]]
+        image_settings_list = self.get_image_settings(current_layer_settings)
+        
         # do exposures
         exposure_data = {}
         for j, settings in enumerate(image_settings_list):

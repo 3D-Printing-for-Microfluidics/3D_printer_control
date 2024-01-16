@@ -21,6 +21,7 @@ class ScreenControl(PrintControl):
         super().post_print_tasks()
 
     def pre_exposure_tasks(self, settings, light_engine):
+        super().pre_exposure_tasks(settings, light_engine)
         screen_index = 0
         for i, le in enumerate(config_dict["screen"]["light_engines"]):
             if le in light_engine:
@@ -31,7 +32,6 @@ class ScreenControl(PrintControl):
             log, name="screen_control_draw_thread", target=self.screen.draw, args=[self.image], kwargs={"screen": screen_index}
         )
         self.screen_thread.start()
-        super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, light_engine):
         self.screen_thread.join()

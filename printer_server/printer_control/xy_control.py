@@ -40,6 +40,7 @@ class XYControl(PrintControl):
             self.xy_stage.logging_start()
 
     def post_print_tasks(self):
+        super().post_print_tasks()
         # set paused position
         x_pos = self.coord_systems["visitech"]["X"]
         y_pos = self.coord_systems["visitech"]["Y"]
