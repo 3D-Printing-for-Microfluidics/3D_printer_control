@@ -521,7 +521,7 @@ class PrintControl:
     def get_le_status(self, settings, light_engine):
         return {}
 
-    def post_exposure_tasks(self, msg):
+    def post_exposure_tasks(self, light_engine, msg):
         self.exposure_index += 1
 
         # update frontend message pane and progress bar
@@ -561,7 +561,7 @@ class PrintControl:
         self.write_to_event_log("Finish Exposure")
         time.sleep(settings["Wait after exposure (ms)"] / 1000)
 
-        self.post_exposure_tasks(msg)
+        self.post_exposure_tasks(light_engine, msg)
         post_exposure_status = self.get_le_status(settings, light_engine)
 
         # save expoure data

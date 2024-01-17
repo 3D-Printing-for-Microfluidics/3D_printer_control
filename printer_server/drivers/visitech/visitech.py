@@ -89,6 +89,7 @@ class Visitech:
         self.led_on = False
         self.dual_led = dual_led
         self.leds = leds
+        self.suppress_ocp_error = False
 
     def connect(self, shutdown, attempts=10, timeout=1):
         self.log.info("Connecting to light engine, this may take up to 1 minute...")
@@ -684,13 +685,21 @@ class Visitech:
         Return type +OK and one line per error triggered since last
         reading
         """
-        errors = self.send("GET STICKY ERRORS")
+        errors = self.send("GET STICKY ERRORS").split("\n")
         if errors:
-            if warn:
-                self.log.warning("Visitech error: %s", errors.capitalize())
-            else:
-                self.log.info(errors.capitalize())
-        return errors.split("\n")
+            for error in errors:
+                if error:
+                    if warn:
+                        # Suppress the first Visitech OCP error. This appears to always be
+                        # triggered on the first exposure of each print job. It would be better
+                        # to figure out why this happens in the hardware and fix it there.
+                        if self.suppress_ocp_error and error.lower() == "led over current protection triggered":
+                            self.suppress_ocp_error = False  # only do this once per print
+                        else:
+                            log.warning("Visitech Error: %s", error)  # report other errors
+                    else:
+                        self.log.debug(error.capitalize())
+        return errors
 
     def get_logs(self):
         """

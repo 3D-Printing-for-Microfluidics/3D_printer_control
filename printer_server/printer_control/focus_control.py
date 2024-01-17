@@ -119,12 +119,12 @@ class FocusControl(PrintControl):
                 self.focus_thread.join()
         return super().pre_exposure_joins(light_engine)
 
-    def post_exposure_tasks(self, msg):
+    def post_exposure_tasks(self, light_engine, msg):
         """If layer is defocused, return KDC to focus position"""
         # fix focus if this exposure was defocused
         if self.defocus_um != 0:
             self.focus_stage.threadedFocusMove(log, self.focused_position, join=True)
-        super().post_exposure_tasks(msg)
+        super().post_exposure_tasks(light_engine, msg)
 
     def finish_print(self):
         self.focus_stage.logging_stop()

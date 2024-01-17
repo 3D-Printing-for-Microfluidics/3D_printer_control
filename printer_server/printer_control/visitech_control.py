@@ -6,12 +6,6 @@ from printer_server.printer_control.screen_control import ScreenControl
 from printer_server.hardware_configuration import config_dict, driver_handles
 
 
-# def door_is_open(visitech_sticky_errors):
-#     """Return true if the door is open, else return false."""
-#     if "open" in visitech_sticky_errors.capitalize():
-#         return True
-#     return False
-
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
@@ -47,7 +41,7 @@ class VisitechControl(ScreenControl):
             return
         # clear visitech overcurrent error
         self.visitech.get_sticky_errors(warn=False)
-        self.suppress_visitech_ocp_error = True
+        self.visitech.suppress_ocp_error = True
         super().print_worker()
 
     def pre_exposure_tasks(self, settings, light_engine):
@@ -69,7 +63,7 @@ class VisitechControl(ScreenControl):
             )
             self.visitech_thread.start()
         else:
-            self.suppress_visitech_ocp_error = True
+            self.visitech.suppress_ocp_error = True
         super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, light_engine):
@@ -88,15 +82,3 @@ class VisitechControl(ScreenControl):
         if "visitech" in light_engine:
             return self.visitech.read_all_status()
         return super().get_le_status(settings, light_engine)
-
-    def post_exposure_tasks(self, msg):
-        # Suppress the first Visitech OCP error. This appears to always be
-        # triggered on the first exposure of each print job. It would be better
-        # to figure out why this happens in the hardware and fix it there.
-        if "visitech" in light_engine:
-            if self.suppress_visitech_ocp_error:
-                self.suppress_visitech_ocp_error = False  # only do this once per print
-                for e in self.visitech.get_sticky_errors(warn=False):
-                    if e and e.lower() != "led over current protection triggered":
-                        log.warning("Visitech error: %s", e.capitalize())  # report other errors
-        return super().post_exposure_tasks(msg)

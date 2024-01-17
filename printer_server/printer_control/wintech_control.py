@@ -2,10 +2,9 @@ import logging
 
 from printer_server.threading_wrapper import Thread
 from printer_server.hardware_configuration import driver_handles
+from printer_server.views.manual_controls import update_le_led_status
 from printer_server.printer_control.screen_control import ScreenControl
-from printer_server.views.manual_controls import (
-    update_le_led_status,
-)
+
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
