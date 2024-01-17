@@ -696,7 +696,7 @@ class Visitech:
                         if self.suppress_ocp_error and error.lower() == "led over current protection triggered":
                             self.suppress_ocp_error = False  # only do this once per print
                         else:
-                            log.warning("Visitech Error: %s", error)  # report other errors
+                            self.log.warning("Visitech Error: %s", error)  # report other errors
                     else:
                         self.log.debug(error.capitalize())
         return errors
