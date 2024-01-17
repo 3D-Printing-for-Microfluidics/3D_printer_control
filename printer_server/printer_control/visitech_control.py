@@ -89,9 +89,10 @@ class VisitechControl(ScreenControl):
         # Suppress the first Visitech OCP error. This appears to always be
         # triggered on the first exposure of each print job. It would be better
         # to figure out why this happens in the hardware and fix it there.
-        if self.suppress_visitech_ocp_error:
-            self.suppress_visitech_ocp_error = False  # only do this once per print
-            for e in self.visitech.get_sticky_errors(warn=False):
-                if e and e.lower() != "led over current protection triggered":
-                    log.warning("Visitech error: %s", e)  # report other errors
+        if "visitech" in light_engine:
+            if self.suppress_visitech_ocp_error:
+                self.suppress_visitech_ocp_error = False  # only do this once per print
+                for e in self.visitech.get_sticky_errors(warn=False):
+                    if e and e.lower() != "led over current protection triggered":
+                        log.warning("Visitech error: %s", e.capitalize())  # report other errors
         return super().post_exposure_tasks(msg)
