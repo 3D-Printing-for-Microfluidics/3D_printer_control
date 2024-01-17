@@ -1,7 +1,9 @@
-from printer_server.views.manual_controls import update_le_led_status
+import logging
 
-from printer_server.printer_control.print_control import PrintControl
-from printer_server.printer_control.screen_control import *
+from printer_server.threading_wrapper import Thread
+from printer_server.views.manual_controls import update_le_led_status
+from printer_server.printer_control.screen_control import ScreenControl
+from printer_server.hardware_configuration import config_dict, driver_handles
 
 
 # def door_is_open(visitech_sticky_errors):
@@ -10,6 +12,8 @@ from printer_server.printer_control.screen_control import *
 #         return True
 #     return False
 
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 class VisitechControl(ScreenControl):
     def __init__(self):

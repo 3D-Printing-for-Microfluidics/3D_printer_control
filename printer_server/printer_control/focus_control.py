@@ -1,7 +1,14 @@
+import logging
 import numpy as np
 from PIL import Image
+from pathlib import Path
 
+from printer_server.threading_wrapper import Thread
+from printer_server.hardware_configuration import driver_handles
 from printer_server.printer_control.print_control import PrintControl, run_in_thread
+from printer_server.views.manual_controls import (
+    get_last_calibration_positions_from_logs,
+)
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -96,6 +103,11 @@ class FocusControl(PrintControl):
 
     def pre_exposure_tasks(self, settings, light_engine):
         self.get_exposure_defocus(settings, light_engine)
+
+        need_to_shift_image = self.focus_stage.config_dict.get("moving_shifts_image", False)
+        if need_to_shift_image:
+            self.image = shift_image(self.image, x=um_to_px(self.defocus_um))
+        
         if self.defocus_um != 0:
             self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position + self.defocus_um, join=False)
         return super().pre_exposure_tasks(settings, light_engine)

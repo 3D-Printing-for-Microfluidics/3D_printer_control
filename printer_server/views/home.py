@@ -52,17 +52,17 @@ shutdown_handle = None
 #     log.error("Printer control module not found")
 
 from printer_server.printer_control.print_control import PrintControl
-from printer_server.printer_control.bp_control import *
-from printer_server.printer_control.focus_control import *
-from printer_server.printer_control.gpio_control import *
-from printer_server.printer_control.keyence_control import *
-from printer_server.printer_control.loadcell_control import *
-from printer_server.printer_control.screen_control import *
-from printer_server.printer_control.ttr_control import *
-from printer_server.printer_control.visitech_control import *
-from printer_server.printer_control.wintech_control import *
-from printer_server.printer_control.xy_control import *
-from printer_server.printer_control.kdc_control import *
+from printer_server.printer_control.bp_control import BPControl
+from printer_server.printer_control.focus_control import FocusControl
+from printer_server.printer_control.gpio_control import FilmGPIOControl
+from printer_server.printer_control.keyence_control import KeyenceControl
+from printer_server.printer_control.loadcell_control import LoadcellControl
+from printer_server.printer_control.screen_control import ScreenControl
+from printer_server.printer_control.ttr_control import TTRControl
+from printer_server.printer_control.visitech_control import VisitechControl
+from printer_server.printer_control.wintech_control import WintechControl
+from printer_server.printer_control.xy_control import XYControl
+from printer_server.printer_control.kdc_control import KDCControl
 
 parent_classes = []
 # if "kdc" in config_dict:

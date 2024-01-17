@@ -1,4 +1,11 @@
+import logging
+
+from printer_server.threading_wrapper import Thread
+from printer_server.hardware_configuration import driver_handles
 from printer_server.printer_control.print_control import PrintControl
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 class TTRControl(PrintControl):
     def __init__(self):

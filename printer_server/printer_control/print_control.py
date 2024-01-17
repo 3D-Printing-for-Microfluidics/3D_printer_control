@@ -4,7 +4,6 @@ import json
 import shutil
 import logging
 import threading
-from printer_server.threading_wrapper import Thread
 from pathlib import Path
 from flask import request
 from functools import wraps
@@ -14,10 +13,11 @@ from zipfile import ZipFile, BadZipFile
 import printer_server.views.home as home
 from printer_server.extensions import db
 from printer_server.settings import Config
+from printer_server.threading_wrapper import Thread
 from printer_server.models import PrintQueue, PrintRecord
-from printer_server.print_file_validator import validate_schema, read_json, expand_json
 from printer_server.hardware_configuration import config_dict, driver_handles
 from printer_server.async_file_handler import async_file_hander
+from printer_server.print_file_validator import validate_schema, read_json, expand_json
 from printer_server.views.manual_controls import (
     get_last_calibration_positions_from_logs,
 )
@@ -510,9 +510,6 @@ class PrintControl:
         return
 
     def pre_exposure_tasks(self, settings, light_engine):
-        need_to_shift_image = self.focus_stage.config_dict.get("moving_shifts_image", False)
-        if need_to_shift_image:
-            self.image = shift_image(self.image, x=um_to_px(settings["Relative focus position (um)"]))
         return
 
     def pre_exposure_joins(self, light_engine):
