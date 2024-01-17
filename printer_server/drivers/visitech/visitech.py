@@ -687,7 +687,7 @@ class Visitech:
         errors = self.send("GET STICKY ERRORS")
         if errors:
             if warn:
-                self.log.warning(errors.capitalize())
+                self.log.warning("Visitech error: %s", errors.capitalize())
             else:
                 self.log.info(errors.capitalize())
         return errors.split("\n")

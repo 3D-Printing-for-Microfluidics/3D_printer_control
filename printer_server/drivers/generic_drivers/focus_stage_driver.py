@@ -73,7 +73,7 @@ class FocusStageDriver:
         if mm is not None:
             thread = Thread(
                 logger, 
-                name="print_control_focus_thread",
+                name="focus_stage_driver_thread",
                 target=self.absMoveFocus,
                 kwargs={
                     "mm": mm,

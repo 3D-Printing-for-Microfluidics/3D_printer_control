@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 
-from printer_server.printer_control.print_control import *
+from printer_server.printer_control.print_control import PrintControl, run_in_thread
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)

@@ -51,7 +51,7 @@ shutdown_handle = None
 # else:
 #     log.error("Printer control module not found")
 
-from printer_server.printer_control.print_control import *
+from printer_server.printer_control.print_control import PrintControl
 from printer_server.printer_control.bp_control import *
 from printer_server.printer_control.focus_control import *
 from printer_server.printer_control.gpio_control import *

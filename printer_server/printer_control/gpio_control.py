@@ -1,4 +1,4 @@
-from printer_server.printer_control.print_control import *
+from printer_server.printer_control.print_control import PrintControl
 
 
 class GPIOControl(PrintControl):

@@ -1,6 +1,6 @@
 from printer_server.views.manual_controls import update_le_led_status
 
-from printer_server.printer_control.print_control import *
+from printer_server.printer_control.print_control import PrintControl
 from printer_server.printer_control.screen_control import *
 
 

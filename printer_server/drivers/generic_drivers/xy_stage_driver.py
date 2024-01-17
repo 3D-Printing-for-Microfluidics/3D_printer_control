@@ -74,7 +74,7 @@ class XYStageDriver:
         if x is not None:
             threads[0] = Thread(
                 logger, 
-                name="print_control_x_thread",
+                name="xy_stage_driver_x_thread",
                 target=self.absMoveXY,
                 kwargs={
                     "mm": x,
@@ -87,7 +87,7 @@ class XYStageDriver:
         if y is not None:
             threads[1] = Thread(
                 logger, 
-                name="print_control_y_thread",
+                name="xy_stage_driver_y_thread",
                 target=self.absMoveXY,
                 kwargs={
                     "mm": y,

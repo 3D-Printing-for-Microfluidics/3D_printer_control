@@ -1,4 +1,4 @@
-from printer_server.printer_control.print_control import *
+from printer_server.printer_control.print_control import PrintControl
 # from printer_server.printer_control.xy_control import *
 # from printer_server.printer_control.focus_control import *
 

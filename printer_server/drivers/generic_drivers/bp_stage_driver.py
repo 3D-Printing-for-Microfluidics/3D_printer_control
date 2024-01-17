@@ -83,7 +83,7 @@ class BPStageDriver:
         if mm is not None:
             thread = Thread(
                 logger, 
-                name="print_control_bp_thread",
+                name="bp_stage_driver_thread",
                 target=self.absMoveBP,
                 kwargs={
                     "mm": mm,

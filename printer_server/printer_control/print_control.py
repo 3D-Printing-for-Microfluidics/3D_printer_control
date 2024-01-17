@@ -26,29 +26,6 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-def has_bad_metadata(filename):
-    """Check to see if the zip file has a hidden __MACOSX folder."""
-    try:
-        with ZipFile(filename, "r") as input_file:
-            for item in input_file.namelist():
-                if item.startswith("__MACOSX/"):
-                    return True
-        return False
-    except BadZipFile:
-        return False
-
-
-def clean_uploaded_file(filename):
-    """Remove unwanted hidden files created by MAC OS in zipfiles."""
-    temp_filename = Path(Config.UPLOAD_FOLDER) / "queue" / "temp.zip"
-    with ZipFile(filename, "r") as old_file, ZipFile(temp_filename, "w") as new_file:
-        for item in old_file.infolist():
-            buffer = old_file.read(item.filename)
-            if not str(item.filename).startswith("__MACOSX/"):
-                new_file.writestr(item, buffer)
-    shutil.move(temp_filename, filename)
-
-
 def run_in_thread(state, text):
     """Wrap long running printer operation methods. The wrapped methods
     push the 3D printer state changes to clients and finish their
@@ -80,7 +57,7 @@ def run_in_thread(state, text):
 
             if run_in_thread:
                 _thread = Thread(
-                    log, name=f"print_control_'{text}'_thread", target=func, args=(self, *args), kwargs={**kwargs}
+                    log, name=f"print_control_({text})_thread", target=func, args=(self, *args), kwargs={**kwargs}
                 )
                 _thread.start()
             else:
@@ -666,6 +643,30 @@ class PrintControl:
             log.warning(msg["text"])
             home.update_printer_state("shutdown failed", msg)
 
+
+    def has_bad_metadata(self, filename):
+        """Check to see if the zip file has a hidden __MACOSX folder."""
+        try:
+            with ZipFile(filename, "r") as input_file:
+                for item in input_file.namelist():
+                    if item.startswith("__MACOSX/"):
+                        return True
+            return False
+        except BadZipFile:
+            return False
+
+
+    def clean_uploaded_file(self, filename):
+        """Remove unwanted hidden files created by MAC OS in zipfiles."""
+        temp_filename = Path(Config.UPLOAD_FOLDER) / "queue" / "temp.zip"
+        with ZipFile(filename, "r") as old_file, ZipFile(temp_filename, "w") as new_file:
+            for item in old_file.infolist():
+                buffer = old_file.read(item.filename)
+                if not str(item.filename).startswith("__MACOSX/"):
+                    new_file.writestr(item, buffer)
+        shutil.move(temp_filename, filename)
+
+
     def handle_upload(self, request):
         """Upload a print job.
 
@@ -682,9 +683,9 @@ class PrintControl:
                 f"{upload_time.strftime('job-%Y-%m-%d_%H-%M-%S.%f')}.zip",
             )
             f.save(filename_on_disk)
-            if has_bad_metadata(filename_on_disk):
+            if self.has_bad_metadata(filename_on_disk):
                 log.debug("Removing hiden '__MACOSX' folder from %s ...", f.filename)
-                clean_uploaded_file(filename_on_disk)
+                self.clean_uploaded_file(filename_on_disk)
             try:
                 _, schema_ver = validate_schema(filename_on_disk)
                 if schema_ver not in config_dict["valid_schema_versions"]:
