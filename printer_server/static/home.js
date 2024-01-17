@@ -7,7 +7,7 @@ var PENDING_FILES = [];
 let loadcell_exists = ((typeof graph_autoscale) === "boolean");
 
 if (loadcell_exists) {
-    let loadcell_trace = {
+    var loadcell_trace = {
         x: [new Date()],
         y: [0],
         mode: 'lines',
