@@ -121,7 +121,7 @@ class Visitech:
 
     def initalize(self):
         # set default state for light engine and clear previous errors
-        self.get_sticky_errors(warn=False)
+        self.get_sticky_errors(warn="NONE")
         self.set_video_source("HDMI")
         if self.dual_led:
             self.set_led_driver_regulation_mode("LIGHT", led_num=0)
@@ -662,7 +662,7 @@ class Visitech:
         """
         return self.send("SET MIRRORS UNPARKED")
 
-    def get_sticky_errors(self, warn=True):
+    def get_sticky_errors(self, warn="ALL"):
         """
         Sticky errors are used to indicate that a runtime protection
         were triggered since last reading the errors. Such as the LED
@@ -689,16 +689,21 @@ class Visitech:
         if errors:
             for error in errors:
                 if error:
-                    if warn:
+                    if warn is "ALL":
+                        self.log.warning("Visitech Error: %s", error)  # report other errors
+                    elif warn is "TEMP":
                         # Suppress the first Visitech OCP error. This appears to always be
                         # triggered on the first exposure of each print job. It would be better
                         # to figure out why this happens in the hardware and fix it there.
-                        if self.suppress_ocp_error and error.lower() == "led over current protection triggered":
-                            self.suppress_ocp_error = False  # only do this once per print
+                        if error.lower() == "led over current protection triggered":
+                            if self.suppress_ocp_error:
+                                self.suppress_ocp_error = False  # only do this once per print
+                        elif error.lower() == "door switch open circuit":
+                            pass
                         else:
                             self.log.warning("Visitech Error: %s", error)  # report other errors
-                    else:
-                        self.log.debug(error.capitalize())
+                    elif warn is "NONE":
+                        self.log.info(error.capitalize())
         return errors
 
     def get_logs(self):
@@ -749,7 +754,7 @@ class Visitech:
             exposure = [self.max_exp_time] * n
         return exposure
 
-    def read_all_status(self):
+    def read_all_status(self, warn="ALL"):
         """
         Return commonly queried status.
         """
@@ -758,7 +763,7 @@ class Visitech:
             "led_feedback": self.get_led_intensity(),
             "led_temp": self.get_led_temp(),
             "led_driver_temp": self.get_led_driver_board_temp(),
-            "led_sticky_errors": self.get_sticky_errors(),
+            "led_sticky_errors": self.get_sticky_errors(warn),
             "led_driver_status": self.get_led_driver_status(),
         }
         if self.dual_led:

@@ -528,7 +528,7 @@ class PrintControl:
     def exposure(self, settings, light_engine):
         return
 
-    def get_le_status(self, settings, light_engine):
+    def get_le_status(self, settings, light_engine, warn="ALL"):
         return {}
 
     def post_exposure_tasks(self, light_engine, msg):
@@ -564,7 +564,7 @@ class PrintControl:
 
         # do the exposure
         position_during_exposure = self.get_focus()
-        pre_exposure_status = self.get_le_status(settings, light_engine)
+        pre_exposure_status = self.get_le_status(settings, light_engine, warn="TEMP")
         time.sleep(settings["Wait before exposure (ms)"] / 1000)
         self.write_to_event_log("Start Exposure")
         self.exposure(settings, light_engine)
@@ -572,7 +572,7 @@ class PrintControl:
         time.sleep(settings["Wait after exposure (ms)"] / 1000)
 
         self.post_exposure_tasks(light_engine, msg)
-        post_exposure_status = self.get_le_status(settings, light_engine)
+        post_exposure_status = self.get_le_status(settings, light_engine, warn="ALL")
 
         # save expoure data
         exposure_data[j] = {

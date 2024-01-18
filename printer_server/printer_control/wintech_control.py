@@ -60,7 +60,7 @@ class WintechControl(ScreenControl):
             update_le_led_status("wintech", False)
         super().exposure(settings, light_engine)
 
-    def get_le_status(self, settings, light_engine):
+    def get_le_status(self, settings, light_engine, warn="ALL"):
         if "wintech" in light_engine:
             return ""
-        return super().get_le_status(settings, light_engine)
+        return super().get_le_status(settings, light_engine, warn)

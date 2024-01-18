@@ -40,7 +40,7 @@ class VisitechControl(ScreenControl):
         if self.state != "printing":
             return
         # clear visitech overcurrent error
-        self.visitech.get_sticky_errors(warn=False)
+        self.visitech.get_sticky_errors(warn="NONE")
         self.visitech.suppress_ocp_error = True
         super().print_worker()
 
@@ -78,7 +78,7 @@ class VisitechControl(ScreenControl):
             update_le_led_status("visitech", False)
         super().exposure(settings, light_engine)
 
-    def get_le_status(self, settings, light_engine):
+    def get_le_status(self, settings, light_engine, warn="ALL"):
         if "visitech" in light_engine:
-            return self.visitech.read_all_status()
-        return super().get_le_status(settings, light_engine)
+            return self.visitech.read_all_status(warn)
+        return super().get_le_status(settings, light_engine, warn)
