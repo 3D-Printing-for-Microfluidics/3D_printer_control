@@ -78,7 +78,7 @@ class FocusControl(PrintControl):
         if self.coord_systems is not None:
             self.focused_position = self.coord_systems["visitech"]["Focus"]
         else:
-            self.focused_position = get_last_calibration_positions_from_logs()["distance"]
+            self.focused_position = get_last_calibration_positions_from_logs()["distance"] / 1000
         self.focus_thread = self.focus_stage.initialize_and_positionFocus(self.focused_position)
         super().initalize_hardware()
         if self.focus_thread is not None:
@@ -109,7 +109,7 @@ class FocusControl(PrintControl):
             self.image = shift_image(self.image, x=um_to_px(self.defocus_um))
         
         if self.defocus_um != 0:
-            self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position + self.defocus_um, join=False)
+            self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position + self.defocus_um/1000, join=False)
         return super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, light_engine):

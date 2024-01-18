@@ -18,6 +18,7 @@ class Printer3D:
 
     def __init__(self):
         # Dynamically import python snippits
+        global config_dict
         if "galil" in config_dict.keys():
             from printer_server.drivers.galil import Galil, Galil_dummy
 
@@ -32,9 +33,9 @@ class Printer3D:
             from printer_server.drivers.kdc101 import KDC101, KDC101_dummy
 
             if config_dict["kdc101"]["dummy"]:
-                self.kdc = KDC101_dummy()
+                self.kdc101 = KDC101_dummy()
             else:
-                self.kdc = KDC101(log_level=default_log_level)
+                self.kdc101 = KDC101(config_dict=config_dict["kdc101"], log_level=default_log_level)
 
         if "gpio" in config_dict.keys():
             from printer_server.drivers.gpio import GPIO, GPIO_dummy
@@ -61,7 +62,7 @@ class Printer3D:
             config_dict["screen"]["light_engines"] = config_dict["light_engines"]
 
             resolutions = []
-            for light_engine in config_dict["screen"]["light_engines"]:
+            for light_engine in config_dict["light_engines"]:
                 resolution = config_dict[light_engine]["resolution"]
                 resolutions.append(tuple(resolution))
             resolutions.append(None)
@@ -154,7 +155,7 @@ class Printer3D:
         if hasattr(self, "galil"):
             self.galil.disconnect()
         if hasattr(self, "kdc"):
-            self.kdc.disconnect()
+            self.kdc101.disconnect()
         if hasattr(self, "gpio"):
             self.gpio.disconnect()
         if hasattr(self, "loadcell"):

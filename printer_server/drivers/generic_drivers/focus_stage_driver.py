@@ -11,6 +11,7 @@ log.setLevel(logging.INFO)
 class FocusStageDriver:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.initialized = None
+        self.connected = None
 
     def setup_log_file(self, filename):
         log.warn("Function not implemented. Using abstract FocusStageDriver class")

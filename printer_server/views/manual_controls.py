@@ -117,7 +117,7 @@ def index():
                 "in_newtons"
             ] = printer_server.drivers.loadcell.loadcell_snip.get_graph_mode()
         if "screen" in config_dict.keys():
-            hardware["screen"]["light_engines"] = config_dict["screen"]["light_engines"]
+            hardware["light_engines"] = config_dict["light_engines"]
         if "tiptilt" in config_dict.keys():
             hardware["tiptilt"]["tip"] = calibration_positions["tip"]
             hardware["tiptilt"]["tilt"] = calibration_positions["tilt"]

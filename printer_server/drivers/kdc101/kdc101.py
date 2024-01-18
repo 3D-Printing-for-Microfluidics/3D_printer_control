@@ -22,6 +22,7 @@ class KDC101(FocusStageDriver):
         self.serial_handle = None
         self.initialized = None
         self.config_dict = config_dict
+        self.connected = None
 
     # helper function to find handle to K-Cube
     def find_device(self):
@@ -33,36 +34,44 @@ class KDC101(FocusStageDriver):
         return None
 
     def connect(self, shutdown):
-        self.port = self.find_device()
-        if self.port is None:
-            msg = "Thor Labs stage not found!"
-            self.log.critical(msg)
-            return False
-        self.serial_handle = serial.Serial(
-            port=self.port,
-            baudrate=115200,
-            bytesize=8,
-            parity=serial.PARITY_NONE,
-            stopbits=1,
-            timeout=0.1,
-        )
-        self.getHardwareInfo()
-        self.enableStage(enable=True)
-        atexit.register(self.disconnect)
-        self.log.info("Connected to Thor Labs stage")
-        return True
+        if self.connected is None:
+            self.connected = False
+            self.port = self.find_device()
+            if self.port is None:
+                msg = "Thor Labs stage not found!"
+                self.log.critical(msg)
+                return False
+            self.serial_handle = serial.Serial(
+                port=self.port,
+                baudrate=115200,
+                bytesize=8,
+                parity=serial.PARITY_NONE,
+                stopbits=1,
+                timeout=0.1,
+            )
+            self.getHardwareInfo()
+            self.enableStage(enable=True)
+            atexit.register(self.disconnect)
+            self.connected = True
+            self.log.info("Connected to Thor Labs stage")
+            return True
+        else:
+            while self.connected is False:
+                time.sleep(0.1)
+
 
     def disconnect(self):
-        if self.serial_handle is not None:
-            try:
-                self.enableStage(enable=False)
-                self.serial_handle.close()
-                self.serial_handle = None
-                self.log.info("Disconnected from Thor Labs stage")
-            except:
-                self.serial_handle.close()
-                self.serial_handle = None
-                self.log.info("Unable to disconnect from Thor Labs stage!")
+        if self.connected is not None and self.connected is not False:
+            if self.serial_handle is not None:
+                try:
+                    self.enableStage(enable=False)
+                    self.serial_handle.close()
+                    self.serial_handle = None
+                    self.log.info("Disconnected from Thor Labs stage")
+                except:
+                    self.serial_handle.close()
+                    self.serial_handle = None
+                    self.log.info("Unable to disconnect from Thor Labs stage!")
 
 
     ############################# Parent class functions #####################################
@@ -83,10 +92,10 @@ class KDC101(FocusStageDriver):
         return self.getCurrentPos()/1000
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        self.move(pos, microns=False, relative=False)
+        self.move(mm, microns=False, relative=False)
 
     def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        self.move(pos, microns=False, relative=True)
+        self.move(mm, microns=False, relative=True)
 
     def startFocusJog(self, speed=None, acceleration=None):
         log.warn("KDC Jogging not implemented")
@@ -131,6 +140,8 @@ class KDC101(FocusStageDriver):
         self.flushUSB()
 
     def move(self, pos, microns=True, relative=True):
+
+        prev_pos = self.getFocusPosition()
 
         # update positioning mode
         if relative:
@@ -180,8 +191,12 @@ class KDC101(FocusStageDriver):
         )
         finished_succeccfully = self.confirmMoveFinished()
         if not finished_succeccfully:
-            self.log.warning("Move failed. Going to position 0")
+            self.log.warning("Move failed. Going to position 0 and retrying")
             self.move(0.0, relative=False)
+            if relative:
+                self.move(prev_pos + position, microns = False, relative=False)
+            else:
+                self.move(position, microns = False, relative=False)
         return True
 
     def setRelative(self):

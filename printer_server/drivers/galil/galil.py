@@ -83,7 +83,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         value = array[axis_index]
         return int(value)
 
-    def convertAxis(self, axis):
+    def convertAxis(self, axis=None):
         """Return converted axis name (eg. maps X,Y,Z to A,B,C)"""
         if axis is None:
             axis = self.default_axis

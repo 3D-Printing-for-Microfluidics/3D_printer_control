@@ -203,7 +203,7 @@ class KeyenceControl(PrintControl):
             f"{x_offset}, {y_offset}"
         ]
 
-        self.defocus_um = (defocus_um + keyence_measurement)/1000
+        self.defocus_um = (defocus_um + keyence_measurement)
 
     def pre_exposure_tasks(self, settings, light_engine):
         """Move X, Y, and Focus stages to exposure positions"""

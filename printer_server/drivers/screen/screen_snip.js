@@ -42,7 +42,7 @@ $(document).ready(function () {
     });
 
 
-    for (var le of hardware["screen"]["light_engines"]) {
+    for (var le of hardware["light_engines"]) {
 
         disable_upload_button(le);
 

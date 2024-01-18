@@ -694,17 +694,16 @@ class Visitech(LightEngineDriver):
             for error in errors:
                 if error:
                     if warn is "ALL":
-                        self.log.warning("Visitech Error: %s", error)  # report other errors
+                        if error.lower() == "led over current protection triggered":
+                            if self.suppress_ocp_error:
+                                self.suppress_ocp_error = False  # only do this once per print
+                        else:
+                            self.log.warning("Visitech Error: %s", error)  # report other errors
                     elif warn is "TEMP":
                         # Suppress the first Visitech OCP error. This appears to always be
                         # triggered on the first exposure of each print job. It would be better
                         # to figure out why this happens in the hardware and fix it there.
-                        if error.lower() == "led over current protection triggered":
-                            if self.suppress_ocp_error:
-                                self.suppress_ocp_error = False  # only do this once per print
-                        elif error.lower() == "door switch open circuit":
-                            pass
-                        else:
+                        if error.lower() != "led over current protection triggered" and error.lower() != "door switch open circuit":
                             self.log.warning("Visitech Error: %s", error)  # report other errors
                     elif warn is "NONE":
                         self.log.info(error.capitalize())
