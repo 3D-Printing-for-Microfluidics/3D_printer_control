@@ -1,5 +1,6 @@
 import os
 import time
+import pstats
 import logging
 from pathlib import Path, PurePath
 from flask import Blueprint, render_template, send_file
@@ -24,6 +25,18 @@ def sizeof_fmt(num):
 
 @blueprint.route("/server_logs")
 def index():
+    # Create combined profile
+    profile_enabled = Config.PROFILE_CODE
+    if profile_enabled:
+        profiles_dir = Path(Config.PROFILES_FOLDER)
+        profile_file = str(Path(Config.PROJECT_ROOT) / "logs" / "profile.txt")
+        if profiles_dir.is_dir():
+            combined_profile = pstats.Stats()
+            for tempfile in profiles_dir.iterdir():
+                if tempfile.is_file():
+                    combined_profile.add(str(tempfile))
+            combined_profile.dump_stats(profile_file)
+
     txt_logs = [
         logs_folder / f for f in os.listdir(logs_folder) if f.lower().endswith(".txt")
     ]

@@ -15,8 +15,8 @@ from printer_server.extensions import db
 from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 from printer_server.models import PrintQueue, PrintRecord
-from printer_server.hardware_configuration import config_dict, driver_handles
 from printer_server.async_file_handler import async_file_hander
+from printer_server.hardware_configuration import config_dict, driver_handles
 from printer_server.print_file_validator import validate_schema, read_json, expand_json
 from printer_server.views.manual_controls import (
     get_last_calibration_positions_from_logs,
@@ -110,6 +110,16 @@ class PrintControl:
         self.print_thread = None  # will be initialized later on start
         self.printing_stopped = threading.Event()
         self.printing_paused = threading.Event()
+
+        # Create delete old profiles
+        profile_enabled = Config.PROFILE_CODE
+        if profile_enabled:
+            profiles_dir = Path(Config.PROFILES_FOLDER)
+            profile_file = str(Path(Config.PROJECT_ROOT) / "logs" / "profile.txt")
+            if Path(profile_file).is_file():
+                os.remove(profile_file)
+            if profiles_dir.is_dir():
+                shutil.rmtree(profiles_dir)
 
     @property
     def state(self):
