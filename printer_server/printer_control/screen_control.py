@@ -22,14 +22,14 @@ class ScreenControl(PrintControl):
         self.screen_thread.join()
 
     def post_print_tasks(self):
-        for i in range(len(config_dict["screen"]["light_engines"])):
+        for i in range(len(self.screen.light_engines)):
             self.screen.clear(screen=i)
         super().post_print_tasks()
 
     def pre_exposure_tasks(self, settings, light_engine):
         super().pre_exposure_tasks(settings, light_engine)
         screen_index = 0
-        for i, le in enumerate(config_dict["screen"]["light_engines"]):
+        for i, le in enumerate(self.screen.light_engines):
             if le in light_engine:
                 screen_index = i
                 break

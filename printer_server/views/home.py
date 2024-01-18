@@ -56,11 +56,10 @@ from printer_server.printer_control.bp_control import BPControl
 from printer_server.printer_control.focus_control import FocusControl
 from printer_server.printer_control.gpio_control import FilmGPIOControl
 from printer_server.printer_control.keyence_control import KeyenceControl
+from printer_server.printer_control.light_engine_control import LightEngineControl
 from printer_server.printer_control.loadcell_control import LoadcellControl
 from printer_server.printer_control.screen_control import ScreenControl
 from printer_server.printer_control.ttr_control import TTRControl
-from printer_server.printer_control.visitech_control import VisitechControl
-from printer_server.printer_control.wintech_control import WintechControl
 from printer_server.printer_control.xy_control import XYControl
 from printer_server.printer_control.kdc_control import KDCControl
 
@@ -68,14 +67,11 @@ parent_classes = []
 # if "kdc" in config_dict:
 #     parent_classes.append(KDCControl)
 
-if "visitech" in config_dict:
-    parent_classes.append(VisitechControl)
+if "light_engines" in config_dict:
+    parent_classes.append(LightEngineControl)
 
 if "keyence" in config_dict:
     parent_classes.append(KeyenceControl)
-
-if "wintech" in config_dict:
-    parent_classes.append(WintechControl)
 
 if "loadcell" in config_dict:
     parent_classes.append(LoadcellControl)

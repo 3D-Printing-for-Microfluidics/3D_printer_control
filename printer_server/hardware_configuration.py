@@ -58,6 +58,8 @@ class Printer3D:
         if "screen" in config_dict.keys():
             from printer_server.drivers.screen import ScreenThread
 
+            config_dict["screen"]["light_engines"] = config_dict["light_engines"]
+
             resolutions = []
             for light_engine in config_dict["screen"]["light_engines"]:
                 resolution = config_dict[light_engine]["resolution"]
@@ -109,7 +111,8 @@ class Printer3D:
         self.bp_stage = None
         self.focus_stage = None
         self.xy_stage = None
-        self.ttr_stage =None
+        self.ttr_stage = None
+        self.light_engines = {}
 
         if "bp" in config_dict["stages"]:
             if hasattr(self, config_dict["stages"]["bp"]):
@@ -141,7 +144,11 @@ class Printer3D:
             else:
                 from printer_server.drivers.generic_drivers import TTRStageDriver
                 self.ttr_stage = TTRStageDriver()
-
+        
+        if "light_engines" in config_dict:
+            for light_engine in config_dict["light_engines"]:
+                if hasattr(self, light_engine):
+                    self.light_engines[light_engine] = getattr(self, light_engine)
 
     def disconnect(self):
         if hasattr(self, "galil"):

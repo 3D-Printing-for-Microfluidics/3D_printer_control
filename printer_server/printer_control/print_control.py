@@ -554,7 +554,7 @@ class PrintControl:
         self.power = settings["Light engine power setting"]
         layer_start_position = self.get_focus()
         light_engine = settings.get(
-            "Light engine", config_dict["screen"]["light_engines"][0]
+            "Light engine", config_dict["light_engines"][0]
         )
 
         # run pre-exposure tasks

@@ -3,9 +3,10 @@ import time
 import logging
 
 from .dlpc900_usb_controller import DLPC900_USB_Controller
+from printer_server.drivers.generic_drivers import LightEngineDriver
 
 
-class Wintech:
+class Wintech(LightEngineDriver):
     """Control module for the Wintech optical engine."""
 
     def __init__(self, log_level=logging.DEBUG):
@@ -19,7 +20,7 @@ class Wintech:
 
         self.dmd_controller = DLPC900_USB_Controller(log_level=self.log_level)
 
-    def connect(self):
+    def connect(self, shutdown):
         """Connect to the DMD controller."""
         self.connected = self.dmd_controller.connect()
         return self.connected
@@ -38,12 +39,16 @@ class Wintech:
         self.dmd_controller.stop_sequence()
         self.led_on = False
 
-    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1):
+    def read_all_status(self, warn="ALL"):
+        return ""
+
+    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
         """
         Setup an exposure.
-            t - exposure time in milliseconds
-            p - power setting
-            r - number of repeats
+            exposure_time_ms - exposure time in milliseconds
+            led_power - power setting
+            repeat - number of repeats
+            led_num - not used
         """
         self.repeats = repeat
         self.exposure_time = exposure_time_ms

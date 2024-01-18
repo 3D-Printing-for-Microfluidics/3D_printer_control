@@ -10,8 +10,10 @@ import socket
 import logging
 from datetime import datetime
 
+from printer_server.drivers.generic_drivers import LightEngineDriver
+
 # pylint:disable=too-many-public-methods
-class Visitech:
+class Visitech(LightEngineDriver):
     """
     This driver is based on the Visitech Ethernet interface and API.
     Commands are sent over a TCP connection.
@@ -91,7 +93,9 @@ class Visitech:
         self.leds = leds
         self.suppress_ocp_error = False
 
-    def connect(self, shutdown, attempts=10, timeout=1):
+    def connect(self, shutdown):
+        attempts=10
+        timeout=1
         self.log.info("Connecting to light engine, this may take up to 1 minute...")
 
         # start TCP connection
@@ -773,14 +777,14 @@ class Visitech:
             dict["led_driver_status2"] = self.get_led_driver_status(led_num=1)
         return dict
 
-    def setup_exposure(self, t, p, r=1, led_num=0):
+    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
         """
         Setup an exposure.
-            t - exposure time in milliseconds
-            p - power setting
-            r - number of repeats
+            exposure_time_ms - exposure time in milliseconds
+            led_power - power setting
+            repeat - number of repeats
         """
-        self.exposure_time = t
+        self.exposure_time = exposure_time_ms
 
         if self.dual_led:
             if led_num == 0:
@@ -795,27 +799,27 @@ class Visitech:
         self.log.info(
             "Setting up exposure at %s for %s ms at power setting %s. Repeat %s",
             self.leds[led_num],
-            t,
-            p,
-            r,
+            exposure_time_ms,
+            led_power,
+            repeat,
         )
-        if t == 0:
+        if exposure_time_ms == 0:
             return
-        elif t > max_t:
-            msg = f"Exposure time {t} ms is greater than maximum possible exposure time "
+        elif exposure_time_ms > max_t:
+            msg = f"Exposure time {exposure_time_ms} ms is greater than maximum possible exposure time "
             msg += f"of {max_t} ms. Using exposure time of {max_t} ms instead."
             self.log.warning(msg)
-            t = max_t
+            exposure_time_ms = max_t
             self.exposure_time = max_t
-        elif t < min_t:
-            msg = f"Exposure time {t} ms is less than minimum possible exposure time "
+        elif exposure_time_ms < min_t:
+            msg = f"Exposure time {exposure_time_ms} ms is less than minimum possible exposure time "
             msg += f"of {min_t} ms. Using exposure time of {min_t} ms instead."
             self.log.warning(msg)
-            t = min_t
+            exposure_time_ms = min_t
             self.exposure_time = min_t
-        self.set_led_amplitude(p, led_num=led_num)
-        self.set_sequencer_lut_definition(exposure=int(t * 1000))
-        self.set_sequencer_lut_config(repeats=r)
+        self.set_led_amplitude(led_power, led_num=led_num)
+        self.set_sequencer_lut_definition(exposure=int(exposure_time_ms * 1000))
+        self.set_sequencer_lut_config(repeats=repeat)
 
     def perform_exposure(self):
         """

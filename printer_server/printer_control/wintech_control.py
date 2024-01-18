@@ -16,7 +16,7 @@ class WintechControl(ScreenControl):
         self.wintech_thread = None
 
     def connect_hardware(self):
-        self.wintech_thread = Thread(log, name="wintech_control_connect_thread", target=self.wintech.connect, args=[])
+        self.wintech_thread = Thread(log, name="wintech_control_connect_thread", target=self.wintech.connect, args=[self.shutdown])
         self.wintech_thread.start()
         super().connect_hardware()
         self.wintech_thread.join()

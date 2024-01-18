@@ -50,7 +50,7 @@ class KeyenceControl(PrintControl):
         super().pre_print_tasks()
 
         # Move focus around a little bit before print. Seems to help repeatablility
-        for light_engine in config_dict["screen"]["light_engines"]:
+        for light_engine in config_dict["light_engines"]:
             self.focus_stage.absMoveFocus(self.coord_systems[f"keyence_{light_engine}"]["Focus"])
             time.sleep(1.0)
 
@@ -61,7 +61,7 @@ class KeyenceControl(PrintControl):
         self.default_x_offset = default_image_settings.get("Image x offset (um)", 0)
         self.default_y_offset = default_image_settings.get("Image y offset (um)", 0)
         self.default_light_engine = default_image_settings.get(
-            "Light engine", config_dict["screen"]["light_engines"][0]
+            "Light engine", config_dict["light_engines"][0]
         )
 
         keyence_indexes = config_dict["keyence"]["sensors"]
@@ -70,7 +70,7 @@ class KeyenceControl(PrintControl):
         # List all exposure positions
         self.measurement_index = 0
         self.measurement_count = 0
-        for light_engine in config_dict["screen"]["light_engines"]:
+        for light_engine in config_dict["light_engines"]:
             self.measurement_count += 2
             self.keyence_measurement_list[light_engine] = {}
             for i, layer in enumerate(self.layer_map):
@@ -94,7 +94,7 @@ class KeyenceControl(PrintControl):
         self.move_build_platform_up(self.default_position_settings)
         time.sleep(1.0)
 
-        for light_engine in config_dict["screen"]["light_engines"]:
+        for light_engine in config_dict["light_engines"]:
             self.update_measurement_progress()
 
             # load keyence focal position
@@ -180,7 +180,7 @@ class KeyenceControl(PrintControl):
     def convert_le_to_screen_le(self, light_engine):
         # convert light engine to screen light engine
         screen_light_engine = None
-        for temp in config_dict["screen"]["light_engines"]:
+        for temp in config_dict["light_engines"]:
             if temp in light_engine:
                 screen_light_engine = temp
                 break
@@ -237,7 +237,7 @@ class KeyenceControl(PrintControl):
 
     #     keyence_indexes = config_dict["keyence"]["sensors"]
 
-    #     for light_engine in config_dict["screen"]["light_engines"]:
+    #     for light_engine in config_dict["light_engines"]:
     #         for axis in ("X", "Y"):
     #             # for direction_indx in (0, 1):
     #             for step_size in (1000.0, 100.0, 10.0):

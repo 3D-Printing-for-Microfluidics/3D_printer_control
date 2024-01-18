@@ -8,6 +8,9 @@
             "focus": "kdc101",
             "t_t_r": "tiptilt"
         },
+        "light_engines": [
+            "visitech"
+        ],
         "external_control": {},
         "galil": {
             "dummy": false,
@@ -59,11 +62,7 @@
             "loadcell_planarization_force": 30.0,
             "loadcell_print_start_force": 5.0
         },
-        "screen": {
-            "light_engines": [
-                "visitech"
-            ]
-        },
+        "screen": {},
         "visitech": {
             "dummy": false,
             "dual_led": false,
@@ -85,6 +84,9 @@
             "focus": "kdc101",
             "t_t_r": "tiptilt"
         },
+        "light_engines": [
+            "visitech"
+        ],
         "external_control": {},
         "galil": {
             "dummy": false,
@@ -132,11 +134,7 @@
             "loadcell_planarization_force": 35.0,
             "loadcell_print_start_force": 5.0
         },
-        "screen": {
-            "light_engines": [
-                "visitech"
-            ]
-        },
+        "screen": {},
         "visitech": {
             "dummy": false,
             "dual_led": false,
@@ -161,6 +159,10 @@
             "x_y": "galil",
             "t_t_r": "tiptilt"
         },
+        "light_engines": [
+            "visitech",
+            "wintech"
+        ],
         "coord_systems": {
             "global": {
                 "X": 0,
@@ -268,12 +270,7 @@
             "loadcell_planarization_force": 35.0,
             "loadcell_print_start_force": 5.0
         },
-        "screen": {
-            "light_engines": [
-                "visitech",
-                "wintech"
-            ]
-        },
+        "screen": {},
         "visitech": {
             "dummy": false,
             "dual_led": true,
@@ -288,6 +285,9 @@
         },
         "wintech": {
             "dummy": false,
+            "leds": [
+                "365nm"
+            ],
             "resolution": [
                 1920,
                 1080
@@ -305,6 +305,9 @@
             "x_y": "galil",
             "t_t_r": "tiptilt"
         },
+        "light_engines": [
+            "visitech"
+        ],
         "coord_systems": {
             "global": {
                 "X": 0,
@@ -401,11 +404,7 @@
             "loadcell_planarization_force": 30.0,
             "loadcell_print_start_force": 5.0
         },
-        "screen": {
-            "light_engines": [
-                "visitech"
-            ]
-        },
+        "screen": {},
         "visitech": {
             "dummy": false,
             "dual_led": false,
