@@ -768,6 +768,10 @@ class Visitech(LightEngineDriver):
             "led_driver_temp": self.get_led_driver_board_temp(),
             "led_sticky_errors": self.get_sticky_errors(warn),
             "led_driver_status": self.get_led_driver_status(),
+            "led_feedback2": "",
+            "led_temp2": "",
+            "led_driver_temp2": "",
+            "led_driver_status2": "",
         }
         if self.dual_led:
             dict["led_feedback2"] = self.get_led_intensity(led_num=1)

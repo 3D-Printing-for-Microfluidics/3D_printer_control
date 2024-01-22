@@ -84,7 +84,7 @@ class PrintControl:
         self.print_history = Path(Config.UPLOAD_FOLDER) / Path("print_history")
 
         # log files
-        self.exposure_log = str(self.current_job / "exposure_data.log")
+        self.exposure_log = str(self.current_job / "exposure_data.csv")
         self.event_log = str(self.current_job / "event_log.csv")
 
         # threads
@@ -171,7 +171,7 @@ class PrintControl:
             with ZipFile(zipped_job_file, "r") as f:
                 namelist = f.namelist()
                 for name in list(namelist):
-                    if (".csv" in name) or (".log" in name) or ("exposure_data" in name):
+                    if (".csv" in name) or (".log" in name):
                         namelist.remove(name)
                 f.extractall(self.current_job, members=namelist)
         except FileNotFoundError:
@@ -207,6 +207,19 @@ class PrintControl:
         async_file_hander.set_enabled(True)
         async_file_hander.write(self.exposure_log, "")
         async_file_hander.write(self.event_log, "timestamp,event\n")
+
+        async_file_hander.write(self.exposure_log, f"layer,duplicate,exposure,setup time,start time,")
+        async_file_hander.write(self.exposure_log, f"stop time,light engine,image name,power,exposure time,")
+        async_file_hander.write(self.exposure_log, f"pre focus,focus,post focus,")
+        async_file_hander.write(self.exposure_log, f"pre driver status,pre feedback,")
+        async_file_hander.write(self.exposure_log, f"pre temp,pre driver temp,")
+        async_file_hander.write(self.exposure_log, f"pre driver status2,pre feedback2,")
+        async_file_hander.write(self.exposure_log, f"pre temp2,pre driver temp2,")
+        async_file_hander.write(self.exposure_log, f"pre sticky errors,post driver status,")
+        async_file_hander.write(self.exposure_log, f"post feedback,post temp,")
+        async_file_hander.write(self.exposure_log, f"post driver temp,post driver status2,")
+        async_file_hander.write(self.exposure_log, f"post feedback2,post temp2,")
+        async_file_hander.write(self.exposure_log, f"post driver temp2,post sticky errors\n")
 
     def get_position_settings(self, layer):
         """Return the position settings for the layer."""
@@ -333,13 +346,9 @@ class PrintControl:
         async_file_hander.start()
 
         position = get_last_calibration_positions_from_logs()
-        self.write_to_event_log(f"Calibration: {position}")
-        # dist = position["distance"]
-        # self.write_to_event_log(f"Distance: {dist}")
-        # tip = position["tip"]
-        # self.write_to_event_log(f"Tip: {tip}")
-        # tilt = position["tilt"]
-        # self.write_to_event_log(f"Tilt: {tilt}")
+        self.write_to_event_log(f"Calibration")
+        for k, v in position.items():
+            self.write_to_event_log(f"{k}: {v}")
         self.focused_position = float(position["distance"]) / 1000
 
         # update frontend progress bar
@@ -504,17 +513,12 @@ class PrintControl:
         image_settings_list = self.get_image_settings(current_layer_settings)
         
         # do exposures
-        exposure_data = {}
         for j, settings in enumerate(image_settings_list):
-            self.exposure_worker(j, settings, exposure_data, msg)
-
-        # log exposure data
-        async_file_hander.write(self.exposure_log, f"layer {layer}:\n")
-        for x in exposure_data:
-            async_file_hander.write(
-                self.exposure_log,
-                f"{json.dumps({x: exposure_data[x]}, indent=2)}\n",
-            )
+            msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
+            msg += f" Exposure {j}"
+            log.info(msg)
+            self.write_to_event_log(msg)
+            self.exposure_worker(j, layer, settings, msg)
 
     def get_exposure_defocus(self, settings, light_engine):
         return
@@ -542,7 +546,7 @@ class PrintControl:
         }
         home.update_printer_state("print progress", msg)
 
-    def exposure_worker(self, j, settings, exposure_data, msg):
+    def exposure_worker(self, j, layer, settings, msg):
         """Process a single exposure of the 3D print.
 
         This method should only be called from inside layer_worker.
@@ -558,6 +562,7 @@ class PrintControl:
         )
 
         # run pre-exposure tasks
+        setup_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         self.write_to_event_log("Setup Exposure")
         self.pre_exposure_tasks(settings, light_engine)
         self.pre_exposure_joins(light_engine)
@@ -566,25 +571,30 @@ class PrintControl:
         position_during_exposure = self.get_focus()
         pre_exposure_status = self.get_le_status(settings, light_engine, warn="TEMP")
         time.sleep(settings["Wait before exposure (ms)"] / 1000)
+        start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         self.write_to_event_log("Start Exposure")
         self.exposure(settings, light_engine)
         self.write_to_event_log("Finish Exposure")
+        end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         time.sleep(settings["Wait after exposure (ms)"] / 1000)
 
         self.post_exposure_tasks(light_engine, msg)
         post_exposure_status = self.get_le_status(settings, light_engine, warn="ALL")
 
         # save expoure data
-        exposure_data[j] = {
-            "image": self.image.name,
-            "power setting": self.power,
-            "exposure time (ms)": self.exposure_time_ms,
-            "layer starting position": layer_start_position,
-            "position during exposure": position_during_exposure,
-            "post exposure position": self.get_focus(),
-            "pre exposure status": pre_exposure_status,
-            "post exposure status": post_exposure_status,
-        }
+        async_file_hander.write(self.exposure_log, f"{layer[0]},{layer[1]},{j},{setup_time},{start_time},")
+        async_file_hander.write(self.exposure_log, f"{end_time},{light_engine},{self.image.name},{self.power},{self.exposure_time_ms},")
+        async_file_hander.write(self.exposure_log, f"{layer_start_position},{position_during_exposure},{self.get_focus()},")
+        async_file_hander.write(self.exposure_log, f"{pre_exposure_status['led_driver_status']},{pre_exposure_status['led_feedback']},")
+        async_file_hander.write(self.exposure_log, f"{pre_exposure_status['led_temp']},{pre_exposure_status['led_driver_temp']},")
+        async_file_hander.write(self.exposure_log, f"{pre_exposure_status['led_driver_status2']},{pre_exposure_status['led_feedback2']},")
+        async_file_hander.write(self.exposure_log, f"{pre_exposure_status['led_temp2']},{pre_exposure_status['led_driver_temp2']},")
+        async_file_hander.write(self.exposure_log, f"{pre_exposure_status['led_sticky_errors']},{post_exposure_status['led_driver_status']},")
+        async_file_hander.write(self.exposure_log, f"{post_exposure_status['led_feedback']},{post_exposure_status['led_temp']},")
+        async_file_hander.write(self.exposure_log, f"{post_exposure_status['led_driver_temp']},{post_exposure_status['led_driver_status2']},")
+        async_file_hander.write(self.exposure_log, f"{post_exposure_status['led_feedback2']},{post_exposure_status['led_temp2']},")
+        async_file_hander.write(self.exposure_log, f"{post_exposure_status['led_driver_temp2']},{post_exposure_status['led_sticky_errors']}\n")
+
 
     def finish_print(self):
         # update fontend, zip logs into archive in print_history, and update db entrty

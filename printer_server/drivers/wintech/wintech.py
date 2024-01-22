@@ -1,6 +1,7 @@
 """Wintech optical engine controller."""
 import time
 import logging
+from datetime import datetime
 
 from .dlpc900_usb_controller import DLPC900_USB_Controller
 from printer_server.drivers.generic_drivers import LightEngineDriver
@@ -40,7 +41,18 @@ class Wintech(LightEngineDriver):
         self.led_on = False
 
     def read_all_status(self, warn="ALL"):
-        return ""
+        return {
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+            "led_feedback": "",
+            "led_temp": "",
+            "led_driver_temp": "",
+            "led_sticky_errors": "",
+            "led_driver_status": "",
+            "led_feedback2": "",
+            "led_temp2": "",
+            "led_driver_temp2": "",
+            "led_driver_status2": "",
+        }
 
     def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
         """
