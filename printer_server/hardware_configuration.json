@@ -163,6 +163,7 @@
             "visitech",
             "wintech"
         ],
+        "external_control": {},
         "coord_systems": {
             "global": {
                 "X": 0,
@@ -195,7 +196,6 @@
                 "Build Platform": 0
             }
         },
-        "external_control": {},
         "galil": {
             "dummy": false,
             "controller_name": "DMC4040",
@@ -308,6 +308,7 @@
         "light_engines": [
             "visitech"
         ],
+        "external_control": {},
         "coord_systems": {
             "global": {
                 "X": 0,
@@ -328,7 +329,6 @@
                 "Build Platform": 0
             }
         },
-        "external_control": {},
         "galil": {
             "dummy": false,
             "controller_name": "DMC4040",
