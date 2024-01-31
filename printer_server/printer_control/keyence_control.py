@@ -211,8 +211,8 @@ class KeyenceControl(PrintControl):
         y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
         screen_light_engine = self.convert_le_to_screen_le(light_engine)
 
-        x_pos = x_offset + self.coord_systems[screen_light_engine]["X"]
-        y_pos =  y_offset + self.coord_systems[screen_light_engine]["Y"]
+        x_pos = x_offset/1000 + self.coord_systems[screen_light_engine]["X"]
+        y_pos =  y_offset/1000 + self.coord_systems[screen_light_engine]["Y"]
         self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
 
         super().pre_exposure_tasks(settings, light_engine)
