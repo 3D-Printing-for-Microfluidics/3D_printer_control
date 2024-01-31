@@ -27,6 +27,8 @@ for key in config_dict.keys():
 # Dynamically import python snippits
 if "external_control" in config_dict.keys():
     import printer_server.drivers.external_control.external_control_snip
+if "coord_systems" in config_dict.keys():
+    import printer_server.drivers.coord_systems.coord_systems_snip
 if "galil" in config_dict.keys():
     import printer_server.drivers.galil.galil_snip
 if "gpio" in config_dict.keys():
@@ -73,6 +75,8 @@ def index():
         if "coord_systems" in config_dict:
             for key in config_dict["coord_systems"].keys():
                 hardware["coord_systems"][key] = config_dict["coord_systems"][key]
+            coord_system_name, _ = printer_server.drivers.coord_systems.coord_systems_snip.get_coodinate_system()
+            hardware["coord_systems"]["active"] = coord_system_name
         if "galil" in config_dict.keys():
             galil_positions = (
                 printer_server.drivers.galil.galil_snip.galil_get_positions()

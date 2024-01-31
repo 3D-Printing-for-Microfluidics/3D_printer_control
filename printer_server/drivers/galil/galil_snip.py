@@ -8,12 +8,11 @@ galil = driver_handles.galil
 coord_system = None
 
 
-@socketio.on("galil_set_coodinate_system", namespace="/manual")
+@socketio.on("set_coodinate_system", namespace="/manual")
 def galil_set_coodinate_system(message):
     "Set coordinate system offsets"
     global coord_system
-    # coord_system = galil.config_dict["coord_systems"][message]
-    coord_system = json.loads(message)
+    coord_system = config_dict["coord_systems"][message]
     socketio.emit(
         "galil_done", galil_get_positions(), namespace="/manual", broadcast=True
     )
