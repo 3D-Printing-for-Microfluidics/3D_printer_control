@@ -98,7 +98,7 @@ class KeyenceControl(PrintControl):
             self.update_measurement_progress()
 
             # load keyence focal position
-            start_position = get_last_calibration_positions_from_logs()[f"keyence_{light_engine}"]
+            start_position = get_last_calibration_positions_from_logs().get(f"keyence_{light_engine}",0)
             self.write_to_event_log(
                 f"{light_engine.capitalize()} Keyence Target Position: {start_position}"
             )

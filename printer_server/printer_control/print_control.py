@@ -349,7 +349,7 @@ class PrintControl:
         self.write_to_event_log(f"Calibration")
         for k, v in position.items():
             self.write_to_event_log(f"{k}: {v}")
-        self.focused_position = float(position["distance"]) / 1000
+        self.focused_position = float(position.get("distance",0)) / 1000
 
         # update frontend progress bar
         self.state = "printing"

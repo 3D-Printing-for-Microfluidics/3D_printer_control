@@ -98,7 +98,7 @@ def index():
                     "film_state"
                 ] = printer_server.drivers.gpio.gpio_snip.getFilmRelayState()
         if "kdc101" in config_dict.keys():
-            hardware["kdc101"]["distance"] = calibration_positions["distance"]
+            hardware["kdc101"]["distance"] = calibration_positions.get("distance",0)
         if "keyence" in config_dict.keys():
             sensors = list(config_dict["keyence"]["sensors"].keys())
             hardware["keyence"]["sensors"] = sensors
@@ -108,9 +108,9 @@ def index():
                 sensor_reading = printer_server.drivers.keyence.keyence_snip.read_sensor(
                     config_dict["keyence"]["sensors"][sensor]["measurement_index"]
                 )
-                hardware["keyence"]["focus"][sensor] = calibration_positions[
-                    f"keyence_{sensor}"
-                ]
+                hardware["keyence"]["focus"][sensor] = calibration_positions.get(
+                    f"keyence_{sensor}", 0
+                )
                 hardware["keyence"]["readings"][sensor] = sensor_reading
 
         if "loadcell" in config_dict.keys():
@@ -123,8 +123,8 @@ def index():
         if "screen" in config_dict.keys():
             hardware["light_engines"] = config_dict["light_engines"]
         if "tiptilt" in config_dict.keys():
-            hardware["tiptilt"]["tip"] = calibration_positions["tip"]
-            hardware["tiptilt"]["tilt"] = calibration_positions["tilt"]
+            hardware["tiptilt"]["tip"] = calibration_positions.get("tip",0)
+            hardware["tiptilt"]["tilt"] = calibration_positions.get("tilt",0)
         if "visitech" in config_dict.keys():
             hardware["visitech"][
                 "status"

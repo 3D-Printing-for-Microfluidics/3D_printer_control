@@ -18,7 +18,7 @@ def updateSetpoint(message):
 
     if mode:
         last_positions[f"keyence_{sensor}"] = (
-            float(last_positions[f"keyence_{sensor}"]) + distance_um
+            float(last_positions.get(f"keyence_{sensor}",0)) + distance_um
         )
     else:
         last_positions[f"keyence_{sensor}"] = distance_um
