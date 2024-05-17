@@ -16,8 +16,10 @@
 {% if initalized %}
 
 {% for driver, dict in hardware.items() %}
+{% if 'path' in dict %}
 {% include dict['path'] %}
 <hr class="bg-secondary">
+{% endif %}
 {% endfor %}
 
 {% else %}

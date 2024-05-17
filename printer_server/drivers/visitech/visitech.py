@@ -10,8 +10,10 @@ import socket
 import logging
 from datetime import datetime
 
+from printer_server.drivers.generic_drivers import LightEngineDriver
+
 # pylint:disable=too-many-public-methods
-class Visitech:
+class Visitech(LightEngineDriver):
     """
     This driver is based on the Visitech Ethernet interface and API.
     Commands are sent over a TCP connection.
@@ -89,8 +91,11 @@ class Visitech:
         self.led_on = False
         self.dual_led = dual_led
         self.leds = leds
+        self.suppress_ocp_error = False
 
-    def connect(self, shutdown, attempts=10, timeout=1):
+    def connect(self, shutdown):
+        attempts=10
+        timeout=1
         self.log.info("Connecting to light engine, this may take up to 1 minute...")
 
         # start TCP connection
@@ -120,7 +125,7 @@ class Visitech:
 
     def initalize(self):
         # set default state for light engine and clear previous errors
-        self.get_sticky_errors(warn=False)
+        self.get_sticky_errors(warn="NONE")
         self.set_video_source("HDMI")
         if self.dual_led:
             self.set_led_driver_regulation_mode("LIGHT", led_num=0)
@@ -661,7 +666,7 @@ class Visitech:
         """
         return self.send("SET MIRRORS UNPARKED")
 
-    def get_sticky_errors(self, warn=True):
+    def get_sticky_errors(self, warn="ALL"):
         """
         Sticky errors are used to indicate that a runtime protection
         were triggered since last reading the errors. Such as the LED
@@ -684,13 +689,25 @@ class Visitech:
         Return type +OK and one line per error triggered since last
         reading
         """
-        errors = self.send("GET STICKY ERRORS")
+        errors = self.send("GET STICKY ERRORS").split("\n")
         if errors:
-            if warn:
-                self.log.warning(errors.capitalize())
-            else:
-                self.log.info(errors.capitalize())
-        return errors.split("\n")
+            for error in errors:
+                if error:
+                    if warn is "ALL":
+                        if error.lower() == "led over current protection triggered":
+                            if self.suppress_ocp_error:
+                                self.suppress_ocp_error = False  # only do this once per print
+                        else:
+                            self.log.warning("Visitech Error: %s", error)  # report other errors
+                    elif warn is "TEMP":
+                        # Suppress the first Visitech OCP error. This appears to always be
+                        # triggered on the first exposure of each print job. It would be better
+                        # to figure out why this happens in the hardware and fix it there.
+                        if error.lower() != "led over current protection triggered" and error.lower() != "door switch open circuit":
+                            self.log.warning("Visitech Error: %s", error)  # report other errors
+                    elif warn is "NONE":
+                        self.log.info(error.capitalize())
+        return errors
 
     def get_logs(self):
         """
@@ -740,7 +757,7 @@ class Visitech:
             exposure = [self.max_exp_time] * n
         return exposure
 
-    def read_all_status(self):
+    def read_all_status(self, warn="ALL"):
         """
         Return commonly queried status.
         """
@@ -749,8 +766,12 @@ class Visitech:
             "led_feedback": self.get_led_intensity(),
             "led_temp": self.get_led_temp(),
             "led_driver_temp": self.get_led_driver_board_temp(),
-            "led_sticky_errors": self.get_sticky_errors(),
+            "led_sticky_errors": self.get_sticky_errors(warn),
             "led_driver_status": self.get_led_driver_status(),
+            "led_feedback2": "",
+            "led_temp2": "",
+            "led_driver_temp2": "",
+            "led_driver_status2": "",
         }
         if self.dual_led:
             dict["led_feedback2"] = self.get_led_intensity(led_num=1)
@@ -759,14 +780,14 @@ class Visitech:
             dict["led_driver_status2"] = self.get_led_driver_status(led_num=1)
         return dict
 
-    def setup_exposure(self, t, p, r=1, led_num=0):
+    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
         """
         Setup an exposure.
-            t - exposure time in milliseconds
-            p - power setting
-            r - number of repeats
+            exposure_time_ms - exposure time in milliseconds
+            led_power - power setting
+            repeat - number of repeats
         """
-        self.exposure_time = t
+        self.exposure_time = exposure_time_ms
 
         if self.dual_led:
             if led_num == 0:
@@ -781,27 +802,27 @@ class Visitech:
         self.log.info(
             "Setting up exposure at %s for %s ms at power setting %s. Repeat %s",
             self.leds[led_num],
-            t,
-            p,
-            r,
+            exposure_time_ms,
+            led_power,
+            repeat,
         )
-        if t == 0:
+        if exposure_time_ms == 0:
             return
-        elif t > max_t:
-            msg = f"Exposure time {t} ms is greater than maximum possible exposure time "
+        elif exposure_time_ms > max_t:
+            msg = f"Exposure time {exposure_time_ms} ms is greater than maximum possible exposure time "
             msg += f"of {max_t} ms. Using exposure time of {max_t} ms instead."
             self.log.warning(msg)
-            t = max_t
+            exposure_time_ms = max_t
             self.exposure_time = max_t
-        elif t < min_t:
-            msg = f"Exposure time {t} ms is less than minimum possible exposure time "
+        elif exposure_time_ms < min_t:
+            msg = f"Exposure time {exposure_time_ms} ms is less than minimum possible exposure time "
             msg += f"of {min_t} ms. Using exposure time of {min_t} ms instead."
             self.log.warning(msg)
-            t = min_t
+            exposure_time_ms = min_t
             self.exposure_time = min_t
-        self.set_led_amplitude(p, led_num=led_num)
-        self.set_sequencer_lut_definition(exposure=int(t * 1000))
-        self.set_sequencer_lut_config(repeats=r)
+        self.set_led_amplitude(led_power, led_num=led_num)
+        self.set_sequencer_lut_definition(exposure=int(exposure_time_ms * 1000))
+        self.set_sequencer_lut_config(repeats=repeat)
 
     def perform_exposure(self):
         """

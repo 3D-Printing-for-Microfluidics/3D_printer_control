@@ -153,7 +153,7 @@ class Visitech_dummy:
     def unpark_dmd_mirrors(self):
         return self.send("SET MIRRORS UNPARKED")
 
-    def get_sticky_errors(self, warn=True):
+    def get_sticky_errors(self, warn="ALL"):
         self.send("GET STICKY ERRORS")
         return ""
 
@@ -177,13 +177,13 @@ class Visitech_dummy:
             exposure = [self.max_exp_time] * n
         return exposure
 
-    def read_all_status(self):
+    def read_all_status(self, warn="ALL"):
         return {
             "dmd_status": self.get_dmd_status(),
             "led_feedback": self.get_led_intensity(),
             "led_temp": self.get_led_temp(),
             "led_driver_temp": self.get_led_driver_board_temp(),
-            "led_sticky_errors": self.get_sticky_errors(),
+            "led_sticky_errors": self.get_sticky_errors(warn),
             "led_driver_status": self.get_led_driver_status(),
         }
 

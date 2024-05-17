@@ -3,6 +3,14 @@
         "valid_schema_versions": [
             "v2"
         ],
+        "stages": {
+            "bp": "galil",
+            "focus": "kdc101",
+            "t_t_r": "tiptilt"
+        },
+        "light_engines": [
+            "visitech"
+        ],
         "external_control": {},
         "galil": {
             "dummy": false,
@@ -29,12 +37,13 @@
             "axes_acceleration": {
                 "A": 50
             },
-            "calibration_position": 23200,
-            "bottom_position": 323913,
-            "top_position": -400000
+            "calibration_position": 2.9,
+            "bottom_position": 40.489125,
+            "top_position": -50
         },
         "kdc101": {
-            "dummy": false
+            "dummy": false,
+            "moving_shifts_image": true
         },
         "tiptilt": {
             "dummy": false,
@@ -53,11 +62,7 @@
             "loadcell_planarization_force": 30.0,
             "loadcell_print_start_force": 5.0
         },
-        "screen": {
-            "light_engines": [
-                "visitech"
-            ]
-        },
+        "screen": {},
         "visitech": {
             "dummy": false,
             "dual_led": false,
@@ -73,6 +78,14 @@
     "HR3v3u": {
         "valid_schema_versions": [
             "v2"
+        ],
+        "stages": {
+            "bp": "galil",
+            "focus": "kdc101",
+            "t_t_r": "tiptilt"
+        },
+        "light_engines": [
+            "visitech"
         ],
         "external_control": {},
         "galil": {
@@ -100,12 +113,13 @@
             "axes_acceleration": {
                 "A": 50
             },
-            "calibration_position": 75041,
-            "bottom_position": 322272,
-            "top_position": -400000
+            "calibration_position": 9.380125,
+            "bottom_position": 40.284,
+            "top_position": -50
         },
         "kdc101": {
-            "dummy": false
+            "dummy": false,
+            "moving_shifts_image": true
         },
         "tiptilt": {
             "dummy": false,
@@ -120,11 +134,7 @@
             "loadcell_planarization_force": 35.0,
             "loadcell_print_start_force": 5.0
         },
-        "screen": {
-            "light_engines": [
-                "visitech"
-            ]
-        },
+        "screen": {},
         "visitech": {
             "dummy": false,
             "dual_led": false,
@@ -143,7 +153,49 @@
             "v3",
             "v2"
         ],
+        "stages": {
+            "bp": "galil",
+            "focus": "galil",
+            "x_y": "galil",
+            "t_t_r": "tiptilt"
+        },
+        "light_engines": [
+            "visitech",
+            "wintech"
+        ],
         "external_control": {},
+        "coord_systems": {
+            "global": {
+                "X": 0,
+                "Y": 0,
+                "Focus": 0,
+                "Build Platform": 0
+            },
+            "visitech": {
+                "X": -130.388,
+                "Y": -31.800,
+                "Focus": 49.065,
+                "Build Platform": 0
+            },
+            "wintech": {
+                "X": 129.100,
+                "Y": -20.840,
+                "Focus": 49.656,
+                "Build Platform": 0
+            },
+            "keyence_visitech": {
+                "X": -79.128,
+                "Y": -19.986,
+                "Focus": 47.737,
+                "Build Platform": 0
+            },
+            "keyence_wintech": {
+                "X": 92.640,
+                "Y": -17.110,
+                "Focus": 48.870,
+                "Build Platform": 0
+            }
+        },
         "galil": {
             "dummy": false,
             "controller_name": "DMC4040",
@@ -179,52 +231,20 @@
                 "D": 0.125
             },
             "axes_speed": {
-                "A": 12.5,
-                "B": 12.5,
+                "A": 200,
+                "B": 25,
                 "C": 25,
                 "D": 25
             },
             "axes_acceleration": {
-                "A": 25,
-                "B": 25,
+                "A": 100,
+                "B": 50,
                 "C": 50,
                 "D": 50
             },
-            "calibration_position": 2315000,
-            "bottom_position": 2400000,
-            "top_position": -2600000,
-            "coord_systems": {
-                "global": {
-                    "X": 0,
-                    "Y": 0,
-                    "Focus": 0,
-                    "Build Platform": 0
-                },
-                "visitech": {
-                    "X": -120268,
-                    "Y": -14440,
-                    "Focus": 47385,
-                    "Build Platform": 0
-                },
-                "wintech": {
-                    "X": 139680,
-                    "Y": -8000,
-                    "Focus": 47385,
-                    "Build Platform": 0
-                },
-                "keyence_visitech": {
-                    "X": -69181,
-                    "Y": -1701,
-                    "Focus": 46131,
-                    "Build Platform": 0
-                },
-                "keyence_wintech": {
-                    "X": 103485,
-                    "Y": -4255,
-                    "Focus": 46597,
-                    "Build Platform": 0
-                }
-            }
+            "calibration_position": 45.2148438,
+            "bottom_position": 46.875,
+            "top_position": -50
         },
         "tiptilt": {
             "dummy": false,
@@ -250,12 +270,7 @@
             "loadcell_planarization_force": 35.0,
             "loadcell_print_start_force": 5.0
         },
-        "screen": {
-            "light_engines": [
-                "visitech",
-                "wintech"
-            ]
-        },
+        "screen": {},
         "visitech": {
             "dummy": false,
             "dual_led": true,
@@ -270,6 +285,9 @@
         },
         "wintech": {
             "dummy": false,
+            "leds": [
+                "365nm"
+            ],
             "resolution": [
                 1920,
                 1080
@@ -281,7 +299,36 @@
             "v3",
             "v2"
         ],
+        "stages": {
+            "bp": "galil",
+            "focus": "galil",
+            "x_y": "galil",
+            "t_t_r": "tiptilt"
+        },
+        "light_engines": [
+            "visitech"
+        ],
         "external_control": {},
+        "coord_systems": {
+            "global": {
+                "X": 0,
+                "Y": 0,
+                "Focus": 0,
+                "Build Platform": 0
+            },
+            "visitech": {
+                "X": 0,
+                "Y": 8.000,
+                "Focus": 2.189,
+                "Build Platform": 0
+            },
+            "keyence_visitech": {
+                "X": 0.047,
+                "Y": -24.424,
+                "Focus": -0.211,
+                "Build Platform": 0
+            }
+        },
         "galil": {
             "dummy": false,
             "controller_name": "DMC4040",
@@ -328,29 +375,9 @@
                 "C": 50,
                 "D": 50
             },
-            "calibration_position": 1491842,
-            "bottom_position": 2234317,
-            "top_position": -2600000,
-            "coord_systems": {
-                "global": {
-                    "X": 0,
-                    "Y": 0,
-                    "Focus": 0,
-                    "Build Platform": 0
-                },
-                "visitech": {
-                    "X": 0,
-                    "Y": 8000,
-                    "Focus": 2189,
-                    "Build Platform": 0
-                },
-                "keyence_visitech": {
-                    "X": 47,
-                    "Y": -24424,
-                    "Focus": -211,
-                    "Build Platform": 0
-                }
-            }
+            "calibration_position": 29.1375391,
+            "bottom_position": 43.6390039,
+            "top_position": -50
         },
         "tiptilt": {
             "dummy": false,
@@ -377,11 +404,7 @@
             "loadcell_planarization_force": 30.0,
             "loadcell_print_start_force": 5.0
         },
-        "screen": {
-            "light_engines": [
-                "visitech"
-            ]
-        },
+        "screen": {},
         "visitech": {
             "dummy": false,
             "dual_led": false,

@@ -18,6 +18,11 @@ class Printer3D:
 
     def __init__(self):
         # Dynamically import python snippits
+        global config_dict
+        if "coord_systems" in config_dict.keys():
+            from printer_server.drivers.coord_systems import Coord_Systems
+            self.coord_systems_control = Coord_Systems()
+
         if "galil" in config_dict.keys():
             from printer_server.drivers.galil import Galil, Galil_dummy
 
@@ -32,9 +37,9 @@ class Printer3D:
             from printer_server.drivers.kdc101 import KDC101, KDC101_dummy
 
             if config_dict["kdc101"]["dummy"]:
-                self.kdc = KDC101_dummy()
+                self.kdc101 = KDC101_dummy()
             else:
-                self.kdc = KDC101(log_level=default_log_level)
+                self.kdc101 = KDC101(config_dict=config_dict["kdc101"], log_level=default_log_level)
 
         if "gpio" in config_dict.keys():
             from printer_server.drivers.gpio import GPIO, GPIO_dummy
@@ -58,8 +63,10 @@ class Printer3D:
         if "screen" in config_dict.keys():
             from printer_server.drivers.screen import ScreenThread
 
+            config_dict["screen"]["light_engines"] = config_dict["light_engines"]
+
             resolutions = []
-            for light_engine in config_dict["screen"]["light_engines"]:
+            for light_engine in config_dict["light_engines"]:
                 resolution = config_dict[light_engine]["resolution"]
                 resolutions.append(tuple(resolution))
             resolutions.append(None)
@@ -106,11 +113,53 @@ class Printer3D:
 
             self.keyence = Keyence()
 
+        self.bp_stage = None
+        self.focus_stage = None
+        self.xy_stage = None
+        self.ttr_stage = None
+        self.light_engines = {}
+
+        if "bp" in config_dict["stages"]:
+            if hasattr(self, config_dict["stages"]["bp"]):
+                self.bp_stage = getattr(self, config_dict["stages"]["bp"])
+            else:
+                from printer_server.drivers.generic_drivers import BPStageDriver
+                self.bp_stage = BPStageDriver()
+
+
+        if "focus" in config_dict["stages"]:
+            if hasattr(self, config_dict["stages"]["focus"]):
+                self.focus_stage = getattr(self, config_dict["stages"]["focus"])
+            else:
+                from printer_server.drivers.generic_drivers import FocusStageDriver
+                self.focus_stage = FocusStageDriver()
+
+
+        if "x_y" in config_dict["stages"]:
+            if hasattr(self, config_dict["stages"]["x_y"]):
+                self.xy_stage = getattr(self, config_dict["stages"]["x_y"])
+            else:
+                from printer_server.drivers.generic_drivers import XYStageDriver
+                self.xy_stage = XYStageDriver()
+   
+
+        if "t_t_r" in config_dict["stages"]:
+            if hasattr(self, config_dict["stages"]["t_t_r"]):
+                self.ttr_stage = getattr(self, config_dict["stages"]["t_t_r"])
+            else:
+                from printer_server.drivers.generic_drivers import TTRStageDriver
+                self.ttr_stage = TTRStageDriver()
+        
+        if "light_engines" in config_dict:
+            for light_engine in config_dict["light_engines"]:
+                if hasattr(self, light_engine):
+                    self.light_engines[light_engine] = getattr(self, light_engine)
+
     def disconnect(self):
         if hasattr(self, "galil"):
             self.galil.disconnect()
         if hasattr(self, "kdc"):
-            self.kdc.disconnect()
+            self.kdc101.disconnect()
         if hasattr(self, "gpio"):
             self.gpio.disconnect()
         if hasattr(self, "loadcell"):

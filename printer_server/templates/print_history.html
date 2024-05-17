@@ -34,6 +34,7 @@
             <th scope="col" class="justify-center">Start Time</th>
             <th scope="col" class="justify-center">End Time</th>
             <th scope="col" class="justify-center">Upload Time</th>
+            <th scope="col" class="justify-center">Print Time</th>
             <th scope="col" class="justify-center">Completed</th>
             <th scope="col" class="justify-center">Reprint</th>
         </tr>
@@ -46,10 +47,15 @@
             <td class="align-middle justify-center">{{ rec.start_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
             {% if rec.end_time %}
             <td class="align-middle justify-center">{{ rec.end_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+            <td class="align-middle justify-center">{{ rec.upload_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+            <td class="align-middle justify-center">{{ '%02d:%02d:%02d' % ((rec.end_time -
+                rec.start_time).total_seconds() // 3600, ((rec.end_time - rec.start_time).total_seconds() % 3600) // 60,
+                (rec.end_time - rec.start_time).total_seconds() % 60) }}</td>
             {% else %}
             <td class="align-middle justify-center"></td>
-            {% endif %}
             <td class="align-middle justify-center">{{ rec.upload_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+            <td class="align-middle justify-center"></td>
+            {% endif %}
             <td class="align-middle justify-center">{{ 'Yes' if rec.completed else 'No' }}</td>
             <td class="align-middle justify-center"><button type="button" class="btn btn-outline-info btn-sm">Add to
                     queue</button>

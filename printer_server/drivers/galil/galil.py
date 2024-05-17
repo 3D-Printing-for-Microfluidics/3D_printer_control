@@ -4,13 +4,14 @@ import threading
 import time
 import atexit
 import logging
+from pathlib import Path
 from datetime import datetime
 import gclib
 from printer_server.async_file_handler import async_file_hander
 from printer_server.threading_wrapper import Thread
+from printer_server.drivers.generic_drivers import BPStageDriver, FocusStageDriver, XYStageDriver
 
-
-class Galil:
+class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def __init__(
         self,
         config_dict=None,
@@ -42,6 +43,9 @@ class Galil:
         self.top_position = config_dict["top_position"]
         self.tolerence = config_dict["axes_tolerance"]
 
+        self.movement_log_times = []
+        self.movement_log_array = []
+
         self.homed = {}
         self.jogging = {}
         self.pre_jog_speed = {}
@@ -65,7 +69,8 @@ class Galil:
             self.logging_move_status[a] = -1
             self.current_position[a] = 0
 
-        self.connected = False
+        self.connected = None
+        self.initialized = None
 
         self.g = gclib.py()
 
@@ -81,7 +86,7 @@ class Galil:
         value = array[axis_index]
         return int(value)
 
-    def convertAxis(self, axis):
+    def convertAxis(self, axis=None):
         """Return converted axis name (eg. maps X,Y,Z to A,B,C)"""
         if axis is None:
             axis = self.default_axis
@@ -114,47 +119,52 @@ class Galil:
         for axis in self.axes:
             self.motorOn(axis)
 
-    def goToZcalibration(self):
-        self.absMove(speed=self.getDefaultSpeed("Build Platform"), cnts=self.calibration_position)
-        return self.getPosition()
+    def goToBPcalibration(self):
+        self.absMove(mm=self.calibration_position, axis="Build Platform")
+        return self.getPosition(in_mm=True)
 
-    def goToZmax(self):
-        self.absMove(speed=self.getDefaultSpeed("Build Platform"), cnts=self.top_position)
-        return self.getPosition()
+    def goToBPmax(self):
+        self.absMove(mm=self.top_position, axis="Build Platform")
+        return self.getPosition(in_mm=True)
 
-    def goToZmin(self):
-        self.absMove(speed=self.getDefaultSpeed("Build Platform"), cnts=self.bottom_position)
-        return self.getPosition()
+    def goToBPmin(self):
+        self.absMove(mm=self.bottom_position, axis="Build Platform")
+        return self.getPosition(in_mm=True)
 
     def connect(self, shutdown):
         """Find the first Galil controller and connect to it."""
-        self.log.info("Searching for %s controller...", self.controller_name)
-        available = self.g.GAddresses()
-        self.address = None
-        for address in sorted(available.keys()):
-            if self.controller_name in available[address]:
-                self.address = address.strip("()").strip("-d")
-                self.controller_name = available[address]
-                self.log.debug("Found %s at %s", available[address], self.address)
-                self.log.info(
-                    "Connecting to %s at %s", self.controller_name, self.address
-                )
-                self.g.GOpen(f"{self.address} --direct")
-                self.log.debug("GInfo returned: %s", self.g.GInfo())
-                self.connected = True
-                self.thread_running = True
-                self.thread.start()
-                atexit.register(self.disconnect)
-                self.log.info("Connected to Galil controller")
-                self.shutdown = shutdown
-                return True
-        msg = f"Galil controller not found! ({self.controller_name})"
-        self.log.critical(msg)
-        return False
+        if self.connected is None:
+            self.connected = False
+            self.log.info("Searching for %s controller...", self.controller_name)
+            available = self.g.GAddresses()
+            self.address = None
+            for address in sorted(available.keys()):
+                if self.controller_name in available[address]:
+                    self.address = address.strip("()").strip("-d")
+                    self.controller_name = available[address]
+                    self.log.debug("Found %s at %s", available[address], self.address)
+                    self.log.info(
+                        "Connecting to %s at %s", self.controller_name, self.address
+                    )
+                    self.g.GOpen(f"{self.address} --direct")
+                    self.log.debug("GInfo returned: %s", self.g.GInfo())
+                    self.connected = True
+                    self.thread_running = True
+                    self.thread.start()
+                    atexit.register(self.disconnect)
+                    self.log.info("Connected to Galil controller")
+                    self.shutdown = shutdown
+                    return True
+            msg = f"Galil controller not found! ({self.controller_name})"
+            self.log.critical(msg)
+            return False
+        else:
+            while self.connected is False:
+                time.sleep(0.1)
 
     def disconnect(self):
         """Disconnect form the Galil controller."""
-        if self.connected is not False:
+        if self.connected is not None and self.connected is not False:
             self.thread_running = False
             try:
                 self.thread.join()
@@ -163,7 +173,8 @@ class Galil:
             self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
             self.thread.daemon = True
             try:
-                self.connected = False
+                self.connected = None
+                self.initialized = None
                 self.g.GClose()
                 self.log.info("Disconnected from Galil controller (%s)", self.controller_name)
             except self.gclib_error as e:
@@ -175,10 +186,9 @@ class Galil:
 
         Log location must be set for data to be saved.
         """
-        if self.movement_log is not None:
-            ts = "%Y-%m-%d %H:%M:%S.%f"
-            async_file_hander.write(self.movement_log, datetime.now().strftime(ts) + ",")
-            async_file_hander.write(self.movement_log, ",".join(map(str, args)) + "\n")
+        ts = "%Y-%m-%d %H:%M:%S.%f"
+        async_file_hander.write(self.movement_log, datetime.now().strftime(ts) + ",")
+        async_file_hander.write(self.movement_log, ",".join(map(str, args)) + "\n")
 
     def mmToCnts(self, mm, axis=None):
         """Convert mm to counts for the specified axis."""
@@ -226,10 +236,13 @@ class Galil:
         lr = self.send(f"MG _LR{a}", notify=False)
         return bool(lf == "0.0000"), bool(lr == "0.0000")
 
-    def getPosition(self, axis=None, notify=True):
+    def getPosition(self, in_mm, axis=None, notify=True):
         """Return the position of the specified encoder."""
         pos = self.send(f"TP{self.convertAxis(axis)}", notify=notify)
-        return int(pos)
+        if not in_mm:
+            return int(pos)
+        else:
+            return self.cntsToMm(int(pos), axis=axis)
 
     def motorOn(self, axis=None):
         """Turn on the specified axis."""
@@ -266,7 +279,7 @@ class Galil:
         a = self.convertAxis(axis)
         self.send(f"SP{a}={speed * self.ctspmm[a]}")
 
-    def home(self, axis=None):
+    def home(self):
         """Run the homing routine.
 
         The homing routine begins by jogging up until the limit switch
@@ -275,7 +288,7 @@ class Galil:
         """
         if "DMC31010" in self.controller_name:
             self.log.info("Start homing...")
-            a = self.convertAxis(axis)
+            a = self.convertAxis()
             self.setSpeed(10)
             self.motorOn()
             self.startJog(speed=-15, acceleration=50)
@@ -303,8 +316,61 @@ class Galil:
                 self.homed[a] = True  # update class homed status
             self.log.info("Homing complete.")
 
+        for a in self.axes:
+            self.setSpeed(self.getDefaultSpeed(a), axis=a)
+            self.setAcceleration(self.getDefaultAcceleration(a), axis=a)
+
+    ################################# Parent class functions #######################################
+
+    def getXYPosition(self, axis=None, notify=True):
+        return self.getPosition(in_mm=True, axis=axis)
+
+    def absMoveXY( self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+        self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
+
+    def relMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+        self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
+
+    def startXYJog(self, speed=None, acceleration=None, axis=None):
+        self.startJog(speed=speed, acceleration=acceleration, axis=axis)
+
+    def stopXYJog(self, axis=None):
+        self.stopJog(axis=axis)
+
+    def getFocusPosition(self, notify=True):
+        return self.getPosition(in_mm=True, axis="Focus")
+
+    def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
+
+    def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
+
+    def startFocusJog(self, speed=None, acceleration=None):
+        self.startJog(speed=speed, acceleration=acceleration, axis="Focus")
+
+    def stopFocusJog(self):
+        self.stopJog(axis="Focus")
+
+    def getBPPosition(self, notify=True):
+        return self.getPosition(in_mm=True, axis="Build Platform")
+
+    def absMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Build Platform")
+
+    def relMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Build Platform")
+
+    def startBPJog(self, speed=None, acceleration=None):
+        self.startJog(speed=speed, acceleration=acceleration, axis="Build Platform")
+
+    def stopBPJog(self):
+        self.stopJog(axis="Build Platform")
+
+    ################################# End parent class functions #######################################
+
     # pylint: disable=too-many-arguments
-    def relMove(self, mm=None, cnts=None, speed=None, acceleration=None, axis=None):
+    def relMove(self, mm=None, cnts=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
         """Perform a relative movement.
 
         Blocks execution until movement is complete. All units are in mm
@@ -322,17 +388,17 @@ class Galil:
         if mm is not None:
             cnts = self.mmToCnts(mm, axis=a)
         if cnts is not None:
-            start_position = self.getPosition(axis=a)
+            start_position = self.getPosition(in_mm=False, axis=a)
             self.log.info("Move axis %s to relative position %s", a, cnts)
             self.send(f"PR{a}={cnts}")
             self.send(f"BG{a}")
             self.logging_move_status[a] = 0
-            self.waitForMotionComplete(start_position + cnts, axis=a)
+            self.waitForMotionComplete(start_position + cnts, wait_for_settling=wait_for_settling, axis=a)
         if speed is not None:
             self.setSpeed(old_speed, axis=a)
         if acceleration is not None:
             self.setAcceleration(old_acceleration, axis=a)
-        return self.getPosition(axis=a)
+        return self.getPosition(in_mm=True, axis=a)
 
     # pylint: disable=too-many-arguments
     def absMove(
@@ -354,7 +420,7 @@ class Galil:
         if not self.homed[a]:
             msg = "Must home before using absolute movements!"
             self.log.error(msg)
-            return self.getPosition(axis=a)
+            return self.getPosition(in_mm=True, axis=a)
         old_speed = None
         old_acceleration = None
         if speed is not None:
@@ -375,7 +441,7 @@ class Galil:
             self.setSpeed(old_speed, axis=a)
         if acceleration is not None:
             self.setAcceleration(old_acceleration, axis=a)
-        return self.getPosition(axis=a)
+        return self.getPosition(in_mm=True, axis=a)
 
     def startJog(self, speed=None, acceleration=None, axis=None):
         """Start a jog, non-blocking."""
@@ -433,7 +499,9 @@ class Galil:
             ):
                 limit_switch_triggered = True
                 wait_for_settling = False
-                self.log.info("Axis %s limit switch triggered", a)
+                self.log.info("Axis %s limit switch triggered during motion", a)
+                self.logging_move_status[a] = 3
+                break
 
         # self.logging_profile_complete = True
         self.logging_move_status[a] = 1
@@ -444,7 +512,7 @@ class Galil:
                 time.sleep(0.01)
                 position = self.current_position[a]
                 if any(self.checkLimits(axis=a)):
-                    self.log.info("Axis %s limit switch triggered", a)
+                    self.log.info("Axis %s limit switch triggered during settling", a)
                     # self.logging_move_complete = True
                     self.logging_move_status[a] = 3
                     return
@@ -467,15 +535,25 @@ class Galil:
         # self.logging_move_complete = True
         self.logging_move_status[a] = 2
 
-    def set_log_file(self, filename):
+    def setup_log_file(self, filename):
         """Set the log file."""
-        self.movement_log = filename
+        if self.movement_log is None and filename is not None:
+            self.movement_log = str(Path(filename) / "galil_movement_data.csv")
+            async_file_hander.write(self.movement_log, "timestamp,")
+            for a in self.axes_common_names:
+                async_file_hander.write(self.movement_log, f"{a} position_mm,")
+                async_file_hander.write(self.movement_log, f"{a} status,")
+            async_file_hander.write(self.movement_log, "\n")
+        elif self.movement_log is not None and filename is None:
+            self.movement_log = None
 
     def logging_start(self):
         """
         Starts collecting position data
         """
         if not self.logging_running:
+            self.movement_log_times = []
+            self.movement_log_array = []
             self.logging_running = True
             self.log.info("Galil logging started")
 
@@ -491,16 +569,29 @@ class Galil:
     def loop(self):
         while self.thread_running:
             for a in self.axes:
-                self.current_position[a] = self.getPosition(notify=False, axis=a)
+                self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
             if self.logging_running:
-                tmp = ""
+                if self.movement_log is not None:
+                    tmp = ""
+                    for a in self.axes:
+                        position = self.current_position[a]
+                        tmp += f"{self.cntsToMm(position, axis=a)},"
+                        tmp += f"{self.logging_move_status[a]},"
+                    self.write_to_disk(tmp)
+                else:
+                    # tmp = []
+                    # for a in self.axes:
+                    #     position = self.current_position[a]
+                    #     tmp.append(self.cntsToMm(position, axis=a))
+                    tmp = self.cntsToMm(self.current_position[self.default_axis])
+
+                    self.movement_log_times.append(time.time())
+                    self.movement_log_array.append(tmp)
+
                 for a in self.axes:
-                    position = self.current_position[a]
-                    tmp += f"{self.cntsToMm(position, axis=a)},"
-                    tmp += f"{self.logging_move_status[a]},"
                     if self.logging_move_status[a] >= 2:
                         self.logging_move_status[a] = -1
-                self.write_to_disk(tmp)
+
                 time.sleep(0.01)
 
     def downloadProgram(self, filename):
@@ -514,7 +605,7 @@ class Galil:
         This will leave you on a python prompt that forwards commands to
         the controller. Exits with KeyboardInterrupt.
         """
-        if not self.connected:
+        if self.connected is None or not self.connected:
             msg = "Must be connected to Galil controller to run interactive mode"
             self.log.critical(msg)
             sys.exit(msg)

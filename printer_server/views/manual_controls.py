@@ -27,6 +27,8 @@ for key in config_dict.keys():
 # Dynamically import python snippits
 if "external_control" in config_dict.keys():
     import printer_server.drivers.external_control.external_control_snip
+if "coord_systems" in config_dict.keys():
+    import printer_server.drivers.coord_systems.coord_systems_snip
 if "galil" in config_dict.keys():
     import printer_server.drivers.galil.galil_snip
 if "gpio" in config_dict.keys():
@@ -70,6 +72,22 @@ def index():
 
     if initialized:
         calibration_positions = get_last_calibration_positions_from_logs()
+        if "coord_systems" in config_dict:
+            # set active coord system
+            coord_system_name, _ = printer_server.drivers.coord_systems.coord_systems_snip.get_coodinate_system()
+            hardware["coord_systems"]["active"] = coord_system_name
+            # set coord system list
+            hardware["coord_systems"]["coord_systems"] = {}
+            for key in config_dict["coord_systems"].keys():
+                hardware["coord_systems"]["coord_systems"][key] = config_dict["coord_systems"][key]
+            # set coord adjustments
+            if "wintech" in config_dict.keys():
+                hardware["coord_systems"]["coord_adjustments"] = {
+                    "x_drift": {"name": "X Drift", "value":calibration_positions.get("x_drift",0.0)},
+                    "y_drift": {"name": "Y Drift", "value":calibration_positions.get("y_drift",0.0)},
+                    "x_shift": {"name": "X Shift per mm Y", "value":calibration_positions.get("x_shift",0.0)},
+                    "y_shift": {"name": "Y Shift per mm X", "value":calibration_positions.get("y_shift",0.0)}
+                }
         if "galil" in config_dict.keys():
             galil_positions = (
                 printer_server.drivers.galil.galil_snip.galil_get_positions()
@@ -81,8 +99,6 @@ def index():
                     "common": config_dict["galil"]["axes_common_names"][i],
                     "position": galil_positions[axis],
                 }
-            if "coord_systems" in config_dict["galil"]:
-                hardware["galil"]["coord_systems"] = config_dict["galil"]["coord_systems"]
         if "gpio" in config_dict.keys():
             if "fan_pin" in config_dict["gpio"].keys():
                 hardware["gpio"][
@@ -93,7 +109,7 @@ def index():
                     "film_state"
                 ] = printer_server.drivers.gpio.gpio_snip.getFilmRelayState()
         if "kdc101" in config_dict.keys():
-            hardware["kdc101"]["distance"] = calibration_positions["distance"]
+            hardware["kdc101"]["distance"] = calibration_positions.get("distance",0)
         if "keyence" in config_dict.keys():
             sensors = list(config_dict["keyence"]["sensors"].keys())
             hardware["keyence"]["sensors"] = sensors
@@ -103,9 +119,9 @@ def index():
                 sensor_reading = printer_server.drivers.keyence.keyence_snip.read_sensor(
                     config_dict["keyence"]["sensors"][sensor]["measurement_index"]
                 )
-                hardware["keyence"]["focus"][sensor] = calibration_positions[
-                    f"keyence_{sensor}"
-                ]
+                hardware["keyence"]["focus"][sensor] = calibration_positions.get(
+                    f"keyence_{sensor}", 0
+                )
                 hardware["keyence"]["readings"][sensor] = sensor_reading
 
         if "loadcell" in config_dict.keys():
@@ -116,10 +132,10 @@ def index():
                 "in_newtons"
             ] = printer_server.drivers.loadcell.loadcell_snip.get_graph_mode()
         if "screen" in config_dict.keys():
-            hardware["screen"]["light_engines"] = config_dict["screen"]["light_engines"]
+            hardware["light_engines"] = config_dict["light_engines"]
         if "tiptilt" in config_dict.keys():
-            hardware["tiptilt"]["tip"] = calibration_positions["tip"]
-            hardware["tiptilt"]["tilt"] = calibration_positions["tilt"]
+            hardware["tiptilt"]["tip"] = calibration_positions.get("tip",0)
+            hardware["tiptilt"]["tilt"] = calibration_positions.get("tilt",0)
         if "visitech" in config_dict.keys():
             hardware["visitech"][
                 "status"

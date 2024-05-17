@@ -1,0 +1,132 @@
+import logging
+import numpy as np
+from PIL import Image
+from pathlib import Path
+
+from printer_server.threading_wrapper import Thread
+from printer_server.hardware_configuration import driver_handles
+from printer_server.printer_control.print_control import PrintControl, run_in_thread
+from printer_server.views.manual_controls import (
+    get_last_calibration_positions_from_logs,
+)
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
+
+def um_to_px(um):
+    """Return the number of pixels corresponding to the length 'um' by
+    rounding 'um' to the nearest 'pixel_pitch' increment.
+    """
+    pixel_pitch = 7.6
+    return int(round(um / pixel_pitch))
+
+
+def shift_image(img, x=0, y=0):
+    """Shift the image by the specified number of pixels in x and y.
+    Pixels that get shifted out of the image on one side disappear and
+    the new pixels on the opposite side are copied from the original
+    edge. This is accomplished by converting the image to a numpy array
+    and building a list of row and column indicies to slice it with.
+    """
+    new_filename = img.parent / f"{img.stem}_shifted_{x}x_{y}y.png"
+    img = np.array(Image.open(img))
+    idx = [[], []]
+    for axis, shift_by in enumerate((y, -x)):
+        if shift_by > 0:
+            idx[axis] = list(range(shift_by, img.shape[axis]))
+            for _ in range(shift_by):
+                idx[axis].append(img.shape[axis] - 1)
+        elif shift_by < 0:
+            idx[axis] = list(range(0, img.shape[axis] + shift_by))
+            for _ in range(-shift_by):
+                idx[axis].insert(0, 0)
+    if idx[0]:
+        img = img[idx[0], :]
+    if idx[1]:
+        img = img[:, idx[1]]
+    img = Image.fromarray(img).convert("L")
+    log.info("Saving new defocused image %s", new_filename)
+    img.save(new_filename)
+    return Path(new_filename)
+
+class FocusControl(PrintControl):
+    def __init__(self):
+        super().__init__()
+        self.focus_stage = driver_handles.focus_stage
+        self.defocus_um = None
+
+    def create_logs(self):
+        super().create_logs()
+        self.focus_stage.setup_log_file(str(self.current_job))
+
+    def get_focus(self):
+        """Return 'Focus' axis position in um"""
+        return int(
+            self.focus_stage.getFocusPosition() * 1000
+        )
+
+    def connect_hardware(self):
+        self.focus_thread = Thread(log, name="focus_control_setup_thread", target=self.focus_stage.connect, args=[self.shutdown])
+        self.focus_thread.start()
+        super().connect_hardware()
+        self.focus_thread.join()
+        if not self.focus_stage.connected:
+            log.error("Focus stage failed to connect!")
+            self.all_hardware_connected = False
+
+    def initalize_hardware(self):
+        if self.coord_systems is not None:
+            self.focused_position = self.coord_systems["visitech"]["Focus"]
+        else:
+            self.focused_position = get_last_calibration_positions_from_logs().get("distance",0) / 1000
+        self.focus_thread = self.focus_stage.initialize_and_positionFocus(self.focused_position)
+        super().initalize_hardware()
+        if self.focus_thread is not None:
+            self.focus_thread.join()
+        self.focus_stage.initialized = True
+
+    @run_in_thread("planarizing", "Planarization Step 1")
+    def planarization_step_1(self):
+        """Lower the build platform for planarization."""
+        if self.state in ["initialized", "planarized", "completed", "stopped"]:
+            super().planarization_step_1()
+            self.focus_stage.logging_start()
+
+    def post_print_tasks(self):
+        super().post_print_tasks()
+        self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position, join=False)
+        if self.focus_thread is not None:
+            self.focus_thread.join()
+
+    def get_exposure_defocus(self, settings, light_engine):
+        self.defocus_um = settings["Relative focus position (um)"]
+
+    def pre_exposure_tasks(self, settings, light_engine):
+        self.get_exposure_defocus(settings, light_engine)
+
+        need_to_shift_image = self.focus_stage.config_dict.get("moving_shifts_image", False)
+        if need_to_shift_image:
+            self.image = shift_image(self.image, x=um_to_px(self.defocus_um))
+        
+        if self.defocus_um != 0:
+            self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position + self.defocus_um/1000, join=False)
+        return super().pre_exposure_tasks(settings, light_engine)
+
+    def pre_exposure_joins(self, light_engine):
+        """Join Focus threads"""
+        if self.defocus_um != 0:
+            if self.focus_thread is not None:
+                self.focus_thread.join()
+        return super().pre_exposure_joins(light_engine)
+
+    def post_exposure_tasks(self, light_engine, msg):
+        """If layer is defocused, return KDC to focus position"""
+        # fix focus if this exposure was defocused
+        if self.defocus_um != 0:
+            self.focus_stage.threadedFocusMove(log, self.focused_position, join=True)
+        super().post_exposure_tasks(light_engine, msg)
+
+    def finish_print(self):
+        self.focus_stage.logging_stop()
+        self.focus_stage.setup_log_file(None)
+        super().finish_print()

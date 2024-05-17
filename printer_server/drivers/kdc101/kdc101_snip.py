@@ -5,7 +5,7 @@ from printer_server.extensions import socketio
 from printer_server.threading_wrapper import Thread
 import printer_server.views.manual_controls
 
-kdc = driver_handles.kdc
+kdc = driver_handles.kdc101
 
 # log = logging.getLogger(__name__)
 # log.setLevel(logging.INFO)

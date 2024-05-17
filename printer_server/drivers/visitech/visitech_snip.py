@@ -30,7 +30,7 @@ def visitechProject(message):
 def visitechStatus():
     socketio.emit(
         "visitech_status",
-        visitech.read_all_status(),
+        visitech.read_all_status(warn="ALL"),
         namespace="/manual",
         broadcast=True,
     )

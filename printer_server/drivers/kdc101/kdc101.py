@@ -4,10 +4,10 @@ import logging
 from struct import pack, unpack
 import serial
 import serial.tools.list_ports
+from printer_server.drivers.generic_drivers import FocusStageDriver
 
-
-class KDC101:
-    def __init__(self, log_level=logging.DEBUG):
+class KDC101(FocusStageDriver):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.homed = False
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
@@ -20,6 +20,9 @@ class KDC101:
         self.relativeMode = True
         self.port = None
         self.serial_handle = None
+        self.initialized = None
+        self.config_dict = config_dict
+        self.connected = None
 
     # helper function to find handle to K-Cube
     def find_device(self):
@@ -30,37 +33,77 @@ class KDC101:
                 return device.device
         return None
 
-    def connect(self):
-        self.port = self.find_device()
-        if self.port is None:
-            msg = "Thor Labs stage not found!"
-            self.log.critical(msg)
-            return False
-        self.serial_handle = serial.Serial(
-            port=self.port,
-            baudrate=115200,
-            bytesize=8,
-            parity=serial.PARITY_NONE,
-            stopbits=1,
-            timeout=0.1,
-        )
-        self.getHardwareInfo()
-        self.enableStage(enable=True)
-        atexit.register(self.disconnect)
-        self.log.info("Connected to Thor Labs stage")
-        return True
+    def connect(self, shutdown):
+        if self.connected is None:
+            self.connected = False
+            self.port = self.find_device()
+            if self.port is None:
+                msg = "Thor Labs stage not found!"
+                self.log.critical(msg)
+                return False
+            self.serial_handle = serial.Serial(
+                port=self.port,
+                baudrate=115200,
+                bytesize=8,
+                parity=serial.PARITY_NONE,
+                stopbits=1,
+                timeout=0.1,
+            )
+            self.getHardwareInfo()
+            self.enableStage(enable=True)
+            atexit.register(self.disconnect)
+            self.connected = True
+            self.log.info("Connected to Thor Labs stage")
+            return True
+        else:
+            while self.connected is False:
+                time.sleep(0.1)
+
 
     def disconnect(self):
-        if self.serial_handle is not None:
-            try:
-                self.enableStage(enable=False)
-                self.serial_handle.close()
-                self.serial_handle = None
-                self.log.info("Disconnected from Thor Labs stage")
-            except:
-                self.serial_handle.close()
-                self.serial_handle = None
-                self.log.info("Unable to disconnect from Thor Labs stage!")
+        if self.connected is not None and self.connected is not False:
+            if self.serial_handle is not None:
+                try:
+                    self.enableStage(enable=False)
+                    self.serial_handle.close()
+                    self.serial_handle = None
+                    self.log.info("Disconnected from Thor Labs stage")
+                except:
+                    self.serial_handle.close()
+                    self.serial_handle = None
+                    self.log.info("Unable to disconnect from Thor Labs stage!")
+
+
+    ############################# Parent class functions #####################################
+
+    def setup_log_file(self, filename):
+        pass
+
+    def logging_start(self):
+        pass
+
+    def logging_stop(self):
+        pass
+
+    def initialize(self):
+        pass
+
+    def getFocusPosition(self, notify=True):
+        return self.getCurrentPos()/1000
+
+    def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.move(mm, microns=False, relative=False)
+
+    def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.move(mm, microns=False, relative=True)
+
+    def startFocusJog(self, speed=None, acceleration=None):
+        log.warn("KDC Jogging not implemented")
+
+    def stopFocusJog(self):
+        log.warn("KDC Jogging not implemented")
+
+    ##############################################################################################
             
     def home(self):
         # Home Stage; MGMSG_MOT_MOVE_HOME
@@ -97,6 +140,8 @@ class KDC101:
         self.flushUSB()
 
     def move(self, pos, microns=True, relative=True):
+
+        prev_pos = self.getFocusPosition()
 
         # update positioning mode
         if relative:
@@ -146,8 +191,12 @@ class KDC101:
         )
         finished_succeccfully = self.confirmMoveFinished()
         if not finished_succeccfully:
-            self.log.warning("Move failed. Going to position 0")
+            self.log.warning("Move failed. Going to position 0 and retrying")
             self.move(0.0, relative=False)
+            if relative:
+                self.move(prev_pos + position, microns = False, relative=False)
+            else:
+                self.move(position, microns = False, relative=False)
         return True
 
     def setRelative(self):

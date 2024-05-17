@@ -4,7 +4,6 @@ import json
 import shutil
 import logging
 import threading
-from printer_server.threading_wrapper import Thread
 from pathlib import Path
 from flask import request
 from functools import wraps
@@ -14,133 +13,17 @@ from zipfile import ZipFile, BadZipFile
 import printer_server.views.home as home
 from printer_server.extensions import db
 from printer_server.settings import Config
+from printer_server.threading_wrapper import Thread
 from printer_server.models import PrintQueue, PrintRecord
-from printer_server.print_file_validator import validate_schema, read_json, expand_json
-from printer_server.hardware_configuration import config_dict, driver_handles
 from printer_server.async_file_handler import async_file_hander
+from printer_server.hardware_configuration import config_dict, driver_handles
+from printer_server.print_file_validator import validate_schema, read_json, expand_json
 from printer_server.views.manual_controls import (
     get_last_calibration_positions_from_logs,
 )
 
-# from printer_server.drivers.kdc101.kdc101_snip import get_kdc_positions
-# from printer_server.drivers.tiptilt.tiptilt_snip import get_tiptilt_positions
-
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
-
-
-def move_all_galil(
-    logger,
-    galil,
-    x,
-    y,
-    z,
-    bp,
-    join=True,
-    speed_x=None,
-    speed_y=None,
-    speed_z=None,
-    speed_bp=None,
-    acceleration_x=None,
-    acceleration_y=None,
-    acceleration_z=None,
-    acceleration_bp=None
-):
-    """
-    Starts multithreaded movement on all of the galil axes. If any axis is set to none, it will not move.
-    If join is set to true, the movements will join before returning
-    """
-    threads = [None, None, None, None]
-    if x is not None:
-        threads[0] = Thread(
-            logger, 
-            name="print_control_galil_x_thread",
-            target=galil.absMove,
-            kwargs={
-                "mm": x / 1000,
-                "speed": speed_x,
-                "acceleration": acceleration_x,
-                "axis": "X",
-            },
-        )
-        threads[0].start()
-    if y is not None:
-        threads[1] = Thread(
-            logger, 
-            name="print_control_galil_y_thread",
-            target=galil.absMove,
-            kwargs={
-                "mm": y / 1000,
-                "speed": speed_y,
-                "acceleration": acceleration_y,
-                "axis": "Y",
-            },
-        )
-        threads[1].start()
-    if z is not None:
-        threads[2] = Thread(
-            logger, 
-            name="print_control_galil_z_thread",
-            target=galil.absMove,
-            kwargs={
-                "mm": z / 1000,
-                "speed": speed_z,
-                "acceleration": acceleration_z,
-                "axis": "Focus",
-            },
-        )
-        threads[2].start()
-
-    if bp is not None:
-        threads[3] = Thread(
-            logger, 
-            name="print_control_galil_bp_thread",
-            target=galil.absMove,
-            kwargs={
-                "mm": bp / 1000,
-                "speed": speed_bp,
-                "acceleration": acceleration_bp,
-                "axis": "Build Platform",
-            },
-        )
-        threads[3].start()
-
-    if join:
-        for thread in threads:
-            if thread is not None:
-                thread.join()
-    else:
-        return threads
-
-
-def get_last_focused_position_from_logs():
-    """Return the last focused position for the distance axis from the
-    position log file.
-    """
-    return get_last_calibration_positions_from_logs()["distance"]
-
-
-def has_bad_metadata(filename):
-    """Check to see if the zip file has a hidden __MACOSX folder."""
-    try:
-        with ZipFile(filename, "r") as input_file:
-            for item in input_file.namelist():
-                if item.startswith("__MACOSX/"):
-                    return True
-        return False
-    except BadZipFile:
-        return False
-
-
-def clean_uploaded_file(filename):
-    """Remove unwanted hidden files created by MAC OS in zipfiles."""
-    temp_filename = Path(Config.UPLOAD_FOLDER) / "queue" / "temp.zip"
-    with ZipFile(filename, "r") as old_file, ZipFile(temp_filename, "w") as new_file:
-        for item in old_file.infolist():
-            buffer = old_file.read(item.filename)
-            if not str(item.filename).startswith("__MACOSX/"):
-                new_file.writestr(item, buffer)
-    shutil.move(temp_filename, filename)
 
 
 def run_in_thread(state, text):
@@ -154,9 +37,9 @@ def run_in_thread(state, text):
 
     def decorator(f):
         @wraps(f)
-        def decorated_function(self, *args, **kwargs):
-            run_in_thread = kwargs.get("run_in_thread", True)
-            top_level = kwargs.get("top_level", True)
+        def decorated_function(self, *args, run_in_thread=False, top_level=False, **kwargs):
+            run_in_thread = kwargs.get("run_in_thread", run_in_thread)
+            top_level = kwargs.get("top_level", top_level)
 
             def func(self, *args, **kwargs):
                 f(self, *args, **kwargs)
@@ -174,7 +57,7 @@ def run_in_thread(state, text):
 
             if run_in_thread:
                 _thread = Thread(
-                    log, name=f"print_control_'{text}'_thread", target=func, args=(self, *args), kwargs={**kwargs}
+                    log, name=f"print_control_({text})_thread", target=func, args=(self, *args), kwargs={**kwargs}
                 )
                 _thread.start()
             else:
@@ -183,7 +66,6 @@ def run_in_thread(state, text):
         return decorated_function
 
     return decorator
-
 
 class PrintControl:
     """
@@ -196,29 +78,27 @@ class PrintControl:
     def __init__(self):
         self._state = "uninitialized"
 
-        # hardware handles
-        self.galil = driver_handles.galil
-        self.tiptilt = driver_handles.tiptilt
-        self.loadcell = driver_handles.loadcell
-
-        # loadcell graph variables
-        self.loadcell_running = False
-        self.loadcell_thread = None
-
         # folders relevant to printing
         self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
         self.current_job = Path(Config.UPLOAD_FOLDER) / Path("current_job")
         self.print_history = Path(Config.UPLOAD_FOLDER) / Path("print_history")
 
         # log files
-        self.position_log = str(self.current_job / "position_data.csv")
-        self.exposure_log = str(self.current_job / "exposure_data.log")
-        self.loadcell_log = str(self.current_job / "loadcell_data.csv")
-        self.movement_log = str(self.current_job / "movement_data.csv")
+        self.exposure_log = str(self.current_job / "exposure_data.csv")
         self.event_log = str(self.current_job / "event_log.csv")
 
         # threads
-        self.galil_thread = None
+        self.bp_thread = None
+        self.focus_thread = None
+        self.xy_threads = None
+
+        try:
+            self.coord_systems_control = driver_handles.coord_systems_control
+            self.coord_systems = config_dict["coord_systems"]
+            
+        except:
+            self.coord_systems_control = None
+            self.coord_systems = None
 
         # values used during printing
         self.image = None
@@ -236,6 +116,16 @@ class PrintControl:
         self.print_thread = None  # will be initialized later on start
         self.printing_stopped = threading.Event()
         self.printing_paused = threading.Event()
+
+        # Create delete old profiles
+        profile_enabled = Config.PROFILE_CODE
+        if profile_enabled:
+            profiles_dir = Path(Config.PROFILES_FOLDER)
+            profile_file = str(Path(Config.PROJECT_ROOT) / "logs" / "profile.txt")
+            if Path(profile_file).is_file():
+                os.remove(profile_file)
+            if profiles_dir.is_dir():
+                shutil.rmtree(profiles_dir)
 
     @property
     def state(self):
@@ -260,14 +150,6 @@ class PrintControl:
             self._state = state
         else:
             raise ValueError(f"Invalid state: {state}")
-
-    def loadcell_graph_loop(self):
-        if not self.loadcell_running:
-            self.loadcell_running = True
-            while self.loadcell_running:
-                data = self.loadcell.get_current_data()
-                home.update_loadcell_graph({"data": data})
-                time.sleep(0.05)
 
     def load_print_job(self, job_id):
         """
@@ -295,7 +177,7 @@ class PrintControl:
             with ZipFile(zipped_job_file, "r") as f:
                 namelist = f.namelist()
                 for name in list(namelist):
-                    if (".csv" in name) or (".log" in name) or ("exposure_data" in name):
+                    if (".csv" in name) or (".log" in name):
                         namelist.remove(name)
                 f.extractall(self.current_job, members=namelist)
         except FileNotFoundError:
@@ -329,27 +211,21 @@ class PrintControl:
     def create_logs(self):
         # create logs and overwrite any pre-existing data
         async_file_hander.set_enabled(True)
-        async_file_hander.write(
-            self.position_log,
-            "layer,duplicate,start_time,end_time,loadcell_start_index,",
-        )
-        async_file_hander.write(
-            self.position_log,
-            "loadcell_end_index,start_position,end_position,thickness_um,squeeze\n",
-        )
         async_file_hander.write(self.exposure_log, "")
         async_file_hander.write(self.event_log, "timestamp,event\n")
-        async_file_hander.write(self.movement_log, "timestamp,")
-        for a in self.galil.axes_common_names:
-            async_file_hander.write(self.movement_log, f"{a} position_mm,")
-            async_file_hander.write(self.movement_log, f"{a} status,")
-        async_file_hander.write(self.movement_log, "\n")
-        async_file_hander.write(
-            self.loadcell_log, "system_time,loadcell_time,index,raw_data,newtons\n"
-        )
-        async_file_hander.start()
-        self.galil.set_log_file(self.movement_log)
-        self.loadcell.set_log_file(self.loadcell_log)
+
+        async_file_hander.write(self.exposure_log, f"layer,duplicate,exposure,setup time,start time,")
+        async_file_hander.write(self.exposure_log, f"stop time,light engine,image name,power,exposure time,")
+        async_file_hander.write(self.exposure_log, f"pre focus,focus,post focus,")
+        async_file_hander.write(self.exposure_log, f"pre driver status,pre feedback,")
+        async_file_hander.write(self.exposure_log, f"pre temp,pre driver temp,")
+        async_file_hander.write(self.exposure_log, f"pre driver status2,pre feedback2,")
+        async_file_hander.write(self.exposure_log, f"pre temp2,pre driver temp2,")
+        async_file_hander.write(self.exposure_log, f"pre sticky errors,post driver status,")
+        async_file_hander.write(self.exposure_log, f"post feedback,post temp,")
+        async_file_hander.write(self.exposure_log, f"post driver temp,post driver status2,")
+        async_file_hander.write(self.exposure_log, f"post feedback2,post temp2,")
+        async_file_hander.write(self.exposure_log, f"post driver temp2,post sticky errors\n")
 
     def get_position_settings(self, layer):
         """Return the position settings for the layer."""
@@ -407,140 +283,33 @@ class PrintControl:
             self.event_log, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},{msg}\n"
         )
 
-    def move_build_platform_up(self, position_settings):
-        """Moves the build platform up according to the position_settings"""
-        inital_wait = position_settings["Initial wait (ms)"] / 1000
-        up_distance = position_settings["Distance up (mm)"]
-        up_speed = position_settings["BP up speed (mm/sec)"]
-        up_acceleration = position_settings["BP up acceleration (mm/sec^2)"]
-
-        time.sleep(inital_wait)
-        self.write_to_event_log("Start Up Movement")
-        self.galil.absMove(
-            mm=self.print_position - up_distance,
-            speed=up_speed,
-            acceleration=up_acceleration,
-            wait_for_settling=False,
-        )
-        self.write_to_event_log("Finish Up Movement")
-
-    def move_build_platform_down(self, position_settings):
-        """Moves the build platform down according to the position_settings"""
-        up_wait = position_settings["Up wait (ms)"] / 1000
-        down_speed = position_settings["BP down speed (mm/sec)"]
-        down_acceleration = position_settings["BP down acceleration (mm/sec^2)"]
-
-        time.sleep(up_wait)
-        self.write_to_event_log("Start Down Movement")
-        self.galil.absMove(
-            mm=self.print_position,
-            speed=down_speed,
-            acceleration=down_acceleration,
-        )
-        self.write_to_event_log("Finish Down Movement")
-
     def move_build_platform(self, position_settings, layer):
-        """Perform the build platform movements for a layer according to
-        the position_settings.
-        """
-        final_wait = position_settings["Final wait (ms)"] / 1000
-        layer_thickness = position_settings["Layer thickness (um)"] / 1000
+        log.warn("Base printer_control class does not have a defined bp stage. Cannot move bp")
+        return 0
 
-        start_position = self.galil.getPosition()
-        start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        start_index = self.loadcell.get_current_loadcell_index()
-        self.move_build_platform_up(position_settings)
-        self.print_position -= layer_thickness
-        self.move_build_platform_down(position_settings)
-
-        force_squeeze = position_settings.get("Enable force squeeze", False)
-        squeeze_count = position_settings.get("Squeeze count", 1)
-        if force_squeeze:
-            for _ in range(squeeze_count):
-                self.write_to_event_log("Start Force Squeeze")
-                self.squeeze_resin(position_settings, layer)
-                self.write_to_event_log("Finish Force Squeeze")
-                time.sleep(final_wait)
-        else:
-            time.sleep(final_wait)
-        end_position = self.galil.getPosition()
-        end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        end_index = self.loadcell.get_current_loadcell_index()
-        thickness = self.galil.cntsToMm(abs(end_position - start_position) * 1000)
-        async_file_hander.write(
-            self.position_log,
-            f"{layer[0]},{layer[1]},{start_time},{end_time},{start_index},",
-        )
-        async_file_hander.write(
-            self.position_log,
-            f"{end_index},{start_position},{end_position},{thickness},{force_squeeze}\n",
-        )
-
-    def squeeze_resin(self, position_settings, layer):
-        squeeze_target = position_settings["Squeeze force (N)"]
-        squeeze_wait = position_settings["Squeeze wait (ms)"] / 1000
-
-        first_count = self.move_bp_to_force(squeeze_target - 5, speed=0.5)
-        second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
-        third_count = self.move_bp_to_force(squeeze_target, speed=0.005)
-        count = first_count + second_count + third_count
-
-        log.info("Squeeze force reached %s steps", count)
-        log.info("Squeeze force: %s", self.loadcell.get_current_force())
-        log.info("Squeeze position: %s", self.galil.getPosition())
-
-        if self.loadcell.get_current_force() > squeeze_target * 1.10:
-            log.warning("Move_to_force overshot target value.")
-
-        time.sleep(squeeze_wait)
-
-        self.galil.absMove(
-            mm=self.print_position,
-            speed=50,
-            acceleration=5,
-        )
-
-    def move_bp_to_force(
-        self, target_force, speed, acceleration=100, error_threshold=None
-    ):
-        """Move the build platform until the target force is achieved.
-
-        force - Target force.
-        speed - Speed in mm/sec. Negative speed means move up.
-        """
-        force = self.loadcell.get_current_force()
-        forces = []
-        count = 0
-        if (speed < 0 and force > target_force) or (speed > 0 and force < target_force):
-            self.galil.startJog(speed=speed, acceleration=acceleration)
-            while (speed < 0 and force > target_force) or (
-                speed > 0 and force < target_force
-            ):
-                time.sleep(0.01)
-                force = self.loadcell.get_current_force()
-                log.debug("Loadcell force: %s", force)
-                count += 1
-                forces.append(force)
-                if len(forces) <= 33:
-                    continue
-                forces.pop(0)
-
-                if error_threshold is not None:
-                    # print(f"{abs(forces[0] - forces[-1])}, {error_threshold}")
-                    if abs(forces[0] - forces[-1]) < error_threshold:
-                        self.galil.stopJog()
-                        time.sleep(0.02)
-                        return None
-            self.galil.stopJog()
-            time.sleep(0.02)
-        return count
+    def force_squeeze(self, position_settings, layer):
+        log.warn("Missing loadcell_control. Cannot force_squeeze")
+        return 0
 
     def get_focus(self):
         log.warn("Base printer_control class does not have a defined focus stage")
         return 0
 
+    def convert_le_to_screen_le(self, light_engine):
+        # convert light engine to screen light engine
+        screen_light_engine = None
+        for temp in config_dict["light_engines"]:
+            if temp in light_engine:
+                screen_light_engine = temp
+                break
+        if screen_light_engine is None:
+            log.error(
+                "No matching light engine found in coord systems: '%s'", light_engine
+            )
+        return screen_light_engine
+
     @run_in_thread("initialized", "Initialize")
-    def initialize(self, run_in_thread=False, top_level=False):
+    def initialize(self):
         """Put all hardware into starting configuration."""
         if self.state == "uninitialized":
             self.state = "busy"
@@ -550,113 +319,25 @@ class PrintControl:
                 self.shutdown(is_critical=True)
                 return False
             self.initalize_hardware()
+            log.info("Printer initialized, all hardware ready.")
             return True
         return False
             
     def connect_hardware(self):
-        ret = self.tiptilt.connect()
-        if not ret:
-            self.all_hardware_connected = False
-        ret = self.loadcell.connect()
-        if not ret:
-            self.all_hardware_connected = False
-        ret = self.galil.connect(self.shutdown)
-        if not ret:
-            self.all_hardware_connected = False
+        pass
 
     def initalize_hardware(self):
-        self.galil_thread = Thread(log, name="print_control_galil_setup_thread", target=self.galil_setup_thread, args=[])
-        self.galil_thread.start()
-        self.galil_thread.join()
-
-        self.galil_thread = Thread(
-            log, name="print_control_galil_setup_done_thread", target=self.galil_finalize_setup_thread, args=[]
-        )
-        self.galil_thread.start()
-        self.galil_thread.join()
-
-    def galil_setup_thread(self):
-        """Initialize and home Galil controller"""
-        self.galil.initialize()
-        self.galil.home()
-
-        for a in self.galil.axes:
-            self.galil.setSpeed(self.galil.getDefaultSpeed(a), axis=a)
-            self.galil.setAcceleration(self.galil.getDefaultAcceleration(a), axis=a)
-
-    def galil_finalize_setup_thread(self):
-        self.galil.goToZmax()
+        pass
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarization_step_1(self):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
-            self.loadcell.start()
-            self.galil.logging_start()
-            time.sleep(0.5)
-            if self.loadcell_thread is None:
-                home.clear_loadcell_graph()
-                self.loadcell_thread = Thread(log, name="print_control_loadcell_graph_thread", target=self.loadcell_graph_loop)
-                self.loadcell_thread.start()
-            loadcell_start_force = self.loadcell.get_current_force()
-            self.galil.goToZmin()
-            if config_dict["loadcell"]["loadcell_planarization_enabled"]:
-                log.debug("Loadcell force (pre-step 1): %s", loadcell_start_force)
-                target_force = config_dict["loadcell"]["loadcell_planarization_force"]
-                if (
-                    self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.25)
-                    is None
-                ):
-                    log.error("Did not reach target planarization force.")
-                    return
-                time.sleep(0.5)
-                log.info(
-                    "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
-                )
-            else:
-                # estimate a 1mm movement for planarization
-                self.galil.relMove(mm=2.0, speed=2.5)
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
-        self.planarized_position = self.galil.getPosition()
-        self.print_position = self.galil.cntsToMm(self.planarized_position)
-        """Raise the build platform to begin printing."""
-        if config_dict["loadcell"]["loadcell_planarization_enabled"]:
-            if self.state == "planarizing":
-                self.planarization_step_3()
-
-    def planarization_step_3(self):
-        """Raise the build platform to its starting postion.
-
-        This is accomplished by first moving up quickly until the
-        measured force is within 5 newtons of the target force, then
-        moving up more slowly until the measured force reaches the
-        target force.
-        """
-        target_force = config_dict["loadcell"]["loadcell_print_start_force"]
-        first_count = self.move_bp_to_force(
-            target_force + 5, speed=-0.5, error_threshold=2.5
-        )
-        if first_count is None:
-            log.error("Loadcell planarization failed. Check build platform screw.")
-            return
-        second_count = self.move_bp_to_force(target_force + 0.5, speed=-0.05)
-        third_count = self.move_bp_to_force(target_force, speed=-0.005)
-        count = first_count + second_count + third_count
-
-        log.info(
-            "Loadcell force post planarization: %s", self.loadcell.get_current_force()
-        )
-        log.debug("Loadcell position: %s", self.planarized_position)
-        self.planarized_position = self.galil.getPosition()
-        self.print_position = self.galil.cntsToMm(self.planarized_position)
-        log.info("Loadcell planarized %s steps", count)
-        log.info("Loadcell force (post-step 2): %s", self.loadcell.get_current_force())
-        log.info("Loadcell position (post-step 2): %s", self.planarized_position)
-        if self.loadcell.get_current_force() < target_force * 0.90:
-            log.warning("Move_to_force overshot target value")
+        self.print_position = self.planarized_position
 
     def start(self, job_id):
         """Do all preparatory work for a print, then start the printing
@@ -681,18 +362,13 @@ class PrintControl:
 
         # Start async_file_handler
         self.create_logs()
+        async_file_hander.start()
 
         position = get_last_calibration_positions_from_logs()
-        # position = get_kdc_positions()
-        dist = position["distance"]
-        self.write_to_event_log(f"Distance: {dist}")
-        self.focused_position = float(position["distance"])
-
-        # position = get_tiptilt_positions()
-        tip = position["tip"]
-        self.write_to_event_log(f"Tip: {tip}")
-        tilt = position["tilt"]
-        self.write_to_event_log(f"Tilt: {tilt}")
+        self.write_to_event_log(f"Calibration")
+        for k, v in position.items():
+            self.write_to_event_log(f"{k}: {v}")
+        self.focused_position = float(position.get("distance",0)) / 1000
 
         # update frontend progress bar
         self.state = "printing"
@@ -731,10 +407,7 @@ class PrintControl:
         if self.state != "paused":
             return
         log.info("Resuming print...")
-        self.galil.absMove(cnts=self.paused_position)
-        self.print_position = self.galil.cntsToMm(self.paused_position)
-        self.paused_position = None
-        self.loadcell.start()
+
         # update fontend
         self.state = "printing"
         msg = {
@@ -767,6 +440,9 @@ class PrintControl:
     def pre_print_tasks(self):
         return
 
+    def pre_print_joins(self):
+        return
+
     def post_print_tasks(self):
         return
 
@@ -789,10 +465,7 @@ class PrintControl:
         self.exposure_count = self.total_number_of_exposures()
 
         self.pre_print_tasks()
-
-        # move build platform to the starting position if this is the first layer
-        if self.next_layer == 0:
-            self.galil.absMove(cnts=self.planarized_position)
+        self.pre_print_joins()
 
         # update frontend message pane and progress bar
         msg = {
@@ -807,18 +480,18 @@ class PrintControl:
                 self.exposure_index += self.exposures_in_layer(layer)
                 continue  # skip previous layers if print was paused
             if self.printing_paused.is_set():
-                self.loadcell.pause()
                 break  # pause, don't do anything else
             if self.printing_stopped.is_set():
                 break  # pause, don't do anything else
             self.next_layer = i + 1
+            
+            # update layer log messages
+            msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
+            log.info(msg)
+            self.write_to_event_log(msg)
 
             # process layer
-            self.layer_worker(i, layer)
-
-        # set paused position
-        if self.printing_paused.is_set():
-            self.paused_position = self.galil.getPosition()
+            self.layer_worker(i, layer, msg)
 
         self.post_print_tasks()
 
@@ -826,56 +499,62 @@ class PrintControl:
         if not self.printing_paused.is_set():
             self.finish_print()
 
-    def layer_worker(self, i, layer):
-        """Process a single layer of the 3D print.
-
-        This method should only be called from inside print_worker.
-        """
+    def pre_layer_tasks(self, i, layer):
         # read settings for this layer
         current_layer_settings = self.print_settings["Layers"][layer[0]]
         position_settings = self.get_position_settings(current_layer_settings)
         image_settings_list = self.get_image_settings(current_layer_settings)
 
-        # update log messages
-        msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
-        log.info(msg)
-        self.write_to_event_log(msg)
-
         # move build platform
-        self.galil_thread = Thread(
+        self.bp_thread = Thread(
             log, name="print_control_move_bp_thread", target=self.move_build_platform, args=[position_settings, layer]
         )
         if not self.next_layer == 1:
-            self.galil_thread.start()
+            self.bp_thread.start()
 
+    def pre_layer_joins(self):
+        if not self.next_layer == 1:
+            self.bp_thread.join()
+
+    def post_layer_tasks(self):
+        return
+
+    def layer_worker(self, i, layer, msg):
+        """Process a single layer of the 3D print.
+
+        This method should only be called from inside print_worker.
+        """
+        self.pre_layer_tasks(i, layer)
+        self.pre_layer_joins()
+
+        # read settings for this layer
+        current_layer_settings = self.print_settings["Layers"][layer[0]]
+        image_settings_list = self.get_image_settings(current_layer_settings)
+        
         # do exposures
-        exposure_data = {}
         for j, settings in enumerate(image_settings_list):
-            self.exposure_worker(j, settings, exposure_data, msg)
+            msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
+            msg += f" Exposure {j}"
+            log.info(msg)
+            self.write_to_event_log(msg)
+            self.exposure_worker(j, layer, settings, msg)
 
-        # log exposure data
-        async_file_hander.write(self.exposure_log, f"layer {layer}:\n")
-        for x in exposure_data:
-            async_file_hander.write(
-                self.exposure_log,
-                f"{json.dumps({x: exposure_data[x]}, indent=2)}\n",
-            )
+    def get_exposure_defocus(self, settings, light_engine):
+        return
 
     def pre_exposure_tasks(self, settings, light_engine):
         return
 
-    def pre_exposure_joins(self, settings, light_engine):
-        # wait for all hardware to be ready for exposure
-        if not self.next_layer == 1:
-            self.galil_thread.join()
+    def pre_exposure_joins(self, light_engine):
+        return
 
     def exposure(self, settings, light_engine):
         return
 
-    def get_le_status(self, settings, light_engine):
+    def get_le_status(self, settings, light_engine, warn="ALL"):
         return {}
 
-    def post_exposure_tasks(self, msg):
+    def post_exposure_tasks(self, light_engine, msg):
         self.exposure_index += 1
 
         # update frontend message pane and progress bar
@@ -886,7 +565,7 @@ class PrintControl:
         }
         home.update_printer_state("print progress", msg)
 
-    def exposure_worker(self, j, settings, exposure_data, msg):
+    def exposure_worker(self, j, layer, settings, msg):
         """Process a single exposure of the 3D print.
 
         This method should only be called from inside layer_worker.
@@ -898,48 +577,45 @@ class PrintControl:
         self.power = settings["Light engine power setting"]
         layer_start_position = self.get_focus()
         light_engine = settings.get(
-            "Light engine", config_dict["screen"]["light_engines"][0]
+            "Light engine", config_dict["light_engines"][0]
         )
 
         # run pre-exposure tasks
+        setup_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         self.write_to_event_log("Setup Exposure")
         self.pre_exposure_tasks(settings, light_engine)
-        self.pre_exposure_joins(settings, light_engine)
+        self.pre_exposure_joins(light_engine)
 
         # do the exposure
         position_during_exposure = self.get_focus()
-        pre_exposure_status = self.get_le_status(settings, light_engine)
+        pre_exposure_status = self.get_le_status(settings, light_engine, warn="TEMP")
         time.sleep(settings["Wait before exposure (ms)"] / 1000)
+        start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         self.write_to_event_log("Start Exposure")
         self.exposure(settings, light_engine)
         self.write_to_event_log("Finish Exposure")
+        end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         time.sleep(settings["Wait after exposure (ms)"] / 1000)
 
-        self.post_exposure_tasks(msg)
-        post_exposure_status = self.get_le_status(settings, light_engine)
+        self.post_exposure_tasks(light_engine, msg)
+        post_exposure_status = self.get_le_status(settings, light_engine, warn="ALL")
 
         # save expoure data
-        exposure_data[j] = {
-            "image": self.image.name,
-            "power setting": self.power,
-            "exposure time (ms)": self.exposure_time_ms,
-            "layer starting position": layer_start_position,
-            "position during exposure": position_during_exposure,
-            "post exposure position": self.get_focus(),
-            "pre exposure status": pre_exposure_status,
-            "post exposure status": post_exposure_status,
-        }
+        async_file_hander.write(self.exposure_log, f"{layer[0]},{layer[1]},{j},{setup_time},{start_time},")
+        async_file_hander.write(self.exposure_log, f"{end_time},{light_engine},{self.image.name},{self.power},{self.exposure_time_ms},")
+        async_file_hander.write(self.exposure_log, f"{layer_start_position},{position_during_exposure},{self.get_focus()},")
+        async_file_hander.write(self.exposure_log, f"{pre_exposure_status['led_driver_status']},{pre_exposure_status['led_feedback']},")
+        async_file_hander.write(self.exposure_log, f"{pre_exposure_status['led_temp']},{pre_exposure_status['led_driver_temp']},")
+        async_file_hander.write(self.exposure_log, f"{pre_exposure_status['led_driver_status2']},{pre_exposure_status['led_feedback2']},")
+        async_file_hander.write(self.exposure_log, f"{pre_exposure_status['led_temp2']},{pre_exposure_status['led_driver_temp2']},")
+        async_file_hander.write(self.exposure_log, f"{pre_exposure_status['led_sticky_errors']},{post_exposure_status['led_driver_status']},")
+        async_file_hander.write(self.exposure_log, f"{post_exposure_status['led_feedback']},{post_exposure_status['led_temp']},")
+        async_file_hander.write(self.exposure_log, f"{post_exposure_status['led_driver_temp']},{post_exposure_status['led_driver_status2']},")
+        async_file_hander.write(self.exposure_log, f"{post_exposure_status['led_feedback2']},{post_exposure_status['led_temp2']},")
+        async_file_hander.write(self.exposure_log, f"{post_exposure_status['led_driver_temp2']},{post_exposure_status['led_sticky_errors']}\n")
+
 
     def finish_print(self):
-        self.galil.logging_stop()
-        self.galil.set_log_file(None)
-
-        self.loadcell.stop()
-        self.loadcell_running = False
-        self.loadcell_thread = None
-        home.clear_loadcell_graph()
-        self.loadcell.set_log_file(None)
-
         # update fontend, zip logs into archive in print_history, and update db entrty
         self.print_duration = datetime.now() - self.print_start_time
         with self.app.app_context():
@@ -1003,6 +679,30 @@ class PrintControl:
             log.warning(msg["text"])
             home.update_printer_state("shutdown failed", msg)
 
+
+    def has_bad_metadata(self, filename):
+        """Check to see if the zip file has a hidden __MACOSX folder."""
+        try:
+            with ZipFile(filename, "r") as input_file:
+                for item in input_file.namelist():
+                    if item.startswith("__MACOSX/"):
+                        return True
+            return False
+        except BadZipFile:
+            return False
+
+
+    def clean_uploaded_file(self, filename):
+        """Remove unwanted hidden files created by MAC OS in zipfiles."""
+        temp_filename = Path(Config.UPLOAD_FOLDER) / "queue" / "temp.zip"
+        with ZipFile(filename, "r") as old_file, ZipFile(temp_filename, "w") as new_file:
+            for item in old_file.infolist():
+                buffer = old_file.read(item.filename)
+                if not str(item.filename).startswith("__MACOSX/"):
+                    new_file.writestr(item, buffer)
+        shutil.move(temp_filename, filename)
+
+
     def handle_upload(self, request):
         """Upload a print job.
 
@@ -1019,9 +719,9 @@ class PrintControl:
                 f"{upload_time.strftime('job-%Y-%m-%d_%H-%M-%S.%f')}.zip",
             )
             f.save(filename_on_disk)
-            if has_bad_metadata(filename_on_disk):
+            if self.has_bad_metadata(filename_on_disk):
                 log.debug("Removing hiden '__MACOSX' folder from %s ...", f.filename)
-                clean_uploaded_file(filename_on_disk)
+                self.clean_uploaded_file(filename_on_disk)
             try:
                 _, schema_ver = validate_schema(filename_on_disk)
                 if schema_ver not in config_dict["valid_schema_versions"]:
