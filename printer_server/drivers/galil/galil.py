@@ -43,6 +43,9 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.top_position = config_dict["top_position"]
         self.tolerence = config_dict["axes_tolerance"]
 
+        self.movement_log_times = []
+        self.movement_log_array = []
+
         self.homed = {}
         self.jogging = {}
         self.pre_jog_speed = {}
@@ -183,10 +186,9 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
 
         Log location must be set for data to be saved.
         """
-        if self.movement_log is not None:
-            ts = "%Y-%m-%d %H:%M:%S.%f"
-            async_file_hander.write(self.movement_log, datetime.now().strftime(ts) + ",")
-            async_file_hander.write(self.movement_log, ",".join(map(str, args)) + "\n")
+        ts = "%Y-%m-%d %H:%M:%S.%f"
+        async_file_hander.write(self.movement_log, datetime.now().strftime(ts) + ",")
+        async_file_hander.write(self.movement_log, ",".join(map(str, args)) + "\n")
 
     def mmToCnts(self, mm, axis=None):
         """Convert mm to counts for the specified axis."""
@@ -550,6 +552,8 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         Starts collecting position data
         """
         if not self.logging_running:
+            self.movement_log_times = []
+            self.movement_log_array = []
             self.logging_running = True
             self.log.info("Galil logging started")
 
@@ -567,14 +571,27 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             for a in self.axes:
                 self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
             if self.logging_running:
-                tmp = ""
+                if self.movement_log is not None:
+                    tmp = ""
+                    for a in self.axes:
+                        position = self.current_position[a]
+                        tmp += f"{self.cntsToMm(position, axis=a)},"
+                        tmp += f"{self.logging_move_status[a]},"
+                    self.write_to_disk(tmp)
+                else:
+                    # tmp = []
+                    # for a in self.axes:
+                    #     position = self.current_position[a]
+                    #     tmp.append(self.cntsToMm(position, axis=a))
+                    tmp = self.cntsToMm(self.current_position[self.default_axis])
+
+                    self.movement_log_times.append(time.time())
+                    self.movement_log_array.append(tmp)
+
                 for a in self.axes:
-                    position = self.current_position[a]
-                    tmp += f"{self.cntsToMm(position, axis=a)},"
-                    tmp += f"{self.logging_move_status[a]},"
                     if self.logging_move_status[a] >= 2:
                         self.logging_move_status[a] = -1
-                self.write_to_disk(tmp)
+
                 time.sleep(0.01)
 
     def downloadProgram(self, filename):
