@@ -19,6 +19,10 @@ class Printer3D:
     def __init__(self):
         # Dynamically import python snippits
         global config_dict
+        if "coord_systems" in config_dict.keys():
+            from printer_server.drivers.coord_systems import Coord_Systems
+            self.coord_systems_control = Coord_Systems()
+
         if "galil" in config_dict.keys():
             from printer_server.drivers.galil import Galil, Galil_dummy
 

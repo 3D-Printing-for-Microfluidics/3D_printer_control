@@ -92,7 +92,13 @@ class PrintControl:
         self.focus_thread = None
         self.xy_threads = None
 
-        self.coord_systems = None
+        try:
+            self.coord_systems_control = driver_handles.coord_systems_control
+            self.coord_systems = config_dict["coord_systems"]
+            
+        except:
+            self.coord_systems_control = None
+            self.coord_systems = None
 
         # values used during printing
         self.image = None
@@ -288,6 +294,19 @@ class PrintControl:
     def get_focus(self):
         log.warn("Base printer_control class does not have a defined focus stage")
         return 0
+
+    def convert_le_to_screen_le(self, light_engine):
+        # convert light engine to screen light engine
+        screen_light_engine = None
+        for temp in config_dict["light_engines"]:
+            if temp in light_engine:
+                screen_light_engine = temp
+                break
+        if screen_light_engine is None:
+            log.error(
+                "No matching light engine found in coord systems: '%s'", light_engine
+            )
+        return screen_light_engine
 
     @run_in_thread("initialized", "Initialize")
     def initialize(self):

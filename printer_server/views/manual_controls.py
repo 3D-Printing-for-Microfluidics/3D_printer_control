@@ -73,10 +73,21 @@ def index():
     if initialized:
         calibration_positions = get_last_calibration_positions_from_logs()
         if "coord_systems" in config_dict:
-            for key in config_dict["coord_systems"].keys():
-                hardware["coord_systems"][key] = config_dict["coord_systems"][key]
+            # set active coord system
             coord_system_name, _ = printer_server.drivers.coord_systems.coord_systems_snip.get_coodinate_system()
             hardware["coord_systems"]["active"] = coord_system_name
+            # set coord system list
+            hardware["coord_systems"]["coord_systems"] = {}
+            for key in config_dict["coord_systems"].keys():
+                hardware["coord_systems"]["coord_systems"][key] = config_dict["coord_systems"][key]
+            # set coord adjustments
+            if "wintech" in config_dict.keys():
+                hardware["coord_systems"]["coord_adjustments"] = {
+                    "x_drift": {"name": "X Drift", "value":calibration_positions.get("x_drift",0.0)},
+                    "y_drift": {"name": "Y Drift", "value":calibration_positions.get("y_drift",0.0)},
+                    "x_shift": {"name": "X Shift per mm Y", "value":calibration_positions.get("x_shift",0.0)},
+                    "y_shift": {"name": "Y Shift per mm X", "value":calibration_positions.get("y_shift",0.0)}
+                }
         if "galil" in config_dict.keys():
             galil_positions = (
                 printer_server.drivers.galil.galil_snip.galil_get_positions()
