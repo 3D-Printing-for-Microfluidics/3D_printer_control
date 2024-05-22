@@ -113,6 +113,14 @@ class Printer3D:
 
             self.keyence = Keyence()
 
+        if "spectrometer" in config_dict.keys():
+            from printer_server.drivers.spectrometer import Spectrometer, Spectrometer_dummy
+
+            if config_dict["spectrometer"]["dummy"]:
+                self.spectrometer = Spectrometer_dummy()
+            else:
+                self.spectrometer = Spectrometer(config_dict=config_dict["spectrometer"], log_level=default_log_level)
+
         self.bp_stage = None
         self.focus_stage = None
         self.xy_stage = None
@@ -174,5 +182,7 @@ class Printer3D:
             self.wintech.disconnect()
         if hasattr(self, "keyence"):
             self.keyence.disconnect()
+        if hasattr(self, "spectrometer"):
+            self.spectrometer.disconnect()
             
 driver_handles = Printer3D()

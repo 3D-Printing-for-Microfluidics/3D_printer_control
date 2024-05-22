@@ -196,6 +196,12 @@
                 "Build Platform": 0
             }
         },
+        "spectrometer": {
+            "dummy": false,
+            "serial num": "",
+            "default_integration_time": 1000,
+            "default_number_of_averages": 5
+        },
         "galil": {
             "dummy": false,
             "controller_name": "DMC4040",
