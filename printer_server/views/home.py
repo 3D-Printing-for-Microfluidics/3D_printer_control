@@ -71,10 +71,10 @@ if "light_engines" in config_dict:
     parent_classes.append(LightEngineControl)
 
 if "keyence" in config_dict:
-    parent_classes.append(LightMeasurementControl)
-
-if "keyence" in config_dict:
     parent_classes.append(KeyenceControl)
+
+if "spectrometer" in config_dict:
+    parent_classes.append(LightMeasurementControl)
 
 if "loadcell" in config_dict:
     parent_classes.append(LoadcellControl)

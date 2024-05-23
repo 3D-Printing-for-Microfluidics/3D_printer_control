@@ -14,17 +14,41 @@ $(document).ready(function () {
     var SpectrometerIntegrationElement = document.getElementById("spectrometer-integration-txt");
     var SpectrometerAveragesElement = document.getElementById("spectrometer-averages-txt");
 
-    socket.on("spectrometer_done", function (spectra) {
-        // download spectra
-        console.log(spectra);
+    socket.on("spectrometer_done", function (message) {
+        document.getElementById("spectrometer-integration-txt").value = message['integration'];
+
+        // Convert the 2D array to CSV string
+        const convertArrayToCSV = (array) => {
+            const rows = [];
+            for (let i = 0; i < array[0].length; i++) {
+                rows.push(`${array[0][i]},${array[1][i]}`);
+            }
+            return rows.join('\n');
+        };
+
+        // Combine header and CSV data
+        const header = `HEADER INFORMATION...\nIntegration time: ${message['integration']} ms\nNumber of Averages: ${message['averages']}\n\nwavelength (nm),counts\n`;
+        const csvData = convertArrayToCSV(message["spectra"]);
+        const csvContent = header + csvData;
+
+        const blob = new Blob([csvContent], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `data.csv`;
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
         enable_button();
     });
 
     $("#spectrometer-auto-chkbx").click(function () {
         var autoCheckboxElement = document.getElementById("spectrometer-auto-chkbx");
-        var auto = Number(!autoCheckboxElement.checked);
-        if (auto == 0) {
+        var auto = Number(autoCheckboxElement.checked);
+        if (auto == 1) {
             SpectrometerIntegrationElement.classList.remove("is-invalid")
             $('#spectrometer-integration-txt').prop('disabled', true);
         } else {
@@ -62,14 +86,15 @@ $(document).ready(function () {
         var autoCheckboxElement = document.getElementById("spectrometer-auto-chkbx");
         var integration = SpectrometerIntegrationElement.value;
         var averages = SpectrometerAveragesElement.value;
-        var auto = Number(!autoCheckboxElement.checked);
+        var auto = Number(autoCheckboxElement.checked);
 
         if (!/^\d+$/.test(averages) && !averages > 0) {
             SpectrometerAveragesElement.classList.add("is-invalid")
+            return
         }
 
         if (!/^\d+$/.test(integration) && !integration > 0) {
-            if (auto == 1) {
+            if (auto == 0) {
                 SpectrometerIntegrationElement.classList.add("is-invalid")
                 return
             } else {
@@ -81,31 +106,3 @@ $(document).ready(function () {
         disable_button();
     });
 });
-
-
-
-
-// const data = [
-//     { name: "John Doe", age: 28, email: "john@example.com" },
-//     { name: "Jane Smith", age: 34, email: "jane@example.com" }
-//   ];
-
-//   function convertToCSV(data) {
-//     const headers = Object.keys(data[0]);
-//     const rows = data.map(row => 
-//       headers.map(header => JSON.stringify(row[header] || "")).join(",")
-//     );
-//     return [headers.join(","), ...rows].join("\n");
-//   }
-
-//   const csvData = convertToCSV(data);
-//   const blob = new Blob([csvData], { type: "text/csv" });
-//   const url = URL.createObjectURL(blob);
-//   const a = document.createElement("a");
-//   a.href = url;
-//   a.download = "data.csv";
-
-//   document.body.appendChild(a);
-//   a.click();
-//   document.body.removeChild(a);
-//   URL.revokeObjectURL(url);

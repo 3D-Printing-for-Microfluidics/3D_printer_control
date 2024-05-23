@@ -11,6 +11,6 @@ def spectrometerCapture(message):
     averages = int(message["averages"])
     if auto == 1:
         integration = None
-    spectrometer.set_integration_time(integration)
-    spectrum = spectrometer.get_spectrum(num_averages=averages)
-    socketio.emit("spectrometer_done", spectrum, namespace="/manual", broadcast=True)
+    integration = spectrometer.set_integration_time(integration)
+    spectra = spectrometer.get_spectrum(num_averages=averages)
+    socketio.emit("spectrometer_done", {"spectra":spectra, "integration":integration, "averages":averages}, namespace="/manual", broadcast=True)

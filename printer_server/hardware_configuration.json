@@ -194,13 +194,19 @@
                 "Y": -17.110,
                 "Focus": 48.870,
                 "Build Platform": 0
+            },
+            "fiber_visitech": {
+                "X": -79.128,
+                "Y": -19.986,
+                "Focus": 47.737,
+                "Build Platform": 0
+            },
+            "fiber_wintech": {
+                "X": 92.640,
+                "Y": -17.110,
+                "Focus": 48.870,
+                "Build Platform": 0
             }
-        },
-        "spectrometer": {
-            "dummy": false,
-            "serial num": "",
-            "default_integration_time": 1000,
-            "default_number_of_averages": 5
         },
         "galil": {
             "dummy": false,
@@ -255,6 +261,12 @@
         "tiptilt": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=3794660"
+        },
+        "spectrometer": {
+            "dummy": false,
+            "serial num": "",
+            "default_integration_time": 1000,
+            "default_number_of_averages": 5
         },
         "keyence": {
             "dummy": false,

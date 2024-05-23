@@ -59,8 +59,8 @@ class LightMeasurementControl(PrintControl):
 
             # Save spectrum to file
             # async_file_hander.write(spectra_path, "HEADER INFORMATION...\n")
-            async_file_hander.write(spectra_path, f"Integration time:{integration_time}\n")
-            async_file_hander.write(spectra_path, f"Number of Averages:{num_avg}\n")
+            async_file_hander.write(spectra_path, f"Integration time: {integration_time} ms\n")
+            async_file_hander.write(spectra_path, f"Number of Averages: {num_avg}\n")
             async_file_hander.write(spectra_path, "\n")
             async_file_hander.write(spectra_path, "wavelength (nm),counts\n")
             for wavelength, counts in zip(spectrum[0], spectrum[1]):
