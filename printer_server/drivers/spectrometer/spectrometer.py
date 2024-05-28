@@ -53,6 +53,7 @@ class Spectrometer:
             self.spectrometer.integration_time_micros(i_time)
             time.sleep(1)
             intensity = self.get_max_intensity()
+            self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
 
             while(intensity > 65000):
                 i_time = i_time/2
@@ -60,10 +61,12 @@ class Spectrometer:
                     self.spectrometer.integration_time_micros(self.get_integration_limits()[0])
                     time.sleep(1)
                     intensity = self.get_max_intensity()
+                    self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
                     return self.get_integration_limits()[0]/1000
                 self.spectrometer.integration_time_micros(i_time)
                 time.sleep(1)
                 intensity = self.get_max_intensity()
+                self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
 
             for _ in range(2):
                 i_time = i_time * 65000/intensity        
@@ -71,10 +74,12 @@ class Spectrometer:
                     self.spectrometer.integration_time_micros(self.get_integration_limits()[1])
                     time.sleep(1)
                     intensity = self.get_max_intensity()
+                    self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
                     return self.get_integration_limits()[1]/1000 
                 self.spectrometer.integration_time_micros(i_time)
                 time.sleep(1)
                 intensity = self.get_max_intensity()
+                self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
             return i_time/1000
 
     def get_integration_limits(self):
