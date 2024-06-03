@@ -40,6 +40,9 @@ class Environmental_sensors(serial.Serial):
         if self.is_open:
             self.close()
         self.open()
+        self.connected = True
+        self.log.info("Connected to Environmental Sensor (%s)", self.port)
+        atexit.register(self.disconnect)
 
 
     def disconnect(self):
@@ -47,3 +50,56 @@ class Environmental_sensors(serial.Serial):
             self.close()
             self.connected = False
             self.log.info("Disconnected from Environmental Sensor (BME688)")
+
+
+    ########################
+    # Teensy serial wrappers
+    ########################
+            
+
+    def get_all_measurements(self):
+        response = self.send("e")
+        return response.split(",")
+    
+    def get_temperature(self):
+        return self.send("t")
+    
+    def get_humidity(self):
+        return self.send("h")
+
+    def get_pressure(self):
+        return self.send("p")
+
+    def get_gas(self):
+        return self.send("g")
+
+    def get_airQuality(self):
+        response = self.send("q")
+        return response.split(",")
+
+    def get_voc(self):
+        return self.send("v")    
+
+
+
+    def send(self, cmd, receive=True):
+        """
+        Sends serial command to the loadcell device
+        """
+        self.log.debug("Sent: '%s'", cmd)
+        self.write(bytes(cmd + "\n", encoding="ascii"))  # write to serial tx buffer
+        if receive:
+            response = self.receive()
+            self.log.debug("Response: '%s'", response)
+            return response  # return the response to the command
+        return
+    
+    def receive(self):
+        """
+        Sends serial response from the loadcell device
+        """
+        response = b""
+        response += self.readline()  # wait for the first line to fill in the rx buffer
+        return (
+            response.decode().rstrip()
+        )  # return decoded byte response (as string) without traililng newline
