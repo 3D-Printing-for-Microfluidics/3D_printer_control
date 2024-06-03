@@ -34,14 +34,14 @@ class Environmental_sensors(serial.Serial):
     def connect(self, shutdown):
         self.port = self.findUsbPort(self.hwid)
         if self.port is None:
-            msg = "Tip/Tilt stage not found!"
+            msg = "Environmental Sensor not found!"
             self.log.critical(msg)
             return False
         if self.is_open:
             self.close()
         self.open()
         self.connected = True
-        self.log.info("Connected to Environmental Sensor (%s)", self.port)
+        self.log.info("Connected to Environmental Sensor (BME688), posrt: %s", self.port)
         atexit.register(self.disconnect)
 
 
@@ -53,13 +53,23 @@ class Environmental_sensors(serial.Serial):
 
 
     ########################
-    # Teensy serial wrappers
+    # ESP32 serial wrappers
     ########################
             
 
     def get_all_measurements(self):
+        key = {}
+        values = ["iaq", "iaqAccuracy", "static", "co2Equivalent", "breathVocEquivalent",
+                   "rawTemperature", "pressure", "rawHumidity", "gasResistance", "stabStatus",
+                     "runInStatus", "temperature", "humidity", "gasPercentage"]
         response = self.send("e")
-        return response.split(",")
+        measurements = response.split(",")
+
+        for value, measurement in zip(values, measurements):
+            key[value] = measurement
+
+        return key
+
     
     def get_temperature(self):
         return self.send("t")
@@ -74,8 +84,14 @@ class Environmental_sensors(serial.Serial):
         return self.send("g")
 
     def get_airQuality(self):
+        key = {}
+        values = ["iaq", "iaqAccuracy", "staticIaq", "co2Equivalent", "breathVocEquivalent"]
         response = self.send("q")
-        return response.split(",")
+        measurements =  response.split(",")
+        for value, measurement in zip(values, measurements):
+            key[value, measurement]
+
+        return key
 
     def get_voc(self):
         return self.send("v")    
