@@ -263,8 +263,8 @@
         },
         "loadcell": {
             "dummy": false,
-            "hwid": "PID=16C0:0483 SER=9881820",
-            "calibration_intercept": 32750.37,
+            "hwid": "PID=16C0:0483 SER=9400820",
+            "calibration_intercept": 32635.00,
             "calibration_slope": -1.24,
             "loadcell_planarization_enabled": true,
             "loadcell_planarization_force": 35.0,
