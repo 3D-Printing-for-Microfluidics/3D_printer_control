@@ -89,7 +89,7 @@ class Environmental_sensors(serial.Serial):
         response = self.send("q")
         measurements =  response.split(",")
         for value, measurement in zip(values, measurements):
-            key[value, measurement]
+            key[value] = measurement
 
         return key
 
