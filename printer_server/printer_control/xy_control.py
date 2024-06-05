@@ -57,8 +57,6 @@ class XYControl(PrintControl):
         """Move X, Y, and Focus stages to exposure positions"""
         x_offset = float(settings.get("Image x offset (um)", self.default_x_offset))
         y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
-        # xy_speed = float(settings.get("XY speed", 12.5))
-        # xy_acceleration = float(settings.get("XY acceleration", 25))
         screen_light_engine = self.convert_le_to_screen_le(light_engine)
 
         if screen_light_engine == "wintech":
@@ -71,7 +69,6 @@ class XYControl(PrintControl):
             x_pos = x_offset/1000 + self.coord_systems[screen_light_engine]["X"]
             y_pos =  y_offset/1000 + self.coord_systems[screen_light_engine]["Y"]
         self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
-        # self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos,  speed_x=xy_speed, acceleration_x=xy_acceleration, join=False)
 
         super().pre_exposure_tasks(settings, light_engine)
 
