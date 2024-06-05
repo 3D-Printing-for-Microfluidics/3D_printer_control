@@ -262,12 +262,6 @@
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=3794660"
         },
-        "spectrometer": {
-            "dummy": false,
-            "serial num": "",
-            "default_integration_time": 1000,
-            "default_number_of_averages": 5
-        },
         "keyence": {
             "dummy": false,
             "sensors": {
