@@ -261,6 +261,11 @@
                 }
             }
         },
+        "environmental_sensors": {
+            "dummy": false,
+            "serial num": "",
+            "measurement_logging": 1000
+        },
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881820",

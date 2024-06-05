@@ -38,3 +38,4 @@ class EnvironmentalSensorsControl(PrintControl):
         self.environmental_sensors.stop()
         self.environmental_sensors.set_log_file(None)
         super().finish_print()
+        
