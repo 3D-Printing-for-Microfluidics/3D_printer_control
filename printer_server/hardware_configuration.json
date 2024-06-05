@@ -281,8 +281,8 @@
         },
         "loadcell": {
             "dummy": false,
-            "hwid": "PID=16C0:0483 SER=9881820",
-            "calibration_intercept": 32750.37,
+            "hwid": "PID=16C0:0483 SER=9400820",
+            "calibration_intercept": 32635.00,
             "calibration_slope": -1.24,
             "loadcell_planarization_enabled": true,
             "loadcell_planarization_force": 35.0,
@@ -425,6 +425,131 @@
         "screen": {},
         "visitech": {
             "dummy": false,
+            "dual_led": false,
+            "leds": [
+                "365nm"
+            ],
+            "resolution": [
+                2560,
+                1600
+            ]
+        }
+    },
+    "HR5": {
+        "valid_schema_versions": [
+            "v3",
+            "v2"
+        ],
+        "stages": {
+            "bp": "galil",
+            "focus": "galil",
+            "x_y": "galil",
+            "t_t_r": "tiptilt"
+        },
+        "light_engines": [
+            "visitech"
+        ],
+        "external_control": {},
+        "coord_systems": {
+            "global": {
+                "X": 0,
+                "Y": 0,
+                "Focus": 0,
+                "Build Platform": 0
+            },
+            "visitech": {
+                "X": 0,
+                "Y": 8.000,
+                "Focus": 2.189,
+                "Build Platform": 0
+            },
+            "keyence_visitech": {
+                "X": 0.047,
+                "Y": -24.424,
+                "Focus": -0.211,
+                "Build Platform": 0
+            }
+        },
+        "galil": {
+            "dummy": true,
+            "controller_name": "DMC4040",
+            "default_axis": "D",
+            "axes": [
+                "A",
+                "B",
+                "C",
+                "D"
+            ],
+            "axes_common_names": [
+                "X",
+                "Y",
+                "Focus",
+                "Build Platform"
+            ],
+            "axes_travel": {
+                "A": 100,
+                "B": 100,
+                "C": 12.5,
+                "D": 100
+            },
+            "axes_ctspmm": {
+                "A": 10000,
+                "B": 10000,
+                "C": 10000,
+                "D": 51200
+            },
+            "axes_tolerance": {
+                "A": 0.125,
+                "B": 0.125,
+                "C": 0.125,
+                "D": 0.125
+            },
+            "axes_speed": {
+                "A": 50,
+                "B": 50,
+                "C": 25,
+                "D": 25
+            },
+            "axes_acceleration": {
+                "A": 50,
+                "B": 50,
+                "C": 50,
+                "D": 50
+            },
+            "calibration_position": 29.1375391,
+            "bottom_position": 43.6390039,
+            "top_position": -50
+        },
+        "tiptilt": {
+            "dummy": true,
+            "hwid": "PID=16C0:0483 SER=9881850"
+        },
+        "spectrometer": {
+            "dummy": false,
+            "serial num": "",
+            "default_integration_time": 1000,
+            "default_number_of_averages": 5
+        },
+        "keyence": {
+            "dummy": true,
+            "sensors": {
+                "visitech": {
+                    "measurement_index": 0
+                }
+            }
+        },
+        "loadcell": {
+            "dummy": true,
+            "hwid": "PID=16C0:0483 SER=5712360",
+            "calibration_intercept": 32298.1,
+            "calibration_slope": -3.31,
+            "loadcell_planarization_enabled": true,
+            "loadcell_planarization_force": 30.0,
+            "loadcell_print_start_force": 5.0
+        },
+        "screen": {},
+        "visitech": {
+            "dummy": true,
             "dual_led": false,
             "leds": [
                 "365nm"

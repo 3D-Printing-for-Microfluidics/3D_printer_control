@@ -21,36 +21,6 @@ log.setLevel(logging.INFO)
 
 shutdown_handle = None
 
-# # Dynamically import PrintControl
-# if Config.HOSTNAME == "HR3v3test":
-#     from printer_server.printer_control.print_control_subclasses import (
-#         HR3v3u_PrintControl,
-#     )
-
-#     print_control = HR3v3_PrintControl()
-# elif Config.HOSTNAME == "HR3v3":
-#     from printer_server.printer_control.print_control_subclasses import HR3v3_PrintControl
-
-#     print_control = HR3v3_PrintControl()
-# elif Config.HOSTNAME == "HR3v3u":
-#     from printer_server.printer_control.print_control_subclasses import (
-#         HR3v3u_PrintControl,
-#     )
-
-#     print_control = HR3v3u_PrintControl()
-# elif Config.HOSTNAME == "HR4":
-#     from printer_server.printer_control.print_control_subclasses import (
-#         HR4Film_PrintControl,
-#     )
-
-#     print_control = HR4Film_PrintControl()
-# elif Config.HOSTNAME == "MR1v1":
-#     from printer_server.printer_control.print_control_subclasses import MR1v1_PrintControl
-
-#     print_control = MR1v1_PrintControl()
-# else:
-#     log.error("Printer control module not found")
-
 from printer_server.printer_control.print_control import PrintControl
 from printer_server.printer_control.bp_control import BPControl
 from printer_server.printer_control.focus_control import FocusControl
@@ -64,8 +34,6 @@ from printer_server.printer_control.xy_control import XYControl
 from printer_server.printer_control.light_measurement_control import LightMeasurementControl
 
 parent_classes = []
-# if "kdc" in config_dict:
-#     parent_classes.append(KDCControl)
 
 if "light_engines" in config_dict:
     parent_classes.append(LightEngineControl)

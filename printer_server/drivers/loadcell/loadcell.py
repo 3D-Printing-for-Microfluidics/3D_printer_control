@@ -224,6 +224,9 @@ class LoadCell(serial.Serial):
                 time = self.start_time + datetime.timedelta(
                     milliseconds=float(milliseconds)
                 )
+                ret = self.receive_bytes(1)
+                while ret != b'\n':
+                    ret = self.receive_bytes(1)
                 force = self.adc_to_force(data)
 
                 if self.log_file is not None:
