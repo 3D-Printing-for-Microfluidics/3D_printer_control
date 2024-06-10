@@ -21,7 +21,7 @@ class EnvironmentalSensorsControl(PrintControl):
         super().create_logs()
 
         async_file_hander.write(
-            self.environmental_sensors_log, "iaq,iaqAccuracy,static,co2Equivalent,breathVocEquivalent,rawTemperature,pressure,rawHumidity,gasResistance,stabStatus,runInStatus,temperature,humidity,gasPercentage\n"
+            self.environmental_sensors_log, "time,iaq,iaqAccuracy,static,co2Equivalent,breathVocEquivalent,rawTemperature,pressure,rawHumidity,gasResistance,stabStatus,runInStatus,temperature,humidity,gasPercentage\n"
         )
         self.environmental_sensors.set_log_file(self.environmental_sensors_log)
         self.environmental_sensors.start() 

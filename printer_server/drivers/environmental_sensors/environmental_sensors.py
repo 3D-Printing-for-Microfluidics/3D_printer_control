@@ -1,3 +1,5 @@
+import json
+import time
 import atexit
 import logging
 import datetime
@@ -20,6 +22,7 @@ class Environmental_sensors(serial.Serial):
         self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
         self.log_file = None
         self.connected = False
+        self.running = False
 
 
     def findUsbPort(self, hwid):
@@ -71,28 +74,25 @@ class Environmental_sensors(serial.Serial):
         """
         if not self.thread.is_alive():
             self.running = True
+            self.measurement_time = self.hardware_configuration
 
             self.flushInput()
 
-            self.log.info("Loadcell started")
-            # temp = self.loadcell_start()  ## Keep?
-            # vvvvvvvvvvvvvvvvvvvvvv ???
-            if self.start_time == 0:
-                # loadcell_time = temp.split("'")  ## ??
-                # loadcell_time = float(loadcell_time[1])
-                self.start_time = datetime.datetime.now() - datetime.timedelta(
-                    milliseconds=loadcell_time
-                )
+            self.log.info("Environmental sensors started")
+
+            file_path = "3D_printer_control/printer_server/hardware_configuration.json"
+            with open(file_path, 'r') as file:
+                # Load the JSON data from the file
+                data = json.load(file)
+            
+            self.rest_time = data["HR5."]["environmental_sensors"]["measurement_period_ms"]
+            
             self.thread.start()
 
     def stop(self):
         """
         Stops the environmental sensors and thread. Saves data to file
         """
-        try:
-            self.loadcell_stop() ## Relevance of this?
-        except serial.SerialException:
-            pass
 
         if self.running:
             self.running = False
@@ -108,35 +108,18 @@ class Environmental_sensors(serial.Serial):
         """
         Threading loop
         """
-        # front_end_counter = 0
-        # front_end_array = []
+        
         while self.running:
             try:
-                # index = int.from_bytes(
-                #     self.receive_bytes(4), byteorder="little", signed=False
-                # )
-                # milliseconds = int.from_bytes(
-                #     self.receive_bytes(4), byteorder="little", signed=False
-                # )
-                # data = int.from_bytes(
-                #     self.receive_bytes(2), byteorder="little", signed=False
-                # )
-                # time = self.start_time + datetime.timedelta(
-                #     milliseconds=float(milliseconds)
-                # )
-                # ret = self.receive_bytes(1)
-                # while ret != b'\n':
-                #     ret = self.receive_bytes(1)
-                # force = self.adc_to_force(data)
 
                 if self.log_file is not None:
-                    # sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                    # loadcell_time = time.strftime("%Y-%m-%d %H:%M:%S.%f")
+                    sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
 
 
                     measurements = self.get_all_measurements()
                     values = list(measurements.values())
                     file_string = ""
+                    file_string += f"{sys_time},"
                     for value in measurements.values():
                         if value == values[-1]:
                             file_string += f"{value}\n"
@@ -147,34 +130,12 @@ class Environmental_sensors(serial.Serial):
                         self.log_file,
                         file_string,
                     )
+                
+                time.sleep(self.rest_time/1000)  
 
-                # front_end_counter += 1
-                # if self.graph_newtons:
-                #     front_end_array.append(force)
-                # else:
-                #     front_end_array.append(data)
-                # if front_end_counter >= 10:
-                #     front_end_counter = 0
-
-                #     if len(self.currentData) >= 5:
-                #         self.currentData.pop(0)
-                #     self.currentData.append(
-                #         {
-                #             "timestamp": time.timestamp() * 1000,
-                #             "force": sum(front_end_array) / len(front_end_array),
-                #         }
-                #     )
-                #     front_end_array = []
-
-                # self.currentForce = force
-                # self.currentIndex = index
             except serial.SerialException:
                 self.running = False
-            except ValueError:
-                self.log.warning("Unable to parse environmental sensor data - cast error")
-                continue
-            except OverflowError:
-                self.log.warning("Unable to parse environmental sensor data - time overflow")
+
 
     ########################
     # ESP32 serial wrappers
