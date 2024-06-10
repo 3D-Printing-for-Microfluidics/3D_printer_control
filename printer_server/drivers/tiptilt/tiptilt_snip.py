@@ -20,7 +20,7 @@ def get_tiptilt_positions():
     new_tip = tiptilt.get_position("tip")
     new_tilt = tiptilt.get_position("tilt")
 
-    if new_tip is not None and new_tip is not "undef":
+    if new_tip is not None and new_tip == "undef":
         last_positions["tip"] = new_tip
         last_positions["tilt"] = new_tilt
 
