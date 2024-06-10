@@ -32,6 +32,5 @@ def set_wintech_adjustments(message):
     socketio.emit(
         "wintech_adj_update",
         last_positions,
-        namespace="/manual",
-        broadcast=True,
+        namespace="/manual"
     )

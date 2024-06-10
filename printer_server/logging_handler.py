@@ -98,7 +98,7 @@ class SocketIOHandler(logging.Handler):
                 "message": record.message,
             }
             socketio.emit(
-                "update_message_box", msg, namespace="/printing", broadcast=True
+                "update_message_box", msg, namespace="/printing"
             )
             msg = "%(asctime)s.%(msecs)03d   %(message)s  " % {
                 "asctime": record.asctime.split(" ")[1],

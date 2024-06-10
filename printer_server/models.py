@@ -25,7 +25,7 @@ class User(SurrogatePK, Model):
     __tablename__ = "Users"
     username = Column(db.String(80), unique=True, nullable=False)
     email = Column(db.String(80), unique=True, nullable=False)
-    password = Column(db.Binary(128), nullable=True)  #: The hashed password
+    password = Column(db.LargeBinary(128), nullable=True)  #: The hashed password
     created_at = Column(db.DateTime, nullable=False, default=datetime.now)
     first_name = Column(db.String(30), nullable=True)
     last_name = Column(db.String(30), nullable=True)

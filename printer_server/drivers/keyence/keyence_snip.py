@@ -28,8 +28,7 @@ def updateSetpoint(message):
     socketio.emit(
         "keyence_setpoint_updated",
         last_positions,
-        namespace="/manual",
-        broadcast=True,
+        namespace="/manual"
     )
 
 

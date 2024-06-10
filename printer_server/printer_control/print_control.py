@@ -2,6 +2,7 @@ import os
 import time
 import json
 import shutil
+import signal
 import logging
 import threading
 from pathlib import Path
@@ -669,7 +670,7 @@ class PrintControl:
                 home.update_printer_state("shutdown completed", msg)
                 
                 time.sleep(0.5)
-                home.shutdown_handle()
+                os.kill(os.getppid(), signal.SIGTERM)
 
         else:
             msg = {

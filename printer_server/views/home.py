@@ -3,7 +3,7 @@ from pathlib import Path
 import logging
 import signal
 from flask import Blueprint, request, render_template
-from flask_socketio import join_room, leave_room
+from flask_socketio import join_room, leave_room, emit
 
 from printer_server.settings import Config
 from printer_server.models import PrintQueue
@@ -31,7 +31,6 @@ from printer_server.printer_control.loadcell_control import LoadcellControl
 from printer_server.printer_control.screen_control import ScreenControl
 from printer_server.printer_control.ttr_control import TTRControl
 from printer_server.printer_control.xy_control import XYControl
-from printer_server.printer_control.kdc_control import KDCControl
 
 parent_classes = []
 
@@ -70,11 +69,6 @@ print_control = ParentPrintControl()
 def index():
     allJobs = PrintQueue.query.all()
 
-    global shutdown_handle
-    shutdown_handle = request.environ.get("werkzeug.server.shutdown")
-    if shutdown_handle is None:
-        raise RuntimeError("Not running with the Werkzeug Server")
-
     if "loadcell" in config_dict.keys():
         return render_template(
             "home.html",
@@ -90,7 +84,7 @@ def index():
         )
 
 def update_printer_state(state, msg):
-    socketio.emit(state, msg, namespace="/printing", broadcast=True)
+    socketio.emit(state, msg, namespace="/printing")
 
 if "loadcell" in config_dict.keys():
     def clear_loadcell_graph():
@@ -98,7 +92,7 @@ if "loadcell" in config_dict.keys():
 
 
     def update_loadcell_graph(msg):
-        socketio.emit("loadcell_graph_data", msg, namespace="/printing", room="loadcell")
+        socketio.emit("loadcell_graph_data", msg, namespace="/printing", to="loadcell")
 
 
 def send_bootstrap_alert(msg):
@@ -111,12 +105,11 @@ def send_bootstrap_alert(msg):
 
 @socketio.on("connect", namespace="/printing")
 def connect():
-    socketio.emit(
+    emit(
         print_control.state,
         dict(),
         namespace="/printing",
         broadcast=False,
-        room=request.sid,
     )
 
 

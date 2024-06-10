@@ -33,8 +33,7 @@ def get_tiptilt_positions_socket():
     socketio.emit(
         "calibration_tiptilt_positions",
         message,
-        namespace="/manual",
-        broadcast=True,
+        namespace="/manual"
     )
     return message
 
@@ -47,8 +46,7 @@ def emit_tiptilt_positions(log=False):
     socketio.emit(
         "tiptilt_motor_move_complete",
         message,
-        namespace="/manual",
-        broadcast=True,
+        namespace="/manual"
     )
 
 

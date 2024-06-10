@@ -117,8 +117,7 @@ def add_to_queue(job_id):
                 "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
                 "upload_ip": request.remote_addr,
             },
-            namespace="/printing",
-            broadcast=True,
+            namespace="/printing"
         )
     except ValueError as e:
         msg = f"Job validation failed for {job.original_filename}:\n {str(e).strip()}"

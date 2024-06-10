@@ -1,5 +1,5 @@
 """The app module, containing the app factory function."""
-from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, render_template
 from printer_server.extensions import db, migrate, socketio
 from printer_server.models import PrintRecord, PrintQueue
@@ -27,10 +27,13 @@ def create_app(config_object=ProdConfig):
     register_hardware(app)
     register_logger(app)
 
-    with app.app_context():
-        cleanup_db()
+    try:
+        with app.app_context():
+            cleanup_db()
+    except:
+        print("Error cleaning DB. Does it exist?")
 
-    return app
+    return app, socketio
 
 
 def register_extensions(app):
