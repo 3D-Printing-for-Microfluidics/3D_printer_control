@@ -523,7 +523,7 @@
         "environmental_sensors": {
             "dummy": false,
             "serial num": "",
-            "measurement_logging": 1000
+            "measurement_period_ms": 1000
         },
         "loadcell": {
             "dummy": true,

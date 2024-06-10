@@ -161,7 +161,7 @@ class Printer3D:
             if config_dict["environmental_sensors"]["dummy"]:
                 self.environmental_sensors = Environmental_sensors_dummy()
             else:
-                self.spectrometer = Environmental_sensors(config_dict=config_dict["environmental_sensors"], log_level=default_log_level)
+                self.environmental_sensors = Environmental_sensors(config_dict=config_dict["environmental_sensors"], log_level=default_log_level)
 
 
     def disconnect(self):
