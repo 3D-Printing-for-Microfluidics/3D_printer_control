@@ -75,10 +75,11 @@ class Environmental_sensors(serial.Serial):
             self.flushInput()
 
             self.log.info("Loadcell started")
-            temp = self.loadcell_start()  ## Keep?
+            # temp = self.loadcell_start()  ## Keep?
+            # vvvvvvvvvvvvvvvvvvvvvv ???
             if self.start_time == 0:
-                loadcell_time = temp.split("'")  ## ??
-                loadcell_time = float(loadcell_time[1])
+                # loadcell_time = temp.split("'")  ## ??
+                # loadcell_time = float(loadcell_time[1])
                 self.start_time = datetime.datetime.now() - datetime.timedelta(
                     milliseconds=loadcell_time
                 )
@@ -107,26 +108,26 @@ class Environmental_sensors(serial.Serial):
         """
         Threading loop
         """
-        front_end_counter = 0
-        front_end_array = []
+        # front_end_counter = 0
+        # front_end_array = []
         while self.running:
             try:
-                index = int.from_bytes(
-                    self.receive_bytes(4), byteorder="little", signed=False
-                )
-                milliseconds = int.from_bytes(
-                    self.receive_bytes(4), byteorder="little", signed=False
-                )
-                data = int.from_bytes(
-                    self.receive_bytes(2), byteorder="little", signed=False
-                )
-                time = self.start_time + datetime.timedelta(
-                    milliseconds=float(milliseconds)
-                )
-                ret = self.receive_bytes(1)
-                while ret != b'\n':
-                    ret = self.receive_bytes(1)
-                force = self.adc_to_force(data)
+                # index = int.from_bytes(
+                #     self.receive_bytes(4), byteorder="little", signed=False
+                # )
+                # milliseconds = int.from_bytes(
+                #     self.receive_bytes(4), byteorder="little", signed=False
+                # )
+                # data = int.from_bytes(
+                #     self.receive_bytes(2), byteorder="little", signed=False
+                # )
+                # time = self.start_time + datetime.timedelta(
+                #     milliseconds=float(milliseconds)
+                # )
+                # ret = self.receive_bytes(1)
+                # while ret != b'\n':
+                #     ret = self.receive_bytes(1)
+                # force = self.adc_to_force(data)
 
                 if self.log_file is not None:
                     # sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
