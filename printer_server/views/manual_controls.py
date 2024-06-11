@@ -29,6 +29,8 @@ if "external_control" in config_dict.keys():
     import printer_server.drivers.external_control.external_control_snip
 if "coord_systems" in config_dict.keys():
     import printer_server.drivers.coord_systems.coord_systems_snip
+if "mks" in config_dict.keys():
+    import printer_server.drivers.mks.mks_snip
 if "galil" in config_dict.keys():
     import printer_server.drivers.galil.galil_snip
 if "gpio" in config_dict.keys():
