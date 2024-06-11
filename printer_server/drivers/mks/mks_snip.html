@@ -1,0 +1,69 @@
+<div class="container mks">
+    <div class="row">
+        <div class="col-6">
+            <h3>Vacuum System</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <button type="button" class="btn btn-outline-info vacuum-pump" id="vacuum-pump" onclick="togglePump()">Pump:
+                <span id="pump-status">OFF</span>
+            </button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <button type="button" class="btn btn-outline-info valve" id="valve5" onclick="toggleValve('valve5')">Pump
+                Valve: <span id="valve5-status">Closed</span></button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-3 text-center">
+            <div class="card text-white bg-light" id="vacuum-chamber1">
+                <div class="card-body">
+                    <br /><br />
+                    <h4 class="card-title">Bell Jar</h4><br /><br />
+                </div>
+            </div>
+        </div>
+        <div class="col-3 text-center">
+            <div class="vacuum-system">
+                <div class="card text-white bg-secondary" id="gauge1-reading">
+                    <div class="card-body">
+                        <p class="card-title">? mTorr</p>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-info valve" id="valve1"
+                    onclick="toggleValve('valve1')">Vacuum Valve: <span id="valve1-status">Closed</span></button>
+                <button type="button" class="btn btn-outline-info valve" id="valve2"
+                    onclick="toggleValve('valve2')">Vent
+                    Valve:
+                    <span id="valve2-status">Closed</span></button>
+            </div>
+        </div>
+        <div class="col-3 text-center">
+            <div class="card text-white bg-light" id="vacuum-chamber2">
+                <div class="card-body">
+                    <br /><br />
+                    <h4 class="card-title">Degassing Chamber</h4><br /><br />
+                </div>
+            </div>
+        </div>
+        <div class="col-3 text-center">
+            <div class="vacuum-system">
+                <div class="card text-white bg-secondary" id="gauge2-reading">
+                    <div class="card-body">
+                        <p class="card-title">? mTorr</p>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-info valve" id="valve3"
+                    onclick="toggleValve('valve3')">Vacuum Valve: <span id="valve3-status">Closed</span></button>
+                <button type="button" class="btn btn-outline-info valve" id="valve4"
+                    onclick="toggleValve('valve4')">Vent
+                    Valve: <span id="valve4-status">Closed</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='mks/mks_snip.js') }}"></script>
