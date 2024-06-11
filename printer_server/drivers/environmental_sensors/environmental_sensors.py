@@ -10,7 +10,7 @@ import serial.serialutil
 from printer_server.async_file_handler import async_file_hander
 
 
-class Environmental_sensors(serial.Serial):
+class EnvironmentalSensors(serial.Serial):
     """
     Class providing high level control of Environmental Sensor
     """
@@ -20,6 +20,7 @@ class Environmental_sensors(serial.Serial):
         self.port = None  # start with no port
         self.hwid = config_dict["hwid"]
         self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
+        self.rest_time = config_dict["measurement_period_ms"]
         self.log_file = None
         self.connected = False
         self.running = False
@@ -74,7 +75,6 @@ class Environmental_sensors(serial.Serial):
         """
         if not self.thread.is_alive():
             self.running = True
-            self.measurement_time = self.hardware_configuration
 
             self.flushInput()
 
@@ -98,8 +98,6 @@ class Environmental_sensors(serial.Serial):
             self.running = False
             self.thread.join()
             self.thread = Thread(self.log, name="environmental_sensors_loop_thread", target=self.loop)
-
-        self.receiveAll()
 
         self.log.info("Environmental sensors stopped")
         self.start_time = 0

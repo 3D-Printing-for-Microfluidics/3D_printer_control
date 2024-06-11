@@ -156,12 +156,12 @@ class Printer3D:
                     self.light_engines[light_engine] = getattr(self, light_engine)
 
         if "environmental_sensors" in config_dict:
-            from printer_server.drivers.environmental_sensors import Environmental_sensors, Environmental_sensors_dummy
+            from printer_server.drivers.environmental_sensors import EnvironmentalSensors, Environmental_sensors_dummy
 
             if config_dict["environmental_sensors"]["dummy"]:
                 self.environmental_sensors = Environmental_sensors_dummy()
             else:
-                self.environmental_sensors = Environmental_sensors(config_dict=config_dict["environmental_sensors"], log_level=default_log_level)
+                self.environmental_sensors = EnvironmentalSensors(config_dict=config_dict["environmental_sensors"], log_level=default_log_level)
 
 
     def disconnect(self):
