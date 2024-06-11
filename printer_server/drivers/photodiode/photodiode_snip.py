@@ -7,7 +7,7 @@ photodiode = driver_handles.photodiode
 @socketio.on("photodiode_capture", namespace="/manual")
 def photodiodeCapture(message):
     auto = int(message["auto"])
-    #don't have this stuff
+    #don't have/need this stuff? this stuff
     integration = int(message["integration"])
     averages = int(message["averages"])
     if auto == 1:

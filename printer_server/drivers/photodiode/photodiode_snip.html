@@ -1,0 +1,40 @@
+<!-- Upload Image -->
+<!-- TO FIX:
+    Need to know how to read the value
+    What is the true fals for toggling the wavelength
+    How to update the read value with the button... that will be in the .js file 
+-->
+<div class="container photodiode">
+    <div class="row">
+        <div class="col-12">
+            <h3>Spectrometer</h3>
+        </div>
+    </div>
+    <div class="row">
+        <h5 class="col-3 text-left">Power:</h5>
+        <div class="col-3">
+            <h5 class="col text-right" id='read_photodiode_power'>{{ hardware['galil']['stages'][axis]['position']
+                }}
+            </h5>
+        </div>
+        <h5 class="col-3 text-left">Wavelength:</h5>
+        <div class="col-3">
+            <div id="wavelength_350_905" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                <label
+                    class="btn btn-outline-info btn-fixed-width shadow-none {% if not hardware['loadcell']['in_newtons'] %} active {% endif %}">365 nm<input
+                        type="radio"></label>
+                <label
+                    class="btn btn-outline-info btn-fixed-width shadow-none {% if hardware['loadcell']['in_newtons'] %} active {% endif %}">905 nm<input
+                        type="radio"></label>
+            </div>
+        </div>
+        
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <button type="button" class="btn btn-outline-info btn-block" id="read_photodiode_power">Read Value</button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='photodiode/photodiode_snip.js') }}"></script>
