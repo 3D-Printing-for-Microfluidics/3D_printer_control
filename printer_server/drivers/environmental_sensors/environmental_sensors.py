@@ -79,6 +79,7 @@ class EnvironmentalSensors(serial.Serial):
         Starts the environmental sensor collecting data
         """
         if not self.thread.is_alive():
+            self.flushInput()
             self.running = True
             self.log.info("Environmental sensors started")
             self.thread.start()
@@ -193,6 +194,7 @@ class EnvironmentalSensors(serial.Serial):
         """
         response = b""
         response += self.readline()  # wait for the first line to fill in the rx buffer
+        self.flushInput()
         return (
             response.decode().rstrip()
         )  # return decoded byte response (as string) without traililng newline
