@@ -52,6 +52,7 @@ class EnvironmentalSensors(serial.Serial):
         self.connected = True
         self.log.info("Connected to Environmental Sensor (BME688), posrt: %s", self.port)
         atexit.register(self.disconnect)
+        return True
 
 
     def disconnect(self):

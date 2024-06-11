@@ -12,7 +12,7 @@ class EnvironmentalSensorsDummy:
 
     @dummy_log
     def connect(self, *args, **kwargs):
-        pass
+        return True
 
     @dummy_log
     def disconnect(self, *args, **kwargs):
