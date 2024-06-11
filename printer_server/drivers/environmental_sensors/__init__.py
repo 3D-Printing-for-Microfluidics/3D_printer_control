@@ -1,2 +1,2 @@
 from .environmental_sensors import EnvironmentalSensors
-from .environmental_sensors_dummy import EnvironmentalSensorsDummy
+from .environmental_sensors_dummy import EnvironmentalSensors_dummy
