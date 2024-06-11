@@ -19,8 +19,12 @@ class EnvironmentalSensors(serial.Serial):
         super().__init__(baudrate=115200, timeout=1)
         self.port = None  # start with no port
         self.hwid = config_dict["hwid"]
-        self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
         self.rest_time = config_dict["measurement_period_ms"]
+
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+
+        self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
         self.log_file = None
         self.connected = False
         self.running = False
@@ -40,7 +44,7 @@ class EnvironmentalSensors(serial.Serial):
                 return p.device
         return None  # not found
 
-    def connect(self, shutdown):
+    def connect(self):
         self.port = self.findUsbPort(self.hwid)
         if self.port is None:
             msg = "Environmental Sensor not found!"
@@ -76,18 +80,7 @@ class EnvironmentalSensors(serial.Serial):
         """
         if not self.thread.is_alive():
             self.running = True
-
-            self.flushInput()
-
             self.log.info("Environmental sensors started")
-
-            file_path = "3D_printer_control/printer_server/hardware_configuration.json"
-            with open(file_path, 'r') as file:
-                # Load the JSON data from the file
-                data = json.load(file)
-            
-            self.rest_time = data["HR5."]["environmental_sensors"]["measurement_period_ms"]
-            
             self.thread.start()
 
     def stop(self):
@@ -110,20 +103,18 @@ class EnvironmentalSensors(serial.Serial):
         
         while self.running:
             try:
-
                 if self.log_file is not None:
                     sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
 
 
+
                     measurements = self.get_all_measurements()
-                    values = list(measurements.values())
+                    measurement_list = ['iaq','iaqAccuracy','static','co2Equivalent','breathVocEquivalent','rawTemperature','pressure','rawHumidity','gasResistance','stabStatus','runInStatus','temperature','humidity','gasPercentage']
                     file_string = ""
                     file_string += f"{sys_time},"
-                    for value in measurements.values():
-                        if value == values[-1]:
-                            file_string += f"{value}\n"
-                        else:
-                            file_string += f"{value},"
+                    for value in measurement_list:
+                        file_string += f"{measurements[value]},"
+                    file_string += "\n"
 
                     async_file_hander.write(
                         self.log_file,
@@ -134,6 +125,8 @@ class EnvironmentalSensors(serial.Serial):
 
             except serial.SerialException:
                 self.running = False
+            except KeyError:
+                pass
 
 
     ########################

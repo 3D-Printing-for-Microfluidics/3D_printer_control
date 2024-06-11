@@ -27,7 +27,7 @@ class EnvironmentalSensorsDummy:
         pass
 
     @dummy_log
-    def start(self, *args, **kwargs):
+    def stop(self, *args, **kwargs):
         pass
 
     @dummy_log

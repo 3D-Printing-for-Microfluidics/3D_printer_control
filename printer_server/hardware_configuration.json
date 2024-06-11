@@ -522,7 +522,7 @@
         },
         "environmental_sensors": {
             "dummy": false,
-            "serial num": "",
+            "hwid": "PID=10C4:EA60 SER=0001",
             "measurement_period_ms": 1000
         },
         "loadcell": {
