@@ -164,6 +164,30 @@
             "wintech"
         ],
         "external_control": {},
+        "mks": {
+            "dummy": false,
+            "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
+            "mks_address": "253",
+            "mks_baudrate": 115200,
+            "sensor_hwid": "",
+            "sensor_baudrate": 9600,
+            "atm pressure": 650,
+            "crane activate": 640,
+            "crane deavtivate": 600,
+            "target": {
+                "belljar": 0.2,
+                "degassing": 0.15
+            },
+            "relays": [
+                "crane power",
+                "pump power",
+                "pump valve",
+                "belljar pump valve",
+                "belljar vent valve",
+                "degassing pump valve",
+                "degassing vent valve"
+            ]
+        },
         "coord_systems": {
             "global": {
                 "X": 0,
@@ -432,6 +456,30 @@
             "visitech"
         ],
         "external_control": {},
+        "mks": {
+            "dummy": false,
+            "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
+            "mks_address": "253",
+            "mks_baudrate": 115200,
+            "sensor_hwid": "",
+            "sensor_baudrate": 9600,
+            "atm pressure": 650,
+            "crane activate": 640,
+            "crane deavtivate": 600,
+            "target": {
+                "belljar": 0.2,
+                "degassing": 0.15
+            },
+            "relays": [
+                "crane power",
+                "pump power",
+                "pump valve",
+                "belljar pump valve",
+                "belljar vent valve",
+                "degassing pump valve",
+                "degassing vent valve"
+            ]
+        },
         "coord_systems": {
             "global": {
                 "X": 0,

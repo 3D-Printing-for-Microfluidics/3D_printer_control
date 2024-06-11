@@ -1,13 +1,3 @@
-$(document).ready(function () {
-    // socket.on("keyence_setpoint_updated", function (message) {
-    //     update_keyence_positions(message);
-    // });
-
-    // $("#loadcell_graph_mode :input").change(function () {
-    //     socket.emit("loadcell_graph_mode", $(this).parent().text());
-    // });
-});
-
 let pumpStatus = false;
 let valveStatus = {
     valve1: false,
@@ -17,25 +7,25 @@ let valveStatus = {
     valve5: false
 };
 
-let valve_on = 'btn btn-info valve';
-let valve_off = 'btn btn-outline-info valve';
-let pump_on = 'btn btn-info vacuum-pump';
-let pump_off = 'btn btn-outline-info vacuum-pump';
-let chamber_vent = 'card text-white bg-light';
-let chamber_mid = 'card text-white bg-warning';
-let chamber_vac = 'card text-white bg-success';
+let btn_on = 'btn-info';
+let btn_off = 'btn-outline-info';
+let chamber_vent = 'bg-light';
+let chamber_mid = 'bg-warning';
+let chamber_vac = 'bg-success';
 
 function togglePump() {
     pumpStatus = !pumpStatus;
     document.getElementById('pump-status').innerText = pumpStatus ? 'ON' : 'OFF';
-    document.getElementById('vacuum-pump').className = pumpStatus ? pump_on : pump_off;
+    document.getElementById('vacuum-pump').classList.remove('btn-info', 'btn-outline-info');
+    document.getElementById('vacuum-pump').classList.add(pumpStatus ? btn_on : btn_off);
     updateChamberStatus();
 }
 
 function toggleValve(valveId) {
     valveStatus[valveId] = !valveStatus[valveId];
     document.getElementById(`${valveId}-status`).innerText = valveStatus[valveId] ? 'Open' : 'Closed';
-    document.getElementById(valveId).className = valveStatus[valveId] ? valve_on : valve_off;
+    document.getElementById(valveId).classList.remove('btn-info', 'btn-outline-info');
+    document.getElementById(valveId).classList.add(valveStatus[valveId] ? btn_on : btn_off);
     updateChamberStatus();
 }
 
@@ -67,16 +57,32 @@ function updateChamberStatus() {
         }
     }
 
-    document.getElementById('gauge1-reading').innerText = `\n${gaugeReading1} Torr\n\n`;
-    document.getElementById('gauge2-reading').innerText = `\n${gaugeReading2} Torr\n\n`;
-    document.getElementById('vacuum-chamber1').className = chamber1;
-    document.getElementById('vacuum-chamber2').className = chamber2;
+    document.getElementById('gauge1-reading').innerText = `${gaugeReading1} Torr`;
+    document.getElementById('gauge2-reading').innerText = `${gaugeReading2} Torr`;
+    document.getElementById('vacuum-chamber1').classList.remove('bg-light', 'bg-warning', 'bg-success');
+    document.getElementById('vacuum-chamber2').classList.remove('bg-light', 'bg-warning', 'bg-success');
+    document.getElementById('vacuum-chamber1').classList.add(chamber1);
+    document.getElementById('vacuum-chamber2').classList.add(chamber2);
 
 }
 
+$(document).ready(function () {
+    // socket.on("keyence_setpoint_updated", function (message) {
+    //     update_keyence_positions(message);
+    // });
+
+    // $("#loadcell_graph_mode :input").change(function () {
+    //     socket.emit("loadcell_graph_mode", $(this).parent().text());
+    // });
+
+
+});
+
+
+
 // // Initialize the system
-// document.getElementById('gauge1-reading').innerText = `\n650 Torr\n\n`;
-// document.getElementById('gauge2-reading').innerText = `\n650 Torr\n\n`;
+// document.getElementById('gauge1-reading').innerText = `650 Torr`;
+// document.getElementById('gauge2-reading').innerText = `650 Torr`;
 // document.getElementById('vacuum-pump').className = pump_off;
 // document.getElementById('valve1').className = valve_on;
 // document.getElementById('valve2').className = valve_on;

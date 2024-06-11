@@ -60,6 +60,10 @@ if "x_y" in config_dict["stages"]:
 if "t_t_r" in config_dict["stages"]:
     parent_classes.append(TTRControl)
 
+if "mks" in config_dict:
+    from printer_server.printer_control.vacuum_control import VacuumControl
+    parent_classes.append(VacuumControl)
+
 class ParentPrintControl(*parent_classes):
     pass
 
