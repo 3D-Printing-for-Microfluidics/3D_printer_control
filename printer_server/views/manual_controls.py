@@ -153,7 +153,8 @@ def index():
             hardware["spectrometer"]["default_integrations"] = config_dict["spectrometer"]["default_integration_time"]
             hardware["spectrometer"]["default_averages"] = config_dict["spectrometer"]["default_number_of_averages"]
         if "photodiode" in config_dict.keys():
-            hardware["photodiode"]
+            hardware["photodiode"]["power"] = printer_server.drivers.photodiode.photodiode_snip.getPower()
+            hardware["photodiode"]["wavelength"] = config_dict["photodiode"]["default_wavelength"]
             
     return render_template(
         "manual_controls.html",

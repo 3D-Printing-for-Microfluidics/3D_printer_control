@@ -120,6 +120,14 @@ class Printer3D:
                 self.spectrometer = Spectrometer_dummy()
             else:
                 self.spectrometer = Spectrometer(config_dict=config_dict["spectrometer"], log_level=default_log_level)
+        
+        if "photodiode" in config_dict.keys():
+            from printer_server.drivers.photodiode import Photodiode, Photodiode_dummy
+
+            if config_dict["photodiode"]["dummy"]:
+                self.photodiode = Photodiode_dummy()
+            else:
+                self.photodiode = Photodiode(config_dict=config_dict["photodiode"], log_level=default_log_level)
 
         self.bp_stage = None
         self.focus_stage = None
@@ -184,5 +192,7 @@ class Printer3D:
             self.keyence.disconnect()
         if hasattr(self, "spectrometer"):
             self.spectrometer.disconnect()
+        if hasattr(self, "photodiode"):
+            self.photodiode.disconnect()
             
 driver_handles = Printer3D()

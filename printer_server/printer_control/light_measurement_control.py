@@ -95,7 +95,8 @@ class LightMeasurementControl(PrintControl):
                 spectrum_thread = Thread(log, name="spectrum_measure_thread", target=self.measure_spectra, args = ())
                 spectrum_thread.start()
                 spectrum_thread.join()
-
+                   # ##### Collect photodiode power here 
+                    ##initialize, write, then save
                 # Turn off light engine
                 light_engine_driver.stop_sequencer()
                 update_le_led_status(light_engine, False)
@@ -103,6 +104,7 @@ class LightMeasurementControl(PrintControl):
                 # Save spectrum to file
                 spectra_path = str(self.current_job / f"{path_prefix}_spectra_{light_engine}_{wavelength}.csv")
                 # async_file_hander.write(spectra_path, "HEADER INFORMATION...\n")
+                # ### wavelength and power desity export to the print file is this section... Its a csv
                 async_file_hander.write(spectra_path, f"Integration time: {self.integration_time} ms\n")
                 async_file_hander.write(spectra_path, f"Number of Averages: {self.num_avg}\n")
                 async_file_hander.write(spectra_path, "\n")

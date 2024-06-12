@@ -41,7 +41,7 @@ if "light_engines" in config_dict:
 if "keyence" in config_dict:
     parent_classes.append(KeyenceControl)
 
-if "spectrometer" in config_dict:
+if "spectrometer" in config_dict or "photodiode" in config_dict:
     parent_classes.append(LightMeasurementControl)
 
 if "loadcell" in config_dict:
@@ -49,10 +49,7 @@ if "loadcell" in config_dict:
 
 if "gpio" in config_dict:
     if "film_pin" in config_dict["gpio"]:
-        parent_classes.append(FilmGPIOControl)
-        
-if "photodiode" in config_dict:
-    parent_classes.append(LightMeasurementControl)        
+        parent_classes.append(FilmGPIOControl)   
 
 if "bp" in config_dict["stages"]:
     parent_classes.append(BPControl)
