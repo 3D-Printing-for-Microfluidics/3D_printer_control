@@ -47,7 +47,8 @@ if "visitech" in config_dict.keys():
     import printer_server.drivers.visitech.visitech_snip
 if "wintech" in config_dict.keys():
     import printer_server.drivers.wintech.wintech_snip
-
+if "photodiode" in config_dict.keys():
+    import printer_server.drivers.photodiode.photodiode_snip
 
 # Create bluprint
 blueprint = Blueprint(
@@ -146,7 +147,9 @@ def index():
             hardware["wintech"][
                 "status"
             ] = printer_server.drivers.wintech.wintech_snip.getLedStatus()
-
+        if "photodiode" in config_dict.keys():
+            hardware["photodiode"]
+            
     return render_template(
         "manual_controls.html",
         initalized=initialized,
