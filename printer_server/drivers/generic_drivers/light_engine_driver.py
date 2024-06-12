@@ -22,3 +22,6 @@ class LightEngineDriver:
 
     def perform_exposure(self):
         log.warn("Function not implemented. Using abstract LightEngineDriver class")
+
+    def stop_sequencer(self):
+        log.warn("Function not implemented. Using abstract LightEngineDriver class")

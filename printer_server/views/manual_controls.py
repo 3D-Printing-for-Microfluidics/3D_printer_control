@@ -47,6 +47,8 @@ if "visitech" in config_dict.keys():
     import printer_server.drivers.visitech.visitech_snip
 if "wintech" in config_dict.keys():
     import printer_server.drivers.wintech.wintech_snip
+if "spectrometer" in config_dict.keys():
+    import printer_server.drivers.spectrometer.spectrometer_snip
 if "photodiode" in config_dict.keys():
     import printer_server.drivers.photodiode.photodiode_snip
 
@@ -147,6 +149,9 @@ def index():
             hardware["wintech"][
                 "status"
             ] = printer_server.drivers.wintech.wintech_snip.getLedStatus()
+        if "spectrometer" in config_dict.keys():
+            hardware["spectrometer"]["default_integrations"] = config_dict["spectrometer"]["default_integration_time"]
+            hardware["spectrometer"]["default_averages"] = config_dict["spectrometer"]["default_number_of_averages"]
         if "photodiode" in config_dict.keys():
             hardware["photodiode"]
             

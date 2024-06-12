@@ -31,7 +31,7 @@ from printer_server.printer_control.loadcell_control import LoadcellControl
 from printer_server.printer_control.screen_control import ScreenControl
 from printer_server.printer_control.ttr_control import TTRControl
 from printer_server.printer_control.xy_control import XYControl
-from printer_server.printer_control.kdc_control import KDCControl
+from printer_server.printer_control.light_measurement_control import LightMeasurementControl
 
 parent_classes = []
 
@@ -40,6 +40,9 @@ if "light_engines" in config_dict:
 
 if "keyence" in config_dict:
     parent_classes.append(KeyenceControl)
+
+if "spectrometer" in config_dict:
+    parent_classes.append(LightMeasurementControl)
 
 if "loadcell" in config_dict:
     parent_classes.append(LoadcellControl)

@@ -87,6 +87,7 @@ class Visitech(LightEngineDriver):
         )
 
         self.connected = False
+        self.repeats = 1
         self.exposure_time = 0
         self.led_on = False
         self.dual_led = dual_led
@@ -459,6 +460,7 @@ class Visitech(LightEngineDriver):
         Return type +OK
         """
         if self.socket is not None:
+            self.log.info("Stopping exposure")
             self.led_on = False
             return self.send("SET SEQ OFF")
         return ""
@@ -788,6 +790,7 @@ class Visitech(LightEngineDriver):
             repeat - number of repeats
         """
         self.exposure_time = exposure_time_ms
+        self.repeats = repeat
 
         if self.dual_led:
             if led_num == 0:
@@ -829,11 +832,15 @@ class Visitech(LightEngineDriver):
         Start an exposure.
         """
         self.led_on = True
-        if self.exposure_time != 0:
-            self.log.info("Exposing for %s ms", self.exposure_time)
+        if self.repeats == 0:
+            self.log.info("Starting exposure")
             self.start_sequencer()
-            time.sleep(self.exposure_time * 1e-3)
-        self.led_on = False
+        else:
+            if self.exposure_time != 0:
+                self.log.info("Exposing for %s ms", self.exposure_time)
+                self.start_sequencer()
+                time.sleep(self.exposure_time * 1e-3)
+            self.led_on = False
 
     def project(self, exposure, power, repeats=1, led_num=0):
         """

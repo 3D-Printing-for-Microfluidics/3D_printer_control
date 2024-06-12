@@ -1,0 +1,41 @@
+<!-- Upload Image -->
+<div class="container spectrometer">
+    <div class="row">
+        <div class="col-12">
+            <h3>Spectrometer</h3>
+        </div>
+    </div>
+    <div class="row">
+        <h5 class="col-6 text-left">Integration Time</h5>
+        <div class="col-4 form-group">
+            <input class="form-control" type="text" id="spectrometer-integration-txt"
+                placeholder="Integration Time (ms)" value="{{ hardware['spectrometer']['default_integrations'] }}">
+            <div class="invalid-feedback">
+                Please provide an integer greater than zero.
+            </div>
+        </div>
+        <h5 class="col-1 text-left">ms</h5>
+        <div class="col-1 form-group text-center">
+            <input class="form-check-input" type="checkbox" value="" id="spectrometer-auto-chkbx">
+            <label class="form-check-label" for="spectrometer-auto-chkbx">Auto</label>
+        </div>
+    </div>
+    <div class="row">
+        <h5 class="col-6 text-left">Number of Averages</h5>
+        <div class="col-6 form-group">
+            <input class="form-control" type="text" id="spectrometer-averages-txt" placeholder="Number of Averages"
+                value="{{ hardware['spectrometer']['default_averages'] }}">
+            <div class="invalid-feedback">
+                Please provide an integer greater than zero.
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-3">
+            <button type="button" class="btn btn-outline-info btn-block" id="download-spectra-btn">Download
+                Spectra</button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='spectrometer/spectrometer_snip.js') }}"></script>
