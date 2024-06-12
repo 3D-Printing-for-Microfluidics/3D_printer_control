@@ -9,15 +9,13 @@
             <h5>Pump Control</h5>
         </div>
         <div class="col-5">
-            <button type="button" class="btn btn-outline-info btn-block vacuum-pump" id="vacuum-pump"
-                onclick="togglePump()">Pump:
-                <span id="pump-status">OFF</span>
+            <button type="button" class="btn btn-outline-info btn-block vacuum-pump" id="vacuum_pump">Pump:
+                <span id="pump_status">OFF</span>
             </button>
         </div>
         <div class="col-5">
-            <button type="button" class="btn btn-outline-info btn-block valve" id="valve5"
-                onclick="toggleValve('valve5')">Pump
-                Valve: <span id="valve5-status">Closed</span></button>
+            <button type="button" class="btn btn-outline-info btn-block valve" id="valve_vacuum">Pump
+                Valve: <span id="valve_vacuum_status">Closed</span></button>
         </div>
     </div>
     <div class="row">
@@ -27,7 +25,7 @@
     </div>
     <div class="row">
         <div class="col-3 text-center">
-            <div class="card text-white bg-light chamber_display" id="vacuum-chamber1">
+            <div class="card text-white bg-light chamber_display" id="vacuum_chamber1">
                 <div class="card-body">
                     <h4 class="card-title">Bell Jar</h4>
                 </div>
@@ -37,19 +35,18 @@
             <div class="vacuum-system">
                 <div class="card text-white bg-secondary gauge_reading">
                     <div class="card-body">
-                        <p class="card-title" id="gauge1-reading">? mTorr</p>
+                        <p class="card-title" id="gauge1_reading">? mTorr</p>
                     </div>
                 </div>
-                <button type="button" class="btn btn-outline-info btn-block valve" id="valve1"
-                    onclick="toggleValve('valve1')">Vacuum Valve: <span id="valve1-status">Closed</span></button>
-                <button type="button" class="btn btn-outline-info btn-block valve" id="valve2"
-                    onclick="toggleValve('valve2')">Vent
+                <button type="button" class="btn btn-outline-info btn-block valve" id="valve_pump1">Vacuum Valve: <span
+                        id="valve_pump1_status">Closed</span></button>
+                <button type="button" class="btn btn-outline-info btn-block valve" id="valve_vent1">Vent
                     Valve:
-                    <span id="valve2-status">Closed</span></button>
+                    <span id="valve_vent1_status">Closed</span></button>
             </div>
         </div>
         <div class="col-3 text-center">
-            <div class="card text-white bg-light chamber_display" id="vacuum-chamber2">
+            <div class="card text-white bg-light chamber_display" id="vacuum_chamber2">
                 <div class="card-body">
                     <h4 class="card-title">Degassing Chamber</h4>
                 </div>
@@ -62,11 +59,10 @@
                         <p class="card-title" id="gauge2-reading">? mTorr</p>
                     </div>
                 </div>
-                <button type="button" class="btn btn-outline-info btn-block valve" id="valve3"
-                    onclick="toggleValve('valve3')">Vacuum Valve: <span id="valve3-status">Closed</span></button>
-                <button type="button" class="btn btn-outline-info btn-block valve" id="valve4"
-                    onclick="toggleValve('valve4')">Vent
-                    Valve: <span id="valve4-status">Closed</span></button>
+                <button type="button" class="btn btn-outline-info btn-block valve" id="valve_pump2">Vacuum Valve: <span
+                        id="valve_pump2_status">Closed</span></button>
+                <button type="button" class="btn btn-outline-info btn-block valve" id="valve_vent2">Vent
+                    Valve: <span id="valve_vent2_status">Closed</span></button>
             </div>
         </div>
     </div>

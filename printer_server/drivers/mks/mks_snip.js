@@ -1,93 +1,168 @@
-let pumpStatus = false;
-let valveStatus = {
-    valve1: false,
-    valve2: false,
-    valve3: false,
-    valve4: false,
-    valve5: false
-};
-
 let btn_on = 'btn-info';
 let btn_off = 'btn-outline-info';
+let btn_warn = 'btn-outline-warn';
 let chamber_vent = 'bg-light';
 let chamber_mid = 'bg-warning';
 let chamber_vac = 'bg-success';
 
-function togglePump() {
-    pumpStatus = !pumpStatus;
-    document.getElementById('pump-status').innerText = pumpStatus ? 'ON' : 'OFF';
-    document.getElementById('vacuum-pump').classList.remove('btn-info', 'btn-outline-info');
-    document.getElementById('vacuum-pump').classList.add(pumpStatus ? btn_on : btn_off);
+$(document).ready(function () {
+
+    // After 60 minutes of inactivity, close socket and timeout web page
+    socket.emit("connecting");
+    var event = 'click',
+        timer,
+        delay = 10000,
+        logout = function () {
+            document.removeEventListener(event, reset, false);
+            var content = 'This page has timed out. Please reload the page.';
+            document.getElementById('base-body').innerHTML = content;
+            socket.disconnect();
+        },
+        reset = function () {
+            clearTimeout(timer);
+            timer = setTimeout(logout, 3600000);
+        };
+    document.addEventListener(event, reset, false);
+    reset();
+
+    // Initiaize to starting values
+    let pumpSetting = hardware["mks"]["relay_setting"]["vacuum_pump"];
+    let valveSetting = {
+        valve_pump1: hardware["mks"]["relay_setting"]["valve_pump1"],
+        valve_vent1: hardware["mks"]["relay_setting"]["valve_vent1"],
+        valve_pump2: hardware["mks"]["relay_setting"]["valve_pump2"],
+        valve_vent2: hardware["mks"]["relay_setting"]["valve_vent2"],
+        valve_vacuum: hardware["mks"]["relay_setting"]["valve_vacuum"],
+    };
+    let valveStatus = {
+        valve_pump1: hardware["mks"]["relay_status"]["valve_pump1"],
+        valve_vent1: hardware["mks"]["relay_status"]["valve_vent1"],
+        valve_pump2: hardware["mks"]["relay_status"]["valve_pump2"],
+        valve_vent2: hardware["mks"]["relay_status"]["valve_vent2"],
+        valve_vacuum: hardware["mks"]["relay_status"]["valve_vacuum"],
+    };
+    let gaugeReading1 = hardware["mks"]["gauge"][0];
+    let gaugeReading2 = hardware["mks"]["gauge"][1];
+    let target1 = hardware["mks"]["target"][0];
+    let target2 = hardware["mks"]["target"][1];
+    let atm = hardware["mks"]["atm"];
+
+    updateValveStatus("valve_pump1");
+    updateValveStatus("valve_vent1");
+    updateValveStatus("valve_pump2");
+    updateValveStatus("valve_vent2");
+    updateValveStatus("valve_vacuum");
+    updatePumpStatus();
     updateChamberStatus();
-}
 
-function toggleValve(valveId) {
-    valveStatus[valveId] = !valveStatus[valveId];
-    document.getElementById(`${valveId}-status`).innerText = valveStatus[valveId] ? 'Open' : 'Closed';
-    document.getElementById(valveId).classList.remove('btn-info', 'btn-outline-info');
-    document.getElementById(valveId).classList.add(valveStatus[valveId] ? btn_on : btn_off);
-    updateChamberStatus();
-}
+    function updatePumpStatus() {
+        document.getElementById('pump_status').innerText = pumpSetting ? 'ON' : 'OFF';
+        document.getElementById('vacuum_pump').classList.remove(btn_on, btn_off, btn_warn);
+        document.getElementById('vacuum_pump').classList.add(pumpSetting ? btn_on : btn_off);
+    }
 
-function updateChamberStatus() {
-    let gaugeReading1 = 760;
-    let gaugeReading2 = 760;
-    let chamber1 = chamber_vent;
-    let chamber2 = chamber_vent;
+    function updateValveStatus(valveId) {
+        document.getElementById(`${valveId}_status`).innerText = valveSetting[valveId] ? 'Open' : 'Closed';
+        document.getElementById(valveId).classList.remove(btn_on, btn_off);
+        document.getElementById(valveId).classList.add(valveSetting[valveId] ? btn_on : btn_off);
+        document.getElementById(valveId).classList.add(valveSetting[valveId] ? (valveStatus[valveId] ? btn_on : btn_warn) : (valveStatus[valveId] ? btn_warn : btn_off));
+    }
 
-    if (!valveStatus.valve2) {
-        if (pumpStatus && valveStatus.valve5 && valveStatus.valve1) {
-            gaugeReading1 = 0.1; // Example value when pump is on and valve1 is open
+    function updateChamberStatus() {
+        let chamber1 = chamber_mid;
+        let chamber2 = chamber_mid;
+
+        if (gaugeReading1 >= atm) {
+            chamber1 = chamber_vent;
+        }
+        if (gaugeReading1 <= target1) {
             chamber1 = chamber_vac;
         }
-        else if (pumpStatus || !valveStatus.valve5) {
-            gaugeReading1 = 123; // Example value for intermediate state
-            chamber1 = chamber_mid;
-        }
-    }
 
-    if (!valveStatus.valve4) {
-        if (pumpStatus && valveStatus.valve5 && valveStatus.valve3) {
-            gaugeReading2 = 0.1; // Example value when pump is on and valve1 is open
+        if (gaugeReading2 >= atm) {
+            chamber2 = chamber_vent;
+        }
+        if (gaugeReading2 <= target2) {
             chamber2 = chamber_vac;
         }
-        else if (pumpStatus || !valveStatus.valve5) {
-            gaugeReading2 = 123; // Example value for intermediate state
-            chamber2 = chamber_mid;
+
+        document.getElementById('gauge1_reading').innerText = `${gaugeReading1} Torr`;
+        document.getElementById('gauge2_reading').innerText = `${gaugeReading2} Torr`;
+        document.getElementById('vacuum_chamber1').classList.remove(chamber_vent, chamber_mid, chamber_vac);
+        document.getElementById('vacuum_chamber2').classList.remove(chamber_vent, chamber_mid, chamber_vac);
+        document.getElementById('vacuum_chamber1').classList.add(chamber1);
+        document.getElementById('vacuum_chamber2').classList.add(chamber2);
+    }
+
+    function togglePump() {
+        pumpSetting = !pumpSetting;
+        updateChamberStatus();
+        if (pumpSetting) {
+            socket.emit("activateRelay", "vacuum_pump");
+        }
+        else {
+            socket.emit("deactivateRelay", "vacuum_pump");
         }
     }
 
-    document.getElementById('gauge1-reading').innerText = `${gaugeReading1} Torr`;
-    document.getElementById('gauge2-reading').innerText = `${gaugeReading2} Torr`;
-    document.getElementById('vacuum-chamber1').classList.remove('bg-light', 'bg-warning', 'bg-success');
-    document.getElementById('vacuum-chamber2').classList.remove('bg-light', 'bg-warning', 'bg-success');
-    document.getElementById('vacuum-chamber1').classList.add(chamber1);
-    document.getElementById('vacuum-chamber2').classList.add(chamber2);
+    function toggleValve(valveId) {
+        valveSetting[valveId] = !valveSetting[valveId];
+        updateValveStatus(valveId);
+        updateChamberStatus();
+        if (valveSetting[valveId]) {
+            socket.emit("activateRelay", valveId);
+        }
+        else {
+            socket.emit("deactivateRelay", valveId);
+        }
+    }
 
-}
+    socket.on("relay_status_updated", function (message) {
+        pumpSetting = message["relay_setting"]["vacuum_pump"];
+        valveSetting = {
+            valve_pump1: message["relay_setting"]["valve_pump1"],
+            valve_vent1: message["relay_setting"]["valve_vent1"],
+            valve_pump2: message["relay_setting"]["valve_pump2"],
+            valve_vent2: message["relay_setting"]["valve_vent2"],
+            valve_vacuum: message["relay_setting"]["valve_vacuum"],
+        };
+        valveStatus = {
+            valve_pump1: message["relay_status"]["valve_pump1"],
+            valve_vent1: message["relay_status"]["valve_vent1"],
+            valve_pump2: message["relay_status"]["valve_pump2"],
+            valve_vent2: message["relay_status"]["valve_vent2"],
+            valve_vacuum: message["relay_status"]["valve_vacuum"],
+        };
+    });
 
-$(document).ready(function () {
-    // socket.on("keyence_setpoint_updated", function (message) {
-    //     update_keyence_positions(message);
-    // });
+    socket.on("pressure_readings_updated", function (message) {
+        gaugeReading1 = message["gauge"][0];
+        gaugeReading2 = message["gauge"][1];
+        updateChamberStatus();
+    });
 
-    // $("#loadcell_graph_mode :input").change(function () {
-    //     socket.emit("loadcell_graph_mode", $(this).parent().text());
-    // });
+    $("#vacuum_pump").click(function () {
+        togglePump();
+    });
 
+    $("#valve_pump1").click(function () {
+        toggleValve("valve_pump1");
+    });
+
+    $("#valve_vent1").click(function () {
+        toggleValve("valve_vent1");
+    });
+
+    $("#valve_pump2").click(function () {
+        toggleValve("valve_pump2");
+    });
+
+    $("#valve_vent2").click(function () {
+        toggleValve("valve_vent2");
+    });
+
+    $("#valve_vacuum").click(function () {
+        toggleValve("valve_vacuum");
+    });
 
 });
-
-
-
-// // Initialize the system
-// document.getElementById('gauge1-reading').innerText = `650 Torr`;
-// document.getElementById('gauge2-reading').innerText = `650 Torr`;
-// document.getElementById('vacuum-pump').className = pump_off;
-// document.getElementById('valve1').className = valve_on;
-// document.getElementById('valve2').className = valve_on;
-// document.getElementById('valve3').className = valve_on;
-// document.getElementById('valve4').className = valve_on;
-// document.getElementById('valve5').className = valve_on;
-// document.getElementById('vacuum-chamber1').className = chamber_vent;
-// document.getElementById('vacuum-chamber2').className = chamber_vent;

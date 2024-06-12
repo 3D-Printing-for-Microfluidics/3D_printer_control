@@ -1112,28 +1112,29 @@ class MKS946(serial.Serial):
     
 if __name__ is '__main__':
     config_dict = {
-        "dummy": False,
-        "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
-        "mks_address": "253",
-        "mks_baudrate": 115200,
-        "sensor_hwid": "",
-        "atm pressure": 650,
-        "crane activate": 640,
-        "crane deavtivate": 600,
-        "target": {
-            "belljar": 0.2,
-            "degassing": 0.15
+            "dummy": True,
+            "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
+            "mks_address": "253",
+            "mks_baudrate": 115200,
+            "sensor_hwid": "",
+            "sensor_baudrate": 9600,
+            "atm pressure": 650,
+            "crane activate": 640,
+            "crane deavtivate": 600,
+            "target": [
+                0.2,
+                0.15
+            ],
+            "relays": [
+                "crane",
+                "vacuum_pump",
+                "valve_vacuum",
+                "valve_pump1",
+                "valve_vent1",
+                "valve_pump2",
+                "valve_vent2"
+            ]
         },
-        "relays": [
-            "crane power",
-            "pump power",
-            "pump valve",
-            "belljar pump valve",
-            "belljar vent valve",
-            "degassing pump valve",
-            "degassing vent valve"
-        ]
-    }
     mks = MKS946(config_dict=config_dict)
     mks.connect()
 

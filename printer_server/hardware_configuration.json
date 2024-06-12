@@ -174,18 +174,18 @@
             "atm pressure": 650,
             "crane activate": 640,
             "crane deavtivate": 600,
-            "target": {
-                "belljar": 0.2,
-                "degassing": 0.15
-            },
+            "target": [
+                0.2,
+                0.15
+            ],
             "relays": [
-                "crane power",
-                "pump power",
-                "pump valve",
-                "belljar pump valve",
-                "belljar vent valve",
-                "degassing pump valve",
-                "degassing vent valve"
+                "crane",
+                "vacuum_pump",
+                "valve_vacuum",
+                "valve_pump1",
+                "valve_vent1",
+                "valve_pump2",
+                "valve_vent2"
             ]
         },
         "coord_systems": {
@@ -466,18 +466,18 @@
             "atm pressure": 650,
             "crane activate": 640,
             "crane deavtivate": 600,
-            "target": {
-                "belljar": 0.2,
-                "degassing": 0.15
-            },
+            "target": [
+                0.2,
+                0.15
+            ],
             "relays": [
-                "crane power",
-                "pump power",
-                "pump valve",
-                "belljar pump valve",
-                "belljar vent valve",
-                "degassing pump valve",
-                "degassing vent valve"
+                "crane",
+                "vacuum_pump",
+                "valve_vacuum",
+                "valve_pump1",
+                "valve_vent1",
+                "valve_pump2",
+                "valve_vent2"
             ]
         },
         "coord_systems": {

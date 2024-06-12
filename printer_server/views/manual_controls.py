@@ -148,6 +148,15 @@ def index():
             hardware["wintech"][
                 "status"
             ] = printer_server.drivers.wintech.wintech_snip.getLedStatus()
+        if "mks" in config_dict.keys():
+            relay_setting, relay_status = printer_server.drivers.mks.mks_snip.get_relay_status()
+            hardware["mks"] = {
+                "relay_setting": relay_setting,
+                "relay_status": relay_status,
+                "gauge": printer_server.drivers.mks.mks_snip.get_gauges(),
+                "target": config_dict["mks"]["target"],
+                "atm": config_dict["mks"]["atm pressure"],
+            }
 
     return render_template(
         "manual_controls.html",
