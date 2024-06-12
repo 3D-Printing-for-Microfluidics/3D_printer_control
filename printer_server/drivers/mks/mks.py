@@ -110,25 +110,18 @@ class MKS946(serial.Serial):
             # self.set_atmospheric_pressure(2, self.config_dict["atm pressure"])
             self.log.info("Setting relays")
             for i, relay in enumerate(self.config_dict["relays"]):
-                if relay is "crane power":
-                    print(f"set_relay_direction: {self.set_relay_direction(i, 'ABOVE')}")
-                    print(f"set_relay_setpoint: {self.set_relay_setpoint(i, self.config_dict['crane activate'])}")
-                    print(f"set_relay_hysteresis: {self.set_relay_hysteresis(i, self.config_dict['crane deavtivate'])}")
-                    print(f"set_relay_mode: {self.set_relay_mode(i, 'ENABLE')}")
-                    # self.set_relay_direction(i, "ABOVE")
-                    # self.set_relay_setpoint(i, self.config_dict["crane activate"])
-                    # self.set_relay_hysteresis(i, self.config_dict["crane deavtivate"])
-                    # self.set_relay_mode(i, "ENABLE") # "SET" = on, "CLEAR" = off, "ENABLE" = auto
-                else:
-                    print(f"set_relay_mode: {self.set_relay_mode(i, 'CLEAR')}")
-                    # self.set_relay_mode(i, "CLEAR") # "SET" = on, "CLEAR" = off, "ENABLE" = auto
+                print(f"set_relay_direction: {self.set_relay_direction(i, relay["direction"])}")
+                print(f"set_relay_setpoint: {self.set_relay_setpoint(i, relay["setpoint"])}")
+                print(f"set_relay_hysteresis: {self.set_relay_hysteresis(i, relay["hysterisis"])}")
+                print(f"set_relay_mode: {self.set_relay_mode(i, 'ENABLE')}")
+                # self.set_relay_direction(i, relay["direction"])
+                # self.set_relay_setpoint(i, relay["setpoint"])
+                # self.set_relay_hysteresis(i, relay["hysterisis"])
+                # self.set_relay_mode(i, 'ENABLE')
             self.log.info("MSK initialized")
 
     def disconnect(self):
         if self.connected:
-            for i, relay in enumerate(self.config_dict["relays"]):
-                if relay is not "crane power":
-                    self.set_relay_mode(i, "CLEAR") # "SET" = on, "CLEAR" = off, "ENABLE" = auto
             self.close()
             self.connected = False
             self.log.info("Disconnected from MKS")
@@ -1116,17 +1109,22 @@ if __name__ is '__main__':
             "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
             "mks_address": "253",
             "mks_baudrate": 115200,
-            "sensor_hwid": "",
-            "sensor_baudrate": 9600,
+            "solenoids_hwid": "",
+            "solenoids_baudrate": 9600,
             "atm pressure": 650,
-            "crane activate": 640,
-            "crane deavtivate": 600,
             "target": [
                 0.2,
                 0.15
             ],
             "relays": [
-                "crane",
+                {
+                    "name":"crane", 
+                    "direction": "ABOVE", 
+                    "setpoint":640, 
+                    "hysterisis":600
+                }
+            ],
+            "solenoids": [
                 "vacuum_pump",
                 "valve_vacuum",
                 "valve_pump1",
@@ -1134,7 +1132,8 @@ if __name__ is '__main__':
                 "valve_pump2",
                 "valve_vent2"
             ]
-        },
+        }
+
     mks = MKS946(config_dict=config_dict)
     mks.connect()
 
@@ -1161,7 +1160,6 @@ if __name__ is '__main__':
     #     print(f"get_module_firmware_version {i+1}: {mks.get_module_firmware_version(i+1)}")
     #     print(f"get_module_serial_number {i+1}: {mks.get_module_serial_number(i+1)}")
 
-    # mks.set_relay_mode(1, "CLEAR")
     # print(f"get_all_relay_mode: {mks.get_all_relay_mode()}")
     # print(f"get_all_relay_status: {mks.get_all_relay_status()}")
     # for i in range(12):

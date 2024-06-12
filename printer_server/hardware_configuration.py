@@ -114,12 +114,17 @@ class Printer3D:
             self.keyence = Keyence()
 
         if "mks" in config_dict.keys():
-            from printer_server.drivers.mks import MKS946, MKS946_dummy
+            from printer_server.drivers.mks import MKS946, MKS946_dummy, MKSSolenoids, MKSSolenoids_dummy
 
             if config_dict["mks"]["dummy"]:
                 self.mks = MKS946_dummy()
+                self.mks_solenoids = MKSSolenoids_dummy()
             else:
                 self.mks = MKS946(
+                    config_dict=config_dict["mks"],
+                    log_level=default_log_level
+                )
+                self.mks_solenoids = MKSSolenoids(
                     config_dict=config_dict["mks"],
                     log_level=default_log_level
                 )
@@ -187,5 +192,6 @@ class Printer3D:
             self.keyence.disconnect()
         if hasattr(self, "mks"):
             self.mks.disconnect()
+            self.mks_solenoids.disconnect()
             
 driver_handles = Printer3D()

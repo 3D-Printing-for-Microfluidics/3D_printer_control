@@ -68,38 +68,41 @@ def get_relay_status(emit=False):
 
     return relay_settings_dict, relay_settings_dict
 
-running = False
-def loop():
-    while running:
+mks_running = False
+def mks_loop():
+    while mks_running:
         get_relay_status(emit=True)
         get_gauges(emit=True)
         time.sleep(10)
 
-thread = Thread(log, name="mks_poll_thread", target=loop)
+mks_thread = Thread(log, name="mks_poll_thread", target=mks_loop)
+mks_running = True
+mks_thread.start()
 
-@socketio.on("connecting", namespace="/manual")
-def connecting():
-    if not running:
-        running = True
-        thread.start()
+# @socketio.on("connecting", namespace="/manual")
+# def connecting():
+#     if not mks_running:
+#         mks_running = True
+#         mks_thread.start()
 
 
-@socketio.on("disconnect", namespace="/manual")
-def disconnect():
-    if running:
-        running = False
-        thread.join()
-        thread = Thread(log, name="mks_poll_thread", target=loop)
-    log.debug("Socket disconnected %s", request.sid)
+# @socketio.on("disconnect", namespace="/manual")
+# def disconnect():
+#     if mks_running:
+#         mks_running = False
+#         mks_thread.join()
+#         mks_thread = Thread(log, name="mks_poll_thread", target=mks_loop)
+#     log.debug("Socket disconnected %s", request.sid)
 
 
 @socketio.on("activateRelay", namespace="/manual")
 def activateRelay(message):
     mks.set_relay_mode(config_dict["mks"]["relays"].index(message), "SET")
     time.sleep(1)
-
+    get_relay_status(emit=True)
 
 @socketio.on("deactivateRelay", namespace="/manual")
 def deactivateRelay(message):
     mks.set_relay_mode(config_dict["mks"]["relays"].index(message), "CLEAR")
     time.sleep(1)
+    get_relay_status(emit=True)

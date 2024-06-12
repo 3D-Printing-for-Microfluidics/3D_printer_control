@@ -26,26 +26,28 @@ $(document).ready(function () {
     reset();
 
     // Initiaize to starting values
-    let pumpSetting = hardware["mks"]["relay_setting"]["vacuum_pump"];
+    let pumpSetting = Boolean(Number(hardware["mks"]["relay_setting"]["vacuum_pump"]));
     let valveSetting = {
-        valve_pump1: hardware["mks"]["relay_setting"]["valve_pump1"],
-        valve_vent1: hardware["mks"]["relay_setting"]["valve_vent1"],
-        valve_pump2: hardware["mks"]["relay_setting"]["valve_pump2"],
-        valve_vent2: hardware["mks"]["relay_setting"]["valve_vent2"],
-        valve_vacuum: hardware["mks"]["relay_setting"]["valve_vacuum"],
+        valve_pump1: Boolean(Number(hardware["mks"]["relay_setting"]["valve_pump1"])),
+        valve_vent1: Boolean(Number(hardware["mks"]["relay_setting"]["valve_vent1"])),
+        valve_pump2: Boolean(Number(hardware["mks"]["relay_setting"]["valve_pump2"])),
+        valve_vent2: Boolean(Number(hardware["mks"]["relay_setting"]["valve_vent2"])),
+        valve_vacuum: Boolean(Number(hardware["mks"]["relay_setting"]["valve_vacuum"])),
     };
     let valveStatus = {
-        valve_pump1: hardware["mks"]["relay_status"]["valve_pump1"],
-        valve_vent1: hardware["mks"]["relay_status"]["valve_vent1"],
-        valve_pump2: hardware["mks"]["relay_status"]["valve_pump2"],
-        valve_vent2: hardware["mks"]["relay_status"]["valve_vent2"],
-        valve_vacuum: hardware["mks"]["relay_status"]["valve_vacuum"],
+        valve_pump1: Boolean(Number(hardware["mks"]["relay_status"]["valve_pump1"])),
+        valve_vent1: Boolean(Number(hardware["mks"]["relay_status"]["valve_vent1"])),
+        valve_pump2: Boolean(Number(hardware["mks"]["relay_status"]["valve_pump2"])),
+        valve_vent2: Boolean(Number(hardware["mks"]["relay_status"]["valve_vent2"])),
+        valve_vacuum: Boolean(Number(hardware["mks"]["relay_status"]["valve_vacuum"])),
     };
     let gaugeReading1 = hardware["mks"]["gauge"][0];
     let gaugeReading2 = hardware["mks"]["gauge"][1];
     let target1 = hardware["mks"]["target"][0];
     let target2 = hardware["mks"]["target"][1];
     let atm = hardware["mks"]["atm"];
+
+    console.log(pumpSetting, valveSetting, valveStatus, gaugeReading1, gaugeReading2, target1, target2, atm);
 
     updateValveStatus("valve_pump1");
     updateValveStatus("valve_vent1");
@@ -96,6 +98,7 @@ $(document).ready(function () {
 
     function togglePump() {
         pumpSetting = !pumpSetting;
+        updatePumpStatus();
         updateChamberStatus();
         if (pumpSetting) {
             socket.emit("activateRelay", "vacuum_pump");
@@ -118,20 +121,20 @@ $(document).ready(function () {
     }
 
     socket.on("relay_status_updated", function (message) {
-        pumpSetting = message["relay_setting"]["vacuum_pump"];
+        pumpSetting = Boolean(Number(message["relay_setting"]["vacuum_pump"]));
         valveSetting = {
-            valve_pump1: message["relay_setting"]["valve_pump1"],
-            valve_vent1: message["relay_setting"]["valve_vent1"],
-            valve_pump2: message["relay_setting"]["valve_pump2"],
-            valve_vent2: message["relay_setting"]["valve_vent2"],
-            valve_vacuum: message["relay_setting"]["valve_vacuum"],
+            valve_pump1: Boolean(Number(message["relay_setting"]["valve_pump1"])),
+            valve_vent1: Boolean(Number(message["relay_setting"]["valve_vent1"])),
+            valve_pump2: Boolean(Number(message["relay_setting"]["valve_pump2"])),
+            valve_vent2: Boolean(Number(message["relay_setting"]["valve_vent2"])),
+            valve_vacuum: Boolean(Number(message["relay_setting"]["valve_vacuum"])),
         };
         valveStatus = {
-            valve_pump1: message["relay_status"]["valve_pump1"],
-            valve_vent1: message["relay_status"]["valve_vent1"],
-            valve_pump2: message["relay_status"]["valve_pump2"],
-            valve_vent2: message["relay_status"]["valve_vent2"],
-            valve_vacuum: message["relay_status"]["valve_vacuum"],
+            valve_pump1: Boolean(Number(message["relay_status"]["valve_pump1"])),
+            valve_vent1: Boolean(Number(message["relay_status"]["valve_vent1"])),
+            valve_pump2: Boolean(Number(message["relay_status"]["valve_pump2"])),
+            valve_vent2: Boolean(Number(message["relay_status"]["valve_vent2"])),
+            valve_vacuum: Boolean(Number(message["relay_status"]["valve_vacuum"])),
         };
     });
 

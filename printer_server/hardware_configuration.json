@@ -169,17 +169,22 @@
             "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
             "mks_address": "253",
             "mks_baudrate": 115200,
-            "sensor_hwid": "",
-            "sensor_baudrate": 9600,
+            "solenoids_hwid": "",
+            "solenoids_baudrate": 9600,
             "atm pressure": 650,
-            "crane activate": 640,
-            "crane deavtivate": 600,
             "target": [
                 0.2,
                 0.15
             ],
             "relays": [
-                "crane",
+                {
+                    "name": "crane",
+                    "direction": "ABOVE",
+                    "setpoint": 640,
+                    "hysterisis": 600
+                }
+            ],
+            "solenoids": [
                 "vacuum_pump",
                 "valve_vacuum",
                 "valve_pump1",
@@ -461,17 +466,22 @@
             "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
             "mks_address": "253",
             "mks_baudrate": 115200,
-            "sensor_hwid": "",
-            "sensor_baudrate": 9600,
+            "solenoids_hwid": "",
+            "solenoids_baudrate": 9600,
             "atm pressure": 650,
-            "crane activate": 640,
-            "crane deavtivate": 600,
             "target": [
                 0.2,
                 0.15
             ],
             "relays": [
-                "crane",
+                {
+                    "name": "crane",
+                    "direction": "ABOVE",
+                    "setpoint": 640,
+                    "hysterisis": 600
+                }
+            ],
+            "solenoids": [
                 "vacuum_pump",
                 "valve_vacuum",
                 "valve_pump1",
