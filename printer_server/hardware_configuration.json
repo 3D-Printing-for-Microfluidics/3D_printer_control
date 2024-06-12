@@ -524,6 +524,13 @@
             "default_integration_time": 1000,
             "default_number_of_averages": 5
         },
+        "photodiode": {
+            "beamdiameter": 0.05,
+            "defaultwavelength": 365,
+            "attenuation": 50,
+            "hwid": "USBO::0c1313:0c0872::1928351:INSTR"
+            
+        },
         "keyence": {
             "dummy": true,
             "sensors": {

@@ -1,0 +1,28 @@
+
+var enable_button = function () {
+    $(`#download-spectra-btn`).prop('disabled', false);
+    $(`#download-spectra-btn`).addClass('btn-outline-info');
+    $(`#download-spectra-btn`).removeClass('btn-outline-secondary');
+}
+
+var disable_button = function () {
+    $(`#download-spectra-btn`).prop('disabled', true);
+    $(`#download-spectra-btn`).removeClass('btn-outline-info');
+    $(`#download-spectra-btn`).addClass('btn-outline-secondary');
+}
+
+$(document).ready(function () {
+
+    // ??? Put here one for reading/updating the value outputs?
+// CAN i reuse read_photodiode_power twice, once for the output the other time for updating it?
+
+    $("#wavelength_350_905 :input").change(function () {
+        socket.emit("wavelength_350_905", $(this).parent().text());
+    });
+
+    $("#read_photodiode_power :input").change(function () {
+        socket.emit("read_photodiode_power", $(this).parent().text());
+    }); 
+     
+
+});

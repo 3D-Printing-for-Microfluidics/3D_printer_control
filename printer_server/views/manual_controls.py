@@ -49,7 +49,8 @@ if "wintech" in config_dict.keys():
     import printer_server.drivers.wintech.wintech_snip
 if "spectrometer" in config_dict.keys():
     import printer_server.drivers.spectrometer.spectrometer_snip
-
+if "photodiode" in config_dict.keys():
+    import printer_server.drivers.photodiode.photodiode_snip
 
 # Create bluprint
 blueprint = Blueprint(
@@ -151,7 +152,9 @@ def index():
         if "spectrometer" in config_dict.keys():
             hardware["spectrometer"]["default_integrations"] = config_dict["spectrometer"]["default_integration_time"]
             hardware["spectrometer"]["default_averages"] = config_dict["spectrometer"]["default_number_of_averages"]
-
+        if "photodiode" in config_dict.keys():
+            hardware["photodiode"]
+            
     return render_template(
         "manual_controls.html",
         initalized=initialized,
