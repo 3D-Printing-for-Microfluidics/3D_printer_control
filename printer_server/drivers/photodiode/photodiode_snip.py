@@ -4,15 +4,14 @@ from printer_server.hardware_configuration import driver_handles
 
 photodiode = driver_handles.photodiode
 
-@socketio.on("photodiode_capture", namespace="/manual")
-def photodiodeCapture(message):
-    auto = int(message["auto"])
-    #don't have/need this stuff? this stuff
-    integration = int(message["integration"])
-    averages = int(message["averages"])
-    if auto == 1:
-        integration = None
-    integration = photodiode.set_integration_time(integration)
-    spectra = photodiode.get_spectrum(num_averages=averages)
+@socketio.on("get_photodiode_power", namespace="/manual")
+def get_photodiode_power(message):
+    
+
+    wavelength = int(message["wavelength"])
+    
+    # in phododiode.py set w, get p, emit p
+
+# Set variable power and double check this works
     #end of stuff
-    socketio.emit("photodiode_done", {"spectra":spectra, "integration":integration, "averages":averages}, namespace="/manual", broadcast=True)
+    socketio.emit("send_photodiode_power", power, namespace="/manual", broadcast=True)

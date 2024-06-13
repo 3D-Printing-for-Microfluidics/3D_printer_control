@@ -117,3 +117,8 @@ class LightMeasurementControl(PrintControl):
             self.integration_time = self.spectrometer.set_integration_time(None)
             log.info(f"Measuring spectra")
             self.spectrum = self.spectrometer.get_spectrum(self.num_avg)
+            
+    # #### create irradiance class and do        
+    # spectrum_thread = Thread(log, name="spectrum_measure_thread", target=self.measure_spectra, args = ())
+    #             spectrum_thread.start()
+    #             spectrum_thread.join()

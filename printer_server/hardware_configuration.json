@@ -525,9 +525,9 @@
             "default_number_of_averages": 5
         },
         "photodiode": {
-            "beamdiameter": 0.05,
-            "defaultwavelength": 365,
-            "attenuation": 50,
+            "beam_diameter": 0.05,
+            "default_wavelength": 365,
+            "attenuation_db": 50,
             "hwid": "USBO::0c1313:0c0872::1928351:INSTR"
             
         },

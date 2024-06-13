@@ -11,7 +11,7 @@
 <div class="container photodiode">
     <div class="row">
         <div class="col-12">
-            <h3>Spectrometer</h3>
+            <h3>Photodiode</h3>
         </div>
     </div>
     <div class="row">
@@ -23,12 +23,12 @@
         </div>
         <h5 class="col-3 text-left">Wavelength:</h5>
         <div class="col-3">
-            <div id="wavelength_350_905" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+            <div id="wavelength_350_405" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
                 <label
                     class="btn btn-outline-info btn-fixed-width shadow-none {% if not hardware['loadcell']['in_newtons'] %} active {% endif %}">365 nm<input
                         type="radio"></label>
                 <label
-                    class="btn btn-outline-info btn-fixed-width shadow-none {% if hardware['loadcell']['in_newtons'] %} active {% endif %}">905 nm<input
+                    class="btn btn-outline-info btn-fixed-width shadow-none {% if hardware['loadcell']['in_newtons'] %} active {% endif %}">405 nm<input
                         type="radio"></label>
             </div>
         </div>
