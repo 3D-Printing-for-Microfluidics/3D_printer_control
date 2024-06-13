@@ -83,3 +83,15 @@ class MKSSolenoids(serial.Serial):
                         re.findall(self.r, message)[0]
                     )  # parse out values for getter commands
                 return message, error
+            
+    def activate_relay(self, relay_num):
+        pass
+
+    def deactivate_relay(self, relay_num):
+        pass
+
+    def get_all_relay_status(self):
+        pass
+
+    def get_all_switch_status(self):
+        pass

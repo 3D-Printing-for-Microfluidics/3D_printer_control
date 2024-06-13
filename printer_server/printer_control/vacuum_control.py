@@ -11,15 +11,19 @@ class VacuumControl(PrintControl):
     def __init__(self):
         super().__init__()
         self.mks = driver_handles.mks
+        self.mks_solenoids = driver_handles.mks_solenoids
 
     def connect_hardware(self):
-        mks_thread = Thread(log, name="mks_control_connect_thread", target=self.mks.connect, args=[])
+        mks_thread = Thread(log, name="mks_connect_thread", target=self.mks.connect, args=[])
+        mks_solenoids_thread = Thread(log, name="mks_solenoids_thread", target=self.mks_solenoids.connect, args=[])
         mks_thread.start()
+        mks_solenoids_thread.start()
         super().connect_hardware()
         mks_thread.join()
+        mks_solenoids_thread.join()
 
     def initialize_hardware(self):
-        mks_thread = Thread(log, name="mks_control_init_thread", target=self.mks.initialize, args=[])
+        mks_thread = Thread(log, name="mks_init_thread", target=self.mks_solenoids.initialize, args=[])
         mks_thread.start()
         super().initialize_hardware()
         mks_thread.join()

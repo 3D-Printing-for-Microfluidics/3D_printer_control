@@ -176,16 +176,20 @@
                 0.2,
                 0.15
             ],
-            "relays": [
-                {
-                    "name": "crane",
+            "relays": {
+                "crane": {
+                    "relay_num": 0,
+                    "mode": "auto",
                     "direction": "ABOVE",
                     "setpoint": 640,
                     "hysterisis": 600
+                },
+                "vacuum_pump": {
+                    "relay_num": 1,
+                    "mode": "manual"
                 }
-            ],
+            },
             "solenoids": [
-                "vacuum_pump",
                 "valve_vacuum",
                 "valve_pump1",
                 "valve_vent1",
@@ -473,16 +477,20 @@
                 0.2,
                 0.15
             ],
-            "relays": [
-                {
-                    "name": "crane",
+            "relays": {
+                "crane": {
+                    "relay_num": 0,
+                    "mode": "auto",
                     "direction": "ABOVE",
                     "setpoint": 640,
                     "hysterisis": 600
+                },
+                "vacuum_pump": {
+                    "relay_num": 1,
+                    "mode": "manual"
                 }
-            ],
+            },
             "solenoids": [
-                "vacuum_pump",
                 "valve_vacuum",
                 "valve_pump1",
                 "valve_vent1",

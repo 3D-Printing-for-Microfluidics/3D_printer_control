@@ -109,19 +109,28 @@ class MKS946(serial.Serial):
             # self.set_atmospheric_pressure(1, self.config_dict["atm pressure"])
             # self.set_atmospheric_pressure(2, self.config_dict["atm pressure"])
             self.log.info("Setting relays")
-            for i, relay in enumerate(self.config_dict["relays"]):
-                print(f"set_relay_direction: {self.set_relay_direction(i, relay["direction"])}")
-                print(f"set_relay_setpoint: {self.set_relay_setpoint(i, relay["setpoint"])}")
-                print(f"set_relay_hysteresis: {self.set_relay_hysteresis(i, relay["hysterisis"])}")
-                print(f"set_relay_mode: {self.set_relay_mode(i, 'ENABLE')}")
-                # self.set_relay_direction(i, relay["direction"])
-                # self.set_relay_setpoint(i, relay["setpoint"])
-                # self.set_relay_hysteresis(i, relay["hysterisis"])
-                # self.set_relay_mode(i, 'ENABLE')
+            for _, relay in enumerate(self.config_dict["relays"]):
+                relay_num = relay["relay_num"]
+                if relay["mode"] is "auto":
+                    print(f"set_relay_direction: {self.set_relay_direction(relay_num, relay["direction"])}")
+                    print(f"set_relay_setpoint: {self.set_relay_setpoint(relay_num, relay["setpoint"])}")
+                    print(f"set_relay_hysteresis: {self.set_relay_hysteresis(relay_num, relay["hysterisis"])}")
+                    print(f"set_relay_mode: {self.set_relay_mode(relay_num, 'ENABLE')}")
+                    # self.set_relay_direction(relay_num, relay["direction"])
+                    # self.set_relay_setpoint(relay_num, relay["setpoint"])
+                    # self.set_relay_hysteresis(relay_num, relay["hysterisis"])
+                    # self.set_relay_mode(relay_num, 'ENABLE')
+                else:
+                    print(f"set_relay_mode: {self.set_relay_mode(relay_num, 'CLEAR')}")
+                    # self.set_relay_mode(relay_num, 'CLEAR')
             self.log.info("MSK initialized")
 
     def disconnect(self):
         if self.connected:
+            for _, relay in enumerate(self.config_dict["relays"]):
+                if relay["mode"] is not "auto":
+                    print(f"set_relay_mode: {self.set_relay_mode(relay["relay_num"], 'CLEAR')}")
+                    # self.set_relay_mode(i, 'CLEAR')
             self.close()
             self.connected = False
             self.log.info("Disconnected from MKS")
@@ -1105,34 +1114,38 @@ class MKS946(serial.Serial):
     
 if __name__ is '__main__':
     config_dict = {
-            "dummy": True,
-            "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
-            "mks_address": "253",
-            "mks_baudrate": 115200,
-            "solenoids_hwid": "",
-            "solenoids_baudrate": 9600,
-            "atm pressure": 650,
-            "target": [
-                0.2,
-                0.15
-            ],
-            "relays": [
-                {
-                    "name":"crane", 
-                    "direction": "ABOVE", 
-                    "setpoint":640, 
-                    "hysterisis":600
-                }
-            ],
-            "solenoids": [
-                "vacuum_pump",
-                "valve_vacuum",
-                "valve_pump1",
-                "valve_vent1",
-                "valve_pump2",
-                "valve_vent2"
-            ]
-        }
+        "dummy": False,
+        "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
+        "mks_address": "253",
+        "mks_baudrate": 115200,
+        "solenoids_hwid": "",
+        "solenoids_baudrate": 9600,
+        "atm pressure": 650,
+        "target": [
+            0.2,
+            0.15
+        ],
+        "relays": {
+            "crane": {
+                "relay_num": 0,
+                "mode": "auto",
+                "direction": "ABOVE",
+                "setpoint": 640,
+                "hysterisis": 600
+            },
+            "vacuum_pump": {
+                "relay_num": 1,
+                "mode": "manual"
+            }
+        },
+        "solenoids": [
+            "valve_vacuum",
+            "valve_pump1",
+            "valve_vent1",
+            "valve_pump2",
+            "valve_vent2"
+        ]
+    }
 
     mks = MKS946(config_dict=config_dict)
     mks.connect()
