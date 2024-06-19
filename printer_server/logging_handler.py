@@ -134,6 +134,8 @@ def configure_loggers(app):
 
     app.logger.removeHandler(default_handler)
     root_logger = logging.getLogger()
+    log = logging.getLogger('werkzeug').setLevel(logging.WARN)
+
     # root_logger.setLevel(logging.NOTSET)  # uncomment to see all mesasges everywhere
 
     console_handler = logging.StreamHandler(sys.stdout)
