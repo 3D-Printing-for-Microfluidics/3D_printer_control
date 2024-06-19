@@ -5,10 +5,10 @@ from printer_server.extensions import db, migrate, socketio
 from printer_server.models import PrintRecord, PrintQueue
 from printer_server import commands, models
 from printer_server.views import home, manual_controls, print_history, server_logs
-from printer_server.settings import ProdConfig
+from printer_server.settings import ProdConfig, DevConfig
 from printer_server.hardware_configuration import driver_handles
 from printer_server.logging_handler import configure_loggers
-
+from flask.helpers import get_debug_flag
 
 def create_app(config_object=ProdConfig):
     """An application factory, as explained here:
@@ -33,7 +33,7 @@ def create_app(config_object=ProdConfig):
     except:
         print("Error cleaning DB. Does it exist?")
 
-    return app, socketio
+    return app
 
 
 def register_extensions(app):
@@ -99,3 +99,6 @@ def cleanup_db():
     PrintRecord().remove_orphaned_files()
     PrintRecord().remove_old_jobs()
     PrintRecord().remove_old_logs()
+
+CONFIG = DevConfig if get_debug_flag() else ProdConfig
+app = create_app(CONFIG)

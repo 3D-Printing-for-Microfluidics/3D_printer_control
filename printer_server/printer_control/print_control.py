@@ -12,7 +12,6 @@ from datetime import datetime
 from zipfile import ZipFile, BadZipFile
 
 import printer_server.views.home as home
-from printer_server.extensions import db
 from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 from printer_server.models import PrintQueue, PrintRecord
@@ -384,7 +383,6 @@ class PrintControl:
         self.print_start_time = datetime.now()
 
         # start printing process in a new thread
-        self.app = db.get_app()
         self.print_thread = Thread(log, name="print_control_print_worker_thread", target=self.print_worker)
         self.print_thread.start()
 
@@ -419,7 +417,6 @@ class PrintControl:
         log.info(msg["text"])
         home.update_printer_state(self.state, msg)
         # resume printing in a new thread
-        self.app = db.get_app()
         self.print_thread = Thread(log, name="print_control_print_worker_thread", target=self.print_worker)
         self.print_thread.start()
 
@@ -619,7 +616,8 @@ class PrintControl:
     def finish_print(self):
         # update fontend, zip logs into archive in print_history, and update db entrty
         self.print_duration = datetime.now() - self.print_start_time
-        with self.app.app_context():
+        from autoapp import app
+        with app.app_context():
             latest_record = PrintRecord.query.order_by(PrintRecord.id.desc()).first()
             latest_record.end_time = datetime.now()
             if not self.printing_stopped.is_set():

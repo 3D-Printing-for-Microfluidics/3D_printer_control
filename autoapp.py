@@ -1,11 +1,6 @@
 """Create an application instance."""
-from flask.helpers import get_debug_flag
-from printer_server.app import create_app
-from printer_server.settings import DevConfig, ProdConfig
-
-CONFIG = DevConfig if get_debug_flag() else ProdConfig
-
-app, soketio = create_app(CONFIG)
+from printer_server.extensions import socketio
+from printer_server.app import app
 
 if __name__ == "__main__":
-    soketio.run(app, host="0.0.0.0", port=5000)
+    socketio.run(app, host="0.0.0.0", port=5000)
