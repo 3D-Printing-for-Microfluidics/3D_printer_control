@@ -57,7 +57,7 @@ def index():
     except ValueError:
         flash("Bad end date", category="danger")
 
-    print_records = query.order_by(PrintRecord.id.desc()).paginate(current_page, 20)
+    print_records = query.order_by(PrintRecord.id.desc()).paginate(page=current_page, per_page=20)
     start, end, boundaries = calculate_page_range(current_page, print_records.pages)
 
     return render_template(
@@ -80,7 +80,7 @@ def download(job_id):
     return send_file(
         os.path.join(file_location, job.zip_filename),
         as_attachment=True,
-        attachment_filename=job.original_filename,
+        download_name=job.original_filename,
     )
 
 
