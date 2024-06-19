@@ -109,12 +109,18 @@ class Printer3D:
                 self.wintech = Wintech(log_level=default_log_level)
 
         if "keyence" in config_dict.keys():
-            from printer_server.drivers.keyence import Keyence
+            from printer_server.drivers.keyence import Keyence, Keyence_dummy
 
-            self.keyence = Keyence(
-                config_dict=config_dict["keyence"], 
-                log_level=default_log_level
-            )
+            if config_dict["keyence"]["dummy"]:
+                self.keyence = Keyence_dummy(
+                    config_dict=config_dict["keyence"], 
+                    log_level=default_log_level
+                )
+            else:
+                self.keyence = Keyence(
+                    config_dict=config_dict["keyence"], 
+                    log_level=default_log_level
+                )
 
         self.bp_stage = None
         self.focus_stage = None
