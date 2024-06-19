@@ -45,6 +45,10 @@ class Photodiode:
             
     def initialize(self):
        # sending cmds to photodiode to set parameters that I want to set initialy
+        self. set_wavelength(self, defaultWavelength)
+        self.set_attenuation_db(self, attenuation) 
+        self.set_beam_diameter(self, beamdiameter)
+        self.power_meter.configure.scalar.pdensity() 
         
     #    self.power_meter.sense.correction.wavelength = self.defaultWavelength
     #    self.power_meter.sense.correction.loss.input.magnitude = self.attenuation
@@ -60,13 +64,7 @@ class Photodiode:
 
         # power_meter.configure.scalar.temperature()
         # print(f"T: {[pwer_meter.read} C")
-        
-        set_wavelength(self, self.defaultWavelength)
-        set_attenuation_db(self, self.attenuation) 
-        set_beam_diameter(self, self.beamdiameter)
-        self.power_meter.configure.scalar.pdensity()
-        
-            
+         
     def disconnect(self):
         # disconnects the photodiode     
         if self.connected:

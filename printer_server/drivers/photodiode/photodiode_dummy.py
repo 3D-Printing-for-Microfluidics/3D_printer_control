@@ -3,20 +3,17 @@ from ThorlabsPM100 import ThorlabsPM100
 
 class Photodiode_dummy:
     
-    
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         
         self.photodiode = None
         self.connected = None
-    
-       
+           
    def connect(self, shutdown):
         self.log.debug("Connected")
         self.connected = True
-        
-
+    
     def disconnect(self):
         self.log.debug("Disconnected")
         self.connected = False

@@ -18,12 +18,19 @@ $(document).ready(function () {
 
     // $("#wavelength_350_405 :input").change(function () {
     //     socket.emit("wavelength_350_405", $(this).parent().text());
-    // });
+
+
+	socket.on("send_photodiode_power", power {
+        // not sure? 
+    });
 
     $("#read_photodiode_power :input").change(function () {
-        socket.emit("read_photodiode_power", $(this).parent().text());
-        // Need to send this: socket.emit("get_photodiode_power",{"wavelength":365}) .. figure out what element its sending 
-    }); // wavelenghtbtn.parent.text.... something???? Later do this? 
-     
+        // socket.emit("read_photodiode_power", $(this).parent().text()); // Example based on loadcell
+        socket.emit("get_photodiode_power",{"wavelength":365}) // ... figure out what element its sending 
+    }); 
+    
+    // wavelenghtbtn.parent.text.... something???? Later do this? 
+    
     // ####### Get socket on to update html element with power reading
 });
+

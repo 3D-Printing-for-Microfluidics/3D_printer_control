@@ -19,8 +19,10 @@ class LightMeasurementControl(PrintControl):
         super().__init__()
         self.spectrometer = driver_handles.spectrometer
         self.light_engines = driver_handles.light_engines
+        self.photodiode = driver_handles.photodiode
 
     def connect_hardware(self):
+        # Connect spectrometer
         spectrometer_thread = Thread(log, name="spectrometer_setup_thread", target=self.spectrometer.connect, args=[])
         spectrometer_thread.start()
         super().connect_hardware()
@@ -28,6 +30,15 @@ class LightMeasurementControl(PrintControl):
         if not self.spectrometer.connected:
             log.error("Spectrometer failed to connect!")
             self.all_hardware_connected = False
+        
+        # Connect photodiode    
+        photodiode_thread = Thread(log, name="photodiode_setup_thread", target=self.photodiode.connect, args=[])
+        photodiode_thread.start()
+        super().connect_hardware()
+        photodiode_thread.join()
+        if not self.photodiode.connected:
+            log.error("Photodiode failed to connect!")
+            self.all_hardware_connected = False    
 
     def pre_print_tasks(self):
         super().pre_print_tasks()
@@ -95,8 +106,16 @@ class LightMeasurementControl(PrintControl):
                 spectrum_thread = Thread(log, name="spectrum_measure_thread", target=self.measure_spectra, args = ())
                 spectrum_thread.start()
                 spectrum_thread.join()
-                   # ##### Collect photodiode power here 
-                    ##initialize, write, then save
+                
+                # ##### Collect photodiode power here 
+                ##initialize, write, then save
+                # Measure irradiance 
+                self.default_wavelength=config_dict["photodiode"]["default_wavelength"] 
+                self.irradiance = None   
+                irradiance_thread = Thread(log, name="irradiance_measure_thread", target=self.measure_irradiance, args = ())
+                irradiance_thread.start()
+                irradiance_thread.join()    
+    
                 # Turn off light engine
                 light_engine_driver.stop_sequencer()
                 update_le_led_status(light_engine, False)
@@ -104,21 +123,29 @@ class LightMeasurementControl(PrintControl):
                 # Save spectrum to file
                 spectra_path = str(self.current_job / f"{path_prefix}_spectra_{light_engine}_{wavelength}.csv")
                 # async_file_hander.write(spectra_path, "HEADER INFORMATION...\n")
-                # ### wavelength and power desity export to the print file is this section... Its a csv
+                                
                 async_file_hander.write(spectra_path, f"Integration time: {self.integration_time} ms\n")
                 async_file_hander.write(spectra_path, f"Number of Averages: {self.num_avg}\n")
                 async_file_hander.write(spectra_path, "\n")
                 async_file_hander.write(spectra_path, "wavelength (nm),counts\n")
                 for wavelength, counts in zip(self.spectrum[0], self.spectrum[1]):
                     async_file_hander.write(spectra_path, f"{wavelength},{counts}\n") 
-
+                    
+# ### wavelength and power desity export to the print file is this section... Its a csv
+                # Save irradiance to file
+                irradiance_path = str(self.current_job / f"{path_prefix}_irradiance_{light_engine}_{wavelength}.csv")
+                async_file_hander.write(irradiance_path, f"Default wavelength {self.default_wavelength} dB\n")
+                async_file_hander.write(irradiance_path, f"Irradiance {self.default_wavelength} dB\n")
+                async_file_hander.write(irradiance_path, "wavelength (nm),counts\n")
+                for wavelength, counts in zip(self.irradiance[0], self.irradiance[1]):
+                    async_file_hander.write(irradiance_path, f"{wavelength},{counts}\n")
+                
     def measure_spectra(self):
             log.info(f"Calculating spectrometer integration time")
             self.integration_time = self.spectrometer.set_integration_time(None)
             log.info(f"Measuring spectra")
             self.spectrum = self.spectrometer.get_spectrum(self.num_avg)
             
-    # #### create irradiance class and do        
-    # spectrum_thread = Thread(log, name="spectrum_measure_thread", target=self.measure_spectra, args = ())
-    #             spectrum_thread.start()
-    #             spectrum_thread.join()
+    def measure_irradiance(self):
+            log.info(f"Measuring irradiance")   
+            self.irradiance = self.photodiode.get_power_density(self.default_wavelength)
