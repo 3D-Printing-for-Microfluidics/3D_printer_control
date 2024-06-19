@@ -19,14 +19,14 @@ def dummy_log(f):
     values, and f's return value. Used for debugging and dummy hardware
     modules.
     """
-    logger = logging.getLogger(f.__qualname__.split(".")[0])
-    logger.setLevel(logging.DEBUG)
+    logger = logging.getLogger(f.__module__.split(".")[-1])
+    # logger.setLevel(logging.DEBUG)
 
     @wraps(f)
     def wrapper(*args, **kwargs):
         logger.debug(
             "%s %s",
-            f.__qualname__,
+            f.__module__.split(".")[-1],
             {
                 **dict(
                     (k, v) for k, v in zip(f.__code__.co_varnames, args) if k != "self"
