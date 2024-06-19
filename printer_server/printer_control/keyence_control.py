@@ -119,7 +119,7 @@ class KeyenceControl(PrintControl):
             # get keyence reading
             temp_position = float(
                 self.keyence.read_all()[
-                    keyence_indexes[light_engine]["measurement_index"] + 1
+                    keyence_indexes[light_engine]["measurement_index"]
                 ]
             )
 
@@ -131,7 +131,7 @@ class KeyenceControl(PrintControl):
 
             temp_position = float(
                 self.keyence.read_all()[
-                    keyence_indexes[light_engine]["measurement_index"] + 1
+                    keyence_indexes[light_engine]["measurement_index"]
                 ]
             )
             current_position = (
@@ -170,7 +170,7 @@ class KeyenceControl(PrintControl):
 
                 keyence_position = float(
                     self.keyence.read_all()[
-                        keyence_indexes[light_engine]["measurement_index"] + 1
+                        keyence_indexes[light_engine]["measurement_index"]
                     ]
                 )
                 self.keyence_measurement_list[light_engine][

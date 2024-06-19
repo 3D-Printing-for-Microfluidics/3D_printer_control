@@ -111,7 +111,10 @@ class Printer3D:
         if "keyence" in config_dict.keys():
             from printer_server.drivers.keyence import Keyence
 
-            self.keyence = Keyence()
+            self.keyence = Keyence(
+                config_dict=config_dict["keyence"], 
+                log_level=default_log_level
+            )
 
         self.bp_stage = None
         self.focus_stage = None

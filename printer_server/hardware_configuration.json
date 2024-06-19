@@ -252,6 +252,8 @@
         },
         "keyence": {
             "dummy": false,
+            "ip_addr": "192.168.0.15",
+            "port": 24685,
             "sensors": {
                 "visitech": {
                     "measurement_index": 1
@@ -385,6 +387,8 @@
         },
         "keyence": {
             "dummy": false,
+            "ip_addr": "192.168.0.15",
+            "port": 24685,
             "sensors": {
                 "visitech": {
                     "measurement_index": 0
@@ -507,13 +511,15 @@
             "hwid": "PID=16C0:0483 SER=9881850"
         },
         "spectrometer": {
-            "dummy": false,
+            "dummy": true,
             "serial num": "",
             "default_integration_time": 1000,
             "default_number_of_averages": 5
         },
         "keyence": {
             "dummy": true,
+            "ip_addr": "192.168.0.15",
+            "port": 24685,
             "sensors": {
                 "visitech": {
                     "measurement_index": 0
