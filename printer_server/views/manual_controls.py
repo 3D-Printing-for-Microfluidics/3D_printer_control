@@ -178,14 +178,17 @@ def get_last_calibration_positions_from_logs():
     """
     log_file = Path(Config.PROJECT_ROOT) / "logs" / "calibration_position_log.txt"
     last_line = None
-    with open(log_file) as f:
-        for line in f:
-            last_line = line.rstrip()
+    try:
+        with open(log_file) as f:
+            for line in f:
+                last_line = line.rstrip()
 
-    last_line = last_line[20:]
-    last_line = last_line.replace("'", '"')
-    temp = json.loads(last_line)
-    return temp
+        last_line = last_line[20:]
+        last_line = last_line.replace("'", '"')
+        temp = json.loads(last_line)
+        return temp
+    except FileNotFoundError:
+        return {}
 
 
 def update_le_led_status(le, state):
