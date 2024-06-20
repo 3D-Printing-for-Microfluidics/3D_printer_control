@@ -194,6 +194,7 @@ class DLPC900_USB_Controller:
         self.transaction_counter = 0
         self.usb_io_counter = 0
         self.is_idle = False
+        self.video_lock = False
 
     def _free_USB_driver(self):
         """Free the USB driver if it is already in use and set its
@@ -332,6 +333,7 @@ class DLPC900_USB_Controller:
         return True
 
     def initalize(self):
+        self.log.debug("Initializing wintech")
         """Connect to the DLPC900 and perform associated setup.
 
         The driver is freed and the USB
@@ -353,6 +355,8 @@ class DLPC900_USB_Controller:
         self.log.info("Wintech light engine initialized")
 
     def disconnect(self):
+        self.log.debug("Disconnecting from wintech")
+        self.video_lock = False
         if self.dev is not None:
             try:
                 self.stop_sequence()
@@ -469,6 +473,7 @@ class DLPC900_USB_Controller:
             self.set_IT6535_power_mode("HDMI", log_level=logging.DEBUG)
             self.set_display_mode("Video mode", log_level=logging.DEBUG)
             self.wait_for_video_lock()
+            self.video_lock = True
         self._DLPC900_command("w", 0x1A1B, [data])
         time.sleep(1)
         self.get_display_mode()
@@ -480,7 +485,7 @@ class DLPC900_USB_Controller:
         """
         self.log.debug("Wait for video lock")
         start_time = time.time()
-        while not is_set(self.get_main_status(suppress_errors=True), 3):
+        while not is_set(self.get_main_status(), 3):
             time.sleep(0.5)
             if time.time() - start_time >= timeout:
                 self.log.warning("Wait for video lock timed out.")
@@ -545,7 +550,7 @@ class DLPC900_USB_Controller:
             self.log.warning(status)
         return response
 
-    def get_main_status(self, suppress_errors=False):
+    def get_main_status(self):
         """Return the main status.
 
         See 2.1.3 "Main Status" in the programmer's guide.
@@ -554,7 +559,7 @@ class DLPC900_USB_Controller:
         response = self._DLPC900_command("r", 0x1A0C)[0]
         self.log.debug("Main status: %s", hex(response))
         status = parse_main_status(response)
-        if status and not suppress_errors:
+        if status and self.video_lock:
             self.log.warning(status)
         return response
 
@@ -685,6 +690,7 @@ class DLPC900_USB_Controller:
         Standby mode must be disabled prior to sending any new data."
         Status commands still work in idle mode.
         """
+        self.log.info("Standby mode enabled")
         self._DLPC900_command("w", 0x0200, [0x1])
         self.check_all_status()
 
@@ -693,6 +699,7 @@ class DLPC900_USB_Controller:
 
         See 2.3.1.1 "Power Mode" in the programmer's guide.
         """
+        self.log.info("Standby mode disabled")
         self._DLPC900_command("w", 0x0200, [0x0])
         self.check_all_status()
 
@@ -701,6 +708,7 @@ class DLPC900_USB_Controller:
 
         A full reset takes about 7 seconds.
         """
+        self.log.info("Software reset")
         self._DLPC900_command("w", 0x0200, [0x2])
         time.sleep(7)
         self.check_all_status()
@@ -746,6 +754,7 @@ class DLPC900_USB_Controller:
 
     def sequencer_is_running(self):
         """Return True if the sequencer is running, else return False."""
+        self.log.debug("Check sequencer running")
         main_status = self.get_main_status()
         if is_set(main_status, 1):
             return True
