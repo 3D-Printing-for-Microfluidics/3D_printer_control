@@ -16,7 +16,7 @@ class BPControl(PrintControl):
         self.bp_stage = driver_handles.bp_stage
 
         # log files
-        self.position_log = str(self.current_job / "position_data.csv")
+        self.position_log = str(self.current_job / "logs" / "position_data.csv")
 
     def create_logs(self):
         super().create_logs()
@@ -29,7 +29,7 @@ class BPControl(PrintControl):
             self.position_log,
             "start_position,end_position,thickness_um,squeeze\n",
         )
-        self.bp_stage.setup_log_file(str(self.current_job))
+        self.bp_stage.setup_log_file(str(self.current_job / "logs"))
 
     def move_build_platform_up(self, position_settings):
         """Moves the build platform up according to the position_settings"""

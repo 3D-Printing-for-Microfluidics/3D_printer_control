@@ -84,8 +84,8 @@ class PrintControl:
         self.print_history = Path(Config.UPLOAD_FOLDER) / Path("print_history")
 
         # log files
-        self.exposure_log = str(self.current_job / "exposure_data.csv")
-        self.event_log = str(self.current_job / "event_log.csv")
+        self.exposure_log = str(self.current_job / "logs" / "exposure_data.csv")
+        self.event_log = str(self.current_job / "logs" / "event_log.csv")
 
         # threads
         self.bp_thread = None
@@ -210,6 +210,8 @@ class PrintControl:
 
     def create_logs(self):
         # create logs and overwrite any pre-existing data
+        os.mkdir(str(self.current_job / "logs"))
+        
         async_file_hander.set_enabled(True)
         async_file_hander.write(self.exposure_log, "")
         async_file_hander.write(self.event_log, "timestamp,event\n")

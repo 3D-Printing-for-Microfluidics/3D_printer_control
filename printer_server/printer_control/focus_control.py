@@ -57,7 +57,7 @@ class FocusControl(PrintControl):
 
     def create_logs(self):
         super().create_logs()
-        self.focus_stage.setup_log_file(str(self.current_job))
+        self.focus_stage.setup_log_file(str(self.current_job / "logs"))
 
     def get_focus(self):
         """Return 'Focus' axis position in um"""

@@ -17,7 +17,7 @@ class XYControl(PrintControl):
 
     def create_logs(self):
         super().create_logs()
-        self.xy_stage.setup_log_file(str(self.current_job))
+        self.xy_stage.setup_log_file(str(self.current_job / "logs"))
 
     def connect_hardware(self):
         self.xy_thread = Thread(log, name="xy_control_setup_thread", target=self.xy_stage.connect, args=[self.shutdown])
