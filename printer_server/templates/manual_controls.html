@@ -13,7 +13,7 @@
 
 {% block page_content %}
 
-{% if initalized %}
+{% if initialized %}
 
 {% for driver, dict in hardware.items() %}
 {% if 'path' in dict %}
@@ -29,7 +29,7 @@
 <hr class="bg-secondary">
 {% endif %}
 
-<h5> Printer must be initalized to access manual controls </h5>
+<h5> Printer must be initialized to access manual controls </h5>
 
 {% endif %}
 

@@ -320,7 +320,7 @@ class PrintControl:
             if not self.all_hardware_connected:
                 self.shutdown(is_critical=True)
                 return False
-            self.initalize_hardware()
+            self.initialize_hardware()
             log.info("Printer initialized, all hardware ready.")
             return True
         return False
@@ -328,7 +328,7 @@ class PrintControl:
     def connect_hardware(self):
         pass
 
-    def initalize_hardware(self):
+    def initialize_hardware(self):
         pass
 
     @run_in_thread("planarizing", "Planarization Step 1")

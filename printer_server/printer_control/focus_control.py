@@ -74,13 +74,13 @@ class FocusControl(PrintControl):
             log.error("Focus stage failed to connect!")
             self.all_hardware_connected = False
 
-    def initalize_hardware(self):
+    def initialize_hardware(self):
         if self.coord_systems is not None:
             self.focused_position = self.coord_systems["visitech"]["Focus"]
         else:
             self.focused_position = get_last_calibration_positions_from_logs().get("distance",0) / 1000
         self.focus_thread = self.focus_stage.initialize_and_positionFocus(self.focused_position)
-        super().initalize_hardware()
+        super().initialize_hardware()
         if self.focus_thread is not None:
             self.focus_thread.join()
         self.focus_stage.initialized = True

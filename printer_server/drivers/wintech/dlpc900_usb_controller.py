@@ -332,7 +332,7 @@ class DLPC900_USB_Controller:
         self.log.info("Connected to Wintech light engine")
         return True
 
-    def initalize(self):
+    def initialize(self):
         self.log.debug("Initializing wintech")
         """Connect to the DLPC900 and perform associated setup.
 

@@ -28,11 +28,11 @@ class XYControl(PrintControl):
             log.error("XY stage failed to connect!")
             self.all_hardware_connected = False
 
-    def initalize_hardware(self):
+    def initialize_hardware(self):
         x_pos = self.coord_systems["visitech"]["X"]
         y_pos = self.coord_systems["visitech"]["Y"]
         self.xy_threads = self.xy_stage.initialize_and_positionXY(x_pos, y_pos)
-        super().initalize_hardware()
+        super().initialize_hardware()
         for thread in self.xy_threads:
             if thread is not None:
                 thread.join()

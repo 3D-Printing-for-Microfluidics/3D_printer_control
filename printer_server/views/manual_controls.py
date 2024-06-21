@@ -149,7 +149,7 @@ def index():
 
     return render_template(
         "manual_controls.html",
-        initalized=initialized,
+        initialized=initialized,
         hostname=Config.HOSTNAME,
         hardware=hardware,
     )

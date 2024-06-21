@@ -123,7 +123,7 @@ class Visitech(LightEngineDriver):
         self.log.info("Connected to Visitech light engine")
         return True
 
-    def initalize(self):
+    def initialize(self):
         # set default state for light engine and clear previous errors
         self.get_sticky_errors(warn="NONE")
         self.set_video_source("HDMI")
