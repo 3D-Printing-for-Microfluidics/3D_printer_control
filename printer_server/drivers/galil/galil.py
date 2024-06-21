@@ -135,32 +135,45 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         """Find the first Galil controller and connect to it."""
         if self.connected is None:
             self.connected = False
-            self.log.info("Searching for %s controller...", self.controller_name)
-            available = self.g.GAddresses()
-            self.address = None
-            for address in sorted(available.keys()):
-                if self.controller_name in available[address]:
-                    self.address = address.strip("()").strip("-d")
-                    self.controller_name = available[address]
-                    self.log.debug("Found %s at %s", available[address], self.address)
-                    self.log.info(
-                        "Connecting to %s at %s", self.controller_name, self.address
-                    )
-                    self.g.GOpen(f"{self.address} --direct")
-                    self.log.debug("GInfo returned: %s", self.g.GInfo())
-                    self.connected = True
-                    self.thread_running = True
-                    self.thread.start()
-                    atexit.register(self.disconnect)
-                    self.log.info("Connected to Galil controller")
-                    self.shutdown = shutdown
-                    return True
-            msg = f"Galil controller not found! ({self.controller_name})"
-            self.log.critical(msg)
-            return False
+            if self.config_dict["address"] is "auto":
+                self.log.info("Searching for %s controller...", self.controller_name)
+                available = self.g.GAddresses()
+                self.address = None
+                for address in sorted(available.keys()):
+                    if self.controller_name in available[address]:
+                        self.address = address.strip("()").strip("-d")
+                        self.controller_name = available[address]
+                        self.log.debug("Found %s at %s", available[address], self.address)
+                        return self._connect(shutdown)
+                msg = f"Galil controller not found! ({self.controller_name})"
+                self.log.critical(msg)
+                return False
+            else:
+                self.address = self.config_dict["address"]
+                self.controller_name = self.config_dict["controller_name"]
+                return self._connect(shutdown)
         else:
             while self.connected is False:
                 time.sleep(0.1)
+
+    def _connect(self, shutdown):
+        self.log.info(
+            "Connecting to %s at %s", self.controller_name, self.address
+        )
+        try:
+            self.g.GOpen(f"{self.address} --direct")
+            self.log.debug("GInfo returned: %s", self.g.GInfo())
+            self.connected = True
+            self.thread_running = True
+            self.thread.start()
+            atexit.register(self.disconnect)
+            self.log.info("Connected to Galil controller")
+            self.shutdown = shutdown
+            return True
+        except self.gclib_error as e:
+            msg = f"Galil controller not found! ({self.controller_name}): {e}"
+            self.log.critical(msg)
+            return False
 
     def disconnect(self):
         """Disconnect form the Galil controller."""
