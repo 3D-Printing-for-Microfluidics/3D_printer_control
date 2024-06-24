@@ -8,7 +8,7 @@ let chamber_vac = 'bg-success';
 $(document).ready(function () {
 
     // After 60 minutes of inactivity, close socket and timeout web page
-    socket.emit("connecting");
+    socket.emit("subscribe_mks");
     var event = 'click',
         timer,
         delay = 10000,
@@ -27,6 +27,7 @@ $(document).ready(function () {
 
     // Initiaize to starting values
     let pumpSetting = Boolean(Number(hardware["mks"]["relay_setting"]["vacuum_pump"]));
+    let craneSetting = Boolean(Number(hardware["mks"]["relay_setting"]["crane"]));
     let valveSetting = {
         valve_pump1: Boolean(Number(hardware["mks"]["relay_setting"]["valve_pump1"])),
         valve_vent1: Boolean(Number(hardware["mks"]["relay_setting"]["valve_vent1"])),
@@ -47,20 +48,25 @@ $(document).ready(function () {
     let target2 = hardware["mks"]["target"][1];
     let atm = hardware["mks"]["atm"];
 
-    console.log(pumpSetting, valveSetting, valveStatus, gaugeReading1, gaugeReading2, target1, target2, atm);
-
     updateValveStatus("valve_pump1");
     updateValveStatus("valve_vent1");
     updateValveStatus("valve_pump2");
     updateValveStatus("valve_vent2");
     updateValveStatus("valve_vacuum");
     updatePumpStatus();
+    updateCraneStatus();
     updateChamberStatus();
 
     function updatePumpStatus() {
         document.getElementById('pump_status').innerText = pumpSetting ? 'ON' : 'OFF';
         document.getElementById('vacuum_pump').classList.remove(btn_on, btn_off, btn_warn);
         document.getElementById('vacuum_pump').classList.add(pumpSetting ? btn_on : btn_off);
+    }
+
+    function updateCraneStatus() {
+        document.getElementById('crane_status').innerText = craneSetting ? 'ENABLED' : 'DISABLED';
+        document.getElementById('crane_status').classList.remove(btn_on, btn_off, btn_warn);
+        document.getElementById('crane_status').classList.add(craneSetting ? btn_on : btn_off);
     }
 
     function updateValveStatus(valveId) {
@@ -122,6 +128,7 @@ $(document).ready(function () {
 
     socket.on("relay_status_updated", function (message) {
         pumpSetting = Boolean(Number(message["relay_setting"]["vacuum_pump"]));
+        craneSetting = Boolean(Number(message["relay_setting"]["crane"]));
         valveSetting = {
             valve_pump1: Boolean(Number(message["relay_setting"]["valve_pump1"])),
             valve_vent1: Boolean(Number(message["relay_setting"]["valve_vent1"])),
@@ -136,6 +143,8 @@ $(document).ready(function () {
             valve_vent2: Boolean(Number(message["relay_status"]["valve_vent2"])),
             valve_vacuum: Boolean(Number(message["relay_status"]["valve_vacuum"])),
         };
+        updatePumpStatus();
+        updateCraneStatus();
     });
 
     socket.on("pressure_readings_updated", function (message) {

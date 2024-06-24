@@ -23,7 +23,7 @@ class VacuumControl(PrintControl):
         mks_solenoids_thread.join()
 
     def initialize_hardware(self):
-        mks_thread = Thread(log, name="mks_init_thread", target=self.mks_solenoids.initialize, args=[])
+        mks_thread = Thread(log, name="mks_init_thread", target=self.mks.initialize, args=[])
         mks_thread.start()
         super().initialize_hardware()
         mks_thread.join()

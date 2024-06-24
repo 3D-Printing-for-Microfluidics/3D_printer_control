@@ -10,7 +10,7 @@ class MKSSolenoids(serial.Serial):
 
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
-        self.hwid = config_dict["hwid"]
+        self.hwid = config_dict["solenoids_hwid"]
         self.port = None  # start with no port
         self.connected = False
         self.initialized = None
@@ -35,14 +35,6 @@ class MKSSolenoids(serial.Serial):
         self.reset_input_buffer()
         self.reset_output_buffer()
         self.connected = True
-        try:
-            self.initialize()
-        except serial.serialutil.SerialException:
-            msg = "MKS Solenoids failed to connect!"
-            self.log.critical(msg)
-            if self.is_open:
-                self.close()
-            return False
         self.log.info("Connected to MKS Solenoids (%s)", self.port)
         atexit.register(self.disconnect)
         return True
@@ -53,45 +45,34 @@ class MKSSolenoids(serial.Serial):
             self.connected = False
             self.log.info("Disconnected from MKS Solenoids")
 
-    def send(self, cmd):
+    def send(self, cmd, receive=True):
         self.log.debug("Sent: '%s'", cmd)
         self.write(bytes(cmd + "\r", encoding="ascii"))  # write to serial tx buffer
-        response, error = self.receive(cmd)
-        self.log.debug("Reply: '%s'", response)
-        if error:
-            self.log.warning("There was an error! %s", response)
-        return response
+        if receive:
+            response = self.receive()
+            self.log.debug("Response: '%s'", response)
+            return response  # return the response to the command
+        return
 
-    def receive(self, cmd):
-        buffer = b""  # buffer for incoming serial communication
-        message = ""  # response to be returned
-        error = False  # indicates an error from the
-        while True:
-            buffer = self.readline()  # wait for the first line to fill in the rx buffer
-            while self.in_waiting:  # while there is more data in the rx buffer
-                buffer += self.readline()  # read next line from rx buffer
-            decoded_buffer = (
-                buffer.decode().rstrip().replace("\r\n", " ")
-            )  # decode the byte response (as string) without newlines
-            message += decoded_buffer  # build response
-            if "Error" in message:
-                error = True  # indicate error state
-            if "Done" in message:
-                message = message.replace(" Done", "")  # strip out done message
-                if "G" in cmd:
-                    message = float(
-                        re.findall(self.r, message)[0]
-                    )  # parse out values for getter commands
-                return message, error
+    def receive(self):
+        """
+        Sends serial response from the loadcell device
+        """
+        response = b""
+        response += self.readline()  # wait for the first line to fill in the rx buffer
+        self.flushInput()
+        return (
+            response.decode().rstrip()
+        )  # return decoded byte response (as string) without traililng newline
             
     def activate_relay(self, relay_num):
-        pass
+        return self.send(f"H{relay_num}")
 
     def deactivate_relay(self, relay_num):
-        pass
+        return self.send(f"L{relay_num}")
 
     def get_all_relay_status(self):
-        pass
+        return self.send("R")
 
     def get_all_switch_status(self):
-        pass
+        return self.send("S")

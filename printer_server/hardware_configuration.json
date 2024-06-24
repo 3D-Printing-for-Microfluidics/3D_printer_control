@@ -178,14 +178,14 @@
             ],
             "relays": {
                 "crane": {
-                    "relay_num": 0,
+                    "relay_num": 1,
                     "mode": "auto",
                     "direction": "ABOVE",
-                    "setpoint": 640,
-                    "hysterisis": 600
+                    "setpoint": 630,
+                    "hysterisis": 560
                 },
                 "vacuum_pump": {
-                    "relay_num": 1,
+                    "relay_num": 2,
                     "mode": "manual"
                 }
             },
@@ -479,14 +479,14 @@
             ],
             "relays": {
                 "crane": {
-                    "relay_num": 0,
+                    "relay_num": 1,
                     "mode": "auto",
                     "direction": "ABOVE",
-                    "setpoint": 640,
-                    "hysterisis": 600
+                    "setpoint": 630,
+                    "hysterisis": 560
                 },
                 "vacuum_pump": {
-                    "relay_num": 1,
+                    "relay_num": 2,
                     "mode": "manual"
                 }
             },

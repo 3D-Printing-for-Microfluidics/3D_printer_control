@@ -7,6 +7,8 @@ import serial.serialutil
 from decimal import Decimal
 import serial.tools.list_ports
 
+from printer_server.threading_wrapper import Thread
+
 '''
 Notes:
     Turn on relay
@@ -68,6 +70,8 @@ class MKS946(serial.Serial):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         self.connected = False
+        self.running = False
+        self.thread = Thread(self.log, name="mks_poll_thread", target=self.loop)
 
     def findUsbPort(self, hwid):
         """
@@ -109,12 +113,12 @@ class MKS946(serial.Serial):
             # self.set_atmospheric_pressure(1, self.config_dict["atm pressure"])
             # self.set_atmospheric_pressure(2, self.config_dict["atm pressure"])
             self.log.info("Setting relays")
-            for _, relay in enumerate(self.config_dict["relays"]):
+            for _, relay in self.config_dict["relays"].items():
                 relay_num = relay["relay_num"]
-                if relay["mode"] is "auto":
-                    print(f"set_relay_direction: {self.set_relay_direction(relay_num, relay["direction"])}")
-                    print(f"set_relay_setpoint: {self.set_relay_setpoint(relay_num, relay["setpoint"])}")
-                    print(f"set_relay_hysteresis: {self.set_relay_hysteresis(relay_num, relay["hysterisis"])}")
+                if relay["mode"] == "auto":
+                    print(f"set_relay_direction: {self.set_relay_direction(relay_num, relay['direction'])}")
+                    print(f"set_relay_setpoint: {self.set_relay_setpoint(relay_num, relay['setpoint'])}")
+                    print(f"set_relay_hysteresis: {self.set_relay_hysteresis(relay_num, relay['hysterisis'])}")
                     print(f"set_relay_mode: {self.set_relay_mode(relay_num, 'ENABLE')}")
                     # self.set_relay_direction(relay_num, relay["direction"])
                     # self.set_relay_setpoint(relay_num, relay["setpoint"])
@@ -123,17 +127,38 @@ class MKS946(serial.Serial):
                 else:
                     print(f"set_relay_mode: {self.set_relay_mode(relay_num, 'CLEAR')}")
                     # self.set_relay_mode(relay_num, 'CLEAR')
+            # self.start_thread()
             self.log.info("MSK initialized")
 
     def disconnect(self):
         if self.connected:
-            for _, relay in enumerate(self.config_dict["relays"]):
+            self.stop_thread()
+            for _, relay in self.config_dict["relays"].items():
                 if relay["mode"] is not "auto":
-                    print(f"set_relay_mode: {self.set_relay_mode(relay["relay_num"], 'CLEAR')}")
+                    print(f"set_relay_mode: {self.set_relay_mode(relay['relay_num'], 'CLEAR')}")
                     # self.set_relay_mode(i, 'CLEAR')
             self.close()
             self.connected = False
             self.log.info("Disconnected from MKS")
+
+    def start_thread(self):
+        if not self.running:
+            self.running = True
+            self.thread.start()
+
+    def stop_thread(self):
+        if self.running:
+            self.running = False
+            self.thread.join()
+            self.thread = Thread(self.log, name="mks_poll_thread", target=self.loop)
+
+    def loop(self):
+        from printer_server.drivers.mks.mks_snip import get_gauges, get_relay_status
+        while self.running:
+            if self.connected:
+                get_relay_status(emit=True)
+                get_gauges(emit=True)
+            time.sleep(0.1)
 
     def send_command(self, command):
         self.write((command + '\r').encode())
@@ -163,25 +188,27 @@ class MKS946(serial.Serial):
             cmd_str += f"{parameter}"
         cmd_str += f";FF"
 
-        self.send_command(cmd_str)
-        rsp_str = self.read_response()
-        # print(f"{cmd_str} -> {rsp_str}")
+        trys = 3
+        for _ in range(trys):
+            self.send_command(cmd_str)
+            rsp_str = self.read_response()
+            # print(f"{cmd_str} -> {rsp_str}")
 
-        if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
-            rsp_str = rsp_str.replace(f"@{self.address}ACK","")
-            rsp_str = rsp_str.replace(f";FF","")
+            if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
+                rsp_str = rsp_str.replace(f"@{self.address}ACK","")
+                rsp_str = rsp_str.replace(f";FF","")
+                
+                return rsp_str
             
-            return rsp_str
-        
-        elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
-            rsp_str = rsp_str.replace(f"@{self.address}NAK","")
-            rsp_str = rsp_str.replace(f";FF","")
-            self.log.error(self.parse_error_code(int(rsp_str)))
-            return None
-        
-        else:
-            self.log.error("NAK: RSP FORMAT ERROR")
-            return None
+            elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
+                rsp_str = rsp_str.replace(f"@{self.address}NAK","")
+                rsp_str = rsp_str.replace(f";FF","")
+                self.log.error(self.parse_error_code(int(rsp_str)))
+                return None
+            
+            else:
+                self.log.error("NAK: RSP FORMAT ERROR")
+        return None
         
 
     def set(self, command, n=None, parameter=""):
@@ -310,7 +337,8 @@ class MKS946(serial.Serial):
         rsp = self.query("PRZ")
         if rsp is None:
             return rsp
-        return [parse_pressure(self.log, p) for p in rsp.split(" ")]
+        # right now we will only care about the first 2 sensors. if we later add more modules, you can change this
+        return [parse_pressure(self.log, p) for p in rsp.split(" ")[:2]]
     
     '''PCn'''
     def read_combination_pressure(self, channel):
@@ -1127,14 +1155,14 @@ if __name__ is '__main__':
         ],
         "relays": {
             "crane": {
-                "relay_num": 0,
+                "relay_num": 1,
                 "mode": "auto",
                 "direction": "ABOVE",
-                "setpoint": 640,
-                "hysterisis": 600
+                "setpoint": 630,
+                "hysterisis": 560
             },
             "vacuum_pump": {
-                "relay_num": 1,
+                "relay_num": 2,
                 "mode": "manual"
             }
         },
@@ -1181,7 +1209,10 @@ if __name__ is '__main__':
     #     print(f"get_relay_direction{i+1}: {mks.get_relay_direction(i+1)}")
     #     print(f"get_relay_mode{i+1}: {mks.get_relay_mode(i+1)}")
     #     print(f"get_relay_status{i+1}: {mks.get_relay_status(i+1)}")
-
+    
+    mks.reset_module_settings(0)
+    mks.reset_module_settings(1)
+    mks.reset_module_settings(2)
 
     mks.set_atmospheric_pressure(1,650)
     mks.set_atmospheric_pressure(2,650)

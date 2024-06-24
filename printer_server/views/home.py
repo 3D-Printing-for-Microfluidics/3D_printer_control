@@ -32,6 +32,7 @@ from printer_server.printer_control.screen_control import ScreenControl
 from printer_server.printer_control.ttr_control import TTRControl
 from printer_server.printer_control.xy_control import XYControl
 from printer_server.printer_control.kdc_control import KDCControl
+from printer_server.printer_control.vacuum_control import VacuumControl
 
 parent_classes = []
 
@@ -61,7 +62,6 @@ if "t_t_r" in config_dict["stages"]:
     parent_classes.append(TTRControl)
 
 if "mks" in config_dict:
-    from printer_server.printer_control.vacuum_control import VacuumControl
     parent_classes.append(VacuumControl)
 
 class ParentPrintControl(*parent_classes):

@@ -154,7 +154,7 @@ def index():
             hardware["mks"]["relay_status"] = relay_status
             hardware["mks"]["gauge"] = printer_server.drivers.mks.mks_snip.get_gauges()
             hardware["mks"]["target"] =config_dict["mks"]["target"]
-            hardware["mks"]["atm"] = config_dict["mks"]["atm"]-50
+            hardware["mks"]["atm"] = config_dict["mks"]["atm pressure"]-50
 
     return render_template(
         "manual_controls.html",

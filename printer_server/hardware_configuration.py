@@ -124,10 +124,11 @@ class Printer3D:
                     config_dict=config_dict["mks"],
                     log_level=default_log_level
                 )
-                self.mks_solenoids = MKSSolenoids(
-                    config_dict=config_dict["mks"],
-                    log_level=default_log_level
-                )
+                # self.mks_solenoids = MKSSolenoids(
+                #     config_dict=config_dict["mks"],
+                #     log_level=default_log_level
+                # )
+                self.mks_solenoids = MKSSolenoids_dummy()
 
         self.bp_stage = None
         self.focus_stage = None
