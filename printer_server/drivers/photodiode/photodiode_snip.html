@@ -17,17 +17,17 @@
     <div class="row">
         <h5 class="col-3 text-left">Power:</h5>
         <div class="col-3">
-            <h5 class="col text-right" id='read_photodiode_power'>{{ hardware['photodiode']}}
+            <h5 class="col text-right" id='photodiode_power'>{{ hardware['photodiode']['power']}}
             </h5>
         </div>
         <h5 class="col-3 text-left">Wavelength:</h5>
         <div class="col-3">
             <div id="wavelength_350_405" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
                 <label
-                    class="btn btn-outline-info btn-fixed-width shadow-none {% if not hardware['photodiode']['wavelength'] %} active {% endif %}">365 nm<input
+                    class="btn btn-outline-info btn-fixed-width shadow-none {% if hardware['photodiode']['wavelength'] == 365 %} active {% endif %}">365 nm<input
                         type="radio"></label>
                 <label
-                    class="btn btn-outline-info btn-fixed-width shadow-none {% if hardware['photodiode']['wavelength'] %} active {% endif %}">405 nm<input
+                    class="btn btn-outline-info btn-fixed-width shadow-none {% if hardware['photodiode']['wavelength'] == 405 %} active {% endif %}">405 nm<input
                         type="radio"></label>
             </div>
         </div>

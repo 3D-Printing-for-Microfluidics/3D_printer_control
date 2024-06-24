@@ -45,7 +45,7 @@ class Photodiode:
             
     def initialize(self):
        # sending cmds to photodiode to set parameters that I want to set initialy
-        self. set_wavelength(self, defaultWavelength)
+        self.set_wavelength(self, defaultWavelength)
         self.set_attenuation_db(self, attenuation) 
         self.set_beam_diameter(self, beamdiameter)
         self.power_meter.configure.scalar.pdensity() 
