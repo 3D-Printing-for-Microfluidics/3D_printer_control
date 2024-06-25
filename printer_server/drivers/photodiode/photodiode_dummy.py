@@ -1,8 +1,6 @@
-import pyvisa
-from ThorlabsPM100 import ThorlabsPM100
+import logging
 
 class Photodiode_dummy:
-    
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
@@ -10,7 +8,7 @@ class Photodiode_dummy:
         self.photodiode = None
         self.connected = None
            
-   def connect(self, shutdown):
+    def connect(self):
         self.log.debug("Connected")
         self.connected = True
     
@@ -31,8 +29,7 @@ class Photodiode_dummy:
         self.log.debug("Set attenuation to %s dB", attenuation)
     
     def get_power_density(self):      
-        power_density = self.power_meter.read * 1000  # Convert to mW/cm^2
-        return power_density
+        return 123.4
        
 
     

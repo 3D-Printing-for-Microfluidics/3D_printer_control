@@ -1,9 +1,10 @@
 # Create photodiode instrument 
 import pyvisa
+import atexit
+import logging
 from ThorlabsPM100 import ThorlabsPM100
 
 class Photodiode:
-    
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         # set defaults in init
         self.log = logging.getLogger(__name__)
@@ -11,29 +12,25 @@ class Photodiode:
         
         self.photodiode = None
         self.connected = None
-        
-        # Leave in only for initial testing
-        testState = True
-        if testState:
-            self.connect()
-            self.initialize()
+        self.initialized = None
        
         # Variables I may want to change or exist as defaults defined in harware_configuration.json
         
-        self.beamdiameter = config_dict["beamdiameter"]
-        self.defaultWavelength = config_dict["defaultwavelength"]
-        self.attenuation = config_dict["attenuation"]
+        self.beamdiameter = config_dict["beam_diameter"]
+        self.defaultWavelength = config_dict["default_wavelength"]
+        self.attenuation = config_dict["attenuation_db"]
         self.hwid = config_dict["hwid"]
         
         # Connect/find the device
-        self.rm = pyvisa.ResourceManagement()
-        # print(rm.list_resources())
+        # self.rm = pyvisa.ResourceManagement()
+        self.rm = pyvisa.ResourceManager("@py")
+        print(self.rm.list_resources())
        
     def connect(self):
         # connect to the photodiode 
         try:
-            self.inst = rm.open_resource(hwid)
-            self.power_meter = ThorlabsPM100(inst=inst)
+            self.inst = self.rm.open_resource(self.hwid)
+            self.power_meter = ThorlabsPM100(inst=self.inst)
             atexit.register(self.disconnect)
             self.connected = True
             return True
@@ -45,9 +42,9 @@ class Photodiode:
             
     def initialize(self):
        # sending cmds to photodiode to set parameters that I want to set initialy
-        self.set_wavelength(self, defaultWavelength)
-        self.set_attenuation_db(self, attenuation) 
-        self.set_beam_diameter(self, beamdiameter)
+        self.set_wavelength(self.defaultWavelength)
+        self.set_attenuation_db(self.attenuation) 
+        self.set_beam_diameter(self.beamdiameter)
         self.power_meter.configure.scalar.pdensity() 
         
     #    self.power_meter.sense.correction.wavelength = self.defaultWavelength
@@ -69,8 +66,6 @@ class Photodiode:
         # disconnects the photodiode     
         if self.connected:
             self.photodiode = None
-            
-    # maybe won't work - do we need to delete class?? 
                
     def set_beam_diameter(self, diameter):
         # set the beam diameter
@@ -83,14 +78,14 @@ class Photodiode:
         # sets the operation wavelength in nm
         # args: length is float 
         if self.power_meter:
-            power_meter.sense.correction.wavelength = length
-            print(f"Wavelength: {power_meter.sense.correction.wavelength} nm")
+            self.power_meter.sense.correction.wavelength = length
+            print(f"Wavelength: {self.power_meter.sense.correction.wavelength} nm")
             
     def set_attenuation_db(self, attenuation):
         # sets attenuation in dB
         if self.power_meter:
-            power_meter.sense.correction.loss.input.magnitude = attenuation
-            print(f"Attenuation: {power_meter.sense.correction.attenuation} dB")
+            self.power_meter.sense.correction.loss.input.magnitude = attenuation
+            print(f"Attenuation: {self.power_meter.sense.correction.attenuation} dB")
 
     def get_power_density(self):
         # ## also in init 

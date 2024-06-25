@@ -37,6 +37,14 @@ class LightMeasurementControl(PrintControl):
             log.error("Photodiode failed to connect!")
             self.all_hardware_connected = False    
 
+    def initalize_hardware(self):
+        photodiode_thread = Thread(log, name="photodiode_init_thread", target=self.photodiode.initialize, args=[])
+        photodiode_thread.start()
+        super().initalize_hardware()
+        if photodiode_thread is not None:
+            photodiode_thread.join()
+        self.photodiode.initialized = True
+
     def pre_print_tasks(self):
         super().pre_print_tasks()
         self.measure_light("preprint")
@@ -101,9 +109,9 @@ class LightMeasurementControl(PrintControl):
                 self.integration_time = None
                 self.spectrum = None
                 self.irradiance = None 
-                spectrum_thread = Thread(log, name="spectrum_measure_thread", target=self.measure_spectra, args = ())
+                spectrum_thread = Thread(log, name="spectrum_measure_thread", target=self.measure_spectra, args = [])
                 # #### is this correctly calling wavelength? 
-                irradiance_thread = Thread(log, name="irradiance_measure_thread", target=self.measure_irradiance, args = (wavelength))
+                irradiance_thread = Thread(log, name="irradiance_measure_thread", target=self.measure_irradiance, args = [wavelength])
                 spectrum_thread.start()
                 irradiance_thread.start()
                 spectrum_thread.join()
@@ -115,7 +123,7 @@ class LightMeasurementControl(PrintControl):
 
                 # Save spectrum to file
                 spectra_path = str(self.current_job / f"{path_prefix}_spectra_{light_engine}_{wavelength}.csv")
-                async_file_hander.write(spectra_path, f"Wavelength for irradiance: {wavelength} (nm)\n")
+                async_file_hander.write(spectra_path, f"Wavelength: {wavelength} (nm)\n")
                 async_file_hander.write(spectra_path, f"Irradiance: {self.irradiance} dB\n")               
                 async_file_hander.write(spectra_path, f"Integration time: {self.integration_time} ms\n")
                 async_file_hander.write(spectra_path, f"Number of Averages: {self.num_avg}\n")

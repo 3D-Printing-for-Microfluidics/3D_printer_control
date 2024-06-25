@@ -154,7 +154,7 @@ def index():
             hardware["spectrometer"]["default_averages"] = config_dict["spectrometer"]["default_number_of_averages"]
         if "photodiode" in config_dict.keys():
             default_wavelength = config_dict["photodiode"]["default_wavelength"]
-            hardware["photodiode"]["power"] = printer_server.drivers.photodiode.photodiode_snip.getPower(default_wavelength)
+            hardware["photodiode"]["power"] = printer_server.drivers.photodiode.photodiode_snip.get_photodiode_power({"wavelength": default_wavelength}, emit=False)
             hardware["photodiode"]["wavelength"] = default_wavelength 
             
     return render_template(

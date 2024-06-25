@@ -525,10 +525,11 @@
             "default_number_of_averages": 5
         },
         "photodiode": {
+            "dummy": true,
             "beam_diameter": 0.05,
             "default_wavelength": 365,
             "attenuation_db": 0,
-            "hwid": "USBO::0c1313:0c0872::1928351:INSTR" 
+            "hwid": "USB0::4883::32882::1928351::0::INSTR'"
         },
         "keyence": {
             "dummy": true,
