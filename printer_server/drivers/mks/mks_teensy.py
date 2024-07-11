@@ -4,13 +4,13 @@ import serial
 import serial.tools.list_ports
 import serial.serialutil
 
-class MKSSolenoids(serial.Serial):
+class MKSTeensy(serial.Serial):
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         super().__init__(baudrate=115200, timeout=None)
 
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
-        self.hwid = config_dict["solenoids_hwid"]
+        self.hwid = config_dict["teensy_hwid"]
         self.port = None  # start with no port
         self.connected = False
         self.initialized = None
@@ -26,7 +26,7 @@ class MKSSolenoids(serial.Serial):
     def connect(self, shutdown):
         self.port = self.findUsbPort(self.hwid)
         if self.port is None:
-            msg = "MKS Solenoids not found!"
+            msg = "MKS Teensy not found!"
             self.log.critical(msg)
             return False
         if self.is_open:
@@ -35,7 +35,7 @@ class MKSSolenoids(serial.Serial):
         self.reset_input_buffer()
         self.reset_output_buffer()
         self.connected = True
-        self.log.info("Connected to MKS Solenoids (%s)", self.port)
+        self.log.info("Connected to MKS Teensy (%s)", self.port)
         atexit.register(self.disconnect)
         return True
     
@@ -43,7 +43,7 @@ class MKSSolenoids(serial.Serial):
         if self.connected:
             self.close()
             self.connected = False
-            self.log.info("Disconnected from MKS Solenoids")
+            self.log.info("Disconnected from MKS Teensy")
 
     def send(self, cmd, receive=True):
         self.log.debug("Sent: '%s'", cmd)

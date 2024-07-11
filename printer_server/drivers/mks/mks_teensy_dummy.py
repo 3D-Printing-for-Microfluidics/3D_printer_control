@@ -1,6 +1,6 @@
 from printer_server.logging_handler import dummy_log
 
-class MKSSolenoids_dummy():
+class MKSTeensy_dummy():
     def __init__(self, *args, **kwargs):
         self.switches = [0, 0, 0, 0, 0]
         self.relays = [0, 0, 0, 0, 0, 0, 0, 0, 0]

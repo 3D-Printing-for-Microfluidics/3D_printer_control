@@ -1146,8 +1146,8 @@ if __name__ is '__main__':
         "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
         "mks_address": "253",
         "mks_baudrate": 115200,
-        "solenoids_hwid": "",
-        "solenoids_baudrate": 9600,
+        "teensy_hwid": "",
+        "teensy_baudrate": 9600,
         "atm pressure": 650,
         "target": [
             0.2,
@@ -1166,7 +1166,7 @@ if __name__ is '__main__':
                 "mode": "manual"
             }
         },
-        "solenoids": [
+        "teensy relays": [
             "valve_vacuum",
             "valve_pump1",
             "valve_vent1",
