@@ -1146,7 +1146,7 @@ if __name__ is '__main__':
         "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
         "mks_address": "253",
         "mks_baudrate": 115200,
-        "teensy_hwid": "",
+        "teensy_hwid": "PID=16C0:0483 SER=16035730",
         "teensy_baudrate": 9600,
         "atm pressure": 650,
         "target": [

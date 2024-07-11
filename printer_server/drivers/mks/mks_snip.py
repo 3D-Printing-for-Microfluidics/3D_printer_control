@@ -71,16 +71,16 @@ def cranePosition(emit=True):
 @socketio.on("craneMove", namespace="/manual")
 def craneMove(message):
     if message["mm"] == "Top":
-        mks_teensy.move_crane_top()
+        pos = mks_teensy.move_crane_top()
     elif message["mm"] == "Bottom":
-        mks_teensy.move_crane_bottom()
+        pos = mks_teensy.move_crane_bottom()
     else:    
         distance_mm = float(message["mm"])
         mode = message["mode"]
         mode = (
             mode != "absolute"
         )  # convert mode to True/False, absolute is true, all else is false
-        mks_teensy.move_crane(distance_mm, relative=mode)
-    cranePosition()
+        pos = mks_teensy.move_crane(distance_mm, relative=mode)
+    socketio.emit("cranePosition", pos, namespace="/manual")
 
 

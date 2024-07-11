@@ -23,7 +23,7 @@ class MKSTeensy(serial.Serial):
                 return p.device
         return None  # not found
 
-    def connect(self, shutdown):
+    def connect(self):
         self.port = self.findUsbPort(self.hwid)
         if self.port is None:
             msg = "MKS Teensy not found!"

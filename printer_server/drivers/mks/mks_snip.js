@@ -15,7 +15,7 @@ var enable_crane_motor_buttons = function () {
 
 var update_dist_position = function (message) {
     if (!$.isEmptyObject(message)) {
-        document.getElementById('distance-state').innerHTML = message.distance;
+        document.getElementById('distance-state').innerHTML = message;
     }
 }
 
@@ -62,11 +62,7 @@ $(document).ready(function () {
     let target2 = hardware["mks"]["target"][1];
     let atm = hardware["mks"]["atm"];
 
-    updateValveStatus("valve_pump1");
-    updateValveStatus("valve_vent1");
-    updateValveStatus("valve_pump2");
-    updateValveStatus("valve_vent2");
-    updateValveStatus("valve_vacuum");
+    updateAllValveStatus();
     updatePumpStatus();
     updateCraneStatus();
     updateChamberStatus();
@@ -81,6 +77,14 @@ $(document).ready(function () {
         document.getElementById('crane_status').innerText = craneSetting ? 'ENABLED' : 'DISABLED';
         document.getElementById('crane_status').classList.remove(btn_on, btn_off, btn_warn);
         document.getElementById('crane_status').classList.add(craneSetting ? btn_on : btn_off);
+    }
+
+    function updateAllValveStatus() {
+        updateValveStatus("valve_pump1");
+        updateValveStatus("valve_vent1");
+        updateValveStatus("valve_pump2");
+        updateValveStatus("valve_vent2");
+        updateValveStatus("valve_vacuum");
     }
 
     function updateValveStatus(valveId) {
@@ -159,6 +163,7 @@ $(document).ready(function () {
         };
         updatePumpStatus();
         updateCraneStatus();
+        updateAllValveStatus();
     });
 
     socket.on("pressure_readings_updated", function (message) {
@@ -192,6 +197,7 @@ $(document).ready(function () {
     });
 
     socket.on("cranePosition", function (message) {
+        console.log(message);
         update_dist_position(message);
         enable_crane_motor_buttons();
     });
