@@ -155,6 +155,7 @@ def index():
             hardware["mks"]["gauge"] = printer_server.drivers.mks.mks_snip.get_gauges()
             hardware["mks"]["target"] =config_dict["mks"]["target"]
             hardware["mks"]["atm"] = config_dict["mks"]["atm pressure"]-50
+            hardware["mks"]["crane_pos"] = printer_server.drivers.mks.mks_snip.cranePosition(emit=False)
 
     return render_template(
         "manual_controls.html",

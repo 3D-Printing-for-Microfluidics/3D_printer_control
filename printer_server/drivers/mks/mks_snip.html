@@ -1,15 +1,38 @@
 <div class="container mks">
     <div class="row">
+        <div class="col-3">
+            <h3>Crane Control</h3>
+        </div>
+        <div class="col-1 text-right">
+            <button type="button" class="btn btn-outline-info float-left" id="crane_status">ENABLED</button>
+        </div>
+        <div class="col-2">
+            <h5 class="col text-right" id='distance-state'>{{ hardware['mks']['crane_pos'] }}</h5>
+        </div>
         <div class="col-6">
-            <h3>Vacuum System</h3>
+            <input class="form-control crane-cntrl-txt" type="text" id="distance-txt" placeholder="Position (mm)">
         </div>
     </div>
     <div class="row">
-        <div class="col-10">
-            <h5>Crane Status</h5>
+        <div class="col-8 text-right">
+            <button type="button" class="btn btn-outline-info crane-cntrl-btn">Bottom</button>
         </div>
-        <div class="col-2">
-            <button type="button" class="btn btn-outline-info float-right" id="crane_status">ENABLED</button>
+        <div class="col-3 text-center">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-info crane-cntrl-btn">-100</button>
+                <button type="button" class="btn btn-outline-info crane-cntrl-btn">-10</button>
+                <button type="button" class="btn btn-outline-info crane-cntrl-btn">10</button>
+                <button type="button" class="btn btn-outline-info crane-cntrl-btn">100</button>
+            </div>
+        </div>
+        <div class="col-1 text-left">
+            <button type="button" class="btn btn-outline-info crane-cntrl-btn">Top</button>
+        </div>
+    </div>
+    <hr class="bg-secondary">
+    <div class="row">
+        <div class="col-6">
+            <h3>Vacuum System</h3>
         </div>
     </div>
     <div class="row">

@@ -72,7 +72,22 @@ class MKSTeensy(serial.Serial):
         return self.send(f"L{relay_num}")
 
     def get_all_relay_status(self):
-        return self.send("R")
+        return list(self.send("R"))
 
-    def get_all_switch_status(self):
-        return self.send("S")
+    def get_all_sensor_status(self):
+        return list(self.send("S"))
+    
+    def get_crane_position(self):
+        return self.send("P")
+    
+    def move_crane(self, mm, relative=False):
+        if relative:
+            return self.send(f"MR{mm}")
+        else:
+            return self.send(f"MA{mm}")
+        
+    def move_crane_top(self):
+        return self.send("MT")
+        
+    def move_crane_bottom(self):
+         return self.send("MB")

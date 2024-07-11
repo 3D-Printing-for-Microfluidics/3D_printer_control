@@ -60,3 +60,27 @@ def deactivateRelay(message):
         mks_teensy.deactivate_relay(config_dict["mks"]["teensy relays"].index(message))
     time.sleep(0.1)
     get_relay_status(emit=True)
+
+@socketio.on("getCranePosition", namespace="/manual")
+def cranePosition(emit=True):
+    pos = mks_teensy.get_crane_position()
+    if emit:
+        socketio.emit("cranePosition", pos, namespace="/manual")
+    return pos
+
+@socketio.on("craneMove", namespace="/manual")
+def craneMove(message):
+    if message["mm"] == "Top":
+        mks_teensy.move_crane_top()
+    elif message["mm"] == "Bottom":
+        mks_teensy.move_crane_bottom()
+    else:    
+        distance_mm = float(message["mm"])
+        mode = message["mode"]
+        mode = (
+            mode != "absolute"
+        )  # convert mode to True/False, absolute is true, all else is false
+        mks_teensy.move_crane(distance_mm, relative=mode)
+    cranePosition()
+
+

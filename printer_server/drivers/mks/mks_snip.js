@@ -5,6 +5,20 @@ let chamber_vent = 'bg-light';
 let chamber_mid = 'bg-warning';
 let chamber_vac = 'bg-success';
 
+var disable_crane_motor_buttons = function () {
+    $('.crane-controls button').prop('disabled', true);
+}
+
+var enable_crane_motor_buttons = function () {
+    $('.crane-controls button').prop('disabled', false);
+}
+
+var update_dist_position = function (message) {
+    if (!$.isEmptyObject(message)) {
+        document.getElementById('distance-state').innerHTML = message.distance;
+    }
+}
+
 $(document).ready(function () {
 
     // After 60 minutes of inactivity, close socket and timeout web page
@@ -175,6 +189,33 @@ $(document).ready(function () {
 
     $("#valve_vacuum").click(function () {
         toggleValve("valve_vacuum");
+    });
+
+    socket.on("cranePosition", function (message) {
+        update_dist_position(message);
+        enable_crane_motor_buttons();
+    });
+
+    // Calibration motor text inputs for absolute positioning
+    $(".crane-cntrl-txt").on('change', function () {
+        // Disable calibration motor buttons
+        disable_crane_motor_buttons();
+        // Parse button content and construct message
+        var mm = $(this).val();
+        var message = { "mm": mm, "mode": "absolute" };
+        // Emit control message with parsed values
+        socket.emit("craneMove", message);
+    });
+
+    // Calibration motor buttons for relative positioning
+    $(".crane-cntrl-btn").click(function () {
+        // Disable calibration motor buttons
+        disable_crane_motor_buttons();
+        // Parse button content and construct message
+        var mm = $(this).text();
+        var message = { "mm": mm, "mode": "relative" };
+        // Emit control message with parsed values
+        socket.emit("craneMove", message);
     });
 
 });
