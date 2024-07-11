@@ -190,11 +190,11 @@
                 }
             },
             "teensy relays": [
+                "valve_vent2",
+                "valve_pump2",
                 "valve_vacuum",
                 "valve_pump1",
-                "valve_vent1",
-                "valve_pump2",
-                "valve_vent2"
+                "valve_vent1"
             ]
         },
         "coord_systems": {
@@ -491,11 +491,11 @@
                 }
             },
             "teensy relays": [
+                "valve_vent2",
+                "valve_pump2",
                 "valve_vacuum",
                 "valve_pump1",
-                "valve_vent1",
-                "valve_pump2",
-                "valve_vent2"
+                "valve_vent1"
             ]
         },
         "coord_systems": {

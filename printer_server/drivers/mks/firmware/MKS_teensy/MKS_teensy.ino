@@ -42,7 +42,7 @@ int get_encoder_position(){
 
 void move(int target_position){
   int off = 0;
-  int min_speed = 64;
+  int min_speed = 48;
   int max_speed = 192;
   int threshold_dist = 75;
 
@@ -52,10 +52,10 @@ void move(int target_position){
   int distanceFromStart = abs(start_position - position);
 
   if(target_position - position > 0){
-    digitalWrite(DIR_PIN, HIGH);
+    digitalWrite(DIR_PIN, LOW);
   }
   else{
-    digitalWrite(DIR_PIN, LOW);
+    digitalWrite(DIR_PIN, HIGH);
   }
 
   while((target_position - position > 0 && target_position - start_position > 0) || (position - target_position > 0 && target_position - start_position < 0)){
@@ -73,6 +73,7 @@ void move(int target_position){
     analogWrite(PWM_PIN, pwm);
     delay(10);
   }
+  delay(1000);
   analogWrite(PWM_PIN, off);
 }
 
@@ -107,11 +108,13 @@ void loop() {
       int pin = data.toInt();
       digitalWrite(solenoid_pins[pin], HIGH);
       solenoid_state[pin] = 1;
+      Serial.println();
     }
     else if(opcode[0] == 'L'){ // Set relay low
       int pin = data.toInt();
       digitalWrite(solenoid_pins[pin], LOW);
       solenoid_state[pin] = 0;
+      Serial.println();
     }
     else if(opcode[0] == 'R'){ // Get all relay status
       for(int i = 0; i < 5; i++){
@@ -147,7 +150,7 @@ void loop() {
       }
     }
     else{
-
+      Serial.println();
     }
   }
 

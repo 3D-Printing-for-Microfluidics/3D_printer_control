@@ -1167,11 +1167,11 @@ if __name__ is '__main__':
             }
         },
         "teensy relays": [
+            "valve_vent2",
+            "valve_pump2",
             "valve_vacuum",
             "valve_pump1",
-            "valve_vent1",
-            "valve_pump2",
-            "valve_vent2"
+            "valve_vent1"
         ]
     }
 
