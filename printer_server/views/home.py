@@ -31,6 +31,7 @@ from printer_server.printer_control.loadcell_control import LoadcellControl
 from printer_server.printer_control.screen_control import ScreenControl
 from printer_server.printer_control.ttr_control import TTRControl
 from printer_server.printer_control.xy_control import XYControl
+from printer_server.printer_control.vacuum_control import VacuumControl
 from printer_server.printer_control.light_measurement_control import LightMeasurementControl
 from printer_server.printer_control.environmental_sensors_control import EnvironmentalSensorsControl
 
@@ -63,6 +64,9 @@ if "x_y" in config_dict["stages"]:
 
 if "t_t_r" in config_dict["stages"]:
     parent_classes.append(TTRControl)
+
+if "mks" in config_dict:
+    parent_classes.append(VacuumControl)
 
 if "environmental_sensors" in config_dict:
     parent_classes.append(EnvironmentalSensorsControl)

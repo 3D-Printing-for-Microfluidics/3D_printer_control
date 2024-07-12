@@ -1,0 +1,102 @@
+<div class="container mks">
+    <div class="row">
+        <div class="col-3">
+            <h3>Crane Control</h3>
+        </div>
+        <div class="col-1 text-right">
+            <button type="button" class="btn btn-outline-info float-left" id="crane_status">ENABLED</button>
+        </div>
+        <div class="col-2">
+            <h5 class="col text-right" id='distance-state'>{{ hardware['mks']['crane_pos'] }}</h5>
+        </div>
+        <div class="col-6">
+            <input class="form-control crane-cntrl-txt" type="text" id="distance-txt" placeholder="Position (mm)">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-8 text-right">
+            <button type="button" class="btn btn-outline-info crane-cntrl-btn">Bottom</button>
+        </div>
+        <div class="col-3 text-center">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-info crane-cntrl-btn">-100</button>
+                <button type="button" class="btn btn-outline-info crane-cntrl-btn">-10</button>
+                <button type="button" class="btn btn-outline-info crane-cntrl-btn">10</button>
+                <button type="button" class="btn btn-outline-info crane-cntrl-btn">100</button>
+            </div>
+        </div>
+        <div class="col-1 text-left">
+            <button type="button" class="btn btn-outline-info crane-cntrl-btn">Top</button>
+        </div>
+    </div>
+    <hr class="bg-secondary">
+    <div class="row">
+        <div class="col-6">
+            <h3>Vacuum System</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-2">
+            <h5>Pump Control</h5>
+        </div>
+        <div class="col-5">
+            <button type="button" class="btn btn-outline-info btn-block vacuum-pump" id="vacuum_pump">Pump:
+                <span id="pump_status">OFF</span>
+            </button>
+        </div>
+        <div class="col-5">
+            <button type="button" class="btn btn-outline-info btn-block valve" id="valve_vacuum">Pump
+                Valve: <span id="valve_vacuum_status">Closed</span></button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-2">
+            <h5>Valve Control</h5>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-3 text-center">
+            <div class="card text-white bg-light chamber_display" id="vacuum_chamber1">
+                <div class="card-body">
+                    <h4 class="card-title">Bell Jar</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-3 text-center">
+            <div class="vacuum-system">
+                <div class="card text-white bg-secondary gauge_reading">
+                    <div class="card-body">
+                        <p class="card-title" id="gauge1_reading">? mTorr</p>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-info btn-block valve" id="valve_pump1">Vacuum Valve: <span
+                        id="valve_pump1_status">Closed</span></button>
+                <button type="button" class="btn btn-outline-info btn-block valve" id="valve_vent1">Vent
+                    Valve:
+                    <span id="valve_vent1_status">Closed</span></button>
+            </div>
+        </div>
+        <div class="col-3 text-center">
+            <div class="card text-white bg-light chamber_display" id="vacuum_chamber2">
+                <div class="card-body">
+                    <h4 class="card-title">Degassing Chamber</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-3 text-center">
+            <div class="vacuum-system">
+                <div class="card text-white bg-secondary gauge_reading">
+                    <div class="card-body">
+                        <p class="card-title" id="gauge2_reading">? mTorr</p>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-info btn-block valve" id="valve_pump2">Vacuum Valve: <span
+                        id="valve_pump2_status">Closed</span></button>
+                <button type="button" class="btn btn-outline-info btn-block valve" id="valve_vent2">Vent
+                    Valve: <span id="valve_vent2_status">Closed</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='mks/mks_snip.js') }}"></script>

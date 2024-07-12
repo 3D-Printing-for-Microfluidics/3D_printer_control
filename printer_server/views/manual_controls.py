@@ -29,6 +29,8 @@ if "external_control" in config_dict.keys():
     import printer_server.drivers.external_control.external_control_snip
 if "coord_systems" in config_dict.keys():
     import printer_server.drivers.coord_systems.coord_systems_snip
+if "mks" in config_dict.keys():
+    import printer_server.drivers.mks.mks_snip
 if "galil" in config_dict.keys():
     import printer_server.drivers.galil.galil_snip
 if "gpio" in config_dict.keys():
@@ -149,6 +151,14 @@ def index():
             hardware["wintech"][
                 "status"
             ] = printer_server.drivers.wintech.wintech_snip.getLedStatus()
+        if "mks" in config_dict.keys():
+            relay_setting, relay_status = printer_server.drivers.mks.mks_snip.get_relay_status()
+            hardware["mks"]["relay_setting"] = relay_setting
+            hardware["mks"]["relay_status"] = relay_status
+            hardware["mks"]["gauge"] = printer_server.drivers.mks.mks_snip.get_gauges()
+            hardware["mks"]["target"] =config_dict["mks"]["target"]
+            hardware["mks"]["atm"] = config_dict["mks"]["atm pressure"]-50
+            hardware["mks"]["crane_pos"] = printer_server.drivers.mks.mks_snip.cranePosition(emit=False)
         if "spectrometer" in config_dict.keys():
             hardware["spectrometer"]["default_integrations"] = config_dict["spectrometer"]["default_integration_time"]
             hardware["spectrometer"]["default_averages"] = config_dict["spectrometer"]["default_number_of_averages"]

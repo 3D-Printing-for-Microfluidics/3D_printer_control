@@ -138,6 +138,22 @@ class Printer3D:
             else:
                 self.photodiode = Photodiode(config_dict=config_dict["photodiode"], log_level=default_log_level)
 
+        if "mks" in config_dict.keys():
+            from printer_server.drivers.mks import MKS946, MKS946_dummy, MKSTeensy, MKSTeensy_dummy
+
+            if config_dict["mks"]["dummy"]:
+                self.mks = MKS946_dummy()
+                self.mks_teensy = MKSTeensy_dummy()
+            else:
+                self.mks = MKS946(
+                    config_dict=config_dict["mks"],
+                    log_level=default_log_level
+                )
+                self.mks_teensy = MKSTeensy(
+                    config_dict=config_dict["mks"],
+                    log_level=default_log_level
+                )
+
         self.bp_stage = None
         self.focus_stage = None
         self.xy_stage = None
@@ -208,6 +224,9 @@ class Printer3D:
             self.wintech.disconnect()
         if hasattr(self, "keyence"):
             self.keyence.disconnect()
+        if hasattr(self, "mks"):
+            self.mks.disconnect()
+            self.mks_teensy.disconnect()
         if hasattr(self, "spectrometer"):
             self.spectrometer.disconnect()
         if hasattr(self, "photodiode"):
