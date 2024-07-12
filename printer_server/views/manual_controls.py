@@ -25,12 +25,10 @@ for key in config_dict.keys():
         hardware[key] = temp_dict
 
 # Dynamically import python snippits
-if "external_control" in config_dict.keys():
-    import printer_server.drivers.external_control.external_control_snip
 if "coord_systems" in config_dict.keys():
     import printer_server.drivers.coord_systems.coord_systems_snip
-if "mks" in config_dict.keys():
-    import printer_server.drivers.mks.mks_snip
+if "external_control" in config_dict.keys():
+    import printer_server.drivers.external_control.external_control_snip
 if "galil" in config_dict.keys():
     import printer_server.drivers.galil.galil_snip
 if "gpio" in config_dict.keys():
@@ -41,18 +39,20 @@ if "keyence" in config_dict.keys():
     import printer_server.drivers.keyence.keyence_snip
 if "loadcell" in config_dict.keys():
     import printer_server.drivers.loadcell.loadcell_snip
+if "mks" in config_dict.keys():
+    import printer_server.drivers.mks.mks_snip
+if "photodiode" in config_dict.keys():
+    import printer_server.drivers.photodiode.photodiode_snip
 if "screen" in config_dict.keys():
     import printer_server.drivers.screen.screen_snip
+if "spectrometer" in config_dict.keys():
+    import printer_server.drivers.spectrometer.spectrometer_snip
 if "tiptilt" in config_dict.keys():
     import printer_server.drivers.tiptilt.tiptilt_snip
 if "visitech" in config_dict.keys():
     import printer_server.drivers.visitech.visitech_snip
 if "wintech" in config_dict.keys():
     import printer_server.drivers.wintech.wintech_snip
-if "spectrometer" in config_dict.keys():
-    import printer_server.drivers.spectrometer.spectrometer_snip
-if "photodiode" in config_dict.keys():
-    import printer_server.drivers.photodiode.photodiode_snip
 
 # Create bluprint
 blueprint = Blueprint(
@@ -93,6 +93,7 @@ def index():
                     "x_shift": {"name": "X Shift per mm Y", "value":calibration_positions.get("x_shift",0.0)},
                     "y_shift": {"name": "Y Shift per mm X", "value":calibration_positions.get("y_shift",0.0)}
                 }
+
         if "galil" in config_dict.keys():
             galil_positions = (
                 printer_server.drivers.galil.galil_snip.galil_get_positions()
@@ -104,6 +105,7 @@ def index():
                     "common": config_dict["galil"]["axes_common_names"][i],
                     "position": galil_positions[axis],
                 }
+
         if "gpio" in config_dict.keys():
             if "fan_pin" in config_dict["gpio"].keys():
                 hardware["gpio"][
@@ -113,8 +115,10 @@ def index():
                 hardware["gpio"][
                     "film_state"
                 ] = printer_server.drivers.gpio.gpio_snip.getFilmRelayState()
+
         if "kdc101" in config_dict.keys():
             hardware["kdc101"]["distance"] = calibration_positions.get("distance",0)
+
         if "keyence" in config_dict.keys():
             sensors = list(config_dict["keyence"]["sensors"].keys())
             hardware["keyence"]["sensors"] = sensors
@@ -136,21 +140,7 @@ def index():
             hardware["loadcell"][
                 "in_newtons"
             ] = printer_server.drivers.loadcell.loadcell_snip.get_graph_mode()
-        if "screen" in config_dict.keys():
-            hardware["light_engines"] = config_dict["light_engines"]
-        if "tiptilt" in config_dict.keys():
-            hardware["tiptilt"]["tip"] = calibration_positions.get("tip",0)
-            hardware["tiptilt"]["tilt"] = calibration_positions.get("tilt",0)
-        if "visitech" in config_dict.keys():
-            hardware["visitech"][
-                "status"
-            ] = printer_server.drivers.visitech.visitech_snip.getLedStatus()
-            hardware["visitech"]["dual_led"] = config_dict["visitech"]["dual_led"]
-            hardware["visitech"]["leds"] = config_dict["visitech"]["leds"]
-        if "wintech" in config_dict.keys():
-            hardware["wintech"][
-                "status"
-            ] = printer_server.drivers.wintech.wintech_snip.getLedStatus()
+
         if "mks" in config_dict.keys():
             relay_setting, relay_status = printer_server.drivers.mks.mks_snip.get_relay_status()
             hardware["mks"]["relay_setting"] = relay_setting
@@ -159,13 +149,34 @@ def index():
             hardware["mks"]["target"] =config_dict["mks"]["target"]
             hardware["mks"]["atm"] = config_dict["mks"]["atm pressure"]-50
             hardware["mks"]["crane_pos"] = printer_server.drivers.mks.mks_snip.cranePosition(emit=False)
-        if "spectrometer" in config_dict.keys():
-            hardware["spectrometer"]["default_integrations"] = config_dict["spectrometer"]["default_integration_time"]
-            hardware["spectrometer"]["default_averages"] = config_dict["spectrometer"]["default_number_of_averages"]
+
         if "photodiode" in config_dict.keys():
             default_wavelength = config_dict["photodiode"]["default_wavelength"]
             hardware["photodiode"]["power"] = printer_server.drivers.photodiode.photodiode_snip.get_photodiode_power({"wavelength": default_wavelength}, emit=False)
             hardware["photodiode"]["wavelength"] = default_wavelength 
+
+        if "screen" in config_dict.keys():
+            hardware["light_engines"] = config_dict["light_engines"]
+
+        if "spectrometer" in config_dict.keys():
+            hardware["spectrometer"]["default_integrations"] = config_dict["spectrometer"]["default_integration_time"]
+            hardware["spectrometer"]["default_averages"] = config_dict["spectrometer"]["default_number_of_averages"]
+
+        if "tiptilt" in config_dict.keys():
+            hardware["tiptilt"]["tip"] = calibration_positions.get("tip",0)
+            hardware["tiptilt"]["tilt"] = calibration_positions.get("tilt",0)
+
+        if "visitech" in config_dict.keys():
+            hardware["visitech"][
+                "status"
+            ] = printer_server.drivers.visitech.visitech_snip.getLedStatus()
+            hardware["visitech"]["dual_led"] = config_dict["visitech"]["dual_led"]
+            hardware["visitech"]["leds"] = config_dict["visitech"]["leds"]
+
+        if "wintech" in config_dict.keys():
+            hardware["wintech"][
+                "status"
+            ] = printer_server.drivers.wintech.wintech_snip.getLedStatus()
             
     return render_template(
         "manual_controls.html",

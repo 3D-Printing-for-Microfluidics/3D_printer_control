@@ -22,53 +22,53 @@ log.setLevel(logging.INFO)
 shutdown_handle = None
 
 from printer_server.printer_control.print_control import PrintControl
-from printer_server.printer_control.bp_control import BPControl
-from printer_server.printer_control.focus_control import FocusControl
-from printer_server.printer_control.gpio_control import FilmGPIOControl
-from printer_server.printer_control.keyence_control import KeyenceControl
-from printer_server.printer_control.light_engine_control import LightEngineControl
-from printer_server.printer_control.loadcell_control import LoadcellControl
-from printer_server.printer_control.screen_control import ScreenControl
-from printer_server.printer_control.ttr_control import TTRControl
-from printer_server.printer_control.xy_control import XYControl
-from printer_server.printer_control.vacuum_control import VacuumControl
-from printer_server.printer_control.light_measurement_control import LightMeasurementControl
-from printer_server.printer_control.environmental_sensors_control import EnvironmentalSensorsControl
 
 parent_classes = []
 
 if "light_engines" in config_dict:
+    from printer_server.printer_control.screen_control import ScreenControl
+    from printer_server.printer_control.light_engine_control import LightEngineControl
     parent_classes.append(LightEngineControl)
 
 if "keyence" in config_dict:
+    from printer_server.printer_control.keyence_control import KeyenceControl
     parent_classes.append(KeyenceControl)
 
 if "spectrometer" in config_dict or "photodiode" in config_dict:
+    from printer_server.printer_control.light_measurement_control import LightMeasurementControl
     parent_classes.append(LightMeasurementControl)
 
 if "loadcell" in config_dict:
+    from printer_server.printer_control.loadcell_control import LoadcellControl
     parent_classes.append(LoadcellControl)
 
 if "gpio" in config_dict:
     if "film_pin" in config_dict["gpio"]:
+        from printer_server.printer_control.gpio_control import FilmGPIOControl
         parent_classes.append(FilmGPIOControl)   
 
 if "bp" in config_dict["stages"]:
+    from printer_server.printer_control.bp_control import BPControl
     parent_classes.append(BPControl)
 
 if "focus" in config_dict["stages"]:
+    from printer_server.printer_control.focus_control import FocusControl
     parent_classes.append(FocusControl)
 
 if "x_y" in config_dict["stages"]:
+    from printer_server.printer_control.xy_control import XYControl
     parent_classes.append(XYControl)
 
 if "t_t_r" in config_dict["stages"]:
+    from printer_server.printer_control.ttr_control import TTRControl
     parent_classes.append(TTRControl)
 
 if "mks" in config_dict:
+    from printer_server.printer_control.vacuum_control import VacuumControl
     parent_classes.append(VacuumControl)
 
 if "environmental_sensors" in config_dict:
+    from printer_server.printer_control.environmental_sensors_control import EnvironmentalSensorsControl
     parent_classes.append(EnvironmentalSensorsControl)
 
 class ParentPrintControl(*parent_classes):
