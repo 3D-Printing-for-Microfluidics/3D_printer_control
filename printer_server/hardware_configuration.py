@@ -164,6 +164,15 @@ class Printer3D:
                 if hasattr(self, light_engine):
                     self.light_engines[light_engine] = getattr(self, light_engine)
 
+        if "environmental_sensors" in config_dict:
+            from printer_server.drivers.environmental_sensors import EnvironmentalSensors, EnvironmentalSensors_dummy
+
+            if config_dict["environmental_sensors"]["dummy"]:
+                self.environmental_sensors = EnvironmentalSensors_dummy()
+            else:
+                self.environmental_sensors = EnvironmentalSensors(config_dict=config_dict["environmental_sensors"], log_level=default_log_level)
+
+
     def disconnect(self):
         if hasattr(self, "galil"):
             self.galil.disconnect()
@@ -183,5 +192,7 @@ class Printer3D:
             self.wintech.disconnect()
         if hasattr(self, "keyence"):
             self.keyence.disconnect()
+        if hasattr(self, "environmental_sensors"):
+            self.environmental_sensors.disconnect()
             
 driver_handles = Printer3D()
