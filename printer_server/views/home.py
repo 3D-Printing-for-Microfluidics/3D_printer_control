@@ -3,7 +3,7 @@ from pathlib import Path
 import logging
 import signal
 from flask import Blueprint, request, render_template
-from flask_socketio import join_room, leave_room
+from flask_socketio import join_room, leave_room, emit
 
 from printer_server.settings import Config
 from printer_server.models import PrintQueue
@@ -31,8 +31,9 @@ from printer_server.printer_control.loadcell_control import LoadcellControl
 from printer_server.printer_control.screen_control import ScreenControl
 from printer_server.printer_control.ttr_control import TTRControl
 from printer_server.printer_control.xy_control import XYControl
-from printer_server.printer_control.kdc_control import KDCControl
 from printer_server.printer_control.vacuum_control import VacuumControl
+from printer_server.printer_control.light_measurement_control import LightMeasurementControl
+from printer_server.printer_control.environmental_sensors_control import EnvironmentalSensorsControl
 
 parent_classes = []
 
@@ -42,12 +43,15 @@ if "light_engines" in config_dict:
 if "keyence" in config_dict:
     parent_classes.append(KeyenceControl)
 
+if "spectrometer" in config_dict or "photodiode" in config_dict:
+    parent_classes.append(LightMeasurementControl)
+
 if "loadcell" in config_dict:
     parent_classes.append(LoadcellControl)
 
 if "gpio" in config_dict:
     if "film_pin" in config_dict["gpio"]:
-        parent_classes.append(FilmGPIOControl)
+        parent_classes.append(FilmGPIOControl)   
 
 if "bp" in config_dict["stages"]:
     parent_classes.append(BPControl)
@@ -64,6 +68,9 @@ if "t_t_r" in config_dict["stages"]:
 if "mks" in config_dict:
     parent_classes.append(VacuumControl)
 
+if "environmental_sensors" in config_dict:
+    parent_classes.append(EnvironmentalSensorsControl)
+
 class ParentPrintControl(*parent_classes):
     pass
 
@@ -73,11 +80,6 @@ print_control = ParentPrintControl()
 @blueprint.route("/")
 def index():
     allJobs = PrintQueue.query.all()
-
-    global shutdown_handle
-    shutdown_handle = request.environ.get("werkzeug.server.shutdown")
-    if shutdown_handle is None:
-        raise RuntimeError("Not running with the Werkzeug Server")
 
     if "loadcell" in config_dict.keys():
         return render_template(
@@ -94,7 +96,7 @@ def index():
         )
 
 def update_printer_state(state, msg):
-    socketio.emit(state, msg, namespace="/printing", broadcast=True)
+    socketio.emit(state, msg, namespace="/printing")
 
 if "loadcell" in config_dict.keys():
     def clear_loadcell_graph():
@@ -102,7 +104,7 @@ if "loadcell" in config_dict.keys():
 
 
     def update_loadcell_graph(msg):
-        socketio.emit("loadcell_graph_data", msg, namespace="/printing", room="loadcell")
+        socketio.emit("loadcell_graph_data", msg, namespace="/printing", to="loadcell")
 
 
 def send_bootstrap_alert(msg):
@@ -115,12 +117,11 @@ def send_bootstrap_alert(msg):
 
 @socketio.on("connect", namespace="/printing")
 def connect():
-    socketio.emit(
+    emit(
         print_control.state,
         dict(),
         namespace="/printing",
         broadcast=False,
-        room=request.sid,
     )
 
 

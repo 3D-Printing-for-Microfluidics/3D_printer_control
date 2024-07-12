@@ -9,7 +9,7 @@ def wintechStop():
     """Turn off the LED in the light engine."""
     wintech.stop_sequencer()
     socketio.emit("update_wintech_led_status", False, namespace="/manual")
-    socketio.emit("wintech_stop_complete", namespace="/manual", broadcast=True)
+    socketio.emit("wintech_stop_complete", namespace="/manual")
 
 
 @socketio.on("wintech_start", namespace="/manual")
@@ -22,7 +22,7 @@ def wintechProject(message):
     wintech.project(exposure, ledPower, repeat)
     if repeat != 0:
         socketio.emit("update_wintech_led_status", False, namespace="/manual")
-    socketio.emit("wintech_start_complete", namespace="/manual", broadcast=True)
+    socketio.emit("wintech_start_complete", namespace="/manual")
 
 
 # @socketio.on("wintech_get_status", namespace="/manual")
@@ -30,8 +30,7 @@ def wintechProject(message):
 #     socketio.emit(
 #         "wintech_status",
 #         wintech.read_all_status(),
-#         namespace="/manual",
-#         broadcast=True,
+#         namespace="/manual"
 #     )
 
 

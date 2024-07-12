@@ -87,6 +87,7 @@ class Visitech(LightEngineDriver):
         )
 
         self.connected = False
+        self.repeats = 1
         self.exposure_time = 0
         self.led_on = False
         self.dual_led = dual_led
@@ -123,7 +124,7 @@ class Visitech(LightEngineDriver):
         self.log.info("Connected to Visitech light engine")
         return True
 
-    def initalize(self):
+    def initialize(self):
         # set default state for light engine and clear previous errors
         self.get_sticky_errors(warn="NONE")
         self.set_video_source("HDMI")
@@ -459,6 +460,7 @@ class Visitech(LightEngineDriver):
         Return type +OK
         """
         if self.socket is not None:
+            self.log.info("Stopping exposure")
             self.led_on = False
             return self.send("SET SEQ OFF")
         return ""
@@ -693,19 +695,19 @@ class Visitech(LightEngineDriver):
         if errors:
             for error in errors:
                 if error:
-                    if warn is "ALL":
+                    if warn == "ALL":
                         if error.lower() == "led over current protection triggered":
                             if self.suppress_ocp_error:
                                 self.suppress_ocp_error = False  # only do this once per print
                         else:
                             self.log.warning("Visitech Error: %s", error)  # report other errors
-                    elif warn is "TEMP":
+                    elif warn == "TEMP":
                         # Suppress the first Visitech OCP error. This appears to always be
                         # triggered on the first exposure of each print job. It would be better
                         # to figure out why this happens in the hardware and fix it there.
                         if error.lower() != "led over current protection triggered" and error.lower() != "door switch open circuit":
                             self.log.warning("Visitech Error: %s", error)  # report other errors
-                    elif warn is "NONE":
+                    elif warn == "NONE":
                         self.log.info(error.capitalize())
         return errors
 
@@ -788,6 +790,7 @@ class Visitech(LightEngineDriver):
             repeat - number of repeats
         """
         self.exposure_time = exposure_time_ms
+        self.repeats = repeat
 
         if self.dual_led:
             if led_num == 0:
@@ -829,11 +832,15 @@ class Visitech(LightEngineDriver):
         Start an exposure.
         """
         self.led_on = True
-        if self.exposure_time != 0:
-            self.log.info("Exposing for %s ms", self.exposure_time)
+        if self.repeats == 0:
+            self.log.info("Starting exposure")
             self.start_sequencer()
-            time.sleep(self.exposure_time * 1e-3)
-        self.led_on = False
+        else:
+            if self.exposure_time != 0:
+                self.log.info("Exposing for %s ms", self.exposure_time)
+                self.start_sequencer()
+                time.sleep(self.exposure_time * 1e-3)
+            self.led_on = False
 
     def project(self, exposure, power, repeats=1, led_num=0):
         """

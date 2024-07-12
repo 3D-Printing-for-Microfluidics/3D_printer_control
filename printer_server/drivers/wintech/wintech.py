@@ -26,9 +26,9 @@ class Wintech(LightEngineDriver):
         self.connected = self.dmd_controller.connect()
         return self.connected
 
-    def initalize(self):
-        """Initalize the DMD controller."""
-        self.dmd_controller.initalize()
+    def initialize(self):
+        """Initialize the DMD controller."""
+        self.dmd_controller.initialize()
 
     def disconnect(self):
         self.dmd_controller.disconnect()
@@ -37,6 +37,7 @@ class Wintech(LightEngineDriver):
         """
         Turn the sequencer off.
         """
+        self.log.info("Stopping exposure")
         self.dmd_controller.stop_sequence()
         self.led_on = False
 
@@ -93,16 +94,17 @@ class Wintech(LightEngineDriver):
         Start an exposure.
         """
         self.led_on = True
-        if self.exposure_time != 0:
-            if self.repeats == 0:
-                self.dmd_controller.start_sequence()
-            else:
+        if self.repeats == 0:
+            self.log.info("Starting exposure")
+            self.dmd_controller.start_sequence()
+        else:
+            if self.exposure_time != 0:
                 self.log.info("Exposing for %s ms", self.exposure_time)
                 self.dmd_controller.start_sequence()
                 time.sleep(self.exposure_time * 0.001 + 0.1)
-                self.led_on = False
+            self.led_on = False
 
-    def project(self, exposure_time_ms, led_power=100, repeat=1):
+    def project(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
         """Call all of the necessary methods to project an image and
         block until projection is complete. Note that the image must be
         drawn to the virtual screen before this method is called.

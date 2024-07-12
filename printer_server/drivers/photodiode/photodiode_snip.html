@@ -1,0 +1,43 @@
+<!-- Upload Image -->
+<!-- TO FIX:
+    Need to know how to read the value
+    What is the true fals for toggling the wavelength
+    How to update the read value with the button... that will be in the .js file 
+
+    views->home.py : need to use light measurement control
+    in views-> manual_controls.py do i need to import the functions from photodiode.py? line 151
+
+-->
+<div class="container photodiode">
+    <div class="row">
+        <div class="col-12">
+            <h3>Photodiode</h3>
+        </div>
+    </div>
+    <div class="row">
+        <h5 class="col-3 text-left">Power:</h5>
+        <div class="col-3">
+            <h5 class="col text-right" id='photodiode_power'>{{ hardware['photodiode']['power'] }}
+            </h5>
+        </div>
+        <h5 class="col-3 text-left">Wavelength:</h5>
+        <div class="col-3">
+            <div id="wavelength_350_405" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                <label
+                    class="btn btn-outline-info btn-fixed-width shadow-none {% if hardware['photodiode']['wavelength'] == 365 %} active {% endif %}">365
+                    nm<input type="radio"></label>
+                <label
+                    class="btn btn-outline-info btn-fixed-width shadow-none {% if hardware['photodiode']['wavelength'] == 405 %} active {% endif %}">405
+                    nm<input type="radio"></label>
+            </div>
+        </div>
+
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <button type="button" class="btn btn-outline-info btn-block" id="read_photodiode_power">Read Value</button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='photodiode/photodiode_snip.js') }}"></script>

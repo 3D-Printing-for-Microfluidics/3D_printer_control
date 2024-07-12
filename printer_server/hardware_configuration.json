@@ -15,6 +15,7 @@
         "galil": {
             "dummy": false,
             "controller_name": "DMC31010",
+            "address": "192.168.0.9",
             "default_axis": "A",
             "axes": [
                 "A"
@@ -91,6 +92,7 @@
         "galil": {
             "dummy": false,
             "controller_name": "DMC31010",
+            "address": "192.168.0.9",
             "default_axis": "A",
             "axes": [
                 "A"
@@ -227,11 +229,24 @@
                 "Y": -17.110,
                 "Focus": 48.870,
                 "Build Platform": 0
+            },
+            "fiber_visitech": {
+                "X": -130.388,
+                "Y": -31.800,
+                "Focus": 49.065,
+                "Build Platform": 0
+            },
+            "fiber_wintech": {
+                "X": 129.100,
+                "Y": -20.840,
+                "Focus": 49.656,
+                "Build Platform": 0
             }
         },
         "galil": {
             "dummy": false,
             "controller_name": "DMC4040",
+            "address": "192.168.0.9",
             "default_axis": "D",
             "axes": [
                 "A",
@@ -285,6 +300,8 @@
         },
         "keyence": {
             "dummy": false,
+            "ip_addr": "192.168.0.15",
+            "port": 24685,
             "sensors": {
                 "visitech": {
                     "measurement_index": 1
@@ -365,6 +382,7 @@
         "galil": {
             "dummy": false,
             "controller_name": "DMC4040",
+            "address": "192.168.0.9",
             "default_axis": "D",
             "axes": [
                 "A",
@@ -418,6 +436,8 @@
         },
         "keyence": {
             "dummy": false,
+            "ip_addr": "192.168.0.15",
+            "port": 24685,
             "sensors": {
                 "visitech": {
                     "measurement_index": 0
@@ -521,6 +541,7 @@
         "galil": {
             "dummy": true,
             "controller_name": "DMC4040",
+            "address": "192.168.0.9",
             "default_axis": "D",
             "axes": [
                 "A",
@@ -573,18 +594,32 @@
             "hwid": "PID=16C0:0483 SER=9881850"
         },
         "spectrometer": {
-            "dummy": false,
+            "dummy": true,
             "serial num": "",
             "default_integration_time": 1000,
             "default_number_of_averages": 5
         },
+        "photodiode": {
+            "dummy": true,
+            "beam_diameter": 0.05,
+            "default_wavelength": 365,
+            "attenuation_db": 0,
+            "hwid": "USB0::4883::32882::1928351::0::INSTR'"
+        },
         "keyence": {
             "dummy": true,
+            "ip_addr": "192.168.0.15",
+            "port": 24685,
             "sensors": {
                 "visitech": {
                     "measurement_index": 0
                 }
             }
+        },
+        "environmental_sensors": {
+            "dummy": false,
+            "hwid": "PID=10C4:EA60 SER=0001",
+            "measurement_period_ms": 1000
         },
         "loadcell": {
             "dummy": true,

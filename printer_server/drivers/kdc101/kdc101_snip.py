@@ -24,8 +24,7 @@ def get_kdc_positions_socket():
     socketio.emit(
         "calibration_focus_position",
         message,
-        namespace="/manual",
-        broadcast=True,
+        namespace="/manual"
     )
     return message
 
@@ -38,8 +37,7 @@ def emit_kdc_positions(log=False):
     socketio.emit(
         "kdc_motor_move_complete",
         message,
-        namespace="/manual",
-        broadcast=True,
+        namespace="/manual"
     )
 
 

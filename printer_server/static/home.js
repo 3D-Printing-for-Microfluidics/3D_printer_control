@@ -250,7 +250,7 @@ function doUpload() {
 
 $(document).ready(function () {
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/printing");
-    socket.emit("connect");
+    socket.emit("connecting");
 
     if (loadcell_exists) {
         // Set up Loadcell graph

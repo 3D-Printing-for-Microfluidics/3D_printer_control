@@ -49,7 +49,10 @@ if "visitech" in config_dict.keys():
     import printer_server.drivers.visitech.visitech_snip
 if "wintech" in config_dict.keys():
     import printer_server.drivers.wintech.wintech_snip
-
+if "spectrometer" in config_dict.keys():
+    import printer_server.drivers.spectrometer.spectrometer_snip
+if "photodiode" in config_dict.keys():
+    import printer_server.drivers.photodiode.photodiode_snip
 
 # Create bluprint
 blueprint = Blueprint(
@@ -156,10 +159,17 @@ def index():
             hardware["mks"]["target"] =config_dict["mks"]["target"]
             hardware["mks"]["atm"] = config_dict["mks"]["atm pressure"]-50
             hardware["mks"]["crane_pos"] = printer_server.drivers.mks.mks_snip.cranePosition(emit=False)
-
+        if "spectrometer" in config_dict.keys():
+            hardware["spectrometer"]["default_integrations"] = config_dict["spectrometer"]["default_integration_time"]
+            hardware["spectrometer"]["default_averages"] = config_dict["spectrometer"]["default_number_of_averages"]
+        if "photodiode" in config_dict.keys():
+            default_wavelength = config_dict["photodiode"]["default_wavelength"]
+            hardware["photodiode"]["power"] = printer_server.drivers.photodiode.photodiode_snip.get_photodiode_power({"wavelength": default_wavelength}, emit=False)
+            hardware["photodiode"]["wavelength"] = default_wavelength 
+            
     return render_template(
         "manual_controls.html",
-        initalized=initialized,
+        initialized=initialized,
         hostname=Config.HOSTNAME,
         hardware=hardware,
     )
@@ -188,14 +198,17 @@ def get_last_calibration_positions_from_logs():
     """
     log_file = Path(Config.PROJECT_ROOT) / "logs" / "calibration_position_log.txt"
     last_line = None
-    with open(log_file) as f:
-        for line in f:
-            last_line = line.rstrip()
+    try:
+        with open(log_file) as f:
+            for line in f:
+                last_line = line.rstrip()
 
-    last_line = last_line[20:]
-    last_line = last_line.replace("'", '"')
-    temp = json.loads(last_line)
-    return temp
+        last_line = last_line[20:]
+        last_line = last_line.replace("'", '"')
+        temp = json.loads(last_line)
+        return temp
+    except FileNotFoundError:
+        return {}
 
 
 def update_le_led_status(le, state):

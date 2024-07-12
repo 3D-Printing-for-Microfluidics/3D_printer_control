@@ -19,14 +19,14 @@ def dummy_log(f):
     values, and f's return value. Used for debugging and dummy hardware
     modules.
     """
-    logger = logging.getLogger(f.__qualname__.split(".")[0])
-    logger.setLevel(logging.DEBUG)
+    logger = logging.getLogger(f.__module__.split(".")[-1])
+    # logger.setLevel(logging.DEBUG)
 
     @wraps(f)
     def wrapper(*args, **kwargs):
         logger.debug(
             "%s %s",
-            f.__qualname__,
+            f.__module__.split(".")[-1],
             {
                 **dict(
                     (k, v) for k, v in zip(f.__code__.co_varnames, args) if k != "self"
@@ -98,7 +98,7 @@ class SocketIOHandler(logging.Handler):
                 "message": record.message,
             }
             socketio.emit(
-                "update_message_box", msg, namespace="/printing", broadcast=True
+                "update_message_box", msg, namespace="/printing"
             )
             msg = "%(asctime)s.%(msecs)03d   %(message)s  " % {
                 "asctime": record.asctime.split(" ")[1],
@@ -134,6 +134,8 @@ def configure_loggers(app):
 
     app.logger.removeHandler(default_handler)
     root_logger = logging.getLogger()
+    log = logging.getLogger('werkzeug').setLevel(logging.WARN)
+
     # root_logger.setLevel(logging.NOTSET)  # uncomment to see all mesasges everywhere
 
     console_handler = logging.StreamHandler(sys.stdout)

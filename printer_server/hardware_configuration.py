@@ -109,9 +109,34 @@ class Printer3D:
                 self.wintech = Wintech(log_level=default_log_level)
 
         if "keyence" in config_dict.keys():
-            from printer_server.drivers.keyence import Keyence
+            from printer_server.drivers.keyence import Keyence, Keyence_dummy
 
-            self.keyence = Keyence()
+            if config_dict["keyence"]["dummy"]:
+                self.keyence = Keyence_dummy(
+                    config_dict=config_dict["keyence"], 
+                    log_level=default_log_level
+                )
+            else:
+                self.keyence = Keyence(
+                    config_dict=config_dict["keyence"], 
+                    log_level=default_log_level
+                )
+
+        if "spectrometer" in config_dict.keys():
+            from printer_server.drivers.spectrometer import Spectrometer, Spectrometer_dummy
+
+            if config_dict["spectrometer"]["dummy"]:
+                self.spectrometer = Spectrometer_dummy()
+            else:
+                self.spectrometer = Spectrometer(config_dict=config_dict["spectrometer"], log_level=default_log_level)
+        
+        if "photodiode" in config_dict.keys():
+            from printer_server.drivers.photodiode import Photodiode, Photodiode_dummy
+
+            if config_dict["photodiode"]["dummy"]:
+                self.photodiode = Photodiode_dummy()
+            else:
+                self.photodiode = Photodiode(config_dict=config_dict["photodiode"], log_level=default_log_level)
 
         if "mks" in config_dict.keys():
             from printer_server.drivers.mks import MKS946, MKS946_dummy, MKSTeensy, MKSTeensy_dummy
@@ -171,6 +196,15 @@ class Printer3D:
                 if hasattr(self, light_engine):
                     self.light_engines[light_engine] = getattr(self, light_engine)
 
+        if "environmental_sensors" in config_dict:
+            from printer_server.drivers.environmental_sensors import EnvironmentalSensors, EnvironmentalSensors_dummy
+
+            if config_dict["environmental_sensors"]["dummy"]:
+                self.environmental_sensors = EnvironmentalSensors_dummy()
+            else:
+                self.environmental_sensors = EnvironmentalSensors(config_dict=config_dict["environmental_sensors"], log_level=default_log_level)
+
+
     def disconnect(self):
         if hasattr(self, "galil"):
             self.galil.disconnect()
@@ -193,5 +227,11 @@ class Printer3D:
         if hasattr(self, "mks"):
             self.mks.disconnect()
             self.mks_teensy.disconnect()
+        if hasattr(self, "spectrometer"):
+            self.spectrometer.disconnect()
+        if hasattr(self, "photodiode"):
+            self.photodiode.disconnect()
+        if hasattr(self, "environmental_sensors"):
+            self.environmental_sensors.disconnect()
             
 driver_handles = Printer3D()

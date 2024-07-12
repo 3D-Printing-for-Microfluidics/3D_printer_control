@@ -2,6 +2,7 @@ import os
 import time
 import json
 import shutil
+import signal
 import logging
 import threading
 from pathlib import Path
@@ -11,7 +12,6 @@ from datetime import datetime
 from zipfile import ZipFile, BadZipFile
 
 import printer_server.views.home as home
-from printer_server.extensions import db
 from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 from printer_server.models import PrintQueue, PrintRecord
@@ -84,8 +84,8 @@ class PrintControl:
         self.print_history = Path(Config.UPLOAD_FOLDER) / Path("print_history")
 
         # log files
-        self.exposure_log = str(self.current_job / "exposure_data.csv")
-        self.event_log = str(self.current_job / "event_log.csv")
+        self.exposure_log = str(self.current_job / "logs" / "exposure_data.csv")
+        self.event_log = str(self.current_job / "logs" / "event_log.csv")
 
         # threads
         self.bp_thread = None
@@ -210,6 +210,8 @@ class PrintControl:
 
     def create_logs(self):
         # create logs and overwrite any pre-existing data
+        os.mkdir(str(self.current_job / "logs"))
+        
         async_file_hander.set_enabled(True)
         async_file_hander.write(self.exposure_log, "")
         async_file_hander.write(self.event_log, "timestamp,event\n")
@@ -318,7 +320,7 @@ class PrintControl:
             if not self.all_hardware_connected:
                 self.shutdown(is_critical=True)
                 return False
-            self.initalize_hardware()
+            self.initialize_hardware()
             log.info("Printer initialized, all hardware ready.")
             return True
         return False
@@ -326,7 +328,7 @@ class PrintControl:
     def connect_hardware(self):
         pass
 
-    def initalize_hardware(self):
+    def initialize_hardware(self):
         pass
 
     @run_in_thread("planarizing", "Planarization Step 1")
@@ -383,7 +385,6 @@ class PrintControl:
         self.print_start_time = datetime.now()
 
         # start printing process in a new thread
-        self.app = db.get_app()
         self.print_thread = Thread(log, name="print_control_print_worker_thread", target=self.print_worker)
         self.print_thread.start()
 
@@ -418,7 +419,6 @@ class PrintControl:
         log.info(msg["text"])
         home.update_printer_state(self.state, msg)
         # resume printing in a new thread
-        self.app = db.get_app()
         self.print_thread = Thread(log, name="print_control_print_worker_thread", target=self.print_worker)
         self.print_thread.start()
 
@@ -618,7 +618,8 @@ class PrintControl:
     def finish_print(self):
         # update fontend, zip logs into archive in print_history, and update db entrty
         self.print_duration = datetime.now() - self.print_start_time
-        with self.app.app_context():
+        from autoapp import app
+        with app.app_context():
             latest_record = PrintRecord.query.order_by(PrintRecord.id.desc()).first()
             latest_record.end_time = datetime.now()
             if not self.printing_stopped.is_set():
@@ -669,7 +670,7 @@ class PrintControl:
                 home.update_printer_state("shutdown completed", msg)
                 
                 time.sleep(0.5)
-                home.shutdown_handle()
+                os.kill(os.getppid(), signal.SIGKILL) #SIGTERM
 
         else:
             msg = {

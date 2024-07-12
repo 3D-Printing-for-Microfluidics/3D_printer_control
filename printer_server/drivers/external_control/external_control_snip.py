@@ -27,7 +27,6 @@ def get_external_control_enable(emit=True):
     socketio.emit(
         "external_control_enable",
         external_control_enable.get_enable(),
-        namespace="/manual",
-        broadcast=True,
+        namespace="/manual"
     )
     return external_control_enable.get_enable()
