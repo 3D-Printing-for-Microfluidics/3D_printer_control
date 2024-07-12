@@ -122,6 +122,22 @@ class Printer3D:
                     log_level=default_log_level
                 )
 
+        if "spectrometer" in config_dict.keys():
+            from printer_server.drivers.spectrometer import Spectrometer, Spectrometer_dummy
+
+            if config_dict["spectrometer"]["dummy"]:
+                self.spectrometer = Spectrometer_dummy()
+            else:
+                self.spectrometer = Spectrometer(config_dict=config_dict["spectrometer"], log_level=default_log_level)
+        
+        if "photodiode" in config_dict.keys():
+            from printer_server.drivers.photodiode import Photodiode, Photodiode_dummy
+
+            if config_dict["photodiode"]["dummy"]:
+                self.photodiode = Photodiode_dummy()
+            else:
+                self.photodiode = Photodiode(config_dict=config_dict["photodiode"], log_level=default_log_level)
+
         self.bp_stage = None
         self.focus_stage = None
         self.xy_stage = None
@@ -192,6 +208,10 @@ class Printer3D:
             self.wintech.disconnect()
         if hasattr(self, "keyence"):
             self.keyence.disconnect()
+        if hasattr(self, "spectrometer"):
+            self.spectrometer.disconnect()
+        if hasattr(self, "photodiode"):
+            self.photodiode.disconnect()
         if hasattr(self, "environmental_sensors"):
             self.environmental_sensors.disconnect()
             

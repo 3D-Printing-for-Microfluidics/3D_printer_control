@@ -31,6 +31,7 @@ from printer_server.printer_control.loadcell_control import LoadcellControl
 from printer_server.printer_control.screen_control import ScreenControl
 from printer_server.printer_control.ttr_control import TTRControl
 from printer_server.printer_control.xy_control import XYControl
+from printer_server.printer_control.light_measurement_control import LightMeasurementControl
 from printer_server.printer_control.environmental_sensors_control import EnvironmentalSensorsControl
 
 parent_classes = []
@@ -41,12 +42,15 @@ if "light_engines" in config_dict:
 if "keyence" in config_dict:
     parent_classes.append(KeyenceControl)
 
+if "spectrometer" in config_dict or "photodiode" in config_dict:
+    parent_classes.append(LightMeasurementControl)
+
 if "loadcell" in config_dict:
     parent_classes.append(LoadcellControl)
 
 if "gpio" in config_dict:
     if "film_pin" in config_dict["gpio"]:
-        parent_classes.append(FilmGPIOControl)
+        parent_classes.append(FilmGPIOControl)   
 
 if "bp" in config_dict["stages"]:
     parent_classes.append(BPControl)
