@@ -65,7 +65,7 @@ class BPStageDriver:
         while not self.initialized:
             time.sleep(0.1)
 
-        return self.threadedBPMove(log, pos, join=False)
+        return self.threadedBPMove(log, pos, join=True)
 
     def threadedBPMove(
         self,

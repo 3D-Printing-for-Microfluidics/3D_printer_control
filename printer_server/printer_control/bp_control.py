@@ -104,10 +104,10 @@ class BPControl(PrintControl):
 
     def initialize_hardware(self):
         bp_pos = self.bp_stage.top_position
-        self.bp_thread = self.bp_stage.initialize_and_positionBP(bp_pos)
+        self.bp_thread = Thread(log, name="bp_control_init_thread", target=self.bp_stage.initialize_and_positionBP, args=[bp_pos])
+        self.bp_thread.start()
         super().initialize_hardware()
-        if self.bp_thread is not None:
-            self.bp_thread.join()
+        self.bp_thread.join()
         self.bp_stage.initialized = True
 
     @run_in_thread("planarizing", "Planarization Step 1")

@@ -53,7 +53,7 @@ class XYStageDriver:
         while not self.initialized:
             time.sleep(0.1)
 
-        return self.threadedXYMove(log, x, y, join=False)
+        return self.threadedXYMove(log, x, y, join=True)
 
     def threadedXYMove(
         self,
