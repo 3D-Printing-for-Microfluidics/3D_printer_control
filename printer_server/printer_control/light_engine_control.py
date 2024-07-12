@@ -53,13 +53,6 @@ class LightEngineControl(ScreenControl):
             thread.join()
         self.light_engine_threads = {}
 
-    def post_print_tasks(self):
-        # always turn off the Visitech
-        for light_engine, light_engine_driver in self.light_engines.items():
-            light_engine_driver.stop_sequencer()
-            update_le_led_status(light_engine, False)
-        super().post_print_tasks()
-
     def print_worker(self):
         if self.state != "printing":
             return
@@ -99,3 +92,10 @@ class LightEngineControl(ScreenControl):
         _light_engine = getLightEngineFromJSON(light_engine)
         light_engine_driver = self.light_engines[_light_engine]
         return light_engine_driver.read_all_status(warn)
+    
+    def post_print_tasks(self):
+        super().post_print_tasks()
+        # always turn off the light engines
+        for light_engine, light_engine_driver in self.light_engines.items():
+            light_engine_driver.stop_sequencer()
+            update_le_led_status(light_engine, False)

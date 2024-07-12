@@ -47,7 +47,7 @@ class Printer3D:
             if config_dict["gpio"]["dummy"]:
                 self.gpio = GPIO_dummy()
             else:
-                self.gpio = GPIO(config_dict=config_dict["gpio"])
+                self.gpio = GPIO(config_dict=config_dict["gpio"], log_level=default_log_level)
 
 
         if "kdc101" in config_dict.keys():
@@ -150,9 +150,8 @@ class Printer3D:
                 self.visitech = Visitech_dummy()
             else:
                 self.visitech = Visitech(
-                    config_dict["visitech"]["leds"],
+                    config_dict=config_dict["visitech"],
                     log_level=default_log_level,
-                    dual_led=config_dict["visitech"]["dual_led"],
                 )
 
         if "wintech" in config_dict.keys():
@@ -161,7 +160,7 @@ class Printer3D:
             if config_dict["wintech"]["dummy"]:
                 self.wintech = Wintech_dummy()
             else:
-                self.wintech = Wintech(log_level=default_log_level)
+                self.wintech = Wintech(config_dict=config_dict["wintech"], log_level=default_log_level)
 
         self.bp_stage = None
         self.focus_stage = None

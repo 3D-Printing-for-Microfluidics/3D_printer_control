@@ -74,14 +74,14 @@ class Visitech(LightEngineDriver):
     SET LBREG
     """
 
-    def __init__(self, leds, log_level=logging.DEBUG, dual_led=False):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.max_exp_time = 10000  # max single projection time in ms
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
         # setup TCP connection
-        self.host = "192.168.0.10"
-        self.port = 5000
+        self.host = config_dict["address"]
+        self.port = config_dict["port"]
         self.socket = (
             None  # start as None so we can tell if a connection has been attempted
         )
@@ -90,8 +90,8 @@ class Visitech(LightEngineDriver):
         self.repeats = 1
         self.exposure_time = 0
         self.led_on = False
-        self.dual_led = dual_led
-        self.leds = leds
+        self.dual_led = config_dict["dual_led"]
+        self.leds = config_dict["leds"]
         self.suppress_ocp_error = False
 
     def connect(self, shutdown):

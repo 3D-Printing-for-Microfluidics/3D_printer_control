@@ -88,14 +88,9 @@ class FocusControl(PrintControl):
     def planarization_step_1(self):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
-            super().planarization_step_1()
             self.focus_stage.logging_start()
-
-    def post_print_tasks(self):
-        super().post_print_tasks()
-        self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position, join=False)
-        if self.focus_thread is not None:
-            self.focus_thread.join()
+            super().planarization_step_1()
+            
 
     def get_exposure_defocus(self, settings, light_engine):
         self.defocus_um = settings["Relative focus position (um)"]
@@ -124,6 +119,12 @@ class FocusControl(PrintControl):
         if self.defocus_um != 0:
             self.focus_stage.threadedFocusMove(log, self.focused_position, join=True)
         super().post_exposure_tasks(light_engine, msg)
+
+    def post_print_tasks(self):
+        super().post_print_tasks()
+        self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position, join=False)
+        if self.focus_thread is not None:
+            self.focus_thread.join()
 
     def finish_print(self):
         self.focus_stage.logging_stop()

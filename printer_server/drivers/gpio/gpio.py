@@ -1,8 +1,12 @@
 import atexit
+import logging
 import RPi.GPIO
 
 class GPIO:
-    def __init__(self, config_dict):
+    def __init__(self, config_dict, log_level=logging.DEBUG):
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+
         self.connected = False
         self.fan_relay = False
         self.film_relay = False
@@ -27,6 +31,7 @@ class GPIO:
             RPi.GPIO.output(self.film_relay_pin, RPi.GPIO.LOW)
         self.connected = True
         atexit.register(self.disconnect)
+        self.log.info("GPIO initialized")
 
     def disconnect(self):
         if self.connected:
@@ -36,15 +41,19 @@ class GPIO:
     def fan_relay_on(self):
         self.fan_relay_state = True
         RPi.GPIO.output(self.fan_relay_pin, RPi.GPIO.LOW)
+        self.log.info("Fan relay on")
 
     def fan_relay_off(self):
         self.fan_relay_state = False
         RPi.GPIO.output(self.fan_relay_pin, RPi.GPIO.HIGH)
+        self.log.info("Fan relay off")
 
     def film_relay_on(self):
         self.film_relay_state = True
         RPi.GPIO.output(self.film_relay_pin, RPi.GPIO.HIGH)
+        self.log.info("Film relay on")
 
     def film_relay_off(self):
         self.film_relay_state = False
         RPi.GPIO.output(self.film_relay_pin, RPi.GPIO.LOW)
+        self.log.info("Film relay off")

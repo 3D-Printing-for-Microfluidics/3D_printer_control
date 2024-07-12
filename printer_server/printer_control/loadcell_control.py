@@ -180,15 +180,11 @@ class LoadcellControl(PrintControl):
             log.error("Loadcell failed to connect!")
             self.all_hardware_connected = False
 
-    def resume(self):
-        if self.state != "paused":
-            return
-        self.loadcell.start()
-        super().resume()
-
     def print_worker(self):
         if self.state != "printing":
             return
+        if not self.loadcell.running:
+            self.loadcell.start()
         super().print_worker()
         if self.printing_paused.is_set():
             self.loadcell.pause()

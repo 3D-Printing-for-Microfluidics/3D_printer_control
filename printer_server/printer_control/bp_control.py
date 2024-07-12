@@ -114,8 +114,8 @@ class BPControl(PrintControl):
     def planarization_step_1(self):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
-            super().planarization_step_1()
             self.bp_stage.logging_start()
+            super().planarization_step_1()
             # self.bp_stage.goToBPmin()
             self.bp_stage.absMoveBP(mm=self.bp_stage.bottom_position-12)
             self.bp_stage.absMoveBP(mm=self.bp_stage.bottom_position, speed=0.5)
@@ -150,10 +150,10 @@ class BPControl(PrintControl):
         super().resume()
 
     def pre_print_tasks(self):
-        super().pre_print_tasks()
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
             self.bp_stage.absMoveBP(mm=self.planarized_position)
+        super().pre_print_tasks()
 
     def post_print_tasks(self):
         # set paused position

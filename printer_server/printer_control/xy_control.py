@@ -40,8 +40,8 @@ class XYControl(PrintControl):
     def planarization_step_1(self):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
-            super().planarization_step_1()
             self.xy_stage.logging_start()
+            super().planarization_step_1()
 
     def pre_print_tasks(self):
         super().pre_print_tasks()

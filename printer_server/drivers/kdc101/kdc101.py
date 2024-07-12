@@ -25,10 +25,10 @@ class KDC101(FocusStageDriver):
         self.connected = None
 
     # helper function to find handle to K-Cube
-    def find_device(self):
+    def find_device(self, vendor_id, product_id):
         x = serial.tools.list_ports.comports()
         for device in x:
-            if device.vid == 1027 and device.pid == 64240:
+            if device.vid == vendor_id and device.pid == product_id:
                 self.log.debug("Found %s", device)
                 return device.device
         return None
@@ -36,7 +36,7 @@ class KDC101(FocusStageDriver):
     def connect(self, shutdown):
         if self.connected is None:
             self.connected = False
-            self.port = self.find_device()
+            self.port = self.find_device(self.config_dict["vendor_id"], self.config_dict["product_id"])
             if self.port is None:
                 msg = "Thor Labs stage not found!"
                 self.log.critical(msg)
@@ -98,10 +98,10 @@ class KDC101(FocusStageDriver):
         self.move(mm, microns=False, relative=True)
 
     def startFocusJog(self, speed=None, acceleration=None):
-        log.warn("KDC Jogging not implemented")
+        self.log.warn("KDC Jogging not implemented")
 
     def stopFocusJog(self):
-        log.warn("KDC Jogging not implemented")
+        self.log.warn("KDC Jogging not implemented")
 
     ##############################################################################################
             

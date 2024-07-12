@@ -10,7 +10,8 @@ from printer_server.drivers.generic_drivers import LightEngineDriver
 class Wintech(LightEngineDriver):
     """Control module for the Wintech optical engine."""
 
-    def __init__(self, log_level=logging.DEBUG):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG):
+        self.config_dict=config_dict
         self.log_level = log_level
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
@@ -23,7 +24,7 @@ class Wintech(LightEngineDriver):
 
     def connect(self, shutdown):
         """Connect to the DMD controller."""
-        self.connected = self.dmd_controller.connect()
+        self.connected = self.dmd_controller.connect(int(self.config_dict["vendor_id"], 16), int(self.config_dict["product_id"], 16))
         return self.connected
 
     def initialize(self):

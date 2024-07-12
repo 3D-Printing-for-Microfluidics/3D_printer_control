@@ -44,6 +44,8 @@
         },
         "kdc101": {
             "dummy": false,
+            "vendor_id": 1027,
+            "product_id": 64240,
             "moving_shifts_image": true
         },
         "tiptilt": {
@@ -66,6 +68,8 @@
         "screen": {},
         "visitech": {
             "dummy": false,
+            "address": "192.168.0.10",
+            "port": 5000,
             "dual_led": false,
             "leds": [
                 "365nm"
@@ -121,6 +125,8 @@
         },
         "kdc101": {
             "dummy": false,
+            "vendor_id": 1027,
+            "product_id": 64240,
             "moving_shifts_image": true
         },
         "tiptilt": {
@@ -139,6 +145,8 @@
         "screen": {},
         "visitech": {
             "dummy": false,
+            "address": "192.168.0.10",
+            "port": 5000,
             "dual_led": false,
             "leds": [
                 "365nm"
@@ -278,6 +286,8 @@
         "screen": {},
         "visitech": {
             "dummy": false,
+            "address": "192.168.0.10",
+            "port": 5000,
             "dual_led": true,
             "leds": [
                 "405nm",
@@ -290,6 +300,8 @@
         },
         "wintech": {
             "dummy": false,
+            "vendor_id": "0x0451",
+            "product_id": "0xC900",
             "leds": [
                 "365nm"
             ],
@@ -429,7 +441,7 @@
             "hwid": "PID=16C0:0483 SER=9881850"
         },
         "keyence": {
-            "dummy": true,
+            "dummy": false,
             "ip_addr": "192.168.0.15",
             "port": 24685,
             "sensors": {
@@ -467,7 +479,9 @@
         },
         "screen": {},
         "visitech": {
-            "dummy": true,
+            "dummy": false,
+            "address": "192.168.0.10",
+            "port": 5000,
             "dual_led": false,
             "leds": [
                 "365nm"
@@ -594,6 +608,8 @@
         "screen": {},
         "visitech": {
             "dummy": false,
+            "address": "192.168.0.10",
+            "port": 5000,
             "dual_led": false,
             "leds": [
                 "365nm"

@@ -317,14 +317,14 @@ class DLPC900_USB_Controller:
             self.get_error_description()
         return data[4 : 4 + payload_length]
 
-    def connect(self):
+    def connect(self, vendor_id, product_id):
         """Find the DLPC900.
 
         The VID and PID combination representing the DLPC900
         controller is found.
         """
         self.log.info("Connecting to DLPC900 via USB")
-        self.dev = usb.core.find(idVendor=0x0451, idProduct=0xC900)
+        self.dev = usb.core.find(idVendor=vendor_id, idProduct=product_id)
         if self.dev is None:
             msg = "Wintech light engine not found!"
             self.log.critical(msg)
