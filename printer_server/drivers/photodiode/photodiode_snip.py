@@ -9,5 +9,5 @@ def get_photodiode_power(message, emit=True):
     photodiode.set_wavelength(wavelength)
     power = photodiode.get_power_density()
     if emit:
-        socketio.emit("photodiode_power", {"power":power}, namespace="/manual", broadcast=True)
+        socketio.emit("photodiode_power", {"power":power}, namespace="/manual")
     return power

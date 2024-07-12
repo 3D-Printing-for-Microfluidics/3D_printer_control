@@ -15,7 +15,7 @@ class EnvironmentalSensorsControl(PrintControl):
         self.environmental_sensors = driver_handles.environmental_sensors
 
         # log files
-        self.environmental_sensors_log = str(self.current_job / "environmental_sensor_data.csv")
+        self.environmental_sensors_log = str(self.current_job / "logs" / "environmental_sensor_data.csv")
 
     def create_logs(self):
         super().create_logs()

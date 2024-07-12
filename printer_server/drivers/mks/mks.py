@@ -1140,7 +1140,7 @@ class MKS946(serial.Serial):
             return False
         return self.set("SST", parameter=time)
     
-if __name__ is '__main__':
+if __name__ == '__main__':
     config_dict = {
         "dummy": False,
         "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",

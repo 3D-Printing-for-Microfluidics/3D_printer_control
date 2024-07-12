@@ -37,10 +37,10 @@ class LightMeasurementControl(PrintControl):
             log.error("Photodiode failed to connect!")
             self.all_hardware_connected = False    
 
-    def initalize_hardware(self):
+    def initialize_hardware(self):
         photodiode_thread = Thread(log, name="photodiode_init_thread", target=self.photodiode.initialize, args=[])
         photodiode_thread.start()
-        super().initalize_hardware()
+        super().initialize_hardware()
         if photodiode_thread is not None:
             photodiode_thread.join()
         self.photodiode.initialized = True
@@ -122,7 +122,7 @@ class LightMeasurementControl(PrintControl):
                 update_le_led_status(light_engine, False)
 
                 # Save spectrum to file
-                spectra_path = str(self.current_job / f"{path_prefix}_spectra_{light_engine}_{wavelength}.csv")
+                spectra_path = str(self.current_job / "logs" / f"{path_prefix}_spectra_{light_engine}_{wavelength}.csv")
                 async_file_hander.write(spectra_path, f"Wavelength: {wavelength} (nm)\n")
                 async_file_hander.write(spectra_path, f"Irradiance: {self.irradiance} dB\n")               
                 async_file_hander.write(spectra_path, f"Integration time: {self.integration_time} ms\n")

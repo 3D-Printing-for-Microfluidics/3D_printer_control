@@ -135,7 +135,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         """Find the first Galil controller and connect to it."""
         if self.connected is None:
             self.connected = False
-            if self.config_dict["address"] is "auto":
+            if self.config_dict["address"] == "auto":
                 self.log.info("Searching for %s controller...", self.controller_name)
                 available = self.g.GAddresses()
                 self.address = None
