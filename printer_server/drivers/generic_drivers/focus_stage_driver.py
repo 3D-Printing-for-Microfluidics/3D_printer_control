@@ -56,7 +56,7 @@ class FocusStageDriver:
         while not self.initialized:
             time.sleep(0.1)
 
-        return self.threadedFocusMove(log, pos, join=False)
+        return self.threadedFocusMove(log, pos, join=True)
 
     def threadedFocusMove(
         self,

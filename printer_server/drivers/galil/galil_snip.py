@@ -1,9 +1,6 @@
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration import driver_handles, config_dict
 import printer_server.views.manual_controls
-# from printer_server.views.manual_controls import (
-#     get_last_calibration_positions_from_logs,
-# )
 
 import time
 
@@ -20,7 +17,7 @@ def galil_set_coodinate_system(message):
     global coord_system
     coord_system = config_dict["coord_systems"][message]
     socketio.emit(
-        "galil_done", galil_get_positions(), namespace="/manual", broadcast=True
+        "galil_done", galil_get_positions(), namespace="/manual"
     )
 
 @socketio.on("galil_go_to_calibration", namespace="/manual")
@@ -31,7 +28,7 @@ def galil_go_to_calibration():
     galil.goToBPcalibration()
     stop_time = time.time()
     socketio.emit(
-        "galil_done", galil_get_positions(), namespace="/manual", broadcast=True
+        "galil_done", galil_get_positions(), namespace="/manual"
     )
 
 
@@ -43,7 +40,7 @@ def galil_go_to_top():
     galil.goToBPmax()
     stop_time = time.time()
     socketio.emit(
-        "galil_done", galil_get_positions(), namespace="/manual", broadcast=True
+        "galil_done", galil_get_positions(), namespace="/manual"
     )
 
 
@@ -55,7 +52,7 @@ def galil_go_to_bottom():
     galil.goToBPmin()
     stop_time = time.time()
     socketio.emit(
-        "galil_done", galil_get_positions(), namespace="/manual", broadcast=True
+        "galil_done", galil_get_positions(), namespace="/manual"
     )
 
 
@@ -67,7 +64,7 @@ def home():
     galil.home()
     stop_time = time.time()
     socketio.emit(
-        "galil_done", galil_get_positions(), namespace="/manual", broadcast=True
+        "galil_done", galil_get_positions(), namespace="/manual"
     )
 
 
@@ -94,10 +91,10 @@ def galil_move(message):
                 #position *= 1000
                 if galil.getCommonName(axis) == "X":
                     y_distance = galil.getPosition(in_mm=True, axis="Y") - coord_system["Y"]
-                    distance += calibration_positions["x_drift"]/1000 + calibration_positions["x_shift"]*y_distance/1000
+                    distance += calibration_positions.get("x_drift",0)/1000 + calibration_positions.get("x_shift",0)*y_distance/1000
                 if galil.getCommonName(axis) == "Y":
                     x_distance = galil.getPosition(in_mm=True, axis="X") - coord_system["X"]
-                    distance += calibration_positions["y_drift"]/1000 + calibration_positions["y_shift"]*x_distance/1000
+                    distance += calibration_positions.get("y_drift",0)/1000 + calibration_positions.get("y_shift",0)*x_distance/1000
             else:
                 distance += coord_system[galil.getCommonName(axis)]
             
@@ -108,7 +105,7 @@ def galil_move(message):
     if return_timing:
         galil.logging_stop()
     socketio.emit(
-        "galil_done", galil_get_positions(return_timing), namespace="/manual", broadcast=True
+        "galil_done", galil_get_positions(return_timing), namespace="/manual"
     )
 
 
@@ -128,7 +125,7 @@ def galil_stopJog():
     galil.stopJog()
     stop_time = time.time()
     socketio.emit(
-        "galil_done", galil_get_positions(), namespace="/manual", broadcast=True
+        "galil_done", galil_get_positions(), namespace="/manual"
     )
 
 
@@ -167,5 +164,5 @@ def galil_get_position(axis, notify=True):
     a = galil.convertAxis(axis)
     if notify:
         message = {"position": galil.getPosition(in_mm=True)}
-        socketio.emit("galil_position", message, namespace="/manual", broadcast=True)
+        socketio.emit("galil_position", message, namespace="/manual")
     return galil.getPosition(in_mm=True, axis=a)

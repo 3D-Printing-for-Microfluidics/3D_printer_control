@@ -12,10 +12,10 @@ class GPIOControl(PrintControl):
         super().__init__()
         self.gpio = driver_handles.gpio
 
-    def initalize_hardware(self):
+    def initialize_hardware(self):
         gpio_thread = Thread(log, name="gpio_control_init_thread", target=self.gpio.initialize, args=[])
         gpio_thread.start()
-        super().initalize_hardware()
+        super().initialize_hardware()
         gpio_thread.join()
 
 

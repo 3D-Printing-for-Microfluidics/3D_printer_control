@@ -43,12 +43,12 @@ class LightEngineControl(ScreenControl):
                 self.all_hardware_connected = False
         self.light_engine_threads = {}
 
-    def initalize_hardware(self):
+    def initialize_hardware(self):
         for light_engine, light_engine_driver in self.light_engines.items():
-            thread = Thread(log, name=f"{light_engine}_control_init_thread", target=light_engine_driver.initalize, args=[])
+            thread = Thread(log, name=f"{light_engine}_control_init_thread", target=light_engine_driver.initialize, args=[])
             thread.start()
             self.light_engine_threads[light_engine] = thread
-        super().initalize_hardware()
+        super().initialize_hardware()
         for light_engine, thread in self.light_engine_threads.items():
             thread.join()
         self.light_engine_threads = {}

@@ -35,14 +35,13 @@ def handleUpload(request):
                         socketio.emit(
                             "calibration_image_uploaded",
                             light_engine,
-                            namespace="/manual",
-                            broadcast=True,
+                            namespace="/manual"
                         )
                         return ""
             except (OSError, FileNotFoundError):  # File has big issues
                 pass
     socketio.emit(
-        "calibration_image_bad", light_engine, namespace="/manual", broadcast=True
+        "calibration_image_bad", light_engine, namespace="/manual"
     )
     return ""
 

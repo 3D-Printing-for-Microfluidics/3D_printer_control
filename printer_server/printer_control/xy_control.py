@@ -17,7 +17,7 @@ class XYControl(PrintControl):
 
     def create_logs(self):
         super().create_logs()
-        self.xy_stage.setup_log_file(str(self.current_job))
+        self.xy_stage.setup_log_file(str(self.current_job / "logs"))
 
     def connect_hardware(self):
         self.xy_thread = Thread(log, name="xy_control_setup_thread", target=self.xy_stage.connect, args=[self.shutdown])
@@ -28,14 +28,12 @@ class XYControl(PrintControl):
             log.error("XY stage failed to connect!")
             self.all_hardware_connected = False
 
-    def initalize_hardware(self):
+    def initialize_hardware(self):
         x_pos = self.coord_systems["visitech"]["X"]
         y_pos = self.coord_systems["visitech"]["Y"]
-        self.xy_threads = self.xy_stage.initialize_and_positionXY(x_pos, y_pos)
-        super().initalize_hardware()
-        for thread in self.xy_threads:
-            if thread is not None:
-                thread.join()
+        self.xy_thread = Thread(log, name="xy_control_init_thread", target=self.xy_stage.initialize_and_positionXY, args=[x_pos, y_pos])
+        super().initialize_hardware()
+        self.xy_thread.join()
         self.xy_stage.initialized = True
 
     @run_in_thread("planarizing", "Planarization Step 1")
