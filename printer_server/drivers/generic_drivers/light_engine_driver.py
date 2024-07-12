@@ -8,7 +8,7 @@ class LightEngineDriver:
     def connect(self, shutdown):
         log.warn("Function not implemented. Using abstract LightEngineDriver class")
 
-    def initalize(self):
+    def initialize(self):
         log.warn("Function not implemented. Using abstract LightEngineDriver class")
 
     def stop_sequencer(self):

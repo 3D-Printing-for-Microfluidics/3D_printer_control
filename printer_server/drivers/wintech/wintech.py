@@ -26,9 +26,9 @@ class Wintech(LightEngineDriver):
         self.connected = self.dmd_controller.connect()
         return self.connected
 
-    def initalize(self):
-        """Initalize the DMD controller."""
-        self.dmd_controller.initalize()
+    def initialize(self):
+        """Initialize the DMD controller."""
+        self.dmd_controller.initialize()
 
     def disconnect(self):
         self.dmd_controller.disconnect()

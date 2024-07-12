@@ -57,7 +57,7 @@ class FocusControl(PrintControl):
 
     def create_logs(self):
         super().create_logs()
-        self.focus_stage.setup_log_file(str(self.current_job))
+        self.focus_stage.setup_log_file(str(self.current_job / "logs"))
 
     def get_focus(self):
         """Return 'Focus' axis position in um"""
@@ -74,15 +74,14 @@ class FocusControl(PrintControl):
             log.error("Focus stage failed to connect!")
             self.all_hardware_connected = False
 
-    def initalize_hardware(self):
+    def initialize_hardware(self):
         if self.coord_systems is not None:
             self.focused_position = self.coord_systems["visitech"]["Focus"]
         else:
             self.focused_position = get_last_calibration_positions_from_logs().get("distance",0) / 1000
-        self.focus_thread = self.focus_stage.initialize_and_positionFocus(self.focused_position)
-        super().initalize_hardware()
-        if self.focus_thread is not None:
-            self.focus_thread.join()
+        self.focus_thread = Thread(log, name="focus_control_init_thread", target=self.focus_stage.initialize_and_positionFocus, args=[self.focused_position])
+        super().initialize_hardware()
+        self.focus_thread.join()
         self.focus_stage.initialized = True
 
     @run_in_thread("planarizing", "Planarization Step 1")

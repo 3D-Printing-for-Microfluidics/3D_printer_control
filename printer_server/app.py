@@ -1,14 +1,14 @@
 """The app module, containing the app factory function."""
-from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, render_template
 from printer_server.extensions import db, migrate, socketio
 from printer_server.models import PrintRecord, PrintQueue
 from printer_server import commands, models
 from printer_server.views import home, manual_controls, print_history, server_logs
-from printer_server.settings import ProdConfig
+from printer_server.settings import ProdConfig, DevConfig
 from printer_server.hardware_configuration import driver_handles
 from printer_server.logging_handler import configure_loggers
-
+from flask.helpers import get_debug_flag
 
 def create_app(config_object=ProdConfig):
     """An application factory, as explained here:
@@ -27,8 +27,11 @@ def create_app(config_object=ProdConfig):
     register_hardware(app)
     register_logger(app)
 
-    with app.app_context():
-        cleanup_db()
+    try:
+        with app.app_context():
+            cleanup_db()
+    except:
+        print("Error cleaning DB. Does it exist?")
 
     return app
 
@@ -96,3 +99,6 @@ def cleanup_db():
     PrintRecord().remove_orphaned_files()
     PrintRecord().remove_old_jobs()
     PrintRecord().remove_old_logs()
+
+CONFIG = DevConfig if get_debug_flag() else ProdConfig
+app = create_app(CONFIG)

@@ -23,11 +23,11 @@ class TTRControl(PrintControl):
             log.error("TTR stage failed to connect!")
             self.all_hardware_connected = False
 
-    def initalize_hardware(self):
+    def initialize_hardware(self):
         pass
         # ttr_pos = 
         # self.ttr_thread = self.focus_stage.initialize_and_positionTTR(ttr_pos, join=False)
-        # super().initalize_hardware()
+        # super().initialize_hardware()
         # if self.ttr_thread is not None:
         #     self.ttr_thread.join()
         # self.ttr_stage.initialized = True

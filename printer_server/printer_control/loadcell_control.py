@@ -18,7 +18,7 @@ class LoadcellControl(PrintControl):
         self.loadcell = driver_handles.loadcell
 
         # log files
-        self.loadcell_log = str(self.current_job / "loadcell_data.csv")
+        self.loadcell_log = str(self.current_job / "logs" / "loadcell_data.csv")
         
         # loadcell graph variables
         self.loadcell_running = False

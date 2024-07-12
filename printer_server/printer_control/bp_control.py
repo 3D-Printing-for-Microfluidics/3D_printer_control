@@ -16,7 +16,7 @@ class BPControl(PrintControl):
         self.bp_stage = driver_handles.bp_stage
 
         # log files
-        self.position_log = str(self.current_job / "position_data.csv")
+        self.position_log = str(self.current_job / "logs" / "position_data.csv")
 
     def create_logs(self):
         super().create_logs()
@@ -29,16 +29,16 @@ class BPControl(PrintControl):
             self.position_log,
             "start_position,end_position,thickness_um,squeeze\n",
         )
-        self.bp_stage.setup_log_file(str(self.current_job))
+        self.bp_stage.setup_log_file(str(self.current_job / "logs"))
 
     def move_build_platform_up(self, position_settings):
         """Moves the build platform up according to the position_settings"""
-        inital_wait = position_settings["Initial wait (ms)"] / 1000
+        initial_wait = position_settings["Initial wait (ms)"] / 1000
         up_distance = position_settings["Distance up (mm)"]
         up_speed = position_settings["BP up speed (mm/sec)"]
         up_acceleration = position_settings["BP up acceleration (mm/sec^2)"]
 
-        time.sleep(inital_wait)
+        time.sleep(initial_wait)
         self.write_to_event_log("Start Up Movement")
         self.bp_stage.absMoveBP(
             mm=self.print_position - up_distance,
@@ -102,12 +102,12 @@ class BPControl(PrintControl):
             log.error("Build platform stage failed to connect!")
             self.all_hardware_connected = False
 
-    def initalize_hardware(self):
+    def initialize_hardware(self):
         bp_pos = self.bp_stage.top_position
-        self.bp_thread = self.bp_stage.initialize_and_positionBP(bp_pos)
-        super().initalize_hardware()
-        if self.bp_thread is not None:
-            self.bp_thread.join()
+        self.bp_thread = Thread(log, name="bp_control_init_thread", target=self.bp_stage.initialize_and_positionBP, args=[bp_pos])
+        self.bp_thread.start()
+        super().initialize_hardware()
+        self.bp_thread.join()
         self.bp_stage.initialized = True
 
     @run_in_thread("planarizing", "Planarization Step 1")
