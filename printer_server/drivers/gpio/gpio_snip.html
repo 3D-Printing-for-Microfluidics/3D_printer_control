@@ -4,23 +4,6 @@
             <h3>GPIO Controls</h3>
         </div>
     </div>
-    {% if 'fan_state' in hardware['gpio'] %}
-    <div class="row">
-        <div class="col-6">
-            <h5>Fan Relay</h5>
-        </div>
-        <div class="col-6">
-            <div id="fan-relay" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
-                <label
-                    class="btn btn-outline-info btn-fixed-width shadow-none {% if hardware['gpio']['fan_state'] %} active {% endif %}">On<input
-                        type="radio"></label>
-                <label
-                    class="btn btn-outline-info btn-fixed-width shadow-none {% if not hardware['gpio']['fan_state'] %} active {% endif %}">Off<input
-                        type="radio"></label>
-            </div>
-        </div>
-    </div>
-    {% endif %}
     {% if 'film_state' in hardware['gpio']%}
     <div class="row">
         <div class="col-6">
