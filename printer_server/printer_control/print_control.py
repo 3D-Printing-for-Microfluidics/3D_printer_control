@@ -673,7 +673,7 @@ class PrintControl:
                 home.update_printer_state("shutdown completed", msg)
                 
                 time.sleep(0.5)
-                os.kill(os.getppid(), signal.SIGKILL) 
+                os.kill(os.getpid(), signal.SIGKILL) 
                 #SIGTERM hanging
                 #SIGINT hanging
                 #SIGKILL kills ssh as well?
