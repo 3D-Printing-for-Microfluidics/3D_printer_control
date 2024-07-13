@@ -4,13 +4,14 @@ import logging
 from datetime import datetime
 
 from .dlpc900_usb_controller import DLPC900_USB_Controller
+from .dlpc900_usb_controller_dummy import DLPC900_USB_Controller_dummy
 from printer_server.drivers.generic_drivers import LightEngineDriver
 
 
 class Wintech(LightEngineDriver):
     """Control module for the Wintech optical engine."""
 
-    def __init__(self, config_dict=None, log_level=logging.DEBUG):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG, dummy=False):
         self.config_dict=config_dict
         self.log_level = log_level
         self.log = logging.getLogger(__name__)
@@ -20,7 +21,10 @@ class Wintech(LightEngineDriver):
         self.exposure_time = 0
         self.led_on = False
 
-        self.dmd_controller = DLPC900_USB_Controller(log_level=self.log_level)
+        if dummy:
+            self.dmd_controller = DLPC900_USB_Controller_dummy(log_level=self.log_level)
+        else:
+            self.dmd_controller = DLPC900_USB_Controller(log_level=self.log_level)
 
     def connect(self, shutdown):
         """Connect to the DMD controller."""

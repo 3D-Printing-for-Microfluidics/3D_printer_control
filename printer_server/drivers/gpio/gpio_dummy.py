@@ -13,6 +13,11 @@ class GPIO_dummy:
         self.film_relay_state = False
 
     @dummy_log
+    def disconnect(self):
+        if self.connected:
+            self.connected = False
+
+    @dummy_log
     def fan_relay_on(self):
         self.fan_relay_state = True
 
