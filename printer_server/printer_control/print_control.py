@@ -210,7 +210,10 @@ class PrintControl:
 
     def create_logs(self):
         # create logs and overwrite any pre-existing data
-        os.mkdir(str(self.current_job / "logs"))
+        try:
+            os.mkdir(str(self.current_job / "logs"))
+        except FileExistsError:
+            pass
         
         async_file_hander.set_enabled(True)
         async_file_hander.write(self.exposure_log, "")
@@ -670,7 +673,10 @@ class PrintControl:
                 home.update_printer_state("shutdown completed", msg)
                 
                 time.sleep(0.5)
-                os.kill(os.getppid(), signal.SIGKILL) #SIGTERM
+                os.kill(os.getppid(), signal.SIGKILL) 
+                #SIGTERM hanging
+                #SIGINT hanging
+                #SIGKILL kills ssh as well?
 
         else:
             msg = {

@@ -10,7 +10,7 @@ class Spectrometer_dummy:
 
         self.connected = None
 
-    def connect(self, shutdown):
+    def connect(self):
         self.log.debug("Connected")
         self.connected = True
         

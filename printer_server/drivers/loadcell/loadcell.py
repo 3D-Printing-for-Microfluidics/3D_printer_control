@@ -95,6 +95,10 @@ class LoadCell(serial.Serial):
 
     def disconnect(self):
         if self.connected:
+            if self.running:
+                self.running = False
+                self.thread.join()
+                self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
             self.close()
             self.connected = False
             self.log.info("Disconnected from Loadcell")

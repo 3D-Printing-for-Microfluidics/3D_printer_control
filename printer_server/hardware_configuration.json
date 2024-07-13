@@ -54,7 +54,7 @@
         },
         "gpio": {
             "dummy": false,
-            "film_pin": 7
+            "film_pin": 4
         },
         "loadcell": {
             "dummy": false,
@@ -594,7 +594,7 @@
         },
         "gpio": {
             "dummy": false,
-            "film_pin": 7
+            "film_pin": 4
         },
         "loadcell": {
             "dummy": false,

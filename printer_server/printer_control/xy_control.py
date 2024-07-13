@@ -32,6 +32,7 @@ class XYControl(PrintControl):
         x_pos = self.coord_systems["visitech"]["X"]
         y_pos = self.coord_systems["visitech"]["Y"]
         self.xy_thread = Thread(log, name="xy_control_init_thread", target=self.xy_stage.initialize_and_positionXY, args=[x_pos, y_pos])
+        self.xy_thread.start()
         super().initialize_hardware()
         self.xy_thread.join()
         self.xy_stage.initialized = True

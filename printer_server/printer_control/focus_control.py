@@ -80,6 +80,7 @@ class FocusControl(PrintControl):
         else:
             self.focused_position = get_last_calibration_positions_from_logs().get("distance",0) / 1000
         self.focus_thread = Thread(log, name="focus_control_init_thread", target=self.focus_stage.initialize_and_positionFocus, args=[self.focused_position])
+        self.focus_thread.start()
         super().initialize_hardware()
         self.focus_thread.join()
         self.focus_stage.initialized = True

@@ -340,8 +340,8 @@ class ScreenThread(Thread):
         """Create a Tk window and run it."""
         self.log.info("Starting screen thread")
 
-        root = tkinter.Tk()
-        root.withdraw()
+        self.root = tkinter.Tk()
+        self.root.withdraw()
 
         self.screens = []
         self.total_offset = 0
@@ -351,6 +351,7 @@ class ScreenThread(Thread):
                 self.total_offset += resolution[0]
         atexit.register(self.stop)
         tkinter.mainloop()
+        self.log.info("Screen thread closed")
 
     def stop(self):
         """Stop the thread."""
@@ -359,6 +360,7 @@ class ScreenThread(Thread):
             for screen in self.screens:
                 screen.window.quit()
             self.screens = None
+            self.root.quit()
 
     def draw(self, img_path, screen=0):
         """Draw an image to the specified screen."""

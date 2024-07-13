@@ -35,7 +35,7 @@ class Printer3D:
             from printer_server.drivers.galil import Galil, Galil_dummy
 
             if config_dict["galil"]["dummy"]:
-                self.galil = Galil_dummy(config_dict=config_dict["galil"])
+                self.galil = Galil_dummy(config_dict=config_dict["galil"], log_level=default_log_level)
             else:
                 self.galil = Galil(
                     config_dict=config_dict["galil"], log_level=default_log_level
@@ -54,7 +54,7 @@ class Printer3D:
             from printer_server.drivers.kdc101 import KDC101, KDC101_dummy
 
             if config_dict["kdc101"]["dummy"]:
-                self.kdc101 = KDC101_dummy()
+                self.kdc101 = KDC101_dummy(log_level=default_log_level)
             else:
                 self.kdc101 = KDC101(config_dict=config_dict["kdc101"], log_level=default_log_level)
 
@@ -76,7 +76,10 @@ class Printer3D:
             from printer_server.drivers.loadcell import LoadCell, Loadcell_dummy
 
             if config_dict["loadcell"]["dummy"]:
-                self.loadcell = Loadcell_dummy()
+                self.loadcell = Loadcell_dummy(
+                    config_dict=config_dict["loadcell"],
+                    log_level=default_log_level,
+                    )
             else:
                 self.loadcell = LoadCell(
                     config_dict=config_dict["loadcell"],
@@ -136,7 +139,10 @@ class Printer3D:
             from printer_server.drivers.tiptilt import TipTilt, TipTilt_dummy
 
             if config_dict["tiptilt"]["dummy"]:
-                self.tiptilt = TipTilt_dummy(verbose=True)
+                self.tiptilt = TipTilt_dummy(
+                    config_dict=config_dict["tiptilt"],
+                    log_level=default_log_level
+                    )
             else:
                 self.tiptilt = TipTilt(
                     config_dict=config_dict["tiptilt"],
@@ -147,7 +153,10 @@ class Printer3D:
             from printer_server.drivers.visitech import Visitech, Visitech_dummy
 
             if config_dict["visitech"]["dummy"]:
-                self.visitech = Visitech_dummy()
+                self.visitech = Visitech_dummy(
+                    config_dict["visitech"]["leds"],
+                    log_level=default_log_level,
+                    dual_led=config_dict["visitech"]["dual_led"],)
             else:
                 self.visitech = Visitech(
                     config_dict=config_dict["visitech"],
@@ -156,7 +165,6 @@ class Printer3D:
 
         if "wintech" in config_dict.keys():
             from printer_server.drivers.wintech import Wintech, Wintech_dummy
-
             if config_dict["wintech"]["dummy"]:
                 self.wintech = Wintech_dummy()
             else:
