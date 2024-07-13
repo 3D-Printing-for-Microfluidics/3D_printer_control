@@ -65,7 +65,7 @@ class MKS946(serial.Serial):
         self.config_dict = config_dict
         self.address = config_dict["mks_address"]
 
-        super().__init__(baudrate=config_dict["mks_baudrate"], timeout=1)
+        super().__init__(baudrate=config_dict["mks_baudrate"], timeout=0.01)
 
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
@@ -134,7 +134,7 @@ class MKS946(serial.Serial):
         if self.connected:
             self.stop_thread()
             for _, relay in self.config_dict["relays"].items():
-                if relay["mode"] is not "auto":
+                if relay["mode"] != "auto":
                     print(f"set_relay_mode: {self.set_relay_mode(relay['relay_num'], 'CLEAR')}")
                     # self.set_relay_mode(i, 'CLEAR')
             self.close()
