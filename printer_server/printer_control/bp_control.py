@@ -115,10 +115,10 @@ class BPControl(PrintControl):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.bp_stage.logging_start()
-            super().planarization_step_1()
             # self.bp_stage.goToBPmin()
             self.bp_stage.absMoveBP(mm=self.bp_stage.bottom_position-12)
             self.bp_stage.absMoveBP(mm=self.bp_stage.bottom_position, speed=0.5)
+            super().planarization_step_1()
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
