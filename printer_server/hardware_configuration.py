@@ -19,6 +19,16 @@ class Printer3D:
     def __init__(self):
         # Dynamically import python snippits
         global config_dict
+        if "acs" in config_dict.keys():
+            from printer_server.drivers.acs import ACS, ACS_dummy
+
+            if config_dict["acs"]["dummy"]:
+                self.acs = ACS_dummy(config_dict=config_dict["acs"], log_level=default_log_level)
+            else:
+                self.acs = ACS(
+                    config_dict=config_dict["acs"], log_level=default_log_level
+                )
+
         if "coord_systems" in config_dict.keys():
             from printer_server.drivers.coord_systems import Coord_Systems
             self.coord_systems_control = Coord_Systems()
@@ -54,7 +64,7 @@ class Printer3D:
             from printer_server.drivers.kdc101 import KDC101, KDC101_dummy
 
             if config_dict["kdc101"]["dummy"]:
-                self.kdc101 = KDC101_dummy(log_level=default_log_level)
+                self.kdc101 = KDC101_dummy(config_dict=config_dict["kdc101"], log_level=default_log_level)
             else:
                 self.kdc101 = KDC101(config_dict=config_dict["kdc101"], log_level=default_log_level)
 
@@ -214,6 +224,8 @@ class Printer3D:
 
 
     def disconnect(self):
+        if hasattr(self, "acs"):
+            self.acs.disconnect()
         if hasattr(self, "environmental_sensors"):
             self.environmental_sensors.disconnect()
         if hasattr(self, "galil"):

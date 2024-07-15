@@ -317,10 +317,16 @@
             "v2"
         ],
         "stages": {
-            "bp": "galil",
-            "focus": "galil",
-            "x_y": "galil",
+            "bp": "acs",
+            "focus": "kdc",
+            "x_y": "acs",
             "t_t_r": "tiptilt"
+        },
+        "kdc101": {
+            "dummy": true,
+            "vendor_id": 1027,
+            "product_id": 64240,
+            "moving_shifts_image": true
         },
         "light_engines": [
             "visitech"
@@ -385,51 +391,39 @@
                 "Build Platform": 0
             }
         },
-        "galil": {
+        "acs": {
             "dummy": true,
-            "controller_name": "DMC4040",
-            "address": "192.168.0.9",
-            "default_axis": "D",
+            "address": "192.168.0.5",
+            "port": 701,
+            "default_axis": "C",
             "axes": [
                 "A",
                 "B",
-                "C",
-                "D"
+                "C"
             ],
             "axes_common_names": [
                 "X",
                 "Y",
-                "Focus",
                 "Build Platform"
             ],
             "axes_travel": {
-                "A": 100,
-                "B": 100,
-                "C": 12.5,
+                "A": 200,
+                "B": 200,
                 "D": 100
-            },
-            "axes_ctspmm": {
-                "A": 10000,
-                "B": 10000,
-                "C": 10000,
-                "D": 51200
             },
             "axes_tolerance": {
                 "A": 0.125,
                 "B": 0.125,
-                "C": 0.125,
                 "D": 0.125
             },
             "axes_speed": {
                 "A": 50,
                 "B": 50,
-                "C": 25,
                 "D": 25
             },
             "axes_acceleration": {
                 "A": 50,
                 "B": 50,
-                "C": 50,
                 "D": 50
             },
             "calibration_position": 29.1375391,

@@ -25,6 +25,8 @@ for key in config_dict.keys():
         hardware[key] = temp_dict
 
 # Dynamically import python snippits
+if "acs" in config_dict.keys():
+    import printer_server.drivers.acs.acs_snip
 if "coord_systems" in config_dict.keys():
     import printer_server.drivers.coord_systems.coord_systems_snip
 if "external_control" in config_dict.keys():
@@ -92,6 +94,18 @@ def index():
                     "y_drift": {"name": "Y Drift", "value":calibration_positions.get("y_drift",0.0)},
                     "x_shift": {"name": "X Shift per mm Y", "value":calibration_positions.get("x_shift",0.0)},
                     "y_shift": {"name": "Y Shift per mm X", "value":calibration_positions.get("y_shift",0.0)}
+                }
+
+        if "acs" in config_dict.keys():
+            acs_positions = (
+                printer_server.drivers.acs.acs_snip.acs_get_positions()
+            )
+            hardware["acs"]["stages"] = {}
+            for i in range(len(config_dict["acs"]["axes"])):
+                axis = config_dict["acs"]["axes"][i]
+                hardware["acs"]["stages"][axis] = {
+                    "common": config_dict["acs"]["axes_common_names"][i],
+                    "position": acs_positions[axis],
                 }
 
         if "galil" in config_dict.keys():
