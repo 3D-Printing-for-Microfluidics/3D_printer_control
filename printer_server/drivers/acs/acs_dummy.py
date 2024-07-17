@@ -233,6 +233,7 @@ class ACS_dummy(BPStageDriver, XYStageDriver):
         self.log.info("Homing complete.")
 
         for a in self.axes:
+            self.homed[a] = True
             self.setSpeed(self.getDefaultSpeed(a), axis=a)
             self.setAcceleration(self.getDefaultAcceleration(a), axis=a)
 

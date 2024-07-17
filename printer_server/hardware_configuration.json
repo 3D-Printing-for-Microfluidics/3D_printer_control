@@ -318,7 +318,7 @@
         ],
         "stages": {
             "bp": "acs",
-            "focus": "kdc",
+            "focus": "kdc101",
             "x_y": "acs",
             "t_t_r": "tiptilt"
         },
@@ -374,20 +374,20 @@
             },
             "visitech": {
                 "X": 0,
-                "Y": 8.000,
-                "Focus": 2.189,
+                "Y": 0,
+                "Focus": 0,
                 "Build Platform": 0
             },
             "keyence_visitech": {
-                "X": 0.047,
-                "Y": -24.424,
-                "Focus": -0.211,
+                "X": 0,
+                "Y": 0,
+                "Focus": 0,
                 "Build Platform": 0
             },
             "fiber_visitech": {
-                "X": 0.047,
-                "Y": -24.424,
-                "Focus": -0.211,
+                "X": 0,
+                "Y": 0,
+                "Focus": 0,
                 "Build Platform": 0
             }
         },
@@ -395,11 +395,11 @@
             "dummy": true,
             "address": "192.168.0.5",
             "port": 701,
-            "default_axis": "C",
+            "default_axis": "2",
             "axes": [
-                "A",
-                "B",
-                "C"
+                "0",
+                "1",
+                "2"
             ],
             "axes_common_names": [
                 "X",
@@ -407,28 +407,28 @@
                 "Build Platform"
             ],
             "axes_travel": {
-                "A": 200,
-                "B": 200,
-                "D": 100
+                "0": 200,
+                "1": 200,
+                "2": 100
             },
             "axes_tolerance": {
-                "A": 0.125,
-                "B": 0.125,
-                "D": 0.125
+                "0": 0.125,
+                "1": 0.125,
+                "2": 0.125
             },
             "axes_speed": {
-                "A": 50,
-                "B": 50,
-                "D": 25
+                "0": 50,
+                "1": 50,
+                "2": 25
             },
             "axes_acceleration": {
-                "A": 50,
-                "B": 50,
-                "D": 50
+                "0": 50,
+                "1": 50,
+                "2": 50
             },
-            "calibration_position": 29.1375391,
-            "bottom_position": 43.6390039,
-            "top_position": -50
+            "calibration_position": 79.1375391,
+            "bottom_position": 93.6390039,
+            "top_position": 0
         },
         "tiptilt": {
             "dummy": true,

@@ -158,6 +158,9 @@ class ACS(BPStageDriver, XYStageDriver):
     def disconnect(self):
         """Disconnect form the ACS controller."""
         if self.connected is not None and self.connected is not False:
+            for axis in self.axes:
+                self.motorOff(axis)
+
             self.thread_running = False
             try:
                 self.thread.join()
