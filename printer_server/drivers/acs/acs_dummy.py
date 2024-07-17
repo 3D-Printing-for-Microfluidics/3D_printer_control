@@ -9,9 +9,9 @@ from datetime import datetime
 from printer_server.threading_wrapper import Thread
 from printer_server.logging_handler import dummy_log
 from printer_server.async_file_handler import async_file_hander
-from printer_server.drivers.generic_drivers import BPStageDriver, FocusStageDriver, XYStageDriver
+from printer_server.drivers.generic_drivers import BPStageDriver, XYStageDriver
 
-class ACS_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
+class ACS_dummy(BPStageDriver, XYStageDriver):
     @dummy_log
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.log = logging.getLogger(__name__)
@@ -26,7 +26,6 @@ class ACS_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.thread_running = False
         self.logging_running = False
 
-        self.controller_name = config_dict["controller_name"]
         self.default_axis = config_dict["default_axis"]
         self.axes = config_dict["axes"]
         self.axes_common_names = config_dict["axes_common_names"]
@@ -136,36 +135,18 @@ class ACS_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         """Find the first ACS controller and connect to it."""
         if self.connected is None:
             self.connected = False
-            if self.config_dict["address"] == "auto":
-                self.log.info("Searching for %s controller...", self.controller_name)
-                available = {"dummy_address": self.controller_name}
-                self.address = None
-                for address in sorted(available.keys()):
-                    if self.controller_name in available[address]:
-                        self.address = "dummy_address"
-                        self.controller_name = available[address]
-                        self.log.debug("Found %s at %s", available[address], self.address)
-                        return self._connect(shutdown)
-                msg = f"ACS controller not found! ({self.controller_name})"
-                self.log.critical(msg)
-                return False
-            else:
-                self.address = self.config_dict["address"]
-                self.controller_name = self.config_dict["controller_name"]
-                return self._connect(shutdown)
+            self.address = self.config_dict["address"]
+            self.log.info("Connecting to %s", self.address)
+            self.connected = True
+            self.thread_running = True
+            self.thread.start()
+            atexit.register(self.disconnect)
+            self.log.info("Connected to ACS controller")
+            self.shutdown = shutdown
+            return True
         else:
             while self.connected is False:
-                time.sleep(0.1)
-
-    def _connect(self, shutdown):
-        self.log.info("Connecting to %s at %s", self.controller_name, self.address)
-        self.connected = True
-        self.thread_running = True
-        self.thread.start()
-        atexit.register(self.disconnect)
-        self.log.info("Connected to ACS controller")
-        self.shutdown = shutdown
-        return True
+                time.sleep(0.1)   
 
     @dummy_log
     def disconnect(self):
@@ -180,7 +161,7 @@ class ACS_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
             self.thread.daemon = True
             self.connected = None
             self.initialized = None
-            self.log.info("Disconnected from ACS controller (%s)", self.controller_name)
+            self.log.info("Disconnected from ACS controller")
 
     # @dummy_log
     def write_to_disk(self, *args):
@@ -247,41 +228,9 @@ class ACS_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
 
     @dummy_log
     def home(self):
-        """Run the homing routine.
-
-        The homing routine begins by jogging up until the limit switch
-        is triggered, then runs the built in "HM" routine and waits for
-        motion to complete.
-        """
-        if "DMC31010" in self.controller_name:
-            self.log.info("Start homing...")
-            a = self.convertAxis()
-            self.setSpeed(10)
-            self.motorOn()
-            self.startJog(speed=-15, acceleration=50)
-            self.motionPlanningComplete(axis=a)
-            self.stopJog()
-            self.motorOn()
-            self.send("HM")
-            self.send("BGA")
-            self.waitForMotionComplete(0)
-            self.motionPlanningComplete(axis=a)
-            self.homed[a] = True
-            self.log.info("Homing complete.")
-            self.current_position[a] = 0.0
-
-        elif "DMC4040" in self.controller_name:
-            self.log.info("Start homing...")
-            self.send("XQ #HMA,0")
-            self.send("XQ #HMB,1")
-            self.send("XQ #HMC,2")
-            self.send("XQ #HMD,3")
-
-            for a in self.axes:
-                self.motionPlanningComplete(axis=a)
-                self.homed[a] = True  # update class homed status
-                self.current_position[a] = 0.0
-            self.log.info("Homing complete.")
+        """Run the homing routine."""
+        self.log.info("Start homing...")
+        self.log.info("Homing complete.")
 
         for a in self.axes:
             self.setSpeed(self.getDefaultSpeed(a), axis=a)

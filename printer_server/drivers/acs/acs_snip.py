@@ -90,10 +90,10 @@ def acs_move(message):
                 distance += coord_system[acs.getCommonName(axis)]
                 #position *= 1000
                 if acs.getCommonName(axis) == "X":
-                    y_distance = acs.getPosition(in_mm=True, axis="Y") - coord_system["Y"]
+                    y_distance = acs.getPosition(axis="Y") - coord_system["Y"]
                     distance += calibration_positions.get("x_drift",0)/1000 + calibration_positions.get("x_shift",0)*y_distance/1000
                 if acs.getCommonName(axis) == "Y":
-                    x_distance = acs.getPosition(in_mm=True, axis="X") - coord_system["X"]
+                    x_distance = acs.getPosition(axis="X") - coord_system["X"]
                     distance += calibration_positions.get("y_drift",0)/1000 + calibration_positions.get("y_shift",0)*x_distance/1000
             else:
                 distance += coord_system[acs.getCommonName(axis)]
@@ -133,7 +133,7 @@ def acs_get_positions(return_timing=False):
     """Get the position the main Z stage."""
     positions = {}
     for axis in acs.axes:
-        position = acs.getPosition(in_mm=True, axis=axis)
+        position = acs.getPosition(axis=axis)
         if coord_systems_control is not None:
             coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
             calibration_positions = printer_server.views.manual_controls.get_last_calibration_positions_from_logs()
@@ -141,10 +141,10 @@ def acs_get_positions(return_timing=False):
                 position -= coord_system[acs.getCommonName(axis)]
                 position *= 1000
                 if acs.getCommonName(axis) == "X":
-                    y_position = acs.getPosition(in_mm=True, axis="Y") - coord_system["Y"]
+                    y_position = acs.getPosition(axis="Y") - coord_system["Y"]
                     position -= calibration_positions.get("x_drift",0.0) + calibration_positions.get("x_shift",0.0)*y_position
                 if acs.getCommonName(axis) == "Y":
-                    x_position = acs.getPosition(in_mm=True, axis="X") - coord_system["X"]
+                    x_position = acs.getPosition(axis="X") - coord_system["X"]
                     position -= calibration_positions.get("y_drift",0.0) + calibration_positions.get("y_shift",0.0)*x_position
             else:
                 position -= coord_system[acs.getCommonName(axis)]
@@ -163,6 +163,6 @@ def acs_get_position(axis, notify=True):
     """Get the position the main Z stage."""
     a = acs.convertAxis(axis)
     if notify:
-        message = {"position": acs.getPosition(in_mm=True)}
+        message = {"position": acs.getPosition()}
         socketio.emit("acs_position", message, namespace="/manual")
-    return acs.getPosition(in_mm=True, axis=a)
+    return acs.getPosition(axis=a)
