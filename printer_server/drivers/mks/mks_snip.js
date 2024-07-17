@@ -19,8 +19,8 @@ var update_dist_position = function (message) {
     }
 }
 
-$(document).ready(function () {
 
+$(document).ready(function () {
     // After 60 minutes of inactivity, close socket and timeout web page
     socket.emit("subscribe_mks");
     var event = 'click',
@@ -30,6 +30,7 @@ $(document).ready(function () {
             document.removeEventListener(event, reset, false);
             var content = 'This page has timed out. Please reload the page.';
             document.getElementById('base-body').innerHTML = content;
+            socket.emit("unsubscribe_mks");
             socket.disconnect();
         },
         reset = function () {
@@ -37,6 +38,7 @@ $(document).ready(function () {
             timer = setTimeout(logout, 3600000);
         };
     document.addEventListener(event, reset, false);
+    window.addEventListener('beforeunload', logout, false);
     reset();
 
     // Initiaize to starting values

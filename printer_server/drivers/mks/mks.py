@@ -2,6 +2,7 @@ import serial
 import atexit
 import time
 import logging
+import threading
 import serial.tools
 import serial.serialutil
 from decimal import Decimal
@@ -57,6 +58,8 @@ def parse_pressure(log, pressure):
     elif "NO_GAUGE" in pressure or "NOGAUGE" in pressure:
         log.error("Controller unable to determine sensor connection.")
         return None
+    elif ">1.0E+03" in pressure:
+        return float(1000)
     else:
         return float(pressure)
 
@@ -65,12 +68,15 @@ class MKS946(serial.Serial):
         self.config_dict = config_dict
         self.address = config_dict["mks_address"]
 
-        super().__init__(baudrate=config_dict["mks_baudrate"], timeout=0.01)
+        super().__init__(baudrate=config_dict["mks_baudrate"], timeout=0.05)
+
+        self.sendLock = threading.Lock()
 
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         self.connected = False
-        self.running = False
+        self.thread_running = False
+        self.pressures = None
         self.thread = Thread(self.log, name="mks_poll_thread", target=self.loop)
 
     def findUsbPort(self, hwid):
@@ -127,7 +133,7 @@ class MKS946(serial.Serial):
                 else:
                     print(f"set_relay_mode: {self.set_relay_mode(relay_num, 'CLEAR')}")
                     # self.set_relay_mode(relay_num, 'CLEAR')
-            # self.start_thread()
+            self.start_thread()
             self.log.info("MSK initialized")
 
     def disconnect(self):
@@ -142,22 +148,23 @@ class MKS946(serial.Serial):
             self.log.info("Disconnected from MKS")
 
     def start_thread(self):
-        if not self.running:
-            self.running = True
+        if not self.thread_running:
+            self.thread_running = True
             self.thread.start()
 
     def stop_thread(self):
-        if self.running:
-            self.running = False
+        if self.thread_running:
+            self.thread_running = False
             self.thread.join()
             self.thread = Thread(self.log, name="mks_poll_thread", target=self.loop)
 
     def loop(self):
-        from printer_server.drivers.mks.mks_snip import get_gauges, get_relay_status
-        while self.running:
+        from printer_server.drivers.mks.mks_snip import get_gauges, get_relay_status, cranePosition
+        while self.thread_running:
             if self.connected:
                 get_relay_status(emit=True)
                 get_gauges(emit=True)
+                cranePosition(emit=True)
             time.sleep(0.1)
 
     def send_command(self, command):
@@ -180,35 +187,37 @@ class MKS946(serial.Serial):
         @003ACK7.602E+2;FF
         Here, <aaa>=003; <Command>=PR1; <Response>=7.602E+2
         '''
-        cmd_str = f"@{self.address}{command}"
-        if n != None:
-            cmd_str += f"{n}"
-        cmd_str += f"?"
-        if parameter != "":
-            cmd_str += f"{parameter}"
-        cmd_str += f";FF"
+        with self.sendLock:
+            cmd_str = f"@{self.address}{command}"
+            if n != None:
+                cmd_str += f"{n}"
+            cmd_str += f"?"
+            if parameter != "":
+                cmd_str += f"{parameter}"
+            cmd_str += f";FF"
 
-        trys = 3
-        for _ in range(trys):
-            self.send_command(cmd_str)
-            rsp_str = self.read_response()
-            # print(f"{cmd_str} -> {rsp_str}")
+            trys = 3
+            for _ in range(trys):
+                self.send_command(cmd_str)
+                rsp_str = self.read_response()
+                # print(f"{cmd_str} -> {rsp_str}")
 
-            if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
-                rsp_str = rsp_str.replace(f"@{self.address}ACK","")
-                rsp_str = rsp_str.replace(f";FF","")
+                if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
+                    rsp_str = rsp_str.replace(f"@{self.address}ACK","")
+                    rsp_str = rsp_str.replace(f";FF","")
+                    
+                    return rsp_str
                 
-                return rsp_str
-            
-            elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
-                rsp_str = rsp_str.replace(f"@{self.address}NAK","")
-                rsp_str = rsp_str.replace(f";FF","")
-                self.log.error(self.parse_error_code(int(rsp_str)))
-                return None
-            
-            else:
-                self.log.error("NAK: RSP FORMAT ERROR")
-        return None
+                elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
+                    rsp_str = rsp_str.replace(f"@{self.address}NAK","")
+                    rsp_str = rsp_str.replace(f";FF","")
+                    self.log.error(self.parse_error_code(int(rsp_str)))
+                    return None
+                
+                else:
+                    print(cmd_str, rsp_str)
+                    self.log.error("NAK: RSP FORMAT ERROR")
+            return None
         
 
     def set(self, command, n=None, parameter=""):
@@ -227,50 +236,51 @@ class MKS946(serial.Serial):
         Here, <aaa>=001; <Command>=BR; <Parameter>=19200;
         <Response>=19200
         '''
-        cmd_str = f"@{self.address}{command}"
-        if n != None:
-            cmd_str += f"{n}"
-        cmd_str += f"!"
-        if parameter != "":
-            cmd_str += f"{parameter}"
-        cmd_str += f";FF"
+        with self.sendLock:
+            cmd_str = f"@{self.address}{command}"
+            if n != None:
+                cmd_str += f"{n}"
+            cmd_str += f"!"
+            if parameter != "":
+                cmd_str += f"{parameter}"
+            cmd_str += f";FF"
 
-        self.send_command(cmd_str)
-        rsp_str = self.read_response()
+            self.send_command(cmd_str)
+            rsp_str = self.read_response()
 
-        if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
-            rsp_str = rsp_str.replace(f"@{self.address}ACK","")
-            rsp_str = rsp_str.replace(f";FF","")
-            
-            if type(parameter) is int:
-                if command == "SST" and rsp_str == "OFF":
-                    rsp_str = 0
-                if int(rsp_str) != parameter:
-                    self.log.error(f"Set command '{command}' failed (value '{parameter}' != response '{rsp_str}')")
-                    return False
-                return True
-
-            elif type(parameter) is str:
-                if rsp_str != parameter:
-                    if command == "PT" and parameter in rsp_str:
-                        return True
-                    else:
+            if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
+                rsp_str = rsp_str.replace(f"@{self.address}ACK","")
+                rsp_str = rsp_str.replace(f";FF","")
+                
+                if type(parameter) is int:
+                    if command == "SST" and rsp_str == "OFF":
+                        rsp_str = 0
+                    if int(rsp_str) != parameter:
                         self.log.error(f"Set command '{command}' failed (value '{parameter}' != response '{rsp_str}')")
                         return False
-                return True
+                    return True
 
+                elif type(parameter) is str:
+                    if rsp_str != parameter:
+                        if command == "PT" and parameter in rsp_str:
+                            return True
+                        else:
+                            self.log.error(f"Set command '{command}' failed (value '{parameter}' != response '{rsp_str}')")
+                            return False
+                    return True
+
+                else:
+                    return rsp_str
+            
+            elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
+                rsp_str = rsp_str.replace(f"@{self.address}NAK","")
+                rsp_str = rsp_str.replace(f";FF","")
+                self.log.error(self.parse_error_code(int(rsp_str)))
+                return False
+            
             else:
-                return rsp_str
-        
-        elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
-            rsp_str = rsp_str.replace(f"@{self.address}NAK","")
-            rsp_str = rsp_str.replace(f";FF","")
-            self.log.error(self.parse_error_code(int(rsp_str)))
-            return False
-        
-        else:
-            self.log.error("NAK: RSP FORMAT ERROR")
-            return False
+                self.log.error("NAK: RSP FORMAT ERROR")
+                return False
         
         
     def parse_error_code(self, code):
@@ -338,7 +348,8 @@ class MKS946(serial.Serial):
         if rsp is None:
             return rsp
         # right now we will only care about the first 2 sensors. if we later add more modules, you can change this
-        return [parse_pressure(self.log, p) for p in rsp.split(" ")[:2]]
+        self.pressures = [parse_pressure(self.log, p) for p in rsp.split(" ")[:2]]
+        return self.pressures
     
     '''PCn'''
     def read_combination_pressure(self, channel):

@@ -1,6 +1,7 @@
 import atexit
-import logging
 import serial
+import logging
+from threading import Lock
 import serial.tools.list_ports
 import serial.serialutil
 
@@ -14,6 +15,8 @@ class MKSTeensy(serial.Serial):
         self.port = None  # start with no port
         self.connected = False
         self.initialized = None
+
+        self.sendLock = Lock()
 
     def findUsbPort(self, hwid):
         ports = list(serial.tools.list_ports.comports())
@@ -40,19 +43,19 @@ class MKSTeensy(serial.Serial):
         return True
     
     def disconnect(self):
-        if self.connected:
-            self.close()
-            self.connected = False
-            self.log.info("Disconnected from MKS Teensy")
+        self.close()
+        self.connected = False
+        self.log.info("Disconnected from MKS Teensy")
 
     def send(self, cmd, receive=True):
-        self.log.debug("Sent: '%s'", cmd)
-        self.write(bytes(cmd + "\r", encoding="ascii"))  # write to serial tx buffer
-        if receive:
-            response = self.receive()
-            self.log.debug("Response: '%s'", response)
-            return response  # return the response to the command
-        return
+        with self.sendLock:
+            self.log.debug("Sent: '%s'", cmd)
+            self.write(bytes(cmd + "\r", encoding="ascii"))  # write to serial tx buffer
+            if receive:
+                response = self.receive()
+                self.log.debug("Response: '%s'", response)
+                return response  # return the response to the command
+            return
 
     def receive(self):
         """

@@ -500,6 +500,10 @@ $(document).ready(function () {
         $("#print-alert-body").text("Are you sure you want to stop printing?");
     });
 
+    $("#degass-btn").click(function () {
+        socket.emit("degass");
+    });
+
     $("#shutdown-btn").click(function () {
         $("#print-alert-title").text("Shutdown");
         $("#print-alert-body").text("Make sure 3D printer is not in operation.");
