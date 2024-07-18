@@ -364,28 +364,27 @@ $(document).ready(function () {
         if (document.getElementById('base-body').innerHTML == content) {
             location.reload()
         }
-
     });
 
     socket.on("initialized", function (message) {
         $("#printer-state").text("Initialized");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
+        show_btn("#plana1-btn, #shutdown-btn, #admin-btn, #degass-btn");
     });
 
     socket.on("planarizing", function (message) {
         $("#printer-state").text("Planarizing");
-        show_btn("#plana2-btn, #admin-btn");
+        show_btn("#plana2-btn, #admin-btn, #degass-btn");
     });
 
     socket.on("planarized", function (message) {
         $("#printer-state").text("Planarized");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
+        show_btn("#plana1-btn, #shutdown-btn, #admin-btn, #degass-btn");
         $("#start-btn").removeClass("d-none");
     });
 
     socket.on("printing", function (message) {
         $("#printer-state").text("Printing");
-        show_btn("#pause-btn, #stop-btn, #admin-btn");
+        show_btn("#pause-btn, #stop-btn, #admin-btn, #degass-btn");
         $("#print-progress-bar").css({ "width": message.percent + "%" })
             .attr({ "aria-valuenow": message.percent })
             .text(message.percent + "%");
@@ -400,12 +399,12 @@ $(document).ready(function () {
 
     socket.on("paused", function (message) {
         $("#printer-state").text("Paused");
-        show_btn("#resume-btn, #stop-btn, #admin-btn");
+        show_btn("#resume-btn, #stop-btn, #admin-btn, #degass-btn");
     });
 
     socket.on("stopped", function (message) {
         $("#printer-state").text("Stopped");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
+        show_btn("#plana1-btn, #shutdown-btn, #admin-btn, #degass-btn");
         if (loadcell_exists) {
             hide_loadcell();
         }
@@ -414,7 +413,7 @@ $(document).ready(function () {
 
     socket.on("completed", function (message) {
         $("#printer-state").text("Completed");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
+        show_btn("#plana1-btn, #shutdown-btn, #admin-btn, #degass-btn");
         if (loadcell_exists) {
             hide_loadcell();
         }
