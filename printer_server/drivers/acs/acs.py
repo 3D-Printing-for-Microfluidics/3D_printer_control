@@ -146,8 +146,8 @@ class ACS(BPStageDriver, XYStageDriver):
                 self.log.critical(msg)
                 return False
             
-            # self.thread_running = True
-            # self.thread.start()
+            self.thread_running = True
+            self.thread.start()
             atexit.register(self.disconnect)
             self.log.info("Connected to ACS controller")
             return True
@@ -482,10 +482,10 @@ class ACS(BPStageDriver, XYStageDriver):
         counter = 0
         time_count = 0
         limit_switch_triggered = False
-        in_motion = float(self.send(f"?MST{a}.#INPOS", notify=False))
-        while in_motion == 1.0:
+        in_motion = not bool(self.send(f"?MST{a}.#INPOS", notify=False))
+        while in_motion:
             time.sleep(0.01)
-            in_motion = float(self.send(f"?MST{a}.#INPOS", notify=False))
+            in_motion = not bool(self.send(f"?MST{a}.#INPOS", notify=False))
             upper, lower = self.checkLimits(axis=a)
             position = self.current_position[a]
             if (
@@ -512,7 +512,7 @@ class ACS(BPStageDriver, XYStageDriver):
                     # self.logging_move_complete = True
                     self.logging_move_status[a] = 3
                     return
-                if int(mm - error) <= position <= int(mm + error):
+                if float(mm - error) <= position <= float(mm + error):
                     counter += 1
                 else:
                     counter = 0
