@@ -1,8 +1,9 @@
+import time
 import logging
 
 from printer_server.threading_wrapper import Thread
-from printer_server.hardware_configuration import driver_handles
 from printer_server.printer_control.print_control import PrintControl
+from printer_server.hardware_configuration import driver_handles, config_dict
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -12,6 +13,8 @@ class VacuumControl(PrintControl):
         super().__init__()
         self.mks = driver_handles.mks
         self.mks_teensy = driver_handles.mks_teensy
+        self.degass_running = False
+        self.degass_thread = None
 
     def connect_hardware(self):
         mks_thread = Thread(log, name="mks_connect_thread", target=self.mks.connect, args=[])
@@ -27,3 +30,47 @@ class VacuumControl(PrintControl):
         mks_thread.start()
         super().initialize_hardware()
         mks_thread.join()
+
+    def degass(self, msg):
+        if msg == "run":
+            self.degass_running = True
+            self.degass_thread = Thread(log, name="degass_thread", target=self.run_degass, args=[])
+            self.degass_thread.start()
+        elif msg == "stop":
+            self.degass_running = False
+            self.degass_thread.join()
+            self.finish_degass()
+        elif msg == "finish":
+            self.finish_degass()
+
+    def run_degass(self):
+        set_pressures = [50, 10, 7, 5, 3, 1, 0.9, 0.8, 0.1, 0.05]
+        waits = [30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
+        hysteresis = [50.5, 10.5, 7.5, 5.5, 3.5, 1.5, 1, 0.9, 0.15, 0.06]
+        relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
+
+        self.mks.set_relay_mode(relay_num, "SET")
+        self.mks_teensy.activate_relay(config_dict["mks"]["teensy relays"].index("valve_vacuum"))
+        for p, w, h in zip(set_pressures, waits, hysteresis):
+            t = 0.0
+            in_hyst = True
+            while t < w and self.degass_running:
+                if self.mks.pressures[1] >= h:
+                    in_hyst = True
+                while (in_hyst and self.mks.pressures[1] >= p):
+                    self.mks_teensy.activate_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"))
+                    time.sleep(0.1)
+                in_hyst = False
+                self.mks_teensy.deactivate_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"))
+                time.sleep(0.1)
+                t += 0.1
+
+
+    def finish_degass(self):
+        relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
+        self.mks_teensy.activate_relay(config_dict["mks"]["teensy relays"].index("valve_vent2"))
+        self.mks_teensy.deactivate_relay(config_dict["mks"]["teensy relays"].index("valve_vacuum"))
+        self.mks.set_relay_mode(relay_num, "CLEAR")
+        while (self.mks.pressures[1] <= config_dict["mks"]["atm pressure"]):
+            time.sleep(0.1)
+        self.mks_teensy.deactivate_relay(config_dict["mks"]["teensy relays"].index("valve_vent2"))

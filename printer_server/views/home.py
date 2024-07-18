@@ -173,6 +173,11 @@ def stop(message):
     print_control.stop(run_in_thread=True, top_level=True)
 
 
+@socketio.on("degass", namespace="/printing")
+def degass():
+    print_control.degass()
+
+
 @socketio.on("shutdown", namespace="/printing")
 # pylint: disable=unused-argument
 def shutdown(message):

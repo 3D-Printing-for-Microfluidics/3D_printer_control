@@ -317,10 +317,16 @@
             "v2"
         ],
         "stages": {
-            "bp": "galil",
-            "focus": "galil",
-            "x_y": "galil",
+            "bp": "acs",
+            "focus": "kdc101",
+            "x_y": "acs",
             "t_t_r": "tiptilt"
+        },
+        "kdc101": {
+            "dummy": true,
+            "vendor_id": 1027,
+            "product_id": 64240,
+            "moving_shifts_image": true
         },
         "light_engines": [
             "visitech"
@@ -368,73 +374,61 @@
             },
             "visitech": {
                 "X": 0,
-                "Y": 8.000,
-                "Focus": 2.189,
+                "Y": 0,
+                "Focus": 0,
                 "Build Platform": 0
             },
             "keyence_visitech": {
-                "X": 0.047,
-                "Y": -24.424,
-                "Focus": -0.211,
+                "X": 0,
+                "Y": 0,
+                "Focus": 0,
                 "Build Platform": 0
             },
             "fiber_visitech": {
-                "X": 0.047,
-                "Y": -24.424,
-                "Focus": -0.211,
+                "X": 0,
+                "Y": 0,
+                "Focus": 0,
                 "Build Platform": 0
             }
         },
-        "galil": {
-            "dummy": true,
-            "controller_name": "DMC4040",
-            "address": "192.168.0.9",
-            "default_axis": "D",
+        "acs": {
+            "dummy": false,
+            "address": "192.168.0.5",
+            "port": 701,
+            "default_axis": "2",
             "axes": [
-                "A",
-                "B",
-                "C",
-                "D"
+                "0",
+                "1",
+                "2"
             ],
             "axes_common_names": [
                 "X",
                 "Y",
-                "Focus",
                 "Build Platform"
             ],
             "axes_travel": {
-                "A": 100,
-                "B": 100,
-                "C": 12.5,
-                "D": 100
-            },
-            "axes_ctspmm": {
-                "A": 10000,
-                "B": 10000,
-                "C": 10000,
-                "D": 51200
+                "0": 200,
+                "1": 200,
+                "2": 100
             },
             "axes_tolerance": {
-                "A": 0.125,
-                "B": 0.125,
-                "C": 0.125,
-                "D": 0.125
+                "0": 0.125,
+                "1": 0.125,
+                "2": 0.125
             },
             "axes_speed": {
-                "A": 50,
-                "B": 50,
-                "C": 25,
-                "D": 25
+                "0": 50,
+                "1": 50,
+                "2": 25
             },
             "axes_acceleration": {
-                "A": 50,
-                "B": 50,
-                "C": 50,
-                "D": 50
+                "0": 50,
+                "1": 50,
+                "2": 50
             },
-            "calibration_position": 29.1375391,
-            "bottom_position": 43.6390039,
-            "top_position": -50
+            "calibration_position": 79.1375391,
+            "bottom_position": 93.6390039,
+            "top_position": 0
         },
         "tiptilt": {
             "dummy": true,

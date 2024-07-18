@@ -9,9 +9,9 @@ from datetime import datetime
 from printer_server.threading_wrapper import Thread
 from printer_server.logging_handler import dummy_log
 from printer_server.async_file_handler import async_file_hander
-from printer_server.drivers.generic_drivers import BPStageDriver, FocusStageDriver, XYStageDriver
+from printer_server.drivers.generic_drivers import BPStageDriver, XYStageDriver
 
-class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
+class ACS_dummy(BPStageDriver, XYStageDriver):
     @dummy_log
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.log = logging.getLogger(__name__)
@@ -21,17 +21,15 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
 
         self.sendLock = threading.Lock()
 
-        self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
+        self.thread = Thread(self.log, name="acs_loop_thread", target=self.loop)
         self.thread.daemon = True
         self.thread_running = False
         self.logging_running = False
 
-        self.controller_name = config_dict["controller_name"]
         self.default_axis = config_dict["default_axis"]
         self.axes = config_dict["axes"]
         self.axes_common_names = config_dict["axes_common_names"]
         self.max_travel_mm = config_dict["axes_travel"]
-        self.ctspmm = config_dict["axes_ctspmm"]
         self.default_speed = config_dict["axes_speed"]
         self.default_acceleration = config_dict["axes_acceleration"]
         self.calibration_position = config_dict["calibration_position"]
@@ -55,7 +53,7 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
             self.jogging[a] = False
             self.pre_jog_speed[a] = 0
             self.pre_jog_acceleration[a] = 0
-            self.error_window[a] = self.tolerence[a] * self.ctspmm[a] / 1000
+            self.error_window[a] = self.tolerence[a] / 1000
             self.monitoring_window[a] = self.error_window[a] * 100
             self.logging_move_status[a] = -1
             self.current_position[a] = 0
@@ -118,71 +116,52 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
     def goToBPcalibration(self):
         self.absMove(mm=self.calibration_position, axis="Build Platform")
         self.current_position[self.convertAxis("Build Platform")] = self.calibration_position
-        return self.getPosition(in_mm=True)
+        return self.getPosition()
 
     @dummy_log
     def goToBPmax(self):
         self.absMove(mm=self.top_position, axis="Build Platform")
         self.current_position[self.convertAxis("Build Platform")] = self.top_position
-        return self.getPosition(in_mm=True)
+        return self.getPosition()
 
     @dummy_log
     def goToBPmin(self):
         self.absMove(mm=self.bottom_position, axis="Build Platform")
         self.current_position[self.convertAxis("Build Platform")] = self.bottom_position
-        return self.getPosition(in_mm=True)
+        return self.getPosition()
 
     @dummy_log
     def connect(self, shutdown):
-        """Find the first Galil controller and connect to it."""
+        """Find the first ACS controller and connect to it."""
         if self.connected is None:
             self.connected = False
-            if self.config_dict["address"] == "auto":
-                self.log.info("Searching for %s controller...", self.controller_name)
-                available = {"dummy_address": self.controller_name}
-                self.address = None
-                for address in sorted(available.keys()):
-                    if self.controller_name in available[address]:
-                        self.address = "dummy_address"
-                        self.controller_name = available[address]
-                        self.log.debug("Found %s at %s", available[address], self.address)
-                        return self._connect(shutdown)
-                msg = f"Galil controller not found! ({self.controller_name})"
-                self.log.critical(msg)
-                return False
-            else:
-                self.address = self.config_dict["address"]
-                self.controller_name = self.config_dict["controller_name"]
-                return self._connect(shutdown)
+            self.address = self.config_dict["address"]
+            self.log.info("Connecting to %s", self.address)
+            self.connected = True
+            self.thread_running = True
+            self.thread.start()
+            atexit.register(self.disconnect)
+            self.log.info("Connected to ACS controller")
+            self.shutdown = shutdown
+            return True
         else:
             while self.connected is False:
-                time.sleep(0.1)
-
-    def _connect(self, shutdown):
-        self.log.info("Connecting to %s at %s", self.controller_name, self.address)
-        self.log.debug("GInfo returned: dummy_info")
-        self.connected = True
-        self.thread_running = True
-        self.thread.start()
-        atexit.register(self.disconnect)
-        self.log.info("Connected to Galil controller")
-        self.shutdown = shutdown
-        return True
+                time.sleep(0.1)   
 
     @dummy_log
     def disconnect(self):
-        """Disconnect form the Galil controller."""
+        """Disconnect form the ACS controller."""
         if self.connected is not None and self.connected is not False:
             self.thread_running = False
             try:
                 self.thread.join()
             except RuntimeError:
                 pass
-            self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
+            self.thread = Thread(self.log, name="acs_loop_thread", target=self.loop)
             self.thread.daemon = True
             self.connected = None
             self.initialized = None
-            self.log.info("Disconnected from Galil controller (%s)", self.controller_name)
+            self.log.info("Disconnected from ACS controller")
 
     # @dummy_log
     def write_to_disk(self, *args):
@@ -195,32 +174,6 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         async_file_hander.write(self.movement_log, ",".join(map(str, args)) + "\n")
 
     # @dummy_log
-    def mmToCnts(self, mm, axis=None):
-        """Convert mm to counts for the specified axis."""
-        return int(mm * self.ctspmm[self.convertAxis(axis)])
-
-    # @dummy_log
-    def cntsToMm(self, counts, axis=None):
-        """Convert counts to mm for the specified axis."""
-        return counts / self.ctspmm[self.convertAxis(axis)]
-
-    # @dummy_log
-    def send(self, command, notify=True):
-        """Send a command to the controller.
-
-        If an error is returned, request and also return more
-        information about the error.
-        """
-        with self.sendLock:
-            if notify:
-                self.log.debug("Sent : '%s'", command)
-            response = "dummy_response"
-            response = "".join(response)
-            if notify and response != "":
-                self.log.debug("Reply: '%s'", response)
-            return response
-
-    # @dummy_log
     def checkLimits(self, axis=None):
         """Return a tuple the state of the limit switches for the
         specified axis.
@@ -231,13 +184,10 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         return bool(lf == "0.0000"), bool(lr == "0.0000")
 
     # @dummy_log
-    def getPosition(self, in_mm, axis=None, notify=True):
+    def getPosition(self, axis=None):
         """Return the position of the specified encoder."""
         pos = self.current_position[self.convertAxis(axis)]
-        if not in_mm:
-            return int(pos)
-        else:
-            return self.cntsToMm(int(pos), axis=axis)
+        return int(pos)
 
     # @dummy_log
     def motorOn(self, axis=None):
@@ -255,7 +205,7 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         """Return the acceleration of the specified axis (mm/sec^2)."""
         a = self.convertAxis(axis)
         acc = 1000
-        return int(acc) / self.ctspmm[a]
+        return int(acc)
 
     # @dummy_log
     def setAcceleration(self, acceleration, axis=None):
@@ -268,7 +218,7 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         """Return the speed for the specified axis (mm/sec)."""
         a = self.convertAxis(axis)
         speed = 1000
-        return int(speed) / self.ctspmm[a]
+        return int(speed)
 
     # @dummy_log
     def setSpeed(self, speed, axis=None):
@@ -278,43 +228,12 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
 
     @dummy_log
     def home(self):
-        """Run the homing routine.
-
-        The homing routine begins by jogging up until the limit switch
-        is triggered, then runs the built in "HM" routine and waits for
-        motion to complete.
-        """
-        if "DMC31010" in self.controller_name:
-            self.log.info("Start homing...")
-            a = self.convertAxis()
-            self.setSpeed(10)
-            self.motorOn()
-            self.startJog(speed=-15, acceleration=50)
-            self.motionPlanningComplete(axis=a)
-            self.stopJog()
-            self.motorOn()
-            self.send("HM")
-            self.send("BGA")
-            self.waitForMotionComplete(0)
-            self.motionPlanningComplete(axis=a)
-            self.homed[a] = True
-            self.log.info("Homing complete.")
-            self.current_position[a] = 0.0
-
-        elif "DMC4040" in self.controller_name:
-            self.log.info("Start homing...")
-            self.send("XQ #HMA,0")
-            self.send("XQ #HMB,1")
-            self.send("XQ #HMC,2")
-            self.send("XQ #HMD,3")
-
-            for a in self.axes:
-                self.motionPlanningComplete(axis=a)
-                self.homed[a] = True  # update class homed status
-                self.current_position[a] = 0.0
-            self.log.info("Homing complete.")
+        """Run the homing routine."""
+        self.log.info("Start homing...")
+        self.log.info("Homing complete.")
 
         for a in self.axes:
+            self.homed[a] = True
             self.setSpeed(self.getDefaultSpeed(a), axis=a)
             self.setAcceleration(self.getDefaultAcceleration(a), axis=a)
 
@@ -322,7 +241,7 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
 
     @dummy_log
     def getXYPosition(self, axis=None, notify=True):
-        return self.getPosition(in_mm=True, axis=axis)
+        return self.getPosition(axis=axis)
 
     @dummy_log
     def absMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
@@ -342,7 +261,7 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
 
     @dummy_log
     def getFocusPosition(self, notify=True):
-        return self.getPosition(in_mm=True, axis="Focus")
+        return self.getPosition(axis="Focus")
 
     @dummy_log
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
@@ -362,7 +281,7 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
 
     @dummy_log
     def getBPPosition(self, notify=True):
-        return self.getPosition(in_mm=True, axis="Build Platform")
+        return self.getPosition(axis="Build Platform")
 
     @dummy_log
     def absMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
@@ -383,32 +302,32 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         ################################# End parent class functions #######################################
 
     @dummy_log
-    def relMove(self, mm=None, cnts=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+    def relMove(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
         """Perform a relative movement."""
         a = self.convertAxis(axis)
         self.current_position[a] += mm
-        self.log.info("Move axis %s relative by %s mm or %s counts", a, mm, cnts)
+        self.log.info("Move axis %s relative by %s mm", a, mm)
         if speed is not None:
             self.setSpeed(speed, axis=a)
         if acceleration is not None:
             self.setAcceleration(acceleration, axis=a)
-        return self.getPosition(in_mm=True, axis=a)
+        return self.getPosition(axis=a)
 
     @dummy_log
-    def absMove(self, mm=None, cnts=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+    def absMove(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
         """Perform an absolute movement."""
         a = self.convertAxis(axis)
         self.current_position[a] = mm
         if not self.homed[a]:
             msg = "Must home before using absolute movements!"
             self.log.error(msg)
-            return self.getPosition(in_mm=True, axis=a)
-        self.log.info("Move axis %s to absolute position %s mm or %s counts", a, mm, cnts)
+            return self.getPosition(axis=a)
+        self.log.info("Move axis %s to absolute position %s mm", a, mm)
         if speed is not None:
             self.setSpeed(speed, axis=a)
         if acceleration is not None:
             self.setAcceleration(acceleration, axis=a)
-        return self.getPosition(in_mm=True, axis=a)
+        return self.getPosition(axis=a)
 
     @dummy_log
     def startJog(self, speed=None, acceleration=None, axis=None):
@@ -431,16 +350,16 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.log.info("Motion planning complete for axis %s", a)
 
     # @dummy_log
-    def waitForMotionComplete(self, cnts, wait_for_settling=True, axis=None):
+    def waitForMotionComplete(self, mm, wait_for_settling=True, axis=None):
         """Blocks execution until the encoder reaches the target value."""
         a = self.convertAxis(axis)
-        self.log.info("Waiting for motion complete on axis %s to %s counts", a, cnts)
+        self.log.info("Waiting for motion complete on axis %s", a, mm)
 
     # @dummy_log
     def setup_log_file(self, filename):
         """Set the log file."""
         if self.movement_log is None and filename is not None:
-            self.movement_log = str(Path(filename) / "galil_movement_data.csv")
+            self.movement_log = str(Path(filename) / "acs_movement_data.csv")
             self.log.info("Log file set to %s", self.movement_log)
         elif self.movement_log is not None and filename is None:
             self.movement_log = None
@@ -449,20 +368,20 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
     def logging_start(self):
         """Starts collecting position data."""
         self.logging_running = True
-        self.log.info("Galil logging started")
+        self.log.info("ACS logging started")
 
     # @dummy_log
     def logging_stop(self):
         """Stops collecting position data."""
         self.logging_running = False
-        self.log.info("Galil logging stopped")
+        self.log.info("ACS logging stopped")
 
     # @dummy_log
     def loop(self):
         """Main loop to update positions and log data."""
         while self.thread_running:
             for a in self.axes:
-                self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
+                self.current_position[a] = self.getPosition(axis=a)
             if self.logging_running and self.movement_log:
                 # self.log.info("Logging data to %s", self.movement_log)
                 pass
@@ -470,25 +389,25 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
 
     # @dummy_log
     def downloadProgram(self, filename):
-        """Download a DMC file to the Galil controller."""
+        """Download a DMC file to the ACS controller."""
         self.log.info("Downloading '%s' to controller...", filename)
 
     # @dummy_log
     def interactiveMode(self):
         """Start interactive mode."""
         if not self.connected:
-            msg = "Must be connected to Galil controller to run interactive mode"
+            msg = "Must be connected to ACS controller to run interactive mode"
             self.log.critical(msg)
             sys.exit(msg)
         try:
             while True:
-                cmd = input("Give Galil a command>> ").strip()
+                cmd = input("Give ACS a command>> ").strip()
                 self.log.info("Command given: %s", cmd)
                 print(self.send(cmd.upper()))
         except KeyboardInterrupt:
             self.log.info("Exited by KeyboardInterrupt")
 
 if __name__ == "__main__":
-    g = Galil_dummy(log_level=logging.DEBUG)
+    g = ACS_dummy(log_level=logging.DEBUG)
     g.connect()
     g.interactiveMode()

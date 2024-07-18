@@ -24,7 +24,7 @@ class TTRControl(PrintControl):
             self.all_hardware_connected = False
 
     def initialize_hardware(self):
-        pass
+        super().initialize_hardware()
         # ttr_pos = 
         # self.ttr_thread = self.focus_stage.initialize_and_positionTTR(ttr_pos, join=False)
         # super().initialize_hardware()

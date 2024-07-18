@@ -1,0 +1,57 @@
+<!-- ACS Control -->
+<div class="container acs">
+    <div class="row top-buffer">
+        <div class="col-12">
+            <h3>ACS Stage Controls</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-4">
+            <button type="button" class="btn btn-outline-info btn-block" id="acs-home-btn">Home</button>
+        </div>
+        <div class="col-4">
+            <button type="button" class="btn btn-outline-info btn-block" id="acs-top-btn">Go to Top</button>
+        </div>
+        <div class="col-4">
+            <button type="button" class="btn btn-outline-info btn-block" id="acs-bottom-btn">Go to Bottom</button>
+        </div>
+    </div>
+    {% for axis in hardware['acs']['stages'].keys() %}
+    <div class="container" aria-label="{{ axis }}">
+        <div class="row">
+            <div class="col-3">
+                <h5>{{ hardware['acs']['stages'][axis]['common'] }}</h5>
+            </div>
+            <div class="col-2">
+                <h5 class="col text-right" id='acs-{{ axis }}-state'>{{ hardware['acs']['stages'][axis]['position']
+                    }}
+                </h5>
+            </div>
+            <div class="col-7">
+                <input class="form-control acs-{{ axis }}-cntrl-txt" type="text" id="acs-{{ axis }}-txt"
+                    placeholder="Position (um)">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-2"></div>
+            <div class="col-10 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-info acs-{{ axis }}-cntrl-btn">-10000</button>
+                    <button type="button" class="btn btn-outline-info acs-{{ axis }}-cntrl-btn">-1000</button>
+                    <button type="button" class="btn btn-outline-info acs-{{ axis }}-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-outline-info acs-{{ axis }}-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-outline-info acs-{{ axis }}-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-outline-info acs-{{ axis }}-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-outline-info acs-{{ axis }}-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-outline-info acs-{{ axis }}-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-outline-info acs-{{ axis }}-cntrl-btn">1000</button>
+                    <button type="button" class="btn btn-outline-info acs-{{ axis }}-cntrl-btn">10000</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {% endfor %}
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='acs/acs_snip.js') }}"></script>
