@@ -33,6 +33,9 @@ if "environmental_sensors" in config_dict:
     from printer_server.printer_control.environmental_sensors_control import EnvironmentalSensorsControl
     parent_classes.append(EnvironmentalSensorsControl)
 
+if "accelerometer" in config_dict:
+    from printer_server.printer_control.accelerometer_control import AccelerometerControl
+
 if "focus" in config_dict["stages"]:
     from printer_server.printer_control.focus_control import FocusControl
     parent_classes.append(FocusControl)
