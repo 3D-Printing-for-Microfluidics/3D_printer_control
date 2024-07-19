@@ -41,6 +41,14 @@ class Printer3D:
             else:
                 self.environmental_sensors = EnvironmentalSensors(config_dict=config_dict["environmental_sensors"], log_level=default_log_level)
 
+        if "accelerometer" in config_dict.keys():
+            from printer_server.drivers.accelerometer import Accelerometer, Accelerometer_dummy
+
+            if config_dict["accelerometer"]["dummy"]:
+                self.accelerometer = Accelerometer_dummy()
+            else:
+                self.accelerometer = Accelerometer()
+
         if "galil" in config_dict.keys():
             from printer_server.drivers.galil import Galil, Galil_dummy
 

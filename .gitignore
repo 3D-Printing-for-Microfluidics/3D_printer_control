@@ -21,3 +21,4 @@ rpi/encoder_print_file*
 rpi/encoder_initialization*
 rpi/encoder_planarization*
 logs/
+.idea/
