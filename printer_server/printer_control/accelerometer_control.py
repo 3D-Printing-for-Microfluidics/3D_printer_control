@@ -27,6 +27,6 @@ class AccelerometerControl(PrintControl):
         super().create_logs()
 
         async_file_hander.write(
-            self.accelerometer_log, "system_time,loadcell_time,index,raw_data,newtons\n"
+            self.accelerometer_log, "system_time,accel_time,data\n"
         )
         self.accelerometer.set_log_file(self.accelerometer_log)
