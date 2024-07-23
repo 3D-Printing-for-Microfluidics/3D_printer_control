@@ -82,19 +82,21 @@ print_control = ParentPrintControl()
 def index():
     allJobs = PrintQueue.query.all()
 
+    kwargs = {
+        "allJobs":allJobs,
+        "hostname":Config.HOSTNAME
+    }
+
     if "loadcell" in config_dict.keys():
-        return render_template(
-            "home.html",
-            allJobs=allJobs,
-            hostname=Config.HOSTNAME,
-            graph_autoscale=print_control.loadcell.graph_autoscale,
-        )
-    else:
-        return render_template(
-            "home.html",
-            allJobs=allJobs,
-            hostname=Config.HOSTNAME
-        )
+        kwargs["graph_autoscale"] = print_control.loadcell.graph_autoscale
+
+    if "mks" in config_dict.keys():
+        kwargs["degass_state"] = print_control.degass_state
+
+    return render_template(
+        "home.html",
+        **kwargs
+    )
 
 def update_printer_state(state, msg):
     socketio.emit(state, msg, namespace="/printing")
@@ -174,8 +176,8 @@ def stop(message):
 
 
 @socketio.on("degass", namespace="/printing")
-def degass():
-    print_control.degass()
+def degass(msg):
+    print_control.degass(msg)
 
 
 @socketio.on("shutdown", namespace="/printing")

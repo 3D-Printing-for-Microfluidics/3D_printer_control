@@ -90,8 +90,13 @@ if (loadcell_exists) {
     }
 }
 
-var show_btn = function (btn) {
+var show_print_btn = function (btn) {
     $(".printer-btn").prop("disabled", true).addClass("d-none");
+    $(btn).prop("disabled", false).removeClass("d-none");
+};
+
+var show_degass_btn = function (btn) {
+    $(".degass-btn").prop("disabled", true).addClass("d-none");
     $(btn).prop("disabled", false).removeClass("d-none");
 };
 
@@ -257,6 +262,23 @@ $(document).ready(function () {
         draw_loadcell_graph();
     }
 
+    try {
+        if (degass_state == "idle") {
+            show_degass_btn("#start-degass-btn");
+        }
+        else if (degass_state == "running") {
+            show_degass_btn("#stop-degass-btn");
+        }
+        else if (degass_state == "finish") {
+            show_degass_btn("#finish-degass-btn");
+        }
+        else if (degass_state == "none") {
+            show_degass_btn();
+        }
+    } catch (error) {
+        console.error(error);
+    }
+
     // Set up the drag/drop zone.
     initDropbox();
 
@@ -352,14 +374,14 @@ $(document).ready(function () {
 
     socket.on("busy", function (message) {
         $("#printer-state").text("Printer is busy");
-        show_btn();
+        show_print_btn();
         start_job_id = "";
         $(".clickable-row").removeClass("table-success");
     });
 
     socket.on("uninitialized", function (message) {
         $("#printer-state").text("Uninitialized");
-        show_btn("#init-btn, #shutdown-btn");
+        show_print_btn("#init-btn, #shutdown-btn");
         var content = '3D printer has been shutdown';
         if (document.getElementById('base-body').innerHTML == content) {
             location.reload()
@@ -368,23 +390,23 @@ $(document).ready(function () {
 
     socket.on("initialized", function (message) {
         $("#printer-state").text("Initialized");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn, #degass-btn");
+        show_print_btn("#plana1-btn, #shutdown-btn, #admin-btn");
     });
 
     socket.on("planarizing", function (message) {
         $("#printer-state").text("Planarizing");
-        show_btn("#plana2-btn, #admin-btn, #degass-btn");
+        show_print_btn("#plana2-btn, #admin-btn");
     });
 
     socket.on("planarized", function (message) {
         $("#printer-state").text("Planarized");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn, #degass-btn");
+        show_print_btn("#plana1-btn, #shutdown-btn, #admin-btn");
         $("#start-btn").removeClass("d-none");
     });
 
     socket.on("printing", function (message) {
         $("#printer-state").text("Printing");
-        show_btn("#pause-btn, #stop-btn, #admin-btn, #degass-btn");
+        show_print_btn("#pause-btn, #stop-btn, #admin-btn");
         $("#print-progress-bar").css({ "width": message.percent + "%" })
             .attr({ "aria-valuenow": message.percent })
             .text(message.percent + "%");
@@ -399,12 +421,12 @@ $(document).ready(function () {
 
     socket.on("paused", function (message) {
         $("#printer-state").text("Paused");
-        show_btn("#resume-btn, #stop-btn, #admin-btn, #degass-btn");
+        show_print_btn("#resume-btn, #stop-btn, #admin-btn");
     });
 
     socket.on("stopped", function (message) {
         $("#printer-state").text("Stopped");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn, #degass-btn");
+        show_print_btn("#plana1-btn, #shutdown-btn, #admin-btn");
         if (loadcell_exists) {
             hide_loadcell();
         }
@@ -413,7 +435,7 @@ $(document).ready(function () {
 
     socket.on("completed", function (message) {
         $("#printer-state").text("Completed");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn, #degass-btn");
+        show_print_btn("#plana1-btn, #shutdown-btn, #admin-btn");
         if (loadcell_exists) {
             hide_loadcell();
         }
@@ -499,9 +521,33 @@ $(document).ready(function () {
         $("#print-alert-body").text("Are you sure you want to stop printing?");
     });
 
-    $("#degass-btn").click(function () {
-        socket.emit("degass");
-    });
+    try {
+        $("#start-degass-btn").click(function () {
+            socket.emit("degass", "run");
+        });
+        $("#stop-degass-btn").click(function () {
+            socket.emit("degass", "stop");
+        });
+        $("#finish-degass-btn").click(function () {
+            socket.emit("degass", "finish");
+        });
+        socket.on("update_degass_state", function (message) {
+            if (message == "idle") {
+                show_degass_btn("#start-degass-btn");
+            }
+            else if (message == "running") {
+                show_degass_btn("#stop-degass-btn");
+            }
+            else if (message == "finish") {
+                show_degass_btn("#finish-degass-btn");
+            }
+            else if (message == "none") {
+                show_degass_btn();
+            }
+        });
+    } catch (error) {
+        console.error(error);
+    }
 
     $("#shutdown-btn").click(function () {
         $("#print-alert-title").text("Shutdown");

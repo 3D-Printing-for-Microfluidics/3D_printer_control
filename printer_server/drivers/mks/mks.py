@@ -216,7 +216,7 @@ class MKS946(serial.Serial):
                 
                 else:
                     print(cmd_str, rsp_str)
-                    self.log.error("NAK: RSP FORMAT ERROR")
+                    self.log.error("NAK: RSP FORMAT ERROR %s: %s", cmd_str, rsp_str)
             return None
         
 
@@ -279,7 +279,7 @@ class MKS946(serial.Serial):
                 return False
             
             else:
-                self.log.error("NAK: RSP FORMAT ERROR")
+                self.log.error("NAK: RSP FORMAT ERROR %s: %s", cmd_str, rsp_str)
                 return False
         
         

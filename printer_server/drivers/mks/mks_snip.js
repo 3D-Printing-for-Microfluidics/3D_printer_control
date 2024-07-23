@@ -114,8 +114,18 @@ $(document).ready(function () {
             chamber2 = chamber_vac;
         }
 
-        document.getElementById('gauge1_reading').innerText = `${gaugeReading1} Torr`;
-        document.getElementById('gauge2_reading').innerText = `${gaugeReading2} Torr`;
+        if (gaugeReading1 < 1.0) {
+            document.getElementById('gauge1_reading').innerText = `${gaugeReading1 * 1000} mTorr`;
+        }
+        else {
+            document.getElementById('gauge1_reading').innerText = `${gaugeReading1} Torr`;
+        }
+        if (gaugeReading2 < 1.0) {
+            document.getElementById('gauge2_reading').innerText = `${gaugeReading2 * 1000} mTorr`;
+        }
+        else {
+            document.getElementById('gauge2_reading').innerText = `${gaugeReading2} Torr`;
+        }
         document.getElementById('vacuum_chamber1').classList.remove(chamber_vent, chamber_mid, chamber_vac);
         document.getElementById('vacuum_chamber2').classList.remove(chamber_vent, chamber_mid, chamber_vac);
         document.getElementById('vacuum_chamber1').classList.add(chamber1);
