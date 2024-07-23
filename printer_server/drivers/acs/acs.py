@@ -314,13 +314,8 @@ class ACS(BPStageDriver, XYStageDriver):
         """Run the homing routine."""
         self.log.info("Start homing...")
 
-        # self.RunBuffer(self.acs, 8, "homeA", sp.SYNCHRONOUS, True) # START pg 92
-        self.send(f"START 8, homeX")
+        self.send(f"START 0, 1")
         self.wait_for_buffer_completion(8)
-        self.send(f"START 8, homeY")
-        self.wait_for_buffer_completion(8)
-        # self.send(f"START 8, homeA")
-        # self.wait_for_buffer_completion(8)
 
         for a in self.axes:
             # self.waitForMotionComplete(0, axis=a)
