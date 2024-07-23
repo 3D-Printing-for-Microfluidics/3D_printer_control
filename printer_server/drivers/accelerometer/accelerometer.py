@@ -63,68 +63,163 @@ class Accelerometer(serial.Serial):
                 return p.device
         return None  # not found
 
+    def start(self):
+        """
+        Starts the accelerometer collecting data
+        """
+        if not self.thread.is_alive():
+            self.running = True
+
+            self.flushInput()
+
+            self.log.info("Accelerometer started")
+            temp = self.accel_start()
+            if self.start_time == 0:
+                accel_time = temp.split("'")
+                accel_time = float(accel_time[1])
+                self.start_time = datetime.datetime.now() - datetime.timedelta(
+                    milliseconds=accel_time
+                )
+            self.thread.start()
+
+    def set_log_file(self, filename):
+        """
+        Sets the filepath to save the log to
+
+        Parameters:
+            filename    - local path and filename (current_job/accelerometer_data.txt)
+        """
+        self.log_file = filename
+
+    def stop(self):
+        """
+        Stops the accelerometer and accelerometer thread. Saves data to file
+        """
+        try:
+            self.accel_stop()
+        except serial.SerialException:
+            pass
+
+        if self.running:
+            self.running = False
+            self.thread.join()
+            self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
+
+        self.receiveAll()
+
+        self.log.info("Accelerometer stopped")
+        self.start_time = 0
+
+    def loop(self):
+        """
+        Threading loop
+        """
+        front_end_counter = 0
+        front_end_array = []
+        while self.running:
+            try:
+                index = int.from_bytes(
+                    self.receive_bytes(4), byteorder="little", signed=False
+                )
+                milliseconds = int.from_bytes(
+                    self.receive_bytes(4), byteorder="little", signed=False
+                )
+                data = int.from_bytes(
+                    self.receive_bytes(2), byteorder="little", signed=False
+                )
+                time = self.start_time + datetime.timedelta(
+                    milliseconds=float(milliseconds)
+                )
+                ret = self.receive_bytes(1)
+                while ret != b'\n':
+                    ret = self.receive_bytes(1)
+                accel = data
+
+                if self.log_file is not None:
+                    sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                    loadcell_time = time.strftime("%Y-%m-%d %H:%M:%S.%f")
+                    async_file_hander.write(
+                        self.log_file,
+                        f"{sys_time},{loadcell_time},{index},{data},{force}\n",
+                    )
+
+                self.currentAccel = accel
+                self.currentIndex = index
+            except serial.SerialException:
+                self.running = False
+            except ValueError:
+                self.log.warning("Unable to parse Accelerometer data - cast error")
+                continue
+            except OverflowError:
+                self.log.warning("Unable to parse Accelerometer data - time overflow")
+
+    ########################
+    # Teensy serial wrappers
+    ########################
+
+    def accel_start(self):
+        """
+        Sample at a frequency of freq (in Hz)
+        """
+        return self.send("b")
+
+    def accel_pause(self):
+        """
+        Pause sampling
+        """
+        try:
+            self.send("p", recieve=False)
+        except serial.SerialException:
+            pass
+        return
+
+    def accel_stop(self):
+        """
+        Stop sampling
+        """
+        try:
+            self.send("e", recieve=False)
+        except serial.SerialException:
+            pass
+        return
+
+    def set_sample_frequency(self, freq_hz):
+        """
+        Set the sampling frequency to freq_hz (in hz)
+        """
+        self.log.debug("Frequency set to '%s'", freq_hz)
+        return self.send("f {}".format(freq_hz)), freq_hz
+
     def send(self, cmd, recieve=True):
         """
-        Sends serial command to the accelerometer device
+        Sends serial command to the loadcell device
         """
-        print("Sent: '%s'", cmd)
+        self.log.debug("Sent: '%s'", cmd)
         self.write(bytes(cmd + "\n", encoding="ascii"))  # write to serial tx buffer
         if recieve:
             response = self.receive()
-            print("Response: '%s'", response)
+            self.log.debug("Response: '%s'", response)
             return response  # return the response to the command
         return
 
     def receive(self):
         """
-        Sends serial response from the accelerometer device
+        Sends serial response from the loadcell device
         """
         response = b""
         response += self.readline()  # wait for the first line to fill in the rx buffer
         return (
             response.decode().rstrip()
-        )  # return decoded byte response (as string) without trailing newline
+        )  # return decoded byte response (as string) without traililng newline
+
+    def receive_bytes(self, number_of_bytes):
+        """
+        Sends a number of bytes from the loadcell device
+        """
+        return self.read(number_of_bytes)
 
     def receiveAll(self):
         self.read()
         while self.in_waiting:
             self.read()
         return
-
-    def loop(self):
-        """
-        Threading loop
-        """
-        self.start_time = -1
-        print(self.receive())
-        print(self.receive())
-        print(self.receive())
-        with open("output.csv", "w") as f:
-            f.write(
-                f"sys_time,accel_time,index,data,force\n",
-            )
-            while self.running:
-                try:
-                    index = self.receive()
-                    milliseconds = self.receive()
-                    if self.start_time == -1:
-                        self.start_time = datetime.datetime.now() - datetime.timedelta(
-                            milliseconds=float(milliseconds)
-                        )
-                    data = self.receive()
-                    time = self.start_time + datetime.timedelta(
-                        milliseconds=float(milliseconds)
-                    )
-
-                    sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                    accel_time = time.strftime("%Y-%m-%d %H:%M:%S.%f")
-                    f.write(
-                        f"{sys_time},{accel_time},{index},{data}\n",
-                    )
-                except serial.SerialException:
-                    self.running = False
-                except ValueError:
-                    print("Unable to parse accelerometer data - cast error")
-                    continue
-                except OverflowError:
-                    print("Unable to parse accelerometer data - time overflow")

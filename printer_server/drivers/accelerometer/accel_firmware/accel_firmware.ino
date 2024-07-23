@@ -1,0 +1,195 @@
+/*
+ * Commands:
+ *  - P X : Sets sample period to X in microseconds
+ *  - B   : Begins sampling
+ *  - P   : Pause sampling
+ *  - E   : Ends sampling
+ */
+
+#include "Arduino.h"
+#include "SparkFunLSM6DSO.h"
+#include "Wire.h"
+
+LSM6DSO myIMU;
+
+// DEFINES AND ENUMS
+#define DEFAULT_PERIOD 1000             // set default sampling period to 1 millisecond
+
+//variables
+char opcode;
+String data = "";
+double period = DEFAULT_PERIOD;
+volatile uint32_t samples_counter = 0;             // current number of samples counter
+volatile uint32_t start_millis = 0;                // sampling starting time
+uint32_t ellapsed_millis = 0;             // sampling ellapsed time counter
+volatile bool timer_running = false;
+volatile bool is_paused = false;
+
+float x_offset = 0.0;
+float y_offset = 0.0;
+float z_offset = 0.0;
+long index = 0;
+
+//#include <Wire.h> // library for I2C communication on Arduino platform
+#include <Time.h>
+
+//objects
+IntervalTimer timer0;                     // timer
+
+//declare helpers
+void translate();
+
+void setup() {
+  Serial.begin(115200);
+  delay(500);
+
+  Wire.begin();
+  delay(10);
+  if( myIMU.begin() )
+    Serial.println("Ready.");
+  else { 
+    Serial.println("Could not connect to IMU.");
+    Serial.println("Freezing");
+  }
+
+  if( myIMU.initialize(BASIC_SETTINGS) )
+    Serial.println("Loaded Settings.");
+
+  myIMU.setAccelRange(2);
+  myIMU.setGyroRange(125);
+
+  for (int i = 0; i < 10; i++){
+    x_offset = myIMU.readFloatAccelX();
+    y_offset = myIMU.readFloatAccelY();
+    z_offset = myIMU.readFloatAccelZ();
+    delay(10);
+  }
+}
+
+void loop() {
+    //if Serial is available
+    if (Serial.available() > 0) {
+        //get the opcode
+        opcode = Serial.read();
+        data = "";
+
+        bool endOfLine = false;
+        //get remaining data
+        while (!endOfLine) {
+            int inChar = Serial.read();
+
+            if (!(inChar == '\n' || inChar == '\r')) {
+                data += (char)inChar;
+            }
+            //when new line hit, process command
+            else {
+                endOfLine = true;
+                translate();
+            }
+        }
+    }
+}
+
+void translate(){
+    //set sample period
+    if(opcode == 'F' || opcode == 'f'){
+        if(data.toInt() == 0){
+            Serial.print("Error: Invalid input. Value must be a integer.");
+            return;
+        }
+        period = data.toInt();
+        Serial.print("Info: Sample Period set to ");
+        Serial.println(period);
+    }
+    //begins sampling
+    else if(opcode == 'B' || opcode == 'b'){
+        setStartTime();
+        Serial.print("Info: Starting Sampling at '");
+        Serial.print(start_millis);
+        Serial.println("' ms");
+        //start sampling
+        timerStart();
+    }
+    //ends sampling
+    else if(opcode == 'P' || opcode == 'p'){
+        Serial.println("Info: Pausing Sampling");
+        //start sampling
+        timerPause();
+    }
+    //ends sampling
+    else if(opcode == 'E' || opcode == 'e'){
+        Serial.println("Info: Stopping Sampling");
+        //start sampling
+        timerStop();
+    }
+    else{
+        Serial.print("Error: Invalid opcode.");
+        return;
+    }
+}
+
+void setStartTime(){
+    if(!is_paused) { // is first
+        start_millis = millis();
+    }
+}
+
+void timerStart() {
+    if(!is_paused){
+        samples_counter = 0;
+    }
+    timer_running = true;
+    is_paused = false;
+    
+    timer0.begin(samplingISR, period);
+}
+
+void timerPause() {
+    if(timer_running){
+        timer0.end();
+        timer_running = false;
+        is_paused = true;
+    }
+}
+
+void timerStop() {
+    if(timer_running){
+        timer0.end();
+        timer_running = false;
+        is_paused = false;
+    }
+}
+
+void samplingISR() {
+
+  float x = myIMU.readFloatAccelX() - x_offset;
+  float y = myIMU.readFloatAccelY() - y_offset;
+  float z = myIMU.readFloatAccelZ() - z_offset;
+
+  float accel = (sqrt(sq(x) + sq(y) + sq(z)), 3);
+
+  uint32_t current_time = millis();
+
+  byte buf1[4];
+  buf1[0] = samples_counter & 255;
+  buf1[1] = (samples_counter >> 8)  & 255;
+  buf1[2] = (samples_counter >> 16) & 255;
+  buf1[3] = (samples_counter >> 24) & 255;
+  Serial.write(buf1, sizeof(buf1));
+
+  buf1[0] = current_time & 255;
+  buf1[1] = (current_time >> 8)  & 255;
+  buf1[2] = (current_time >> 16) & 255;
+  buf1[3] = (current_time >> 24) & 255;
+  Serial.write(buf1, sizeof(buf1));
+
+  buf1[0] = accel & 255;
+  buf1[1] = (accel >> 8)  & 255;
+  buf1[2] = (accel >> 16) & 255;
+  buf1[3] = (accel >> 24) & 255;
+  Serial.write(buf1, sizeof(buf1));
+  Serial.print('\n');
+
+    // increment samples counter
+    samples_counter++;
+}
