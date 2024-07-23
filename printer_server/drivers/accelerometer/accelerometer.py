@@ -192,7 +192,7 @@ class Accelerometer(serial.Serial):
 
     def send(self, cmd, recieve=True):
         """
-        Sends serial command to the loadcell device
+        Sends serial command to the accelerometer device
         """
         self.log.debug("Sent: '%s'", cmd)
         self.write(bytes(cmd + "\n", encoding="ascii"))  # write to serial tx buffer
@@ -204,7 +204,7 @@ class Accelerometer(serial.Serial):
 
     def receive(self):
         """
-        Sends serial response from the loadcell device
+        Sends serial response from the accelerometer device
         """
         response = b""
         response += self.readline()  # wait for the first line to fill in the rx buffer
@@ -214,7 +214,7 @@ class Accelerometer(serial.Serial):
 
     def receive_bytes(self, number_of_bytes):
         """
-        Sends a number of bytes from the loadcell device
+        Sends a number of bytes from the accelerometer device
         """
         return self.read(number_of_bytes)
 
