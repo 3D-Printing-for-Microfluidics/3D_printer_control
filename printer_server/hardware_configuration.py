@@ -236,6 +236,8 @@ class Printer3D:
             self.acs.disconnect()
         if hasattr(self, "environmental_sensors"):
             self.environmental_sensors.disconnect()
+        if hasattr(self, "accelerometer"):
+            self.accelerometer.disconnect()
         if hasattr(self, "galil"):
             self.galil.disconnect()
         if hasattr(self, "gpio"):
