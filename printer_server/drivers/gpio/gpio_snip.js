@@ -1,5 +1,5 @@
 $(document).ready(function () {
     $("#film-relay :input").change(function () {
-        socket.emit("film_relay_mode", $(this).parent().text());
+        socket.emit("gpio_switch_film_relay", $(this).parent().text());
     });
 });

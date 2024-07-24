@@ -5,7 +5,7 @@ import printer_server.views.manual_controls
 coord_systems_control = driver_handles.coord_systems_control
 
 
-@socketio.on("set_coodinate_system", namespace="/manual")
+@socketio.on("coodinate_system_set_system", namespace="/manual")
 def set_coodinate_system(message):
     """set_coodinate_system -- Sets the variable determining which coordinate system to use"""
     coord_systems_control.set_coodinate_system(message),
@@ -16,7 +16,7 @@ def get_coodinate_system(emit=True):
     coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
     return coord_system_name, coord_system
 
-@socketio.on("set_wintech_adjustments", namespace="/manual")
+@socketio.on("coodinate_system_set_wintech_adjustments", namespace="/manual")
 def set_wintech_adjustments(message):
 
     last_positions = (
@@ -30,7 +30,7 @@ def set_wintech_adjustments(message):
     printer_server.views.manual_controls.write_to_position_log(last_positions)
 
     socketio.emit(
-        "wintech_adj_update",
+        "coodinate_system_done",
         last_positions,
         namespace="/manual"
     )

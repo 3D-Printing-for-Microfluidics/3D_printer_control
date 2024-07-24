@@ -68,11 +68,11 @@ class MKSTeensy(serial.Serial):
             response.decode().rstrip()
         )  # return decoded byte response (as string) without traililng newline
             
-    def activate_relay(self, relay_num):
-        return self.send(f"H{relay_num}")
-
-    def deactivate_relay(self, relay_num):
-        return self.send(f"L{relay_num}")
+    def switch_relay(self, relay_num, state):
+        if state:
+            return self.send(f"H{relay_num}")
+        else:
+            return self.send(f"L{relay_num}")
 
     def get_all_relay_status(self):
         return list(self.send("R"))

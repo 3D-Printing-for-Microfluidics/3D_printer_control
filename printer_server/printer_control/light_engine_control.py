@@ -1,7 +1,7 @@
 import logging
 
 from printer_server.threading_wrapper import Thread
-from printer_server.views.manual_controls import update_le_led_status
+from printer_server.views.manual_controls import update_le_led_state
 from printer_server.printer_control.screen_control import ScreenControl
 from printer_server.hardware_configuration import config_dict, driver_handles
 
@@ -83,9 +83,9 @@ class LightEngineControl(ScreenControl):
     def exposure(self, settings, light_engine):
         _light_engine = getLightEngineFromJSON(light_engine)
         light_engine_driver = self.light_engines[_light_engine]
-        update_le_led_status(_light_engine, True)
+        update_le_led_state(_light_engine, True)
         light_engine_driver.perform_exposure()
-        update_le_led_status(_light_engine, False)
+        update_le_led_state(_light_engine, False)
         super().exposure(settings, light_engine)
 
     def get_le_status(self, settings, light_engine, warn="ALL"):
@@ -98,4 +98,4 @@ class LightEngineControl(ScreenControl):
         # always turn off the light engines
         for light_engine, light_engine_driver in self.light_engines.items():
             light_engine_driver.stop_sequencer()
-            update_le_led_status(light_engine, False)
+            update_le_led_state(light_engine, False)

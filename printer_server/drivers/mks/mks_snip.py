@@ -12,7 +12,7 @@ def get_gauges(emit=False):
     gauges = mks.read_all_pressures()
     if emit:
         socketio.emit(
-            "pressure_readings_updated", {"gauge":gauges}, namespace="/manual"
+            "mks_update_pressure_readings", {"gauge":gauges}, namespace="/manual"
         )
     return gauges
 
@@ -31,7 +31,7 @@ def get_relay_status(emit=False):
         
     if emit:
         socketio.emit(
-            "relay_status_updated", 
+            "mks_update_relay_status", 
             {
                 "relay_setting": relay_settings_dict,
                 "relay_status": relay_status_dict
@@ -41,34 +41,28 @@ def get_relay_status(emit=False):
 
     return relay_settings_dict, relay_status_dict
 
-@socketio.on("activateRelay", namespace="/manual")
-def activateRelay(message):
-    if message in config_dict["mks"]["relays"].keys():
-        relay_num = config_dict["mks"]["relays"][message]["relay_num"]
-        mks.set_relay_mode(relay_num, "SET")
-    elif message in config_dict["mks"]["teensy relays"]:
-        mks_teensy.activate_relay(config_dict["mks"]["teensy relays"].index(message))
+@socketio.on("mks_switch_relay", namespace="/manual")
+def switchRelay(message):
+    print(message)
+    if message["relay"] in config_dict["mks"]["relays"].keys():
+        relay_num = config_dict["mks"]["relays"][message["relay"]]["relay_num"]
+        if message["state"]:
+            mks.set_relay_mode(relay_num, "SET")
+        else:
+            mks.set_relay_mode(relay_num, "CLEAR")
+    elif message["relay"] in config_dict["mks"]["teensy relays"]:
+        mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index(message["relay"]), message["state"])
     time.sleep(0.1)
     get_relay_status(emit=True)
 
-@socketio.on("deactivateRelay", namespace="/manual")
-def deactivateRelay(message):
-    if message in config_dict["mks"]["relays"].keys():
-        relay_num = config_dict["mks"]["relays"][message]["relay_num"]
-        mks.set_relay_mode(relay_num, "CLEAR")
-    elif message in config_dict["mks"]["teensy relays"]:
-        mks_teensy.deactivate_relay(config_dict["mks"]["teensy relays"].index(message))
-    time.sleep(0.1)
-    get_relay_status(emit=True)
-
-@socketio.on("getCranePosition", namespace="/manual")
+@socketio.on("mks_crane_get_position", namespace="/manual")
 def cranePosition(emit=True):
     pos = mks_teensy.get_crane_position()
     if emit:
-        socketio.emit("cranePosition", pos, namespace="/manual")
+        socketio.emit("mks_crane_done", pos, namespace="/manual")
     return pos
 
-@socketio.on("craneMove", namespace="/manual")
+@socketio.on("mks_crane_move", namespace="/manual")
 def craneMove(message):
     if message["mm"] == "Top":
         pos = mks_teensy.move_crane_top()
@@ -81,6 +75,6 @@ def craneMove(message):
             mode != "absolute"
         )  # convert mode to True/False, absolute is true, all else is false
         pos = mks_teensy.move_crane(distance_mm, relative=mode)
-    socketio.emit("cranePosition", pos, namespace="/manual")
+    socketio.emit("mks_crane_done", pos, namespace="/manual")
 
 

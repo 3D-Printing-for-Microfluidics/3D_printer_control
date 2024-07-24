@@ -11,7 +11,7 @@ except:
     coord_systems_control = None
 start_time = 0
 stop_time = 0
-@socketio.on("set_galil_coodinate_system", namespace="/manual")
+@socketio.on("galil_set_coodinate_system", namespace="/manual")
 def galil_set_coodinate_system(message):
     "Set coordinate system offsets"
     global coord_system
@@ -164,5 +164,5 @@ def galil_get_position(axis, notify=True):
     a = galil.convertAxis(axis)
     if notify:
         message = {"position": galil.getPosition(in_mm=True)}
-        socketio.emit("galil_position", message, namespace="/manual")
+        socketio.emit("galil_return_position", message, namespace="/manual")
     return galil.getPosition(in_mm=True, axis=a)

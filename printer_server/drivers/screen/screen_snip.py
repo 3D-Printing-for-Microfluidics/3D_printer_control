@@ -33,7 +33,7 @@ def handleUpload(request):
                         file.stream.seek(0)
                         file.save(imagePath)  # save it to the server
                         socketio.emit(
-                            "calibration_image_uploaded",
+                            "screen_image_uploaded",
                             light_engine,
                             namespace="/manual"
                         )
@@ -41,7 +41,7 @@ def handleUpload(request):
             except (OSError, FileNotFoundError):  # File has big issues
                 pass
     socketio.emit(
-        "calibration_image_bad", light_engine, namespace="/manual"
+        "screen_image_bad", light_engine, namespace="/manual"
     )
     return ""
 
@@ -53,6 +53,9 @@ def screenDraw(message):
         Config.UPLOAD_FOLDER, "calibration_images", f"{light_engine}.png"
     )
     screen.draw(imagePath, screen=getScreenNumber(light_engine))
+    socketio.emit(
+        "screen_done", light_engine, namespace="/manual"
+    )
 
 
 @socketio.on("screen_white", namespace="/manual")
@@ -62,9 +65,15 @@ def screenWhite(message):
         Config.PRINT_SERVER_FOLDER, f"drivers/{light_engine}/images", f"white.png"
     )
     screen.draw(imagePath, screen=getScreenNumber(light_engine))
+    socketio.emit(
+        "screen_done", light_engine, namespace="/manual"
+    )
 
 
 @socketio.on("screen_clear", namespace="/manual")
 def screenClear(message):
     light_engine = message["light_engine"]
     screen.clear(screen=getScreenNumber(light_engine))
+    socketio.emit(
+        "screen_done", light_engine, namespace="/manual"
+    )

@@ -5,7 +5,7 @@ from printer_server.hardware_configuration import driver_handles
 keyence = driver_handles.keyence
 
 
-@socketio.on("keyence_setpoint_update", namespace="/manual")
+@socketio.on("keyence_set_setpoint", namespace="/manual")
 def updateSetpoint(message):
     sensor = message["sensor"]
     distance_um = float(message["microns"])
@@ -26,7 +26,7 @@ def updateSetpoint(message):
     printer_server.views.manual_controls.write_to_position_log(last_positions)
 
     socketio.emit(
-        "keyence_setpoint_updated",
+        "keyence_done",
         last_positions,
         namespace="/manual"
     )

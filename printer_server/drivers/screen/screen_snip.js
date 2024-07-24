@@ -28,14 +28,14 @@ var unhighlight_draw_white_button = function (le) {
 
 $(document).ready(function () {
     // Once once upload is complete, re-enable upload controls
-    socket.on("calibration_image_uploaded", function (le) {
+    socket.on("screen_image_uploaded", function (le) {
         var filePickerElement = document.getElementById(`${le}-file-picker`);
         filePickerElement.classList.remove("is-invalid")
         // enable_upload_button(le);
     });
 
     // If a bad file was uploaded, disable upload options
-    socket.on("calibration_image_bad", function (le) {
+    socket.on("screen_image_bad", function (le) {
         var filePickerElement = document.getElementById(`${le}-file-picker`);
         filePickerElement.classList.add("is-invalid")
         enable_upload_button(le);
@@ -101,7 +101,7 @@ function uploadFile(image, le) {
     fd.append("light_engine", le);
     console.log(le)
     $.ajax({ // Use ajax to compose and send the request
-        url: "/handle-calibration-upload",
+        url: "/screen_image_upload",
         method: "POST",
         contentType: false,
         processData: false,
