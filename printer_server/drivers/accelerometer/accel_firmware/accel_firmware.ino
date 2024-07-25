@@ -91,7 +91,7 @@ void loop() {
 
 void translate(){
     //set sample period
-    if(opcode == 'F' || opcode == 'f'){
+    if(opcode == 'T' || opcode == 't'){
         if(data.toInt() == 0){
             Serial.print("Error: Invalid input. Value must be a integer.");
             return;

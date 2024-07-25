@@ -47,7 +47,7 @@ class Printer3D:
             if config_dict["accelerometer"]["dummy"]:
                 self.accelerometer = Accelerometer_dummy()
             else:
-                self.accelerometer = Accelerometer()
+                self.accelerometer = Accelerometer(config_dict=config_dict["accelerometer"], log_level=default_log_level)
 
         if "galil" in config_dict.keys():
             from printer_server.drivers.galil import Galil, Galil_dummy

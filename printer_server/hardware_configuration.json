@@ -463,8 +463,8 @@
             "measurement_period_ms": 1000
         },
         "accelerometer": {
-            "dummy": true,
-            "hwid": "idk yet",
+            "dummy": false,
+            "hwid": "USB VID:PID=16C0:0483 SER=16038530",
             "measurement_period_ms": 100
         },
         "loadcell": {

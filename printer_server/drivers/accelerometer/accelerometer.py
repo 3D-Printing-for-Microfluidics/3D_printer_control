@@ -1,52 +1,64 @@
-import threading
 import datetime
+import logging
 import serial
+import atexit
 import serial.tools.list_ports
 import serial.serialutil
+from printer_server.threading_wrapper import Thread
+from printer_server.async_file_handler import async_file_hander
 
 
 class Accelerometer(serial.Serial):
 
-    def __init__(self):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG):
         """
         Initializes the accelerometer
         """
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+
+        self.config_dict = config_dict
+
         super().__init__(baudrate=115200, timeout=1)
         self.port = None  # start with no port
         # self.status = None              # status to be updated after every send
 
         self.connected = False
 
-        self.thread = threading.Thread(target=self.loop)
-
-        self.connect()
-        self.running = True
-        self.thread.start()
-
-        input()
-
+        self.thread = Thread(self.log, name="accelerometer_loop_thread", target=self.loop)
         self.running = False
-        self.thread.join()
+
+        # self.connect()
+        # self.running = True
+        # self.thread.start()
+
+        # input()
+
+        # self.running = False
+        # self.thread.join()
 
     def connect(self):
         """
         Connects to the accelerometer and sets parameters.
         """
-        self.port = self.findUsbPort("VID:PID=1A86:7523") # <------ ???
+        self.port = self.findUsbPort(self.config_dict["hwid"])
         if self.port is None:
             return False
         if self.is_open:
             self.close()
         self.open()
         self.receiveAll()
+        self.set_sample_period(self.config_dict["measurement_period_ms"])
+        self.log.info("Connected to Accelerometer")
         self.connected = True
+        atexit.register(self.disconnect)
         return True
 
     def disconnect(self):
         if self.connected:
             self.close()
             self.connected = False
-            print("Disconnected from Accelerometer")
+            self.log.info("Disconnected from Accelerometer")
 
     def findUsbPort(self, hwid):
         """
@@ -57,9 +69,8 @@ class Accelerometer(serial.Serial):
         """
         ports = list(serial.tools.list_ports.comports())
         for p in ports:
-            print(p.hwid)
             if hwid.upper() in p.hwid:
-                print("Found '%s' at '%s'", p.hwid, p.device)
+                self.log.debug("Found '%s' at '%s'", p.hwid, p.device)
                 return p.device
         return None  # not found
 
@@ -91,6 +102,24 @@ class Accelerometer(serial.Serial):
         """
         self.log_file = filename
 
+    def pause(self):
+        """
+        Pauses the accelerometer and accelerometer thread.
+        """
+        try:
+            self.accel_pause()
+        except serial.SerialException:
+            pass
+
+        if self.running:
+            self.running = False
+            self.thread.join()
+            self.thread = Thread(self.log, name="accelerometer_loop_thread", target=self.loop)
+
+        self.receiveAll()
+
+        self.log.info("Accelerometer paused")
+
     def stop(self):
         """
         Stops the accelerometer and accelerometer thread. Saves data to file
@@ -103,7 +132,7 @@ class Accelerometer(serial.Serial):
         if self.running:
             self.running = False
             self.thread.join()
-            self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
+            self.thread = Thread(self.log, name="accelerometer_loop_thread", target=self.loop)
 
         self.receiveAll()
 
@@ -114,8 +143,6 @@ class Accelerometer(serial.Serial):
         """
         Threading loop
         """
-        front_end_counter = 0
-        front_end_array = []
         while self.running:
             try:
                 index = int.from_bytes(
@@ -133,7 +160,7 @@ class Accelerometer(serial.Serial):
                 ret = self.receive_bytes(1)
                 while ret != b'\n':
                     ret = self.receive_bytes(1)
-                accel = data
+                accel = data/16384
 
                 if self.log_file is not None:
                     sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
@@ -183,12 +210,12 @@ class Accelerometer(serial.Serial):
             pass
         return
 
-    # def set_sample_frequency(self, freq_hz):
-    #     """
-    #     Set the sampling frequency to freq_hz (in hz)
-    #     """
-    #     self.log.debug("Frequency set to '%s'", freq_hz)
-    #     return self.send("f {}".format(freq_hz)), freq_hz
+    def set_sample_period(self, ms):
+        """
+        Set the sampling period to ms (in ms)
+        """
+        self.log.debug("Period set to '%s'", ms)
+        return self.send("t {}".format(ms)), ms
 
     def send(self, cmd, recieve=True):
         """
