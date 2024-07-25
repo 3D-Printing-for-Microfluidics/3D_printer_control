@@ -462,6 +462,11 @@
             "hwid": "PID=10C4:EA60 SER=0001",
             "measurement_period_ms": 1000
         },
+        "accelerometer": {
+            "dummy": false,
+            "hwid": "USB VID:PID=16C0:0483 SER=16038530",
+            "measurement_period_ms": 100
+        },
         "loadcell": {
             "dummy": true,
             "hwid": "PID=16C0:0483 SER=5712360",
