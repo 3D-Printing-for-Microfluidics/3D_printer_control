@@ -28,7 +28,6 @@ volatile bool is_paused = false;
 float x_offset = 0.0;
 float y_offset = 0.0;
 float z_offset = 0.0;
-long index = 0;
 
 //#include <Wire.h> // library for I2C communication on Arduino platform
 #include <Time.h>
@@ -167,6 +166,8 @@ void samplingISR() {
   float z = myIMU.readFloatAccelZ() - z_offset;
 
   float accel = (sqrt(sq(x) + sq(y) + sq(z)), 3);
+  int scale = 16384;
+  accel = accel*scale;
 
   uint32_t current_time = millis();
 
@@ -183,11 +184,11 @@ void samplingISR() {
   buf1[3] = (current_time >> 24) & 255;
   Serial.write(buf1, sizeof(buf1));
 
-  buf1[0] = accel & 255;
-  buf1[1] = (accel >> 8)  & 255;
-  buf1[2] = (accel >> 16) & 255;
-  buf1[3] = (accel >> 24) & 255;
-  Serial.write(buf1, sizeof(buf1));
+  byte buf2[2];
+  buf2[0] = (uint16_t)accel & 255;
+  buf2[1] = ((uint16_t)accel >> 8)  & 255;
+
+  Serial.write(buf2, sizeof(buf2));
   Serial.print('\n');
 
     // increment samples counter

@@ -32,7 +32,7 @@ class Accelerometer(serial.Serial):
         """
         Connects to the accelerometer and sets parameters.
         """
-        self.port = self.findUsbPort("VID:PID=1A86:7523")
+        self.port = self.findUsbPort("VID:PID=1A86:7523") # <------ ???
         if self.port is None:
             return False
         if self.is_open:
@@ -137,10 +137,10 @@ class Accelerometer(serial.Serial):
 
                 if self.log_file is not None:
                     sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                    loadcell_time = time.strftime("%Y-%m-%d %H:%M:%S.%f")
+                    accel_time = time.strftime("%Y-%m-%d %H:%M:%S.%f")
                     async_file_hander.write(
                         self.log_file,
-                        f"{sys_time},{loadcell_time},{index},{data},{force}\n",
+                        f"{sys_time},{accel_time},{index},{data}\n",
                     )
 
                 self.currentAccel = accel
@@ -183,12 +183,12 @@ class Accelerometer(serial.Serial):
             pass
         return
 
-    def set_sample_frequency(self, freq_hz):
-        """
-        Set the sampling frequency to freq_hz (in hz)
-        """
-        self.log.debug("Frequency set to '%s'", freq_hz)
-        return self.send("f {}".format(freq_hz)), freq_hz
+    # def set_sample_frequency(self, freq_hz):
+    #     """
+    #     Set the sampling frequency to freq_hz (in hz)
+    #     """
+    #     self.log.debug("Frequency set to '%s'", freq_hz)
+    #     return self.send("f {}".format(freq_hz)), freq_hz
 
     def send(self, cmd, recieve=True):
         """
