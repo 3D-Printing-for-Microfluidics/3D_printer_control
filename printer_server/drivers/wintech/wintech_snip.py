@@ -1,5 +1,5 @@
 from printer_server.extensions import socketio
-from printer_server.hardware_configuration import driver_handles
+from printer_server.hardware_configuration.hardware_configuration import driver_handles
 
 wintech = driver_handles.wintech
 

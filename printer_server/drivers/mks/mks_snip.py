@@ -1,7 +1,7 @@
 import time
 import logging
 from printer_server.extensions import socketio
-from printer_server.hardware_configuration import driver_handles, config_dict
+from printer_server.hardware_configuration.hardware_configuration import driver_handles, config_dict
 
 mks = driver_handles.mks
 mks_teensy = driver_handles.mks_teensy

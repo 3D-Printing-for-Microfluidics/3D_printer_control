@@ -4,7 +4,7 @@ from datetime import datetime
 
 from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
-from printer_server.hardware_configuration import driver_handles
+from printer_server.hardware_configuration.hardware_configuration import driver_handles
 from printer_server.printer_control.print_control import PrintControl, run_in_thread
 
 log = logging.getLogger(__name__)

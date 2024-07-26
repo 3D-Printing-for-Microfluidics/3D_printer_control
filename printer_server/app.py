@@ -6,7 +6,7 @@ from printer_server.models import PrintRecord, PrintQueue
 from printer_server import commands, models
 from printer_server.views import home, manual_controls, print_history, server_logs
 from printer_server.settings import ProdConfig, DevConfig
-from printer_server.hardware_configuration import driver_handles
+from printer_server.hardware_configuration.hardware_configuration import driver_handles
 from printer_server.logging_handler import configure_loggers
 from flask.helpers import get_debug_flag
 

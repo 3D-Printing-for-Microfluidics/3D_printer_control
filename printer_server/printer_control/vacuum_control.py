@@ -4,7 +4,7 @@ import logging
 from printer_server.extensions import socketio
 from printer_server.threading_wrapper import Thread
 from printer_server.printer_control.print_control import PrintControl
-from printer_server.hardware_configuration import driver_handles, config_dict
+from printer_server.hardware_configuration.hardware_configuration import driver_handles, config_dict
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)

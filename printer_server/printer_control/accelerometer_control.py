@@ -1,7 +1,7 @@
 import logging
 
 from printer_server.async_file_handler import async_file_hander
-from printer_server.hardware_configuration import  driver_handles
+from printer_server.hardware_configuration.hardware_configuration import  driver_handles
 from printer_server.printer_control.print_control import PrintControl
 
 log = logging.getLogger(__name__)

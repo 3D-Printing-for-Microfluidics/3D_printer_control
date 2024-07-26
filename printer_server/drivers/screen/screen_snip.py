@@ -2,7 +2,7 @@ import os
 from printer_server.settings import Config
 from printer_server.extensions import socketio
 from flask import request, Blueprint, render_template
-from printer_server.hardware_configuration import driver_handles
+from printer_server.hardware_configuration.hardware_configuration import driver_handles
 
 from PIL import Image
 

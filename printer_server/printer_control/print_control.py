@@ -16,7 +16,7 @@ from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 from printer_server.models import PrintQueue, PrintRecord
 from printer_server.async_file_handler import async_file_hander
-from printer_server.hardware_configuration import config_dict, driver_handles
+from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 from printer_server.print_file_validator import validate_schema, read_json, expand_json
 from printer_server.views.manual_controls import (
     get_last_calibration_positions_from_logs,
