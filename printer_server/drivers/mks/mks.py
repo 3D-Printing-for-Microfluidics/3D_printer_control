@@ -1127,7 +1127,7 @@ if __name__ == '__main__':
     }
 
     mks = MKS946(config_dict=config_dict)
-    mks.connect()
+    mks.connect(exit)
 
     mks.reset_module_settings(0)
     mks.reset_module_settings(1)

@@ -27,7 +27,7 @@ class EnvironmentalSensorsControl(PrintControl):
         self.environmental_sensors.start() 
 
     def connect_hardware(self):
-        environmental_sensors_ret = self.environmental_sensors.connect()
+        environmental_sensors_ret = self.environmental_sensors.connect(self.shutdown)
         super().connect_hardware()
         if not environmental_sensors_ret:
             log.error("environmental Sensor failed to connect!")

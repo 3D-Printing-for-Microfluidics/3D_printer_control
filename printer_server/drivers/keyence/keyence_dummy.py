@@ -20,7 +20,7 @@ class Keyence_dummy:
         self.port = config_dict["port"]
         
     @dummy_log
-    def connect(self):
+    def connect(self, shutdown):
         self.connected = False
         self.log.info(
             "Connected to Keyence sensor"

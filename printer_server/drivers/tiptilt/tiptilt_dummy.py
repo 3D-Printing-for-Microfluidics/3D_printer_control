@@ -17,7 +17,7 @@ class TipTilt_dummy:
         self.initialized = None
 
     @dummy_log
-    def connect(self, shutdown=False):
+    def connect(self, shutdown):
         self.port = "dummyPort"
         if self.port is None:
             msg = "Tip/Tilt stage not found!"
@@ -110,6 +110,6 @@ class TipTilt_dummy:
 
 if __name__ == "__main__":
     t = TipTilt_dummy()
-    t.connect()
+    t.connect(exit)
     print(t.get_position("tip"))
     print(t.get_position("tilt"))

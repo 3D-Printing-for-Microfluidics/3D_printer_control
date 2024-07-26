@@ -174,7 +174,7 @@ class LoadcellControl(PrintControl):
             log.warning("Move_to_force overshot target value")
 
     def connect_hardware(self):
-        loadcell_ret = self.loadcell.connect()
+        loadcell_ret = self.loadcell.connect(self.shutdown)
         super().connect_hardware()
         if not loadcell_ret:
             log.error("Loadcell failed to connect!")

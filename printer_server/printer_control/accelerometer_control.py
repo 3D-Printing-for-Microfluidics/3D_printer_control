@@ -24,7 +24,7 @@ class AccelerometerControl(PrintControl):
         self.accelerometer.set_log_file(self.accelerometer_log)
 
     def connect_hardware(self):
-        accel_connect = self.accelerometer.connect()
+        accel_connect = self.accelerometer.connect(self.shutdown)
         super().connect_hardware()
         if not accel_connect:
             log.error("Accelerometer failed to connect!")

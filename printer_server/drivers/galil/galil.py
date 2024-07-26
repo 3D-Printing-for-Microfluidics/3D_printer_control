@@ -633,5 +633,5 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
 
 if __name__ == "__main__":
     g = Galil(log_level=logging.DEBUG)
-    g.connect()
+    g.connect(exit)
     g.interactiveMode()

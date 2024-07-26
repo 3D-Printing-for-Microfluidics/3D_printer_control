@@ -15,7 +15,7 @@ class TTRControl(PrintControl):
         self.ttr_stage = driver_handles.ttr_stage
 
     def connect_hardware(self):
-        self.ttr_thread = Thread(log, name="ttr_control_setup_thread", target=self.ttr_stage.connect)
+        self.ttr_thread = Thread(log, name="ttr_control_setup_thread", target=self.ttr_stage.connect, args=[self.shutdown])
         self.ttr_thread.start()
         super().connect_hardware()
         self.ttr_thread.join()

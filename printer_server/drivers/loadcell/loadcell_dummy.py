@@ -37,7 +37,7 @@ class Loadcell_dummy:
         return n
 
     @dummy_log
-    def connect(self, frequency=1000):
+    def connect(self, shutdown, frequency=1000):
         self.freq = frequency
         self.port = "dummyPort"
         if self.port is None:
@@ -228,7 +228,7 @@ if __name__ == "__main__":
         "calibration_slope": 1
     }
     lc = Loadcell_dummy(config_dict=config)
-    lc.connect()
+    lc.connect(exit)
     lc.start()
     lc.set_log_file("loadcell_data.txt")
     print(lc.get_current_force())

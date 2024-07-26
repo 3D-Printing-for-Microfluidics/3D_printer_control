@@ -1,9 +1,6 @@
 import time
-import atexit
 import logging
 from struct import pack, unpack
-import serial
-import serial.tools.list_ports
 from printer_server.drivers.generic_drivers import USBSerial, FocusStageDriver
 
 class KDC101(USBSerial, FocusStageDriver):
@@ -11,7 +8,7 @@ class KDC101(USBSerial, FocusStageDriver):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], timeout=0.1, logger=self.log)
+        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], baudrate=config_dict["baudrate"], timeout=0.1, logger=self.log)
 
         self.homed = False
         self.Device_Unit_SF = 34304.0  # pg 34 of protocol PDF (as of Issue 23)
@@ -23,8 +20,8 @@ class KDC101(USBSerial, FocusStageDriver):
         self.relativeMode = True
         self.config_dict = config_dict
 
-    def connect(self):
-        super().connect()
+    def connect(self, shutdown):
+        super().connect(shutdown)
         if self.connected is None:
             self.getHardwareInfo()
             self.enableStage(enable=True)

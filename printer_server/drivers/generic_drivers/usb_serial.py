@@ -33,7 +33,7 @@ class USBSerial(serial.Serial):
                     return p.device, f"{p.manufacturer} {p.product}"
         return None, None
     
-    def connect(self):
+    def connect(self, shutdown):
         if self.connected is None:
             self.connected = False
             self.port, self.name = self.findUsbPort(self.vid, self.pid, self.sn)
@@ -46,6 +46,7 @@ class USBSerial(serial.Serial):
             self.open()
             self.flush_buffers()
             self.connected = True
+            self.shutdown = shutdown
             self.log.info("Connected to device (%s)", self.name)
             atexit.register(self.disconnect)
             return True

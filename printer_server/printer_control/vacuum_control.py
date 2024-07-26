@@ -19,8 +19,8 @@ class VacuumControl(PrintControl):
         self.degass_state = None
 
     def connect_hardware(self):
-        mks_thread = Thread(log, name="mks_connect_thread", target=self.mks.connect, args=[])
-        mks_teensy_thread = Thread(log, name="mks_teensy_thread", target=self.mks_teensy.connect, args=[])
+        mks_thread = Thread(log, name="mks_connect_thread", target=self.mks.connect, args=[self.shutdown])
+        mks_teensy_thread = Thread(log, name="mks_teensy_thread", target=self.mks_teensy.connect, args=[self.shutdown])
         mks_thread.start()
         mks_teensy_thread.start()
         super().connect_hardware()

@@ -18,7 +18,7 @@ class LoadCell(USBSerial):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], timeout=1, line_ending='\n', logger=self.log)
+        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"],  baudrate=config_dict["baudrate"], timeout=1, line_ending='\n', logger=self.log)
 
         self.intercept = config_dict["calibration_intercept"]
         self.slope = config_dict["calibration_slope"]

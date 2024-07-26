@@ -15,7 +15,7 @@ class EnvironmentalSensors(USBSerial):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=115200, timeout=1, line_ending='\n', logger=self.log)
+        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"],  baudrate=config_dict["baudrate"], timeout=1, line_ending='\n', logger=self.log)
         
         self.rest_time = config_dict["measurement_period_ms"]
 

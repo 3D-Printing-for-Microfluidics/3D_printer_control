@@ -14,7 +14,7 @@ class TipTilt(USBSerial, TTRStageDriver):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], logger=self.log)
+        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=config_dict["baudrate"], logger=self.log)
 
         self.r = re.compile(r"\d*\.?\d*$")  # regex for getter functions
 
@@ -114,7 +114,7 @@ class TipTilt(USBSerial, TTRStageDriver):
 
 if __name__ == "__main__":
     t = TipTilt()
-    t.connect()
+    t.connect(exit)
     # t.home()
     print(t.get_position("tip"))
     print(t.get_position("tilt"))
