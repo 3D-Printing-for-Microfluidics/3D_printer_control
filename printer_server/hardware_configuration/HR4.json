@@ -1,0 +1,136 @@
+{
+    "valid_schema_versions": [
+        "v3",
+        "v2"
+    ],
+    "stages": {
+        "bp": "galil",
+        "focus": "galil",
+        "x_y": "galil",
+        "t_t_r": "tiptilt"
+    },
+    "light_engines": [
+        "visitech"
+    ],
+    "external_control": {},
+    "coord_systems": {
+        "global": {
+            "X": 0,
+            "Y": 0,
+            "Focus": 0,
+            "Build Platform": 0
+        },
+        "visitech": {
+            "X": 0,
+            "Y": 8.000,
+            "Focus": 2.189,
+            "Build Platform": 0
+        },
+        "keyence_visitech": {
+            "X": 0.047,
+            "Y": -24.424,
+            "Focus": -0.211,
+            "Build Platform": 0
+        }
+    },
+    "galil": {
+        "dummy": false,
+        "controller_name": "DMC4040",
+        "address": "192.168.0.9",
+        "default_axis": "D",
+        "axes": [
+            "A",
+            "B",
+            "C",
+            "D"
+        ],
+        "axes_common_names": [
+            "X",
+            "Y",
+            "Focus",
+            "Build Platform"
+        ],
+        "axes_travel": {
+            "A": 100,
+            "B": 100,
+            "C": 12.5,
+            "D": 100
+        },
+        "axes_ctspmm": {
+            "A": 10000,
+            "B": 10000,
+            "C": 10000,
+            "D": 51200
+        },
+        "axes_tolerance": {
+            "A": 0.125,
+            "B": 0.125,
+            "C": 0.125,
+            "D": 0.125
+        },
+        "axes_speed": {
+            "A": 50,
+            "B": 50,
+            "C": 25,
+            "D": 25
+        },
+        "axes_acceleration": {
+            "A": 50,
+            "B": 50,
+            "C": 50,
+            "D": 50
+        },
+        "calibration_position": 29.1375391,
+        "bottom_position": 43.6390039,
+        "top_position": -50
+    },
+    "tiptilt": {
+        "dummy": false,
+        "hwid": "PID=16C0:0483 SER=9881850",
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "9881850",
+        "baudrate": 115200
+    },
+    "keyence": {
+        "dummy": false,
+        "ip_addr": "192.168.0.15",
+        "port": 24685,
+        "sensors": {
+            "visitech": {
+                "measurement_index": 0
+            }
+        }
+    },
+    "gpio": {
+        "dummy": false,
+        "film_pin": 4
+    },
+    "loadcell": {
+        "dummy": false,
+        "hwid": "PID=16C0:0483 SER=5712360",
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "5712360",
+        "baudrate": 115200,
+        "calibration_intercept": 32298.1,
+        "calibration_slope": -3.31,
+        "loadcell_planarization_enabled": true,
+        "loadcell_planarization_force": 30.0,
+        "loadcell_print_start_force": 5.0
+    },
+    "screen": {},
+    "visitech": {
+        "dummy": false,
+        "address": "192.168.0.10",
+        "port": 5000,
+        "dual_led": false,
+        "leds": [
+            "365nm"
+        ],
+        "resolution": [
+            2560,
+            1600
+        ]
+    }
+}

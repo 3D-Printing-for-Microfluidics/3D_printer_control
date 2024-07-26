@@ -7,11 +7,9 @@ default_log_level = logging.INFO
 dummy = False
 
 
-configuration_path = Path(Config.PRINT_SERVER_FOLDER).rglob("hardware_configuration.json")
+configuration_path = Path(Config.PRINT_SERVER_FOLDER).joinpath('hardware_configuration').rglob(f"{Config.HOSTNAME}.json")
 with open(next(configuration_path), "r") as file_handle:
     config_dict = json.load(file_handle)
-config_dict = config_dict[Config.HOSTNAME]
-
 
 class Printer3D:
     """Provides hardware handles to the Flask print control."""
