@@ -1,69 +1,27 @@
-import json
 import time
-import atexit
 import logging
 import datetime
+from serial import SerialException
 from printer_server.threading_wrapper import Thread
-import serial
-import serial.tools.list_ports
-import serial.serialutil
+from printer_server.drivers.generic_drivers import USBSerial
 from printer_server.async_file_handler import async_file_hander
 
-
-class EnvironmentalSensors(serial.Serial):
+class EnvironmentalSensors(USBSerial):
     """
     Class providing high level control of Environmental Sensor
     """
 
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
-        super().__init__(baudrate=115200, timeout=1)
-        self.port = None  # start with no port
-        self.hwid = config_dict["hwid"]
-        self.rest_time = config_dict["measurement_period_ms"]
-
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
+        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=115200, timeout=1, line_ending='\n', logger=self.log)
+        
+        self.rest_time = config_dict["measurement_period_ms"]
+
         self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
         self.log_file = None
-        self.connected = False
         self.running = False
-
-
-    def findUsbPort(self, hwid):
-        """
-        Finds serial port with given hwid
-
-        Parameters:
-            hwid - device identifier
-        """
-        ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            if hwid.upper() in p.hwid:
-                self.log.debug("Found '%s' at '%s'", p.hwid, p.device)
-                return p.device
-        return None  # not found
-
-    def connect(self):
-        self.port = self.findUsbPort(self.hwid)
-        if self.port is None:
-            msg = "Environmental Sensor not found!"
-            self.log.critical(msg)
-            return False
-        if self.is_open:
-            self.close()
-        self.open()
-        self.connected = True
-        self.log.info("Connected to Environmental Sensor (BME688), posrt: %s", self.port)
-        atexit.register(self.disconnect)
-        return True
-
-
-    def disconnect(self):
-        if self.connected:
-            self.close()
-            self.connected = False
-            self.log.info("Disconnected from Environmental Sensor (BME688)")
 
     def set_log_file(self, filename):
         """
@@ -79,7 +37,6 @@ class EnvironmentalSensors(serial.Serial):
         Starts the environmental sensor collecting data
         """
         if not self.thread.is_alive():
-            self.flushInput()
             self.running = True
             self.log.info("Environmental sensors started")
             self.thread.start()
@@ -107,8 +64,6 @@ class EnvironmentalSensors(serial.Serial):
                 if self.log_file is not None:
                     sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
 
-
-
                     measurements = self.get_all_measurements()
                     measurement_list = ['iaq','iaqAccuracy','static','co2Equivalent','breathVocEquivalent','rawTemperature','pressure','rawHumidity','gasResistance','stabStatus','runInStatus','temperature','humidity','gasPercentage']
                     file_string = ""
@@ -124,7 +79,7 @@ class EnvironmentalSensors(serial.Serial):
                 
                 time.sleep(self.rest_time/1000)  
 
-            except serial.SerialException:
+            except SerialException:
                 self.running = False
             except KeyError:
                 pass
@@ -173,28 +128,3 @@ class EnvironmentalSensors(serial.Serial):
 
     def get_voc(self):
         return self.send("v")    
-
-
-
-    def send(self, cmd, receive=True):
-        """
-        Sends serial command to the loadcell device
-        """
-        self.log.debug("Sent: '%s'", cmd)
-        self.write(bytes(cmd + "\n", encoding="ascii"))  # write to serial tx buffer
-        if receive:
-            response = self.receive()
-            self.log.debug("Response: '%s'", response)
-            return response  # return the response to the command
-        return
-    
-    def receive(self):
-        """
-        Sends serial response from the loadcell device
-        """
-        response = b""
-        response += self.readline()  # wait for the first line to fill in the rx buffer
-        self.flushInput()
-        return (
-            response.decode().rstrip()
-        )  # return decoded byte response (as string) without traililng newline

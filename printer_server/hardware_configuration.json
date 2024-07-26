@@ -46,11 +46,16 @@
             "dummy": false,
             "vendor_id": 1027,
             "product_id": 64240,
+            "baudrate": 115200,
             "moving_shifts_image": true
         },
         "tiptilt": {
             "dummy": false,
-            "hwid": "PID=16C0:0483 SER=5800580"
+            "hwid": "PID=16C0:0483 SER=5800580",
+            "vendor_id": 5824,
+            "product_id": 1155,
+            "serial_number": "5800580",
+            "baudrate": 115200
         },
         "gpio": {
             "dummy": false,
@@ -59,6 +64,10 @@
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=9881500",
+            "vendor_id": 5824,
+            "product_id": 1155,
+            "serial_number": "9881500",
+            "baudrate": 115200,
             "calibration_intercept": 33218.0,
             "calibration_slope": -3.75,
             "loadcell_planarization_enabled": true,
@@ -127,15 +136,24 @@
             "dummy": false,
             "vendor_id": 1027,
             "product_id": 64240,
+            "baudrate": 115200,
             "moving_shifts_image": true
         },
         "tiptilt": {
             "dummy": false,
-            "hwid": "PID=16C0:0483 SER=9881850"
+            "hwid": "PID=16C0:0483 SER=9881850",
+            "vendor_id": 5824,
+            "product_id": 1155,
+            "serial_number": "9881850",
+            "baudrate": 115200
         },
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=5712570",
+            "vendor_id": 5824,
+            "product_id": 1155,
+            "serial_number": "5712570",
+            "baudrate": 115200,
             "calibration_intercept": 34990.0,
             "calibration_slope": -2.1,
             "loadcell_planarization_enabled": true,
@@ -259,7 +277,11 @@
         },
         "tiptilt": {
             "dummy": false,
-            "hwid": "PID=16C0:0483 SER=3794660"
+            "hwid": "PID=16C0:0483 SER=3794660",
+            "vendor_id": 5824,
+            "product_id": 1155,
+            "serial_number": "3794660",
+            "baudrate": 115200
         },
         "keyence": {
             "dummy": false,
@@ -277,6 +299,10 @@
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=9400820",
+            "vendor_id": 5824,
+            "product_id": 1155,
+            "serial_number": "9400820",
+            "baudrate": 115200,
             "calibration_intercept": 32635.00,
             "calibration_slope": -1.24,
             "loadcell_planarization_enabled": true,
@@ -326,6 +352,7 @@
             "dummy": true,
             "vendor_id": 1027,
             "product_id": 64240,
+            "baudrate": 115200,
             "moving_shifts_image": true
         },
         "light_engines": [
@@ -335,9 +362,15 @@
         "mks": {
             "dummy": false,
             "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
-            "mks_address": "253",
+            "mks_vendor_id": 1027,
+            "mks_product_id": 24577,
+            "mks_serial_number": "A9AOVRT7",
             "mks_baudrate": 115200,
+            "mks_address": "253",
             "teensy_hwid": "PID=16C0:0483 SER=16035730",
+            "teensy_vendor_id": 5824,
+            "teensy_product_id": 1155,
+            "teensy_serial_number": "16035730",
             "teensy_baudrate": 9600,
             "atm pressure": 650,
             "target": [
@@ -432,7 +465,11 @@
         },
         "tiptilt": {
             "dummy": true,
-            "hwid": "PID=16C0:0483 SER=9881850"
+            "hwid": "PID=16C0:0483 SER=9881850",
+            "vendor_id": 5824,
+            "product_id": 1155,
+            "serial_number": "9881850",
+            "baudrate": 115200
         },
         "keyence": {
             "dummy": false,
@@ -455,21 +492,34 @@
             "beam_diameter": 0.05,
             "default_wavelength": 365,
             "attenuation_db": 0,
-            "hwid": "USB0::4883::32882::1928351::0::INSTR'"
+            "vendor_id": 4883,
+            "product_id": 32882
         },
         "environmental_sensors": {
             "dummy": true,
             "hwid": "PID=10C4:EA60 SER=0001",
+            "vendor_id": 4292,
+            "product_id": 60000,
+            "serial_number": "0001",
+            "baudrate": 115200,
             "measurement_period_ms": 1000
         },
         "accelerometer": {
-            "dummy": false,
+            "dummy": true,
             "hwid": "USB VID:PID=16C0:0483 SER=16038530",
+            "vendor_id": 5824,
+            "product_id": 1155,
+            "serial_number": "16038530",
+            "baudrate": 115200,
             "measurement_period_ms": 100
         },
         "loadcell": {
             "dummy": true,
             "hwid": "PID=16C0:0483 SER=5712360",
+            "vendor_id": 5824,
+            "product_id": 1155,
+            "serial_number": "5712360",
+            "baudrate": 115200,
             "calibration_intercept": 32298.1,
             "calibration_slope": -3.31,
             "loadcell_planarization_enabled": true,
@@ -579,7 +629,11 @@
         },
         "tiptilt": {
             "dummy": false,
-            "hwid": "PID=16C0:0483 SER=9881850"
+            "hwid": "PID=16C0:0483 SER=9881850",
+            "vendor_id": 5824,
+            "product_id": 1155,
+            "serial_number": "9881850",
+            "baudrate": 115200
         },
         "keyence": {
             "dummy": false,
@@ -598,6 +652,10 @@
         "loadcell": {
             "dummy": false,
             "hwid": "PID=16C0:0483 SER=5712360",
+            "vendor_id": 5824,
+            "product_id": 1155,
+            "serial_number": "5712360",
+            "baudrate": 115200,
             "calibration_intercept": 32298.1,
             "calibration_slope": -3.31,
             "loadcell_planarization_enabled": true,

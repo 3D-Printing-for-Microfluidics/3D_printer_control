@@ -11,20 +11,14 @@ class TipTilt_dummy:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
-        self.hwid = config_dict["hwid"] if config_dict else "DummyHWID"
         self.port = None
         self.connected = False
         self.r = re.compile(r"\d*\.?\d*$")
         self.initialized = None
 
     @dummy_log
-    def findUsbPort(self, hwid):
-        self.log.debug("Finding USB port for HWID: '%s'", hwid)
-        return "/dev/ttyUSB0"  # Dummy port
-
-    @dummy_log
     def connect(self, shutdown=False):
-        self.port = self.findUsbPort(self.hwid)
+        self.port = "dummyPort"
         if self.port is None:
             msg = "Tip/Tilt stage not found!"
             self.log.critical(msg)

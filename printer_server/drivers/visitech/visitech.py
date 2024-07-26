@@ -111,6 +111,8 @@ class Visitech(LightEngineDriver):
                 self.connected = True
                 self.shutdown = shutdown
             except (OSError, socket.timeout) as e:
+                if "timed out" in str(e):
+                    i = attempts
                 self.log.info("%s. Retrying in %s second(s)", e, timeout)
                 self.socket = None  # get rid of handle to bad socket
                 time.sleep(timeout)  # wait to try again

@@ -13,7 +13,6 @@ from printer_server.threading_wrapper import Thread
 class Loadcell_dummy:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.port = None
-        self.hwid = config_dict["hwid"] if config_dict else "DummyHWID"
         self.intercept = config_dict["calibration_intercept"] if config_dict else 0
         self.slope = config_dict["calibration_slope"] if config_dict else 1
         self.currentData = []
@@ -32,11 +31,6 @@ class Loadcell_dummy:
         self.connected = False
 
     @dummy_log
-    def findUsbPort(self, hwid):
-        self.log.debug("Finding USB port for HWID: '%s'", hwid)
-        return "/dev/ttyUSB0"
-
-    @dummy_log
     def adc_to_force(self, x):
         grams = (x - self.intercept) / self.slope
         n = grams / 1000 * 9.8
@@ -45,7 +39,7 @@ class Loadcell_dummy:
     @dummy_log
     def connect(self, frequency=1000):
         self.freq = frequency
-        self.port = self.findUsbPort(self.hwid)
+        self.port = "dummyPort"
         if self.port is None:
             msg = "Loadcell not found!"
             self.log.critical(msg)
@@ -217,7 +211,7 @@ class Loadcell_dummy:
         return "Done"
 
     # @dummy_log
-    def receive_bytes(self, number_of_bytes):
+    def read_bytes(self, number_of_bytes):
         return b'\x00' * number_of_bytes
 
     # @dummy_log
@@ -230,7 +224,6 @@ class Loadcell_dummy:
 
 if __name__ == "__main__":
     config = {
-        "hwid": "DummyHWID",
         "calibration_intercept": 0,
         "calibration_slope": 1
     }

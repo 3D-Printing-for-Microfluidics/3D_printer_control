@@ -136,8 +136,9 @@ class ACS(BPStageDriver, XYStageDriver):
                     self.socket.connect((self.address, self.port))
                     self.connected = True
                     self.shutdown = shutdown
-                    
                 except (OSError, socket.timeout) as e:
+                    if "timed out" in str(e):
+                        i = attempts
                     self.log.info("%s. Retrying in %s second(s)", e, timeout)
                     self.socket = None  # get rid of handle to bad socket
                     time.sleep(timeout)  # wait to try again
@@ -303,7 +304,7 @@ class ACS(BPStageDriver, XYStageDriver):
 
     def wait_for_buffer_completion(self, buffer_number, check_interval=1):
         while True:
-            response = self.send(f"?{8}")
+            response = self.send(f"?{buffer_number}")
             if "terminated" in response:
                 self.log.debug("Buffer execution completed")
                 break
@@ -315,7 +316,7 @@ class ACS(BPStageDriver, XYStageDriver):
         self.log.info("Start homing...")
 
         self.send(f"START 0, 1")
-        self.wait_for_buffer_completion(8)
+        self.wait_for_buffer_completion(0)
 
         for a in self.axes:
             # self.waitForMotionComplete(0, axis=a)

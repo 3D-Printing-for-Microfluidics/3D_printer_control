@@ -1,72 +1,15 @@
-import atexit
-import serial
 import logging
 from threading import Lock
-import serial.tools.list_ports
-import serial.serialutil
+from printer_server.drivers.generic_drivers import USBSerial
 
-class MKSTeensy(serial.Serial):
+class MKSTeensy(USBSerial):
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
-        super().__init__(baudrate=115200, timeout=None)
-
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
-        self.hwid = config_dict["teensy_hwid"]
-        self.port = None  # start with no port
-        self.connected = False
-        self.initialized = None
+
+        super().__init__(vid=config_dict["teensy_vendor_id"], pid=config_dict["teensy_product_id"], sn=config_dict["teensy_serial_number"], logger=self.log)
 
         self.sendLock = Lock()
-
-    def findUsbPort(self, hwid):
-        ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            if hwid.upper() in p.hwid:
-                self.log.debug("Found '%s' at '%s'", p.hwid, p.device)
-                return p.device
-        return None  # not found
-
-    def connect(self):
-        self.port = self.findUsbPort(self.hwid)
-        if self.port is None:
-            msg = "MKS Teensy not found!"
-            self.log.critical(msg)
-            return False
-        if self.is_open:
-            self.close()
-        self.open()
-        self.reset_input_buffer()
-        self.reset_output_buffer()
-        self.connected = True
-        self.log.info("Connected to MKS Teensy (%s)", self.port)
-        atexit.register(self.disconnect)
-        return True
-    
-    def disconnect(self):
-        self.close()
-        self.connected = False
-        self.log.info("Disconnected from MKS Teensy")
-
-    def send(self, cmd, receive=True):
-        with self.sendLock:
-            self.log.debug("Sent: '%s'", cmd)
-            self.write(bytes(cmd + "\r", encoding="ascii"))  # write to serial tx buffer
-            if receive:
-                response = self.receive()
-                self.log.debug("Response: '%s'", response)
-                return response  # return the response to the command
-            return
-
-    def receive(self):
-        """
-        Sends serial response from the loadcell device
-        """
-        response = b""
-        response += self.readline()  # wait for the first line to fill in the rx buffer
-        self.flushInput()
-        return (
-            response.decode().rstrip()
-        )  # return decoded byte response (as string) without traililng newline
             
     def switch_relay(self, relay_num, state):
         if state:

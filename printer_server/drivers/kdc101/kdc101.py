@@ -4,13 +4,16 @@ import logging
 from struct import pack, unpack
 import serial
 import serial.tools.list_ports
-from printer_server.drivers.generic_drivers import FocusStageDriver
+from printer_server.drivers.generic_drivers import USBSerial, FocusStageDriver
 
-class KDC101(FocusStageDriver):
+class KDC101(USBSerial, FocusStageDriver):
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
-        self.homed = False
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
+
+        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], timeout=0.1, logger=self.log)
+
+        self.homed = False
         self.Device_Unit_SF = 34304.0  # pg 34 of protocol PDF (as of Issue 23)
         self.Channel = 1
         self.destination = 0x50
@@ -18,60 +21,22 @@ class KDC101(FocusStageDriver):
         self.maxPos = 25.0
         self.minPos = 0.0
         self.relativeMode = True
-        self.port = None
-        self.serial_handle = None
-        self.initialized = None
         self.config_dict = config_dict
-        self.connected = None
 
-    # helper function to find handle to K-Cube
-    def find_device(self, vendor_id, product_id):
-        x = serial.tools.list_ports.comports()
-        for device in x:
-            if device.vid == vendor_id and device.pid == product_id:
-                self.log.debug("Found %s", device)
-                return device.device
-        return None
-
-    def connect(self, shutdown):
+    def connect(self):
+        super().connect()
         if self.connected is None:
-            self.connected = False
-            self.port = self.find_device(self.config_dict["vendor_id"], self.config_dict["product_id"])
-            if self.port is None:
-                msg = "Thor Labs stage not found!"
-                self.log.critical(msg)
-                return False
-            self.serial_handle = serial.Serial(
-                port=self.port,
-                baudrate=115200,
-                bytesize=8,
-                parity=serial.PARITY_NONE,
-                stopbits=1,
-                timeout=0.1,
-            )
             self.getHardwareInfo()
             self.enableStage(enable=True)
-            atexit.register(self.disconnect)
-            self.connected = True
-            self.log.info("Connected to Thor Labs stage")
-            return True
-        else:
-            while self.connected is False:
-                time.sleep(0.1)
 
 
     def disconnect(self):
         if self.connected is not None and self.connected is not False:
-            if self.serial_handle is not None:
-                try:
-                    self.enableStage(enable=False)
-                    self.serial_handle.close()
-                    self.serial_handle = None
-                    self.log.info("Disconnected from Thor Labs stage")
-                except:
-                    self.serial_handle.close()
-                    self.serial_handle = None
-                    self.log.info("Unable to disconnect from Thor Labs stage!")
+            try:
+                self.enableStage(enable=False)
+            except:
+                pass
+        super().disconnect()
 
 
     ############################# Parent class functions #####################################
@@ -107,7 +72,7 @@ class KDC101(FocusStageDriver):
             
     def home(self):
         # Home Stage; MGMSG_MOT_MOVE_HOME
-        self.serial_handle.write(
+        self.write_bytes(
             pack("<HBBBB", 0x0443, self.Channel, 0x00, self.destination, self.source)
         )
         self.log.info("Homing stage...")
@@ -121,7 +86,7 @@ class KDC101(FocusStageDriver):
         while Rx != Homed and not self.homed:
             if attempts > 30:
                 # self.log.info("Homing Failed: Trying again")
-                self.serial_handle.write(
+                self.write_bytes(
                     pack(
                         "<HBBBB",
                         0x0443,
@@ -132,12 +97,12 @@ class KDC101(FocusStageDriver):
                     )
                 )
                 attempts = 0
-            Rx = self.serial_handle.read(2)
+            Rx = self.read_bytes(2)
             attempts = attempts + 1
 
         self.homed = True
         self.log.info("Stage Homed")
-        self.flushUSB()
+        self.flush_buffers()
 
     def move(self, pos, microns=True, relative=True):
 
@@ -177,7 +142,7 @@ class KDC101(FocusStageDriver):
         # we do this recursively otherwise it might freeze here (each ittr = ~10 sec)
         # if it freezes, we just home again
         self.log.info("Moving stage to %s", pos)
-        self.serial_handle.write(
+        self.write_bytes(
             pack(
                 "<HBBBBHi",
                 code,
@@ -214,35 +179,31 @@ class KDC101(FocusStageDriver):
             if attempts > 100:
                 self.log.info("Move Failed: Trying again")
                 return False
-            Rx = self.serial_handle.read(2)
+            Rx = self.read_bytes(2)
             attempts = attempts + 1
 
         self.log.debug("Move Complete")
-        self.flushUSB()
+        self.flush_buffers()
         return True
 
     def sendServerAlive(self):
-        self.serial_handle.write(
+        self.write_bytes(
             pack("<HBBBB", 0x0492, 0x00, 0x00, self.destination, self.source)
         )
 
     def getHardwareInfo(self):
         # Get HW info; MGMSG_HW_REQ_INFO; may be require by a K Cube to
         #  allow confirmation Rx messages
-        self.serial_handle.write(pack("<HBBBB", 0x0005, 0x00, 0x00, 0x50, 0x01))
-        self.flushUSB()
+        self.write_bytes(pack("<HBBBB", 0x0005, 0x00, 0x00, 0x50, 0x01))
+        self.flush_buffers()
 
     def enableStage(self, enable=True):
         # Enable Stage; MGMSG_MOD_SET_CHANENABLESTATE
         state = 0x01 if enable else 0x02
-        self.serial_handle.write(
+        self.write_bytes(
             pack("<HBBBB", 0x0210, self.Channel, state, self.destination, self.source)
         )
         time.sleep(0.1)
-
-    def flushUSB(self):
-        self.serial_handle.flushInput()
-        self.serial_handle.flushOutput()
 
     def getCurrentPos(self):
         # for some reason sometimes the first one fails.
@@ -254,13 +215,13 @@ class KDC101(FocusStageDriver):
 
     def getCurrentPosHelper(self):
         # Request Position; MGMSG_MOT_REQ_POSCOUNTER
-        self.serial_handle.write(
+        self.write_bytes(
             pack("<HBBBB", 0x0411, self.Channel, 0x00, self.destination, self.source)
         )
 
         # Read back position returns by the cube; Rx message MGMSG_MOT_GET_POSCOUNTER
         _, _, position_dUnits = unpack(
-            "<6sHI", self.serial_handle.read(12)
+            "<6sHI", self.read_bytes(12)
         )  # first two returns are header and chan_dent
         getpos = position_dUnits / float(self.Device_Unit_SF)
 
@@ -273,7 +234,7 @@ class KDC101(FocusStageDriver):
         getpos = round(
             getpos * 1000, 1
         )  # convert to microns and round to 1 decimal place
-        self.flushUSB()  # added to test if it fixes the read error
+        self.flush_buffers()  # added to test if it fixes the read error
 
         if not self.homed and getpos == 0.0:
             return "undef"

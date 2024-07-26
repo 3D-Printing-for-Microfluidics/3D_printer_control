@@ -6,6 +6,7 @@ import logging
 import json
 import atexit
 import socket
+import time
 
 class Keyence:
     def __init__(
@@ -18,44 +19,58 @@ class Keyence:
 
 
         self.connected = False
-        self.sensor_socket = None
+        self.socket = None
         self.host = config_dict["ip_addr"]
         self.port = config_dict["port"]
         
     def connect(self):
+        attempts=10
+        timeout=1
+        self.log.info("Connecting to Keyence sensors, this may take up to 1 minute...")
+
+        # start TCP connection
+        i = 0
         self.connected = False
-        try:
-            self.sensor_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sensor_socket.settimeout(5)
-            self.sensor_socket.connect((self.host, self.port))
-            self.log.info(
-                "Connected to Keyence sensor"
-            )
-            self.connected = True
-            atexit.register(self.disconnect)
-        except (OSError, socket.timeout):
-            self.log.critical(f"Keyence sensor not found! (CL-3000)")
+        while i < attempts:  # try up to attempts number of times to create a connection
+            i += 1
+            try:  # attempt a new connection
+                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.socket.settimeout(10)
+                self.socket.connect((self.host, self.port))
+                self.connected = True
+            except (OSError, socket.timeout) as e:
+                if "timed out" in str(e):
+                    i = attempts
+                self.log.info("%s. Retrying in %s second(s)", e, timeout)
+                self.socket = None  # get rid of handle to bad socket
+                time.sleep(timeout)  # wait to try again
+        if not self.connected:  # connection failed every time, notify user
+            msg = "Keyence sensor not found! (CL-3000)"
+            self.log.critical(msg)
             return False
-        else:
-            return True
+
+        # register exit handlers
+        atexit.register(self.disconnect)
+        self.log.info("Connected to Keyence sensor")
+        return True
 
     def disconnect(self):
-        if self.connected and self.sensor_socket is not None:
-            self.sensor_socket.close()
+        if self.connected and self.socket is not None:
+            self.socket.close()
             self.connected = False
-            self.sensor_socket = None
+            self.socket = None
             self.log.info("Disconnected from Keyence sensor")
 
     def send_command(self, message):
         message += "\r"
         encoded_message = message.encode()
         try:
-            self.sensor_socket.sendall(encoded_message)
+            self.socket.sendall(encoded_message)
         except Exception as ex:
             self.log.error(f"Failed to send message to sensor due to {ex}")
         else:
             self.log.debug(f"Command sent: {message}")
-        response = self.sensor_socket.recv(1024).decode()
+        response = self.socket.recv(1024).decode()
         self.log.debug(f"Feedback: {response}")
         return response
 

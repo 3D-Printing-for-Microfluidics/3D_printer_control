@@ -1,15 +1,12 @@
-import atexit
 import logging
 import datetime
-import threading
+from serial import SerialException
 from printer_server.threading_wrapper import Thread
-import serial
-import serial.tools.list_ports
-import serial.serialutil
+from printer_server.drivers.generic_drivers import USBSerial
 from printer_server.async_file_handler import async_file_hander
 
 
-class LoadCell(serial.Serial):
+class LoadCell(USBSerial):
     """
     Class providing high level control of loadcell
     """
@@ -18,11 +15,11 @@ class LoadCell(serial.Serial):
         """
         Initializes the loadcell
         """
-        super().__init__(baudrate=115200, timeout=1)
-        self.port = None  # start with no port
-        # self.status = None              # status to be updated after every send
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
 
-        self.hwid = config_dict["hwid"]
+        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], timeout=1, line_ending='\n', logger=self.log)
+
         self.intercept = config_dict["calibration_intercept"]
         self.slope = config_dict["calibration_slope"]
 
@@ -35,63 +32,22 @@ class LoadCell(serial.Serial):
         self.graph_newtons = True
         self.graph_autoscale = False
 
-        self.log = logging.getLogger(__name__)
-        self.log.setLevel(log_level)
         self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
         self.log_file = None
-        self.connected = False
-
-    def findUsbPort(self, hwid):
-        """
-        Finds serial port with given hwid
-
-        Parameters:
-            hwid - device identifier
-        """
-        ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            if hwid.upper() in p.hwid:
-                self.log.debug("Found '%s' at '%s'", p.hwid, p.device)
-                return p.device
-        return None  # not found
 
     def adc_to_force(self, x):
         """
         Converts the adc counts to newtons using precalculated constants
         """
-
         grams = (x - self.intercept) / self.slope
         n = grams / 1000 * 9.8
         return n
-
-    def connect(self, frequency=1000):
-        """
-        Connects to the loadcell and sets parameters.
-
-        Parameters:
-            hwid        - device identifier
-            frequency   - sample frequency of loadcell (in milliseconds)
-        """
+    
+    def initialize(self, frequency=1000):
         self.freq = frequency
-
-        self.port = self.findUsbPort(self.hwid)
-        if self.port is None:
-            msg = "Loadcell not found!"
-            self.log.critical(msg)
-            return False
-        if self.is_open:
-            self.close()
-        self.open()
-        self.connected = True
-
         self.loadcell_stop()
-        self.receiveAll()
-
+        self.flush_buffers()
         self.log.debug("%s", self.set_sample_frequency(int(self.freq)))
-        self.log.info("Connected to loadcell (%s)", self.port)
-
-        atexit.register(self.disconnect)
-        return True
 
     def disconnect(self):
         if self.connected:
@@ -99,9 +55,7 @@ class LoadCell(serial.Serial):
                 self.running = False
                 self.thread.join()
                 self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
-            self.close()
-            self.connected = False
-            self.log.info("Disconnected from Loadcell")
+        super().disconnect()
 
     def start(self):
         """
@@ -109,8 +63,6 @@ class LoadCell(serial.Serial):
         """
         if not self.thread.is_alive():
             self.running = True
-
-            self.flushInput()
 
             self.log.info("Loadcell started")
             temp = self.loadcell_start()
@@ -135,17 +87,14 @@ class LoadCell(serial.Serial):
         """
         Pauses the loadcell and loadcell thread.
         """
-        try:
-            self.loadcell_pause()
-        except serial.SerialException:
-            pass
+        self.loadcell_pause()
 
         if self.running:
             self.running = False
             self.thread.join()
             self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
 
-        self.receiveAll()
+        self.flush_buffers()
 
         self.log.info("Loadcell paused")
 
@@ -153,17 +102,14 @@ class LoadCell(serial.Serial):
         """
         Stops the loadcell and loadcell thread. Saves data to file
         """
-        try:
-            self.loadcell_stop()
-        except serial.SerialException:
-            pass
+        self.loadcell_stop()
 
         if self.running:
             self.running = False
             self.thread.join()
             self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
 
-        self.receiveAll()
+        self.flush_buffers()
 
         self.log.info("Loadcell stopped")
         self.start_time = 0
@@ -217,20 +163,24 @@ class LoadCell(serial.Serial):
         while self.running:
             try:
                 index = int.from_bytes(
-                    self.receive_bytes(4), byteorder="little", signed=False
+                    self.read_bytes(4), byteorder="little", signed=False
                 )
                 milliseconds = int.from_bytes(
-                    self.receive_bytes(4), byteorder="little", signed=False
+                    self.read_bytes(4), byteorder="little", signed=False
                 )
                 data = int.from_bytes(
-                    self.receive_bytes(2), byteorder="little", signed=False
+                    self.read_bytes(2), byteorder="little", signed=False
                 )
                 time = self.start_time + datetime.timedelta(
                     milliseconds=float(milliseconds)
                 )
-                ret = self.receive_bytes(1)
+                bad_data = False
+                ret = self.read_bytes(1)
                 while ret != b'\n':
-                    ret = self.receive_bytes(1)
+                    bad_data = True
+                    ret = self.read_bytes(1)
+                if bad_data:
+                    continue
                 force = self.adc_to_force(data)
 
                 if self.log_file is not None:
@@ -261,7 +211,7 @@ class LoadCell(serial.Serial):
 
                 self.currentForce = force
                 self.currentIndex = index
-            except serial.SerialException:
+            except SerialException:
                 self.running = False
             except ValueError:
                 self.log.warning("Unable to parse loadcell data - cast error")
@@ -283,20 +233,14 @@ class LoadCell(serial.Serial):
         """
         Pause sampling
         """
-        try:
-            self.send("p", recieve=False)
-        except serial.SerialException:
-            pass
+        self.send("p", recieve=False)
         return
 
     def loadcell_stop(self):
         """
         Stop sampling
         """
-        try:
-            self.send("e", recieve=False)
-        except serial.SerialException:
-            pass
+        self.send("e", recieve=False)
         return
 
     def set_sample_frequency(self, freq_hz):
@@ -305,37 +249,3 @@ class LoadCell(serial.Serial):
         """
         self.log.debug("Frequency set to '%s'", freq_hz)
         return self.send("f {}".format(freq_hz)), freq_hz
-
-    def send(self, cmd, recieve=True):
-        """
-        Sends serial command to the loadcell device
-        """
-        self.log.debug("Sent: '%s'", cmd)
-        self.write(bytes(cmd + "\n", encoding="ascii"))  # write to serial tx buffer
-        if recieve:
-            response = self.receive()
-            self.log.debug("Response: '%s'", response)
-            return response  # return the response to the command
-        return
-
-    def receive(self):
-        """
-        Sends serial response from the loadcell device
-        """
-        response = b""
-        response += self.readline()  # wait for the first line to fill in the rx buffer
-        return (
-            response.decode().rstrip()
-        )  # return decoded byte response (as string) without traililng newline
-
-    def receive_bytes(self, number_of_bytes):
-        """
-        Sends a number of bytes from the loadcell device
-        """
-        return self.read(number_of_bytes)
-
-    def receiveAll(self):
-        self.read()
-        while self.in_waiting:
-            self.read()
-        return
