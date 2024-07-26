@@ -192,7 +192,9 @@ class Hexapod:
         self.logging_handle.info(f"Moved to angle: ({u}, {v}, {w})")
     
     def set_pose(self, x, y, z, u, v, w):
-        """ Perform absolute simultaneous translation and rotation of all translational and rotational axes to the specified positions and angles in X, Y, Z, U, V, and W to specify the pose of the coordinate system that corresponds to the current pivot point
+        """ Perform absolute simultaneous translation and rotation of all translational and rotational axes to the specified 
+        positions and angles in X, Y, Z, U, V, and W to specify the pose of the coordinate system that corresponds to the current 
+        pivot point
 
         Args:
             x (float): 'X' axis target position
@@ -241,6 +243,11 @@ class Hexapod:
         self.logging_handle.info("Motion stopped")
 
     def get_pivot_point(self):
+        """ Retrieve the current pivot point
+
+        Returns:
+            OrderedDict: dictionary containing the axes and values of the pivot point
+        """
         return self.controller.qSPI()
 
     def set_pivot_point(self, r, s, t):
@@ -267,7 +274,7 @@ class Hexapod:
             self.logging_handle.info(f"Pivot point set to: {ret_val}")
             return True
         else:
-            self.logging_handle.info(f"Not all rotational axes (U, V, W) are 0. Set them to 0 before attempting pivot point adjustment")
+            self.logging_handle.warning(f"Not all rotational axes (U, V, W) are 0. Set them to 0 before attempting pivot point adjustment")
             return False
     
     def step_pivot_point(self, axis, step_size):
