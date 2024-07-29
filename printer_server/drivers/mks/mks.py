@@ -55,7 +55,7 @@ class MKS946(USBSerial):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__(vid=config_dict["mks_vendor_id"], pid=config_dict["mks_product_id"], sn=config_dict["mks_serial_number"], baudrate=config_dict["mks_baudrate"], timeout=0.05, logger=self.log)
+        super().__init__(vid=config_dict["mks_vendor_id"], pid=config_dict["mks_product_id"], sn=config_dict["mks_serial_number"], baudrate=config_dict["mks_baudrate"], timeout=0.1, logger=self.log)
 
         self.config_dict = config_dict
         self.address = config_dict["mks_address"]
@@ -151,7 +151,7 @@ class MKS946(USBSerial):
                     return None
                 
                 else:
-                    self.log.error("NAK: RSP FORMAT ERROR %s: %s", cmd_str, rsp_str)
+                    self.log.error("NAK: QUERY RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
             return None
         
 
@@ -213,7 +213,7 @@ class MKS946(USBSerial):
                 return False
             
             else:
-                self.log.error("NAK: RSP FORMAT ERROR %s: %s", cmd_str, rsp_str)
+                self.log.error("NAK: SET RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
                 return False
         
         

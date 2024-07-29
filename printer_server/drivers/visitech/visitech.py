@@ -118,7 +118,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
         RuntimeError is raised if an error is detected in the response.
         """
         reply = super().send(data)
-        reply = reply.decode().split("\r\n")
+        reply = reply.split("\r\n")
         if "OK" not in reply[0]:
             raise RuntimeError(f"Error returned by light engine ({reply[1]}) {reply[2]}")
         return reply[1]

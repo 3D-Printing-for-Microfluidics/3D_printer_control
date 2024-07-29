@@ -16,7 +16,7 @@ class Keyence_dummy:
         self.log.setLevel(log_level)
 
         self.connected = False
-        self.host = config_dict["ip_addr"]
+        self.host = config_dict["address"]
         self.port = config_dict["port"]
         
     @dummy_log

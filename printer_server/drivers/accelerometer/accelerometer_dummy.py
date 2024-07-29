@@ -8,7 +8,12 @@ class Accelerometer_dummy:
 
     @dummy_log
     def connect(self, *args, **kwargs):
+        self.connected = True
         return True
+    
+    @dummy_log
+    def disconnect(self, *args, **kwargs):
+        self.connected = False
     
     @dummy_log
     def initialize(self, *args, **kwargs):

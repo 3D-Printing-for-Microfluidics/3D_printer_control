@@ -59,6 +59,10 @@ class Loadcell_dummy:
             self.log.info("Disconnected from Loadcell")
 
     @dummy_log
+    def initialize(self):
+        pass
+
+    @dummy_log
     def start(self):
         if not self.thread.is_alive():
             self.running = True

@@ -152,6 +152,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         information about the error.
         """
         response = super().send(command, notify=notify)
+        response = response.strip()[:-1].strip()
         if response != "":
             if response[0] == '?':
                 self.log.error("Last command '%s' returned error '%s (%s)'", command, response, self.send(f"?{response}"))

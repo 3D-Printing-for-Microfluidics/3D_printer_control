@@ -4,7 +4,7 @@ from printer_server.logging_handler import dummy_log
 class EnvironmentalSensors_dummy:
     @dummy_log
     def __init__(self, *args, **kwargs):
-        pass
+        self.connected = None
 
     @dummy_log
     def findUsbPort(self, *args, **kwargs):
@@ -12,11 +12,12 @@ class EnvironmentalSensors_dummy:
 
     @dummy_log
     def connect(self, *args, **kwargs):
+        self.connected=True
         return True
 
     @dummy_log
     def disconnect(self, *args, **kwargs):
-        pass
+        self.connected=False
 
     @dummy_log
     def set_log_file(self, *args, **kwargs):

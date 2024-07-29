@@ -18,13 +18,32 @@ class MKSTeensy(USBSerial):
             return self.send(f"L{relay_num}")
 
     def get_all_relay_status(self):
-        return list(self.send("R"))
+        while True:
+            try:
+                l = list(self.send("R"))
+                if len(l) < 5:
+                    continue
+                return l
+            except:
+                continue
 
     def get_all_sensor_status(self):
-        return list(self.send("S"))
+        while True:
+            try:
+                l = list(self.send("S"))
+                if len(l) < 5:
+                    continue
+                return l
+            except:
+                continue
     
     def get_crane_position(self):
-        return self.send("P")
+        while True:
+            try:
+                p = float(self.send("P"))
+                return p
+            except:
+                continue 
     
     def move_crane(self, mm, relative=False):
         if relative:
