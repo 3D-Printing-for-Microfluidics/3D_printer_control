@@ -11,10 +11,9 @@ import printer_server.views.home
 
 
 # Dynamically get hardware components
-configuration_path = Path(Config.PRINT_SERVER_FOLDER).rglob("hardware_configuration.json")
+configuration_path = Path(Config.PRINT_SERVER_FOLDER).joinpath('hardware_configuration').rglob(f"{Config.HOSTNAME}.json")
 with open(next(configuration_path), "r") as file_handle:
     config_dict = json.load(file_handle)
-config_dict = config_dict[Config.HOSTNAME]
 
 # Generate HTML snippit list
 hardware = {}

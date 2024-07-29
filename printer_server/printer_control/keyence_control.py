@@ -5,7 +5,7 @@ from datetime import datetime
 import printer_server.views.home as home
 from printer_server.threading_wrapper import Thread
 from printer_server.printer_control.print_control import PrintControl
-from printer_server.hardware_configuration import config_dict, driver_handles
+from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 from printer_server.views.manual_controls import (
     get_last_calibration_positions_from_logs,
 )
@@ -25,7 +25,7 @@ class KeyenceControl(PrintControl):
         self.default_light_engine = None
 
     def connect_hardware(self):
-        keyence_thread = Thread(log, name="keyence_control_setup_thread", target=self.keyence.connect, args=[])
+        keyence_thread = Thread(log, name="keyence_control_setup_thread", target=self.keyence.connect, args=[self.shutdown])
         keyence_thread.start()
         super().connect_hardware()
         keyence_thread.join()

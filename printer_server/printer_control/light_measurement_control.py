@@ -9,7 +9,7 @@ from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
 from printer_server.printer_control.print_control import PrintControl
 from printer_server.views.manual_controls import update_le_led_state
-from printer_server.hardware_configuration import config_dict, driver_handles
+from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -43,7 +43,6 @@ class LightMeasurementControl(PrintControl):
         super().initialize_hardware()
         if photodiode_thread is not None:
             photodiode_thread.join()
-        self.photodiode.initialized = True
 
     def pre_print_tasks(self):
         super().pre_print_tasks()

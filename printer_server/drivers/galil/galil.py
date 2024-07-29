@@ -70,7 +70,6 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             self.current_position[a] = 0
 
         self.connected = None
-        self.initialized = None
 
         self.g = gclib.py()
 
@@ -187,7 +186,6 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             self.thread.daemon = True
             try:
                 self.connected = None
-                self.initialized = None
                 self.g.GClose()
                 self.log.info("Disconnected from Galil controller (%s)", self.controller_name)
             except self.gclib_error as e:
@@ -633,5 +631,5 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
 
 if __name__ == "__main__":
     g = Galil(log_level=logging.DEBUG)
-    g.connect()
+    g.connect(exit)
     g.interactiveMode()

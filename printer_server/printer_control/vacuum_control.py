@@ -4,7 +4,7 @@ import logging
 from printer_server.extensions import socketio
 from printer_server.threading_wrapper import Thread
 from printer_server.printer_control.print_control import PrintControl
-from printer_server.hardware_configuration import driver_handles, config_dict
+from printer_server.hardware_configuration.hardware_configuration import driver_handles, config_dict
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -19,13 +19,19 @@ class VacuumControl(PrintControl):
         self.degass_state = None
 
     def connect_hardware(self):
-        mks_thread = Thread(log, name="mks_connect_thread", target=self.mks.connect, args=[])
-        mks_teensy_thread = Thread(log, name="mks_teensy_thread", target=self.mks_teensy.connect, args=[])
+        mks_thread = Thread(log, name="mks_connect_thread", target=self.mks.connect, args=[self.shutdown])
+        mks_teensy_thread = Thread(log, name="mks_teensy_thread", target=self.mks_teensy.connect, args=[self.shutdown])
         mks_thread.start()
         mks_teensy_thread.start()
         super().connect_hardware()
         mks_thread.join()
         mks_teensy_thread.join()
+        if not self.mks.connected:
+            log.error("MKS failed to connect!")
+            self.all_hardware_connected = False
+        if not self.mks_teensy.connected:
+            log.error("MKS Teensy failed to connect!")
+            self.all_hardware_connected = False
 
     def initialize_hardware(self):
         mks_thread = Thread(log, name="mks_init_thread", target=self.mks.initialize, args=[])

@@ -4,7 +4,7 @@ import logging
 import printer_server.views.home as home
 from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
-from printer_server.hardware_configuration import config_dict, driver_handles
+from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 from printer_server.printer_control.print_control import PrintControl, run_in_thread
 # from printer_server.printer_control.print_control_subclasses import BPControl
 
@@ -174,11 +174,26 @@ class LoadcellControl(PrintControl):
             log.warning("Move_to_force overshot target value")
 
     def connect_hardware(self):
-        loadcell_ret = self.loadcell.connect()
+        loadcell_ret = self.loadcell.connect(self.shutdown)
         super().connect_hardware()
         if not loadcell_ret:
             log.error("Loadcell failed to connect!")
             self.all_hardware_connected = False
+
+    def connect_hardware(self):
+        self.loadcell_thread = Thread(log, name="loadcell_control_setup_thread", target=self.loadcell.connect, args=[self.shutdown])
+        self.loadcell_thread.start()
+        super().connect_hardware()
+        self.loadcell_thread.join()
+        if not self.loadcell.connected:
+            log.error("Loadcell failed to connect!")
+            self.all_hardware_connected = False
+
+    def initialize_hardware(self):
+        self.loadcell_thread = Thread(log, name="loadcell_control_init_thread", target=self.loadcell.initialize, args=[])
+        self.loadcell_thread.start()
+        super().initialize_hardware()
+        self.loadcell_thread.join()
 
     def print_worker(self):
         if self.state != "printing":

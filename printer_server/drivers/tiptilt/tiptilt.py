@@ -1,11 +1,6 @@
 import re
-import atexit
 import logging
-import serial
-import serial.tools.list_ports
-import serial.serialutil
-from printer_server.drivers.generic_drivers import TTRStageDriver
-
+from printer_server.drivers.generic_drivers import USBSerial, TTRStageDriver
 
 # helper function for converting axis name into index
 def get_axis_index(axis):
@@ -14,67 +9,17 @@ def get_axis_index(axis):
         axis, 0
     )  # 0 is default if axis is invalid
 
-class TipTilt(serial.Serial, TTRStageDriver):
+class TipTilt(USBSerial, TTRStageDriver):
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
-        super().__init__(baudrate=115200, timeout=None)
-
-        # self.ser = serial.Serial(baudrate=115200, timeout=None)
-        # self.ser.port = None
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
-        self.hwid = config_dict["hwid"]
-        self.port = None  # start with no port
-        self.connected = False
+
+        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=config_dict["baudrate"], logger=self.log)
+
+        self.config_dict = config_dict
         self.r = re.compile(r"\d*\.?\d*$")  # regex for getter functions
-        self.initialized = None
 
-    def findUsbPort(self, hwid):
-        ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            if hwid.upper() in p.hwid:
-                self.log.debug("Found '%s' at '%s'", p.hwid, p.device)
-                return p.device
-        return None  # not found
-
-    def connect(self, shutdown):
-        self.port = self.findUsbPort(self.hwid)
-        if self.port is None:
-            msg = "Tip/Tilt stage not found!"
-            self.log.critical(msg)
-            return False
-        if self.is_open:
-            self.close()
-        self.open()
-        self.reset_input_buffer()
-        self.reset_output_buffer()
-        self.connected = True
-        try:
-            self.initialize()
-        except serial.serialutil.SerialException:
-            msg = "Tip/Tilt failed to connect!"
-            self.log.critical(msg)
-            if self.is_open:
-                self.close()
-            return False
-        self.log.info("Connected to tip/tilt stage (%s)", self.port)
-        atexit.register(self.disconnect)
-        return True
-    
-    def disconnect(self):
-        if self.connected:
-            self.close()
-            self.connected = False
-            self.log.info("Disconnected from Tip/tilt stage")
-
-    def send(self, cmd):
-        self.log.debug("Sent: '%s'", cmd)
-        self.write(bytes(cmd + "\r", encoding="ascii"))  # write to serial tx buffer
-        response, error = self.receive(cmd)
-        self.log.debug("Reply: '%s'", response)
-        if error:
-            self.log.warning("There was an error! %s", response)
-        return response
-
+    # Override USBSerial recive to recieve until 'Done' message
     def receive(self, cmd):
         buffer = b""  # buffer for incoming serial communication
         message = ""  # response to be returned
@@ -95,7 +40,9 @@ class TipTilt(serial.Serial, TTRStageDriver):
                     message = float(
                         re.findall(self.r, message)[0]
                     )  # parse out values for getter commands
-                return message, error
+                if error:
+                    self.log.warning("There was an error! %s", message)
+                return message
 
     ## wrappers for commands from Teensyduino ##
 
@@ -168,7 +115,7 @@ class TipTilt(serial.Serial, TTRStageDriver):
 
 if __name__ == "__main__":
     t = TipTilt()
-    t.connect()
+    t.connect(exit)
     # t.home()
     print(t.get_position("tip"))
     print(t.get_position("tilt"))

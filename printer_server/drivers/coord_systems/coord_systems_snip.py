@@ -1,5 +1,5 @@
 from printer_server.extensions import socketio
-from printer_server.hardware_configuration import driver_handles
+from printer_server.hardware_configuration.hardware_configuration import driver_handles
 import printer_server.views.manual_controls
 
 coord_systems_control = driver_handles.coord_systems_control

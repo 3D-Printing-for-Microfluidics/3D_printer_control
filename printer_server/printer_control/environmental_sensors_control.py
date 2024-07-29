@@ -1,8 +1,9 @@
 import time
 import logging
 
+from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
-from printer_server.hardware_configuration import config_dict, driver_handles
+from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 from printer_server.printer_control.print_control import PrintControl, run_in_thread
 
 
@@ -27,10 +28,12 @@ class EnvironmentalSensorsControl(PrintControl):
         self.environmental_sensors.start() 
 
     def connect_hardware(self):
-        environmental_sensors_ret = self.environmental_sensors.connect()
+        self.env_thread = Thread(log, name="env_control_setup_thread", target=self.environmental_sensors.connect, args=[self.shutdown])
+        self.env_thread.start()
         super().connect_hardware()
-        if not environmental_sensors_ret:
-            log.error("environmental Sensor failed to connect!")
+        self.env_thread.join()
+        if not self.environmental_sensors.connected:
+            log.error("Enviornmental sensors failed to connect!")
             self.all_hardware_connected = False
 
     def finish_print(self):

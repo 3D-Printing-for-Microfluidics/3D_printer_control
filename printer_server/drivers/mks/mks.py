@@ -1,23 +1,10 @@
-import serial
-import atexit
 import time
 import logging
 import threading
-import serial.tools
-import serial.serialutil
 from decimal import Decimal
-import serial.tools.list_ports
-
 from printer_server.threading_wrapper import Thread
+from printer_server.drivers.generic_drivers import USBSerial
 
-'''
-Notes:
-    Turn on relay
-    Turn off relay
-    Get pressure
-    Get relay status
-    Get reed sensor status
-'''
 
 def decimal_to_scientific(number, precision):
     scientific_notation = f"{Decimal(number):+.{precision}E}"
@@ -63,89 +50,46 @@ def parse_pressure(log, pressure):
     else:
         return float(pressure)
 
-class MKS946(serial.Serial):
+class MKS946(USBSerial):
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
-        self.config_dict = config_dict
-        self.address = config_dict["mks_address"]
-
-        super().__init__(baudrate=config_dict["mks_baudrate"], timeout=0.05)
-
-        self.sendLock = threading.Lock()
-
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
-        self.connected = False
+
+        super().__init__(vid=config_dict["mks_vendor_id"], pid=config_dict["mks_product_id"], sn=config_dict["mks_serial_number"], baudrate=config_dict["mks_baudrate"], timeout=0.1, logger=self.log)
+
+        self.config_dict = config_dict
+        self.address = config_dict["mks_address"]
         self.thread_running = False
         self.pressures = None
         self.thread = Thread(self.log, name="mks_poll_thread", target=self.loop)
+        self.sendLock = threading.Lock()
 
-    def findUsbPort(self, hwid):
-        """
-        Finds serial port with given hwid
-
-        Parameters:
-            hwid - device identifier
-        """
-        ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            if hwid.upper() in p.hwid:
-                self.log.debug("Found '%s' at '%s'", p.hwid, p.device)
-                return p.device
-        return None  # not found
-            
-    def connect(self):
-        self.port = self.findUsbPort(self.config_dict["mks_hwid"])
-        if self.port is None:
-            msg = "MKS not found!"
-            self.log.critical(msg)
-            return False
-        if self.is_open:
-            self.close()
-        self.open()
-
-        self.flush()
-        self.connected = True
-
-        self.log.info("Connected to MKS (%s)", self.port)
-
-        atexit.register(self.disconnect)
-        return True
-    
     def initialize(self):
         if self.connected:
             self.log.info("Setting atm pressure")
-            print(f"set_atmospheric_pressure: {self.set_atmospheric_pressure(1, self.config_dict['atm pressure'])}")
-            print(f"set_atmospheric_pressure: {self.set_atmospheric_pressure(2, self.config_dict['atm pressure'])}")
-            # self.set_atmospheric_pressure(1, self.config_dict["atm pressure"])
-            # self.set_atmospheric_pressure(2, self.config_dict["atm pressure"])
+            self.set_atmospheric_pressure(1, self.config_dict["atm pressure"])
+            self.set_atmospheric_pressure(2, self.config_dict["atm pressure"])
             self.log.info("Setting relays")
             for _, relay in self.config_dict["relays"].items():
                 relay_num = relay["relay_num"]
                 if relay["mode"] == "auto":
-                    print(f"set_relay_direction: {self.set_relay_direction(relay_num, relay['direction'])}")
-                    print(f"set_relay_setpoint: {self.set_relay_setpoint(relay_num, relay['setpoint'])}")
-                    print(f"set_relay_hysteresis: {self.set_relay_hysteresis(relay_num, relay['hysterisis'])}")
-                    print(f"set_relay_mode: {self.set_relay_mode(relay_num, 'ENABLE')}")
-                    # self.set_relay_direction(relay_num, relay["direction"])
-                    # self.set_relay_setpoint(relay_num, relay["setpoint"])
-                    # self.set_relay_hysteresis(relay_num, relay["hysterisis"])
-                    # self.set_relay_mode(relay_num, 'ENABLE')
+                    self.set_relay_direction(relay_num, relay["direction"])
+                    self.set_relay_setpoint(relay_num, relay["setpoint"])
+                    self.set_relay_hysteresis(relay_num, relay["hysterisis"])
+                    self.set_relay_mode(relay_num, 'ENABLE')
                 else:
-                    print(f"set_relay_mode: {self.set_relay_mode(relay_num, 'CLEAR')}")
-                    # self.set_relay_mode(relay_num, 'CLEAR')
+                    self.set_relay_mode(relay_num, 'CLEAR')
             self.start_thread()
             self.log.info("MSK initialized")
 
     def disconnect(self):
         if self.connected:
             self.stop_thread()
+            self.log.info("Clearing relays")
             for _, relay in self.config_dict["relays"].items():
                 if relay["mode"] != "auto":
-                    print(f"set_relay_mode: {self.set_relay_mode(relay['relay_num'], 'CLEAR')}")
-                    # self.set_relay_mode(i, 'CLEAR')
-            self.close()
-            self.connected = False
-            self.log.info("Disconnected from MKS")
+                    self.set_relay_mode(relay['relay_num'], 'CLEAR')
+        super().disconnect()
 
     def start_thread(self):
         if not self.thread_running:
@@ -166,12 +110,6 @@ class MKS946(serial.Serial):
                 get_gauges(emit=True)
                 cranePosition(emit=True)
             time.sleep(0.1)
-
-    def send_command(self, command):
-        self.write((command + '\r').encode())
-
-    def read_response(self):
-        return self.readline().decode().strip()
 
     def query(self, command, n=None, parameter=""):
         '''
@@ -198,9 +136,7 @@ class MKS946(serial.Serial):
 
             trys = 3
             for _ in range(trys):
-                self.send_command(cmd_str)
-                rsp_str = self.read_response()
-                # print(f"{cmd_str} -> {rsp_str}")
+                rsp_str = self.send(cmd_str)
 
                 if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
                     rsp_str = rsp_str.replace(f"@{self.address}ACK","")
@@ -215,8 +151,7 @@ class MKS946(serial.Serial):
                     return None
                 
                 else:
-                    print(cmd_str, rsp_str)
-                    self.log.error("NAK: RSP FORMAT ERROR %s: %s", cmd_str, rsp_str)
+                    self.log.error("NAK: QUERY RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
             return None
         
 
@@ -245,8 +180,7 @@ class MKS946(serial.Serial):
                 cmd_str += f"{parameter}"
             cmd_str += f";FF"
 
-            self.send_command(cmd_str)
-            rsp_str = self.read_response()
+            rsp_str = self.send(cmd_str)
 
             if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
                 rsp_str = rsp_str.replace(f"@{self.address}ACK","")
@@ -279,7 +213,7 @@ class MKS946(serial.Serial):
                 return False
             
             else:
-                self.log.error("NAK: RSP FORMAT ERROR %s: %s", cmd_str, rsp_str)
+                self.log.error("NAK: SET RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
                 return False
         
         
@@ -1155,9 +1089,15 @@ if __name__ == '__main__':
     config_dict = {
         "dummy": False,
         "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
-        "mks_address": "253",
+        "mks_vendor_id": "1027",
+        "mks_product_id": "24577",
+        "mks_serial_number": "A9AOVRT7",
         "mks_baudrate": 115200,
+        "mks_address": "253",
         "teensy_hwid": "PID=16C0:0483 SER=16035730",
+        "teensy_vendor_id": "5824",
+        "teensy_product_id": "1155",
+        "teensy_serial_number": "16035730",
         "teensy_baudrate": 9600,
         "atm pressure": 650,
         "target": [
@@ -1187,48 +1127,47 @@ if __name__ == '__main__':
     }
 
     mks = MKS946(config_dict=config_dict)
-    mks.connect()
+    mks.connect(exit)
 
-    # print(f"get_addr: {mks.get_addr()}")
-    # print(f"get_baud: {mks.get_baud()}")
-    # print(f"get_parity: {mks.get_parity()}")
-    # print(f"get_485_delay: {mks.get_485_delay()}")
-    # print(f"get_unit: {mks.get_unit()}")
-    # print(f"get_display_mode: {mks.get_display_mode()}")
-    # print(f"get_display_format: {mks.get_display_format()}")
-    # print(f"get_panel_lock: {mks.get_panel_lock()}")
-    # print(f"get_user_calibration_state: {mks.get_user_calibration_state()}")
-    # print(f"get_parameter_setting_state: {mks.get_parameter_setting_state()}")
-    # print(f"get_module_types: {mks.get_module_types()}")
-    # print(f"get_controller_type: {mks.get_controller_type()}")
-    # print(f"get_controller_serial_number: {mks.get_controller_serial_number()}")
-    # print(f"get_screensaver_time: {mks.get_screensaver_time()}")
-
-    # print(f"get_sensors_on_module A: {mks.get_sensors_on_module('A')}")
-    # print(f"get_sensors_on_module B: {mks.get_sensors_on_module('B')}")
-    # print(f"get_sensors_on_module C: {mks.get_sensors_on_module('C')}")
-
-    # for i in range(6):
-    #     print(f"get_module_firmware_version {i+1}: {mks.get_module_firmware_version(i+1)}")
-    #     print(f"get_module_serial_number {i+1}: {mks.get_module_serial_number(i+1)}")
-
-    # print(f"get_all_relay_mode: {mks.get_all_relay_mode()}")
-    # print(f"get_all_relay_status: {mks.get_all_relay_status()}")
-    # for i in range(12):
-    #     print(f"get_relay_setpoint{i+1}: {mks.get_relay_setpoint(i+1)}")
-    #     print(f"get_relay_hysteresis{i+1}: {mks.get_relay_hysteresis(i+1)}")
-    #     print(f"get_relay_direction{i+1}: {mks.get_relay_direction(i+1)}")
-    #     print(f"get_relay_mode{i+1}: {mks.get_relay_mode(i+1)}")
-    #     print(f"get_relay_status{i+1}: {mks.get_relay_status(i+1)}")
-    
     mks.reset_module_settings(0)
     mks.reset_module_settings(1)
     mks.reset_module_settings(2)
 
+    print(f"get_addr: {mks.get_addr()}")
+    print(f"get_baud: {mks.get_baud()}")
+    print(f"get_parity: {mks.get_parity()}")
+    print(f"get_485_delay: {mks.get_485_delay()}")
+    print(f"get_unit: {mks.get_unit()}")
+    print(f"get_display_mode: {mks.get_display_mode()}")
+    print(f"get_display_format: {mks.get_display_format()}")
+    print(f"get_panel_lock: {mks.get_panel_lock()}")
+    print(f"get_user_calibration_state: {mks.get_user_calibration_state()}")
+    print(f"get_parameter_setting_state: {mks.get_parameter_setting_state()}")
+    print(f"get_module_types: {mks.get_module_types()}")
+    print(f"get_controller_type: {mks.get_controller_type()}")
+    print(f"get_controller_serial_number: {mks.get_controller_serial_number()}")
+    print(f"get_screensaver_time: {mks.get_screensaver_time()}")
+
+    print(f"get_sensors_on_module A: {mks.get_sensors_on_module('A')}")
+    print(f"get_sensors_on_module B: {mks.get_sensors_on_module('B')}")
+    print(f"get_sensors_on_module C: {mks.get_sensors_on_module('C')}")
+
+    for i in range(6):
+        print(f"get_module_firmware_version {i+1}: {mks.get_module_firmware_version(i+1)}")
+        print(f"get_module_serial_number {i+1}: {mks.get_module_serial_number(i+1)}")
+
+    print(f"get_all_relay_mode: {mks.get_all_relay_mode()}")
+    print(f"get_all_relay_status: {mks.get_all_relay_status()}")
+    for i in range(12):
+        print(f"get_relay_setpoint{i+1}: {mks.get_relay_setpoint(i+1)}")
+        print(f"get_relay_hysteresis{i+1}: {mks.get_relay_hysteresis(i+1)}")
+        print(f"get_relay_direction{i+1}: {mks.get_relay_direction(i+1)}")
+        print(f"get_relay_mode{i+1}: {mks.get_relay_mode(i+1)}")
+        print(f"get_relay_status{i+1}: {mks.get_relay_status(i+1)}")
+
     mks.set_atmospheric_pressure(1,650)
     mks.set_atmospheric_pressure(2,650)
     print(f"read_all_pressures: {mks.read_all_pressures()}")
-    # for i in range(6):
     i=0
     print(f"read_pressure{i+1}: {mks.read_pressure(i+1)}")
     print(f"get_atmospheric_pressure{i+1}: {mks.get_atmospheric_pressure(i+1)}")

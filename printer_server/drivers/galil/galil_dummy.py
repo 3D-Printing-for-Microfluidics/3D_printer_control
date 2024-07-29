@@ -490,5 +490,5 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
 
 if __name__ == "__main__":
     g = Galil_dummy(log_level=logging.DEBUG)
-    g.connect()
+    g.connect(exit)
     g.interactiveMode()
