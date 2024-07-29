@@ -4,15 +4,14 @@ import time
 import atexit
 import socket
 import logging
-import threading
 from pathlib import Path
 from datetime import datetime
 from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
 
-from printer_server.drivers.generic_drivers import BPStageDriver, XYStageDriver
+from printer_server.drivers.generic_drivers import EthernetSerial, BPStageDriver, XYStageDriver
 
-class ACS(BPStageDriver, XYStageDriver):
+class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
     def __init__(
         self,
         config_dict=None,
@@ -20,10 +19,11 @@ class ACS(BPStageDriver, XYStageDriver):
     ):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
+
+        super().__init__(host=config_dict["address"], port=config_dict["port"], logger=self.log)
+
         self.movement_log = None
         self.config_dict = config_dict
-
-        self.sendLock = threading.Lock()
 
         self.thread = Thread(self.log, name="acs_loop_thread", target=self.loop)
         self.thread.daemon = True
@@ -66,11 +66,6 @@ class ACS(BPStageDriver, XYStageDriver):
             self.monitoring_window[a] = self.error_window[a] * 100
             self.logging_move_status[a] = -1
             self.current_position[a] = 0
-
-        self.connected = None
-        self.initialized = None
-
-        self.socket = None
 
     def convertAxis(self, axis=None):
         """Return converted axis name (eg. maps X,Y,Z to A,B,C)"""
@@ -119,45 +114,15 @@ class ACS(BPStageDriver, XYStageDriver):
 
     def connect(self, shutdown):
         """Find the first ACS controller and connect to it."""
-        if self.connected is None:
-            attempts=10
-            timeout=1
-            
-            self.connected = False
-            self.address = self.config_dict["address"]
-            self.port = self.config_dict["port"]
-            self.log.info("Connecting to ACS (%s), this may take up to 1 minute...", self.address)
-            i = 0
-            while i < attempts:  # try up to attempts number of times to create a connection
-                i += 1
-                try:
-                    self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    self.socket.settimeout(10)
-                    self.socket.connect((self.address, self.port))
-                    self.connected = True
-                    self.shutdown = shutdown
-                    
-                except (OSError, socket.timeout) as e:
-                    self.log.info("%s. Retrying in %s second(s)", e, timeout)
-                    self.socket = None  # get rid of handle to bad socket
-                    time.sleep(timeout)  # wait to try again
-            if not self.connected:
-                msg = f"ACS controller not found!"
-                self.log.critical(msg)
-                return False
-            
+        ret = super().connect(shutdown)
+        if ret is not None and ret and not self.thread_running:
             self.thread_running = True
             self.thread.start()
-            atexit.register(self.disconnect)
-            self.log.info("Connected to ACS controller")
-            return True
-        else:
-            while self.connected is False:
-                time.sleep(0.1)
+        return ret
 
     def disconnect(self):
         """Disconnect form the ACS controller."""
-        if self.connected is not None and self.connected is not False:
+        if self.connected is not None and self.connected is not False and self.socket is not None:
             for axis in self.axes:
                 self.motorOff(axis)
 
@@ -169,16 +134,7 @@ class ACS(BPStageDriver, XYStageDriver):
             self.thread = Thread(self.log, name="acs_loop_thread", target=self.loop)
             self.thread.daemon = True
 
-            self.connected = None
-            self.initialized = None
-            try:
-                if self.socket is not None:
-                    with self.sendLock:
-                        self.socket.close()
-                    self.socket = None
-                self.log.info("Disconnected from ACS controller")
-            except:
-                self.log.error("Unexpected error on disconnect")
+            super().disconnect()
 
     def write_to_disk(self, *args):
         """Write data to disk using the async file handler class.
@@ -195,52 +151,17 @@ class ACS(BPStageDriver, XYStageDriver):
         If an error is returned, request and also return more
         information about the error.
         """
-        with self.sendLock:
-            if notify:
-                self.log.debug("Sent : '%s'", command)
-            response = self._send(command)
-            response = "".join(response)
-            self.log.debug("Reply: '%s'", response)
-            if response != "":
-                if notify:
-                    self.log.debug("Reply: '%s'", response)
-                if response[0] == '?':
-                    self.log.error("Last command '%s' returned error '%s (%s)'", command, response, self.send(f"?{response}"))
-            return response
-                
-    def _send(self, msg):
-        msg += "\r"
-        encoded_message = msg.encode()
-        try:
-            self.socket.sendall(encoded_message)
-        except socket.timeout:
-            msg = "ACS controller send timed out!"
-            self.log.critical(msg)
-            self.shutdown(is_critical = True)
-            sys.exit(msg)
-        except Exception as ex:
-            self.log.error("Failed to send packet: %s", ex)
-
-        try:
-            msg = self.socket.recv(1024).decode()
-            return msg.strip()[:-1].strip()
-        except socket.timeout:
-            msg = "ACS controller recieve timed out!"
-            self.log.critical(msg)
-            self.shutdown(is_critical = True)
-            sys.exit(msg)
-        except Exception as e:
-            self.log.error("Failed to receive packet: %s", e)
-        return None
-
+        response = super().send(command, notify=notify)
+        if response != "":
+            if response[0] == '?':
+                self.log.error("Last command '%s' returned error '%s (%s)'", command, response, self.send(f"?{response}"))
+        return response
+            
     def checkLimits(self, axis=None):
         """Return a tuple the state of the limit switches for the
         specified axis.
         """
         a = self.convertAxis(axis)
-        # with self.sendLock:
-        #     lf = sp.GetSafetyInput(self.acs, a, sp.SafetyControlMasks.ACSC_SAFETY_RL, sp.SYNCHRONOUS, True) #FAULT(axis).#RL pg 250
-        #     lr = sp.GetSafetyInput(self.acs, a, sp.SafetyControlMasks.ACSC_SAFETY_LL, sp.SYNCHRONOUS, True) #FAULT(axis).#LL pg 250
         lr = float(self.send(f"?FAULT{a}.#SRL")) # SRL is software limit RL is hardware
         ll = float(self.send(f"?FAULT{a}.#SLL")) # SLL is software limit LL is hardware
         return bool(lr), bool(ll)
@@ -248,62 +169,46 @@ class ACS(BPStageDriver, XYStageDriver):
     def getPosition(self, axis=None, notify=True):
         """Return the position of the specified encoder."""
         a = self.convertAxis(axis)
-        # with self.sendLock:
-        #     pos = sp.GetFPosition(self.acs, a, sp.SYNCHRONOUS, True)
         pos = self.send(f"?FPOS{a}", notify=notify)
         return float(pos)
 
     def motorOn(self, axis=None):
         """Turn on the specified axis."""
         a = self.convertAxis(axis)
-        # with self.sendLock:
-        #     sp.Enable(self.acs, a, sp.SYNCHRONOUS, True) # ENABLE pg 96
         self.send(f"ENABLE {a}")
 
     def motorOff(self, axis=None):
         """Turn off the specified axis."""
         a = self.convertAxis(axis)
         self.log.warning("Axis %s motor turned off. It may sink due to gravity.", a)
-        # with self.sendLock:
-        #     sp.Disable(self.acs, a, sp.SYNCHRONOUS, True) # DISABLE pg 96
         self.send(f"DISABLE {a}")
 
     def getAcceleration(self, axis=None):
         """Return the acceleration of the specified axis (mm/sec^2)."""
         a = self.convertAxis(axis)
-        # with self.sendLock:
-        #     acc = sp.GetAcceleration(self.acs, a, sp.SYNCHRONOUS, True) # ACC 2pg 372
         acc = self.send(f"?ACC{a}")
         return float(acc)
 
     def setAcceleration(self, acceleration, axis=None):
         """Set the acceleration for the specified axis (mm/sec^2)."""
         a = self.convertAxis(axis)
-        # with self.sendLock:
-        #     sp.SetAcceleration(self.acs, a, acceleration, sp.SYNCHRONOUS, True) 
-        #     sp.SetDeceleration(self.acs, a, acceleration, sp.SYNCHRONOUS, True)
-
         self.send(f"ACC({a}) = {acceleration}")
         self.send(f"DEC({a}) = {acceleration}")
 
     def getSpeed(self, axis=None):
         """Return the speed for the specified axis (mm/sec)."""
         a = self.convertAxis(axis)
-        # with self.sendLock:
-        #     speed = sp.GetVelocity(self.acs, a, sp.SYNCHRONOUS, True)
         speed = self.send(f"?VEL{a}")
         return float(speed)
 
     def setSpeed(self, speed, axis=None):
         """Set the speed for the specified axis (mm/sec)."""
         a = self.convertAxis(axis)
-        # with self.sendLock:
-        #     sp.SetVelocity(self.acs, a, speed, sp.SYNCHRONOUS, True)
         self.send(f"VEL({a}) = {speed}")
 
     def wait_for_buffer_completion(self, buffer_number, check_interval=1):
         while True:
-            response = self.send(f"?{8}")
+            response = self.send(f"?{buffer_number}")
             if "terminated" in response:
                 self.log.debug("Buffer execution completed")
                 break
@@ -314,16 +219,10 @@ class ACS(BPStageDriver, XYStageDriver):
         """Run the homing routine."""
         self.log.info("Start homing...")
 
-        # self.RunBuffer(self.acs, 8, "homeA", sp.SYNCHRONOUS, True) # START pg 92
-        self.send(f"START 8, homeX")
-        self.wait_for_buffer_completion(8)
-        self.send(f"START 8, homeY")
-        self.wait_for_buffer_completion(8)
-        # self.send(f"START 8, homeA")
-        # self.wait_for_buffer_completion(8)
+        self.send(f"START 0, 1")
+        self.wait_for_buffer_completion(0)
 
         for a in self.axes:
-            # self.waitForMotionComplete(0, axis=a)
             self.homed[a] = True  # update class homed status
         self.log.info("Homing complete.")
 
@@ -384,8 +283,6 @@ class ACS(BPStageDriver, XYStageDriver):
         if mm is not None:
             start_position = self.getPosition(axis=a)
             self.log.info("Move axis %s to relative position %s", a, mm)
-            # with self.sendLock:
-            #     sp.ToPoint(self.acs, sp.MotionFlags.ACSC_AMF_, a, mm, sp.SYNCHRONOUS, True) # PTP pg 108
             self.send(f"PTP/r {a}, {mm}")
             self.logging_move_status[a] = 0
             self.waitForMotionComplete(start_position + mm, wait_for_settling=wait_for_settling, axis=a)
@@ -425,8 +322,6 @@ class ACS(BPStageDriver, XYStageDriver):
             self.setAcceleration(acceleration, axis=a)
         if mm is not None:
             self.log.info("Move axis %s to absolute position %s", a, mm)
-            # with self.sendLock:
-            #     sp.ToPoint(self.acs, None, a, mm, sp.SYNCHRONOUS, True) # PTP pg 108
             self.send(f"PTP {a}, {mm}")
             self.logging_move_status[a] = 0
             self.waitForMotionComplete(mm, wait_for_settling=wait_for_settling, axis=a)
@@ -450,8 +345,6 @@ class ACS(BPStageDriver, XYStageDriver):
 
         self.setAcceleration(acceleration)
         self.log.info("Start jog on axis %s at speed %s mm/sec", a, speed)
-        # with self.sendLock:
-        #     sp.Jog(self.acs, sp.MotionFlags.ACSC_AMF_VELOCITY, a, speed, sp.SYNCHRONOUS, True) # JOG pg 127
         if speed > 0:
             self.send(f"JOG/v {a}, {speed}, +")
         else:
@@ -462,23 +355,17 @@ class ACS(BPStageDriver, XYStageDriver):
         """Stop a jog, non-blocking."""
         a = self.convertAxis(axis)
         self.log.info("Stop jog on axis %s", a)
-        # with self.sendLock:
-        #     sp.Kill(self.acs, a, sp.SYNCHRONOUS, True) # sp.Halt uses full decelleration. I think a quick stop may be better... KILL pg 99
         self.send(f"KILL/e {a}")
         self.logging_move_status[a] = -1
         self.jogging[a] = False
         self.setSpeed(self.pre_jog_speed[a])
         self.setAcceleration(self.pre_jog_acceleration[a])
 
-    # WaitMotionEnd # Waits for Motion Compete and settling
-    # GetMotorState # Bit order (0: enabled, 1:loop control, 4:settled, 5:moving, 6:accelerating, 25:settledA, 26:settledB, 27:settledC)
-
     def waitForMotionComplete(self, mm, wait_for_settling=True, axis=None):
         """Blocks execution until the encoder reaches the target value
         and saves motion data as it goes.
         """
         a = self.convertAxis(axis)
-        # self.WaitMotionEnd(self.acs, a, -1, True)
         counter = 0
         time_count = 0
         limit_switch_triggered = False
@@ -574,10 +461,6 @@ class ACS(BPStageDriver, XYStageDriver):
                         tmp += f"{self.logging_move_status[a]},"
                     self.write_to_disk(tmp)
                 else:
-                    # tmp = []
-                    # for a in self.axes:
-                    #     position = self.current_position[a]
-                    #     tmp.append(position, axis=a)
                     tmp = self.current_position[self.default_axis]
 
                     self.movement_log_times.append(time.time())
@@ -600,10 +483,12 @@ class ACS(BPStageDriver, XYStageDriver):
             self.log.critical(msg)
             sys.exit(msg)
         try:
+            import threading
+            sendLock = threading.Lock()
             while True:
                 cmd = input("Give ACS a command>> ")
                 cmd.strip()
-                with self.sendLock:
+                with sendLock:
                     print(self.send(cmd))
         except KeyboardInterrupt:
             print("\nExited by KeyboardInterrupt")

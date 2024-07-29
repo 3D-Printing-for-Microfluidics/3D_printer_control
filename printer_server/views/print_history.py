@@ -7,7 +7,7 @@ from flask import Blueprint, request, render_template, flash, send_file
 from printer_server.models import PrintRecord, PrintQueue
 from printer_server.settings import Config
 from printer_server.extensions import socketio
-from printer_server.hardware_configuration import config_dict
+from printer_server.hardware_configuration.hardware_configuration import config_dict
 from printer_server.print_file_validator import validate_schema
 
 blueprint = Blueprint(

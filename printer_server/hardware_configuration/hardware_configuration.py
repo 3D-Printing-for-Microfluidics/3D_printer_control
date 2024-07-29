@@ -7,11 +7,9 @@ default_log_level = logging.INFO
 dummy = False
 
 
-configuration_path = Path(Config.PRINT_SERVER_FOLDER).rglob("hardware_configuration.json")
+configuration_path = Path(Config.PRINT_SERVER_FOLDER).joinpath('hardware_configuration').rglob(f"{Config.HOSTNAME}.json")
 with open(next(configuration_path), "r") as file_handle:
     config_dict = json.load(file_handle)
-config_dict = config_dict[Config.HOSTNAME]
-
 
 class Printer3D:
     """Provides hardware handles to the Flask print control."""
@@ -182,11 +180,8 @@ class Printer3D:
                 )
 
         if "wintech" in config_dict.keys():
-            from printer_server.drivers.wintech import Wintech, Wintech_dummy
-            if config_dict["wintech"]["dummy"]:
-                self.wintech = Wintech_dummy()
-            else:
-                self.wintech = Wintech(config_dict=config_dict["wintech"], log_level=default_log_level)
+            from printer_server.drivers.wintech import Wintech
+            self.wintech = Wintech(config_dict=config_dict["wintech"], log_level=default_log_level, dummy=config_dict["wintech"]["dummy"])
 
         self.bp_stage = None
         self.focus_stage = None

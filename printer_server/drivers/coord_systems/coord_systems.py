@@ -1,4 +1,4 @@
-from printer_server.hardware_configuration import config_dict
+from printer_server.hardware_configuration.hardware_configuration import config_dict
 
 class Coord_Systems:
     def __init__(self):

@@ -2,7 +2,7 @@ import logging
 
 from printer_server.threading_wrapper import Thread
 from printer_server.printer_control.print_control import PrintControl
-from printer_server.hardware_configuration import config_dict, driver_handles
+from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)

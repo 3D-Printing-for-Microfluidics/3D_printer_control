@@ -1,5 +1,5 @@
 from printer_server.extensions import socketio
-from printer_server.hardware_configuration import driver_handles, config_dict
+from printer_server.hardware_configuration.hardware_configuration import driver_handles, config_dict
 import printer_server.views.manual_controls
 
 import time
@@ -11,7 +11,7 @@ except:
     coord_systems_control = None
 start_time = 0
 stop_time = 0
-@socketio.on("set_acs_coodinate_system", namespace="/manual")
+@socketio.on("acs_set_coodinate_system", namespace="/manual")
 def acs_set_coodinate_system(message):
     "Set coordinate system offsets"
     global coord_system
@@ -164,5 +164,5 @@ def acs_get_position(axis, notify=True):
     a = acs.convertAxis(axis)
     if notify:
         message = {"position": acs.getPosition()}
-        socketio.emit("acs_position", message, namespace="/manual")
+        socketio.emit("acs_return_position", message, namespace="/manual")
     return acs.getPosition(axis=a)

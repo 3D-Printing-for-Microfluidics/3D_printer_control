@@ -10,10 +10,10 @@ import socket
 import logging
 from datetime import datetime
 
-from printer_server.drivers.generic_drivers import LightEngineDriver
+from printer_server.drivers.generic_drivers import EthernetSerial, LightEngineDriver
 
 # pylint:disable=too-many-public-methods
-class Visitech(LightEngineDriver):
+class Visitech(EthernetSerial, LightEngineDriver):
     """
     This driver is based on the Visitech Ethernet interface and API.
     Commands are sent over a TCP connection.
@@ -79,50 +79,14 @@ class Visitech(LightEngineDriver):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        # setup TCP connection
-        self.host = config_dict["address"]
-        self.port = config_dict["port"]
-        self.socket = (
-            None  # start as None so we can tell if a connection has been attempted
-        )
+        super().__init__(host=config_dict["address"], port=config_dict["port"], line_ending="\r\n\r\n", logger=self.log)
 
-        self.connected = False
         self.repeats = 1
         self.exposure_time = 0
         self.led_on = False
         self.dual_led = config_dict["dual_led"]
         self.leds = config_dict["leds"]
         self.suppress_ocp_error = False
-
-    def connect(self, shutdown):
-        attempts=10
-        timeout=1
-        self.log.info("Connecting to light engine, this may take up to 1 minute...")
-
-        # start TCP connection
-        i = 0
-        self.connected = False
-        while i < attempts:  # try up to attempts number of times to create a connection
-            i += 1
-            try:  # attempt a new connection
-                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.socket.settimeout(10)
-                self.socket.connect((self.host, self.port))
-                self.connected = True
-                self.shutdown = shutdown
-            except (OSError, socket.timeout) as e:
-                self.log.info("%s. Retrying in %s second(s)", e, timeout)
-                self.socket = None  # get rid of handle to bad socket
-                time.sleep(timeout)  # wait to try again
-        if not self.connected:  # connection failed every time, notify user
-            msg = "Visitech light engine not found!"
-            self.log.critical(msg)
-            return False
-
-        # register exit handlers
-        atexit.register(self.disconnect)
-        self.log.info("Connected to Visitech light engine")
-        return True
 
     def initialize(self):
         # set default state for light engine and clear previous errors
@@ -137,17 +101,12 @@ class Visitech(LightEngineDriver):
         self.log.info("Visitech light engine initialized")
 
     def disconnect(self):
-        if self.connected and self.socket is not None:
+        if self.connected is not None and self.connected and self.socket is not None:
             try:
                 self.stop_sequencer()  # make sure DMD is stopped on exit
-                self.socket.close() # close the TCP conenction on exit
-                self.connected = False
-                self.socket = None
-                self.log.info("Disconnected from Visitech light engine")
             except:
-                self.connected = False
-                self.socket = None
-                self.log.info("Unable to disconnect from Visitech!")
+                pass
+            super().disconnect()
             
 
     def send(self, data):
@@ -158,22 +117,10 @@ class Visitech(LightEngineDriver):
         A string is always returned, with a default value of ''. A
         RuntimeError is raised if an error is detected in the response.
         """
-        reply = None
-        data += "\r\n\r\n"
-        data = data.encode()
-        self.log.debug("Sent:  '%s'", data.decode().rstrip())
-        self.socket.sendall(data)
-        try:
-            reply = self.socket.recv(1024)
-        except (OSError, socket.timeout):
-            msg = "Visitech timed out!"
-            self.log.critical(msg)
-            self.shutdown(is_critical=True)
-            sys.exit(msg)
+        reply = super().send(data)
         reply = reply.decode().split("\r\n")
         if "OK" not in reply[0]:
             raise RuntimeError(f"Error returned by light engine ({reply[1]}) {reply[2]}")
-        self.log.debug("Reply: '%s'", reply[1])
         return reply[1]
 
     def load_defaults(self):

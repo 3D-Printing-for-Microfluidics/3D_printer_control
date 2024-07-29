@@ -11,10 +11,9 @@ import printer_server.views.home
 
 
 # Dynamically get hardware components
-configuration_path = Path(Config.PRINT_SERVER_FOLDER).rglob("hardware_configuration.json")
+configuration_path = Path(Config.PRINT_SERVER_FOLDER).joinpath('hardware_configuration').rglob(f"{Config.HOSTNAME}.json")
 with open(next(configuration_path), "r") as file_handle:
     config_dict = json.load(file_handle)
-config_dict = config_dict[Config.HOSTNAME]
 
 # Generate HTML snippit list
 hardware = {}
@@ -121,10 +120,6 @@ def index():
                 }
 
         if "gpio" in config_dict.keys():
-            if "fan_pin" in config_dict["gpio"].keys():
-                hardware["gpio"][
-                    "fan_state"
-                ] = printer_server.drivers.gpio.gpio_snip.getFanRelayState()
             if "film_pin" in config_dict["gpio"].keys():
                 hardware["gpio"][
                     "film_state"
@@ -200,7 +195,7 @@ def index():
     )
 
 
-@blueprint.route("handle-calibration-upload", methods=["POST"])
+@blueprint.route("screen_image_upload", methods=["POST"])
 def upload():
     return printer_server.drivers.screen.screen_snip.handleUpload(request)
 
@@ -236,5 +231,5 @@ def get_last_calibration_positions_from_logs():
         return {}
 
 
-def update_le_led_status(le, state):
-    socketio.emit(f"update_{le}_led_status", state, namespace="/manual")
+def update_le_led_state(le, state):
+    socketio.emit(f"{le}_update_led_state", state, namespace="/manual")

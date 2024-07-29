@@ -4,19 +4,15 @@ from printer_server.logging_handler import dummy_log
 class Accelerometer_dummy:
     @dummy_log
     def __init__(self, *args, **kwargs):
-        pass
+        self.connnected = None
 
     @dummy_log
     def connect(self, *args, **kwargs):
         return True
-
+    
     @dummy_log
-    def disconnect(self, *args, **kwargs):
-        pass
-
-    @dummy_log
-    def findUsbPort(self, *args, **kwargs):
-        pass
+    def initialize(self, *args, **kwargs):
+        return True
 
     @dummy_log
     def start(self, *args, **kwargs):
@@ -34,17 +30,6 @@ class Accelerometer_dummy:
         pass
 
     @dummy_log
-    def send(self, *args, **kwargs):
-        pass
-
-    @dummy_log
-    def receive(self, *args, **kwargs):
-        pass
-
-    @dummy_log
-    def receiveAll(self, *args, **kwargs):
-        pass
-
     def accel_start(self, *args, **kwargs):
         pass
 
@@ -54,17 +39,5 @@ class Accelerometer_dummy:
     def accel_stop(self, *args, **kwargs):
         pass
 
-    def set_sample_frequency(self, *args, **kwargs):
-        pass
-
-    def send(self, *args, **kwargs):
-        pass
-
-    def receive(self, *args, **kwargs):
-        pass
-
-    def receive_bytes(self, *args, **kwargs):
-        pass
-
-    def receiveAll(self, *args, **kwargs):
+    def set_sample_period(self, *args, **kwargs):
         pass

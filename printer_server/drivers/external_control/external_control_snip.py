@@ -15,17 +15,17 @@ class External_Control:
 external_control_enable = External_Control()
 
 
-@socketio.on("set_external_control_enable", namespace="/manual")
+@socketio.on("external_control_set_enable", namespace="/manual")
 def set_external_control_enable(message):
     """set_external_control -- Sets the variable determining if printer can be auto-calibrated"""
     external_control_enable.set_enable(message == "Enabled")
 
 
-@socketio.on("get_external_control_enable", namespace="/manual")
+@socketio.on("external_control_get_enable", namespace="/manual")
 def get_external_control_enable(emit=True):
     """Return the external control enable flag."""
     socketio.emit(
-        "external_control_enable",
+        "external_control_return_enable",
         external_control_enable.get_enable(),
         namespace="/manual"
     )

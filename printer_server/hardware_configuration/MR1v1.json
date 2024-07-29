@@ -1,0 +1,164 @@
+{
+    "valid_schema_versions": [
+        "v4",
+        "v3",
+        "v2"
+    ],
+    "stages": {
+        "bp": "galil",
+        "focus": "galil",
+        "x_y": "galil",
+        "t_t_r": "tiptilt"
+    },
+    "light_engines": [
+        "visitech",
+        "wintech"
+    ],
+    "external_control": {},
+    "coord_systems": {
+        "global": {
+            "X": 0,
+            "Y": 0,
+            "Focus": 0,
+            "Build Platform": 0
+        },
+        "visitech": {
+            "X": -130.388,
+            "Y": -31.800,
+            "Focus": 49.065,
+            "Build Platform": 0
+        },
+        "wintech": {
+            "X": 129.100,
+            "Y": -20.840,
+            "Focus": 49.656,
+            "Build Platform": 0
+        },
+        "keyence_visitech": {
+            "X": -79.128,
+            "Y": -19.986,
+            "Focus": 47.737,
+            "Build Platform": 0
+        },
+        "keyence_wintech": {
+            "X": 92.640,
+            "Y": -17.110,
+            "Focus": 48.870,
+            "Build Platform": 0
+        }
+    },
+    "galil": {
+        "dummy": false,
+        "controller_name": "DMC4040",
+        "address": "192.168.0.9",
+        "default_axis": "D",
+        "axes": [
+            "A",
+            "B",
+            "C",
+            "D"
+        ],
+        "axes_common_names": [
+            "X",
+            "Y",
+            "Focus",
+            "Build Platform"
+        ],
+        "axes_travel": {
+            "A": 300,
+            "B": 100,
+            "C": 100,
+            "D": 100
+        },
+        "axes_ctspmm": {
+            "A": 51200,
+            "B": 51200,
+            "C": 51200,
+            "D": 51200
+        },
+        "axes_tolerance": {
+            "A": 0.125,
+            "B": 0.125,
+            "C": 0.125,
+            "D": 0.125
+        },
+        "axes_speed": {
+            "A": 200,
+            "B": 25,
+            "C": 25,
+            "D": 25
+        },
+        "axes_acceleration": {
+            "A": 100,
+            "B": 50,
+            "C": 50,
+            "D": 50
+        },
+        "calibration_position": 45.2148438,
+        "bottom_position": 46.875,
+        "top_position": -50
+    },
+    "tiptilt": {
+        "dummy": false,
+        "hwid": "PID=16C0:0483 SER=3794660",
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "3794660",
+        "baudrate": 115200,
+        "home_on_init": false
+    },
+    "keyence": {
+        "dummy": false,
+        "address": "192.168.0.15",
+        "port": 24685,
+        "sensors": {
+            "visitech": {
+                "measurement_index": 1
+            },
+            "wintech": {
+                "measurement_index": 0
+            }
+        }
+    },
+    "loadcell": {
+        "dummy": false,
+        "hwid": "PID=16C0:0483 SER=9400820",
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "9400820",
+        "baudrate": 115200,
+        "sample_period_us": 1000,
+        "calibration_intercept": 32635.00,
+        "calibration_slope": -1.24,
+        "loadcell_planarization_enabled": true,
+        "loadcell_planarization_force": 35.0,
+        "loadcell_print_start_force": 5.0
+    },
+    "screen": {},
+    "visitech": {
+        "dummy": false,
+        "address": "192.168.0.10",
+        "port": 5000,
+        "dual_led": true,
+        "leds": [
+            "405nm",
+            "365nm"
+        ],
+        "resolution": [
+            2560,
+            1600
+        ]
+    },
+    "wintech": {
+        "dummy": false,
+        "vendor_id": "0x0451",
+        "product_id": "0xC900",
+        "leds": [
+            "365nm"
+        ],
+        "resolution": [
+            1920,
+            1080
+        ]
+    }
+}

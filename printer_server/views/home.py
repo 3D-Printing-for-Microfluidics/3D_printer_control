@@ -10,10 +10,9 @@ from printer_server.models import PrintQueue
 from printer_server.extensions import socketio
 
 # Dynamically get hardware components
-configuration_path = Path(Config.PRINT_SERVER_FOLDER).rglob("hardware_configuration.json")
+configuration_path = Path(Config.PRINT_SERVER_FOLDER).joinpath('hardware_configuration').rglob(f"{Config.HOSTNAME}.json")
 with open(next(configuration_path), "r") as file_handle:
     config_dict = json.load(file_handle)
-config_dict = config_dict[Config.HOSTNAME]
 
 blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static")
 log = logging.getLogger(__name__)
@@ -86,19 +85,21 @@ print_control = ParentPrintControl()
 def index():
     allJobs = PrintQueue.query.all()
 
+    kwargs = {
+        "allJobs":allJobs,
+        "hostname":Config.HOSTNAME
+    }
+
     if "loadcell" in config_dict.keys():
-        return render_template(
-            "home.html",
-            allJobs=allJobs,
-            hostname=Config.HOSTNAME,
-            graph_autoscale=print_control.loadcell.graph_autoscale,
-        )
-    else:
-        return render_template(
-            "home.html",
-            allJobs=allJobs,
-            hostname=Config.HOSTNAME
-        )
+        kwargs["graph_autoscale"] = print_control.loadcell.graph_autoscale
+
+    if "mks" in config_dict.keys():
+        kwargs["degass_state"] = print_control.degass_state
+
+    return render_template(
+        "home.html",
+        **kwargs
+    )
 
 def update_printer_state(state, msg):
     socketio.emit(state, msg, namespace="/printing")
@@ -178,8 +179,8 @@ def stop(message):
 
 
 @socketio.on("degass", namespace="/printing")
-def degass():
-    print_control.degass()
+def degass(msg):
+    print_control.degass(msg)
 
 
 @socketio.on("shutdown", namespace="/printing")

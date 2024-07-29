@@ -8,8 +8,8 @@ from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
 from printer_server.printer_control.print_control import PrintControl
-from printer_server.views.manual_controls import update_le_led_status
-from printer_server.hardware_configuration import config_dict, driver_handles
+from printer_server.views.manual_controls import update_le_led_state
+from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -43,7 +43,6 @@ class LightMeasurementControl(PrintControl):
         super().initialize_hardware()
         if photodiode_thread is not None:
             photodiode_thread.join()
-        self.photodiode.initialized = True
 
     def pre_print_tasks(self):
         super().pre_print_tasks()
@@ -101,7 +100,7 @@ class LightMeasurementControl(PrintControl):
                 self.screen_thread.join()
 
                 # Turn on light engine
-                update_le_led_status(light_engine, True)
+                update_le_led_state(light_engine, True)
                 light_engine_driver.perform_exposure()
 
                 # Measure spectrum and irradiance
@@ -119,7 +118,7 @@ class LightMeasurementControl(PrintControl):
                 
                 # Turn off light engine
                 light_engine_driver.stop_sequencer()
-                update_le_led_status(light_engine, False)
+                update_le_led_state(light_engine, False)
 
                 # Save spectrum to file
                 spectra_path = str(self.current_job / "logs" / f"{path_prefix}_spectra_{light_engine}_{wavelength}.csv")

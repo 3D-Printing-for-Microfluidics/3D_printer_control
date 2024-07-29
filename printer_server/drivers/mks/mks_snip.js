@@ -22,7 +22,6 @@ var update_dist_position = function (message) {
 
 $(document).ready(function () {
     // After 60 minutes of inactivity, close socket and timeout web page
-    socket.emit("subscribe_mks");
     var event = 'click',
         timer,
         delay = 10000,
@@ -30,7 +29,6 @@ $(document).ready(function () {
             document.removeEventListener(event, reset, false);
             var content = 'This page has timed out. Please reload the page.';
             document.getElementById('base-body').innerHTML = content;
-            socket.emit("unsubscribe_mks");
             socket.disconnect();
         },
         reset = function () {
@@ -114,8 +112,18 @@ $(document).ready(function () {
             chamber2 = chamber_vac;
         }
 
-        document.getElementById('gauge1_reading').innerText = `${gaugeReading1} Torr`;
-        document.getElementById('gauge2_reading').innerText = `${gaugeReading2} Torr`;
+        if (gaugeReading1 < 1.0) {
+            document.getElementById('gauge1_reading').innerText = `${gaugeReading1 * 1000} mTorr`;
+        }
+        else {
+            document.getElementById('gauge1_reading').innerText = `${gaugeReading1} Torr`;
+        }
+        if (gaugeReading2 < 1.0) {
+            document.getElementById('gauge2_reading').innerText = `${gaugeReading2 * 1000} mTorr`;
+        }
+        else {
+            document.getElementById('gauge2_reading').innerText = `${gaugeReading2} Torr`;
+        }
         document.getElementById('vacuum_chamber1').classList.remove(chamber_vent, chamber_mid, chamber_vac);
         document.getElementById('vacuum_chamber2').classList.remove(chamber_vent, chamber_mid, chamber_vac);
         document.getElementById('vacuum_chamber1').classList.add(chamber1);
@@ -126,27 +134,17 @@ $(document).ready(function () {
         pumpSetting = !pumpSetting;
         updatePumpStatus();
         updateChamberStatus();
-        if (pumpSetting) {
-            socket.emit("activateRelay", "vacuum_pump");
-        }
-        else {
-            socket.emit("deactivateRelay", "vacuum_pump");
-        }
+        socket.emit("mks_switch_relay", { "relay": "vacuum_pump", "state": pumpSetting });
     }
 
     function toggleValve(valveId) {
         valveSetting[valveId] = !valveSetting[valveId];
         updateValveStatus(valveId);
         updateChamberStatus();
-        if (valveSetting[valveId]) {
-            socket.emit("activateRelay", valveId);
-        }
-        else {
-            socket.emit("deactivateRelay", valveId);
-        }
+        socket.emit("mks_switch_relay", { "relay": valveId, "state": valveSetting[valveId] });
     }
 
-    socket.on("relay_status_updated", function (message) {
+    socket.on("mks_update_relay_status", function (message) {
         pumpSetting = Boolean(Number(message["relay_setting"]["vacuum_pump"]));
         craneSetting = Boolean(Number(message["relay_setting"]["crane"]));
         valveSetting = {
@@ -168,7 +166,7 @@ $(document).ready(function () {
         updateAllValveStatus();
     });
 
-    socket.on("pressure_readings_updated", function (message) {
+    socket.on("mks_update_pressure_readings", function (message) {
         gaugeReading1 = message["gauge"][0];
         gaugeReading2 = message["gauge"][1];
         updateChamberStatus();
@@ -198,8 +196,7 @@ $(document).ready(function () {
         toggleValve("valve_vacuum");
     });
 
-    socket.on("cranePosition", function (message) {
-        console.log(message);
+    socket.on("mks_crane_done", function (message) {
         update_dist_position(message);
         enable_crane_motor_buttons();
     });
@@ -212,7 +209,7 @@ $(document).ready(function () {
         var mm = $(this).val();
         var message = { "mm": mm, "mode": "absolute" };
         // Emit control message with parsed values
-        socket.emit("craneMove", message);
+        socket.emit("mks_crane_move", message);
     });
 
     // Calibration motor buttons for relative positioning
@@ -223,7 +220,7 @@ $(document).ready(function () {
         var mm = $(this).text();
         var message = { "mm": mm, "mode": "relative" };
         // Emit control message with parsed values
-        socket.emit("craneMove", message);
+        socket.emit("mks_crane_move", message);
     });
 
 });

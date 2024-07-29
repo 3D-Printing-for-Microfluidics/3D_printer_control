@@ -80,7 +80,7 @@ $(document).ready(function () {
         socket.emit("visitech_start", { "repeat": repeat, "exposure": exposure, "ledPower": ledPower, "led": led_1_checked });
     });
 
-    socket.on("update_visitech_led_status", function (message) {
+    socket.on("visitech_update_led_state", function (message) {
         var statusElement = document.getElementById("visitech-status");
         if (message == true) {
             statusElement.classList.remove("invisible")

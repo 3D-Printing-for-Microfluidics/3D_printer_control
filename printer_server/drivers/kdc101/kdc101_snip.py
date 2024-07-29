@@ -1,6 +1,6 @@
 import threading
 
-from printer_server.hardware_configuration import driver_handles
+from printer_server.hardware_configuration.hardware_configuration import driver_handles
 from printer_server.extensions import socketio
 from printer_server.threading_wrapper import Thread
 import printer_server.views.manual_controls
@@ -10,36 +10,23 @@ kdc = driver_handles.kdc101
 # log = logging.getLogger(__name__)
 # log.setLevel(logging.INFO)
 
-def get_kdc_positions():
+@socketio.on("get_kdc_positions", namespace="/manual")
+def get_kdc_positions(log=False, emit=True):
     last_positions = (
         printer_server.views.manual_controls.get_last_calibration_positions_from_logs()
     )
     last_positions["distance"] = kdc.getCurrentPos()
-    return last_positions
-
-
-@socketio.on("get_kdc_positions", namespace="/manual")
-def get_kdc_positions_socket():
-    message = get_kdc_positions()
-    socketio.emit(
-        "calibration_focus_position",
-        message,
-        namespace="/manual"
-    )
-    return message
-
-
-def emit_kdc_positions(log=False):
-    message = get_kdc_positions()
 
     if log:
-        printer_server.views.manual_controls.write_to_position_log(message)
-    socketio.emit(
-        "kdc_motor_move_complete",
-        message,
-        namespace="/manual"
-    )
+        printer_server.views.manual_controls.write_to_position_log(last_positions)
+    if emit:
+        socketio.emit(
+            "kdc_done",
+            last_positions,
+            namespace="/manual"
+        )
 
+    return last_positions
 
 @socketio.on("kdc_motor_move", namespace="/manual")
 def moveKDCMotor(message):
@@ -49,8 +36,7 @@ def moveKDCMotor(message):
         mode != "absolute"
     )  # convert mode to True/False, absolute is true, all else is false
     kdc.move(distance_um, relative=mode)
-    emit_kdc_positions(log=message["log"])
-
+    get_kdc_positions(log=message["log"])
 
 @socketio.on("kdc_motor_home", namespace="/manual")
 def homeKDCMotor(message):
@@ -58,7 +44,7 @@ def homeKDCMotor(message):
 
     def func(axis):
         kdc.home()
-        emit_kdc_positions(log=True)
+        get_kdc_positions(log=True)
 
     t = Thread(name="kdc101_snip_home_thread", target=func, args=[axis])
     t.start()

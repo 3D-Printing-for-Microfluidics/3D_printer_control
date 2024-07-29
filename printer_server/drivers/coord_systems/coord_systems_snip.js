@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    socket.on("wintech_adj_update", function (message) {
+    socket.on("coodinate_system_done", function (message) {
         if (!$.isEmptyObject(message)) {
             for (var adj in hardware['coord_systems']['coord_adjustments']) {
                 if (hardware['coord_systems']['coord_adjustments'].hasOwnProperty(adj)) {
@@ -11,8 +11,9 @@ $(document).ready(function () {
 
     // Change coordinate systems
     $("#coord_systems :input").change(function () {
-        socket.emit("set_coodinate_system", $(this).parent().text().toLowerCase());
-        socket.emit("set_galil_coodinate_system", $(this).parent().text().toLowerCase());
+        socket.emit("coodinate_system_set_system", $(this).parent().text().toLowerCase());
+        socket.emit("galil_set_coodinate_system", $(this).parent().text().toLowerCase());
+        socket.emit("acs_set_coodinate_system", $(this).parent().text().toLowerCase());
     });
 
     var show_wintech_adj = function (btn) {
@@ -40,7 +41,7 @@ $(document).ready(function () {
         if (!isNaN(parseFloat(value)) && isFinite(value)) {
             var message = {}
             message[adj_name] = parseFloat(value);
-            socket.emit("set_wintech_adjustments", message);
+            socket.emit("coodinate_system_set_wintech_adjustments", message);
         }
     });
 });

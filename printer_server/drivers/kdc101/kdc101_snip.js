@@ -19,7 +19,7 @@ var update_kdc_positions = function (message) {
 
 $(document).ready(function () {
     // Enable calibration motor buttons and update position labels when current motion is complete
-    socket.on("kdc_motor_move_complete", function (message) {
+    socket.on("kdc_done", function (message) {
         update_kdc_positions(message);
         enable_kdc_motor_buttons();
     });

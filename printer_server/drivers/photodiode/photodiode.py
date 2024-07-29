@@ -1,5 +1,5 @@
 # Create photodiode instrument 
-import pyvisa
+import usbtmc
 import atexit
 import logging
 from ThorlabsPM100 import ThorlabsPM100
@@ -12,24 +12,20 @@ class Photodiode:
         
         self.photodiode = None
         self.connected = None
-        self.initialized = None
        
         # Variables I may want to change or exist as defaults defined in harware_configuration.json
         
         self.beamdiameter = config_dict["beam_diameter"]
         self.defaultWavelength = config_dict["default_wavelength"]
         self.attenuation = config_dict["attenuation_db"]
-        self.hwid = config_dict["hwid"]
-        
-        # Connect/find the device
-        # self.rm = pyvisa.ResourceManagement()
-        self.rm = pyvisa.ResourceManager("@py")
-        print(self.rm.list_resources())
+        self.vendor_id = config_dict["vendor_id"]
+        self.product_id = config_dict["product_id"]
        
     def connect(self):
         # connect to the photodiode 
         try:
-            self.inst = self.rm.open_resource(self.hwid)
+            self.inst = usbtmc.Instrument(self.vendor_id, self.product_id)
+            setattr(self.inst, 'query', self.inst.ask)
             self.power_meter = ThorlabsPM100(inst=self.inst)
             atexit.register(self.disconnect)
             self.connected = True

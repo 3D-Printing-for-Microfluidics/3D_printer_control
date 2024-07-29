@@ -13,7 +13,7 @@ var disable_button = function () {
 
 $(document).ready(function () {
 
-    socket.on("photodiode_power", function (message) {
+    socket.on("photodiode_return_power", function (message) {
         document.getElementById(`photodiode_power`).innerHTML = message["power"];
         enable_button();
     });
@@ -22,7 +22,7 @@ $(document).ready(function () {
         var wavelengthElement = document.getElementById("wavelength_350_405");
         var activeButton = $("#wavelength_350_405 .active");
         var wavelength = activeButton.text().trim().split(" ")[0]; // Split to get the wavelength value
-        socket.emit("get_photodiode_power", { "wavelength": wavelength }) // ... figure out what element its sending 
+        socket.emit("photodiode_get_power", { "wavelength": wavelength }) // ... figure out what element its sending 
         disable_button();
     });
 });

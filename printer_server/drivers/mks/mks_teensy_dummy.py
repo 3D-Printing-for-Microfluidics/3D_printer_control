@@ -14,12 +14,8 @@ class MKSTeensy_dummy():
         pass
             
     @dummy_log
-    def activate_relay(self, relay_num, *args, **kwargs):
-        self.relays[relay_num] = 1
-
-    @dummy_log
-    def deactivate_relay(self, relay_num, *args, **kwargs):
-        self.relays[relay_num] = 0
+    def set_relay(self, relay_num, state, *args, **kwargs):
+        self.relays[relay_num] = state
 
     @dummy_log
     def get_all_relay_status(self, *args, **kwargs):

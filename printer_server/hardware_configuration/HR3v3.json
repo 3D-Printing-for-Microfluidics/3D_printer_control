@@ -1,0 +1,92 @@
+{
+    "valid_schema_versions": [
+        "v2"
+    ],
+    "stages": {
+        "bp": "galil",
+        "focus": "kdc101",
+        "t_t_r": "tiptilt"
+    },
+    "light_engines": [
+        "visitech"
+    ],
+    "external_control": {},
+    "galil": {
+        "dummy": false,
+        "controller_name": "DMC31010",
+        "address": "192.168.0.9",
+        "default_axis": "A",
+        "axes": [
+            "A"
+        ],
+        "axes_common_names": [
+            "Build Platform"
+        ],
+        "axes_travel": {
+            "A": 100
+        },
+        "axes_ctspmm": {
+            "A": 8000
+        },
+        "axes_tolerance": {
+            "A": 0.125
+        },
+        "axes_speed": {
+            "A": 25
+        },
+        "axes_acceleration": {
+            "A": 50
+        },
+        "calibration_position": 2.9,
+        "bottom_position": 40.489125,
+        "top_position": -50
+    },
+    "kdc101": {
+        "dummy": false,
+        "vendor_id": 1027,
+        "product_id": 64240,
+        "baudrate": 115200,
+        "moving_shifts_image": true
+    },
+    "tiptilt": {
+        "dummy": false,
+        "hwid": "PID=16C0:0483 SER=5800580",
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "5800580",
+        "baudrate": 115200,
+        "home_on_init": false
+    },
+    "gpio": {
+        "dummy": false,
+        "film_pin": 4
+    },
+    "loadcell": {
+        "dummy": false,
+        "hwid": "PID=16C0:0483 SER=9881500",
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "9881500",
+        "baudrate": 115200,
+        "sample_period_us": 1000,
+        "calibration_intercept": 33218.0,
+        "calibration_slope": -3.75,
+        "loadcell_planarization_enabled": true,
+        "loadcell_planarization_force": 30.0,
+        "loadcell_print_start_force": 5.0
+    },
+    "screen": {},
+    "visitech": {
+        "dummy": false,
+        "address": "192.168.0.10",
+        "port": 5000,
+        "dual_led": false,
+        "leds": [
+            "365nm"
+        ],
+        "resolution": [
+            2560,
+            1600
+        ]
+    }
+}

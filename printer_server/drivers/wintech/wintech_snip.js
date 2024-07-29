@@ -72,7 +72,7 @@ $(document).ready(function () {
         socket.emit("wintech_start", { "repeat": repeat, "exposure": exposure, "ledPower": ledPower });
     });
 
-    socket.on("update_wintech_led_status", function (message) {
+    socket.on("wintech_update_led_state", function (message) {
         var statusElement = document.getElementById("wintech-status");
         if (message == true) {
             statusElement.classList.remove("invisible")

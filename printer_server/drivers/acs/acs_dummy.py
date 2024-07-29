@@ -409,5 +409,5 @@ class ACS_dummy(BPStageDriver, XYStageDriver):
 
 if __name__ == "__main__":
     g = ACS_dummy(log_level=logging.DEBUG)
-    g.connect()
+    g.connect(exit)
     g.interactiveMode()
