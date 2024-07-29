@@ -15,7 +15,6 @@ class USBSerial(serial.Serial):
         self.port = None
         self.name = None
         self.connected = None
-        self.initialized = None
         self.line_ending = line_ending
     
     def findUsbPort(self, vid, pid, sn=None):
@@ -38,6 +37,7 @@ class USBSerial(serial.Serial):
             self.connected = False
             self.port, self.name = self.findUsbPort(self.vid, self.pid, self.sn)
             if self.port is None:
+                self.connected = None
                 msg = "Device not found!"
                 self.log.critical(msg)
                 return False
@@ -61,7 +61,6 @@ class USBSerial(serial.Serial):
         if self.connected is not None and self.connected:
             self.close()
             self.connected = None
-            self.initialized = None
             self.log.info("Disconnected from device (%s)", self.name)
 
     # line endings \r, \n

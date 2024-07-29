@@ -21,11 +21,11 @@ class Accelerometer(USBSerial):
         self.thread = Thread(self.log, name="accelerometer_loop_thread", target=self.loop)
         self.running = False
 
-    def initialize(self, frequency=1000):
-        self.freq = frequency
+    def initialize(self):
         self.accel_stop()
         self.flush_buffers()
         self.set_sample_period(self.config_dict["measurement_period_ms"])
+        self.initialize = True
 
     def disconnect(self):
         if self.connected:

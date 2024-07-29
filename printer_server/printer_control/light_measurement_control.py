@@ -43,7 +43,6 @@ class LightMeasurementControl(PrintControl):
         super().initialize_hardware()
         if photodiode_thread is not None:
             photodiode_thread.join()
-        self.photodiode.initialized = True
 
     def pre_print_tasks(self):
         super().pre_print_tasks()

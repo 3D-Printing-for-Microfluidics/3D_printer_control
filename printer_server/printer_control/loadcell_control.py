@@ -180,6 +180,21 @@ class LoadcellControl(PrintControl):
             log.error("Loadcell failed to connect!")
             self.all_hardware_connected = False
 
+    def connect_hardware(self):
+        self.loadcell_thread = Thread(log, name="loadcell_control_setup_thread", target=self.loadcell.connect, args=[self.shutdown])
+        self.loadcell_thread.start()
+        super().connect_hardware()
+        self.loadcell_thread.join()
+        if not self.loadcell.connected:
+            log.error("Loadcell failed to connect!")
+            self.all_hardware_connected = False
+
+    def initialize_hardware(self):
+        self.loadcell_thread = Thread(log, name="loadcell_control_init_thread", target=self.loadcell.initialize, args=[])
+        self.loadcell_thread.start()
+        super().initialize_hardware()
+        self.loadcell_thread.join()
+
     def print_worker(self):
         if self.state != "printing":
             return

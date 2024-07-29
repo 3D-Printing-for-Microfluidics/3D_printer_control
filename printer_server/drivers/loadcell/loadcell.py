@@ -20,15 +20,12 @@ class LoadCell(USBSerial):
 
         super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"],  baudrate=config_dict["baudrate"], timeout=1, line_ending='\n', logger=self.log)
 
-        self.intercept = config_dict["calibration_intercept"]
-        self.slope = config_dict["calibration_slope"]
-
+        self.config_dict = config_dict
         self.currentData = []
         self.currentIndex = -1
         self.currentForce = 0
         self.start_time = 0
         self.running = False
-        self.freq = 1000
         self.graph_newtons = True
         self.graph_autoscale = False
 
@@ -39,15 +36,14 @@ class LoadCell(USBSerial):
         """
         Converts the adc counts to newtons using precalculated constants
         """
-        grams = (x - self.intercept) / self.slope
+        grams = (x - self.config_dict["calibration_intercept"]) / self.config_dict["calibration_slope"]
         n = grams / 1000 * 9.8
         return n
     
-    def initialize(self, frequency=1000):
-        self.freq = frequency
+    def initialize(self):
         self.loadcell_stop()
         self.flush_buffers()
-        self.log.debug("%s", self.set_sample_frequency(int(self.freq)))
+        self.log.debug("%s", self.set_sample_period(int(self.config_dict["sample_period_us"])))
 
     def disconnect(self):
         if self.connected:
@@ -243,9 +239,9 @@ class LoadCell(USBSerial):
         self.send("e", recieve=False)
         return
 
-    def set_sample_frequency(self, freq_hz):
+    def set_sample_period(self, us):
         """
         Set the sampling frequency to freq_hz (in hz)
         """
-        self.log.debug("Frequency set to '%s'", freq_hz)
-        return self.send("f {}".format(freq_hz)), freq_hz
+        self.log.debug("Period set to '%s'", us)
+        return self.send("f {}".format(us)), us

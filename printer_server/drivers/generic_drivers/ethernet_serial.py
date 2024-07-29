@@ -13,7 +13,6 @@ class EthernetSerial():
         self.line_ending = line_ending
         self.socket = None
         self.connected = None
-        self.initialized = None
         self.sendLock = threading.Lock()
 
     def connect(self, shutdown):
@@ -34,12 +33,13 @@ class EthernetSerial():
                     self.connected = True
                     self.shutdown = shutdown
                 except (OSError, socket.timeout) as e:
-                    if "timed out" in e:
-                        i = attempts
+                    if "timed out" in str(e):
+                        break
                     self.log.info("%s. Retrying in %s second(s)", e, timeout)
                     self.socket = None  # get rid of handle to bad socket
                     time.sleep(timeout)  # wait to try again
             if not self.connected:
+                self.connected = None
                 msg = f"Device not found!"
                 self.log.critical(msg)
                 return False
@@ -56,7 +56,6 @@ class EthernetSerial():
         """Disconnect form the device."""
         if self.connected is not None and self.connected and self.socket is not None:
             self.connected = None
-            self.initialized = None
             try:
                 with self.sendLock:
                     self.socket.close()

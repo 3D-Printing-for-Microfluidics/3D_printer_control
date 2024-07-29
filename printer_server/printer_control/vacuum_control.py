@@ -26,6 +26,12 @@ class VacuumControl(PrintControl):
         super().connect_hardware()
         mks_thread.join()
         mks_teensy_thread.join()
+        if not self.mks.connected:
+            log.error("MKS failed to connect!")
+            self.all_hardware_connected = False
+        if not self.mks_teensy.connected:
+            log.error("MKS Teensy failed to connect!")
+            self.all_hardware_connected = False
 
     def initialize_hardware(self):
         mks_thread = Thread(log, name="mks_init_thread", target=self.mks.initialize, args=[])

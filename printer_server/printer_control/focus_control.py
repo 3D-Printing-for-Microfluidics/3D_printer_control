@@ -83,7 +83,6 @@ class FocusControl(PrintControl):
         self.focus_thread.start()
         super().initialize_hardware()
         self.focus_thread.join()
-        self.focus_stage.initialized = True
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarization_step_1(self):

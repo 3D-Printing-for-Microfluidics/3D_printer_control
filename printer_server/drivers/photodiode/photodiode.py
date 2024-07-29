@@ -12,7 +12,6 @@ class Photodiode:
         
         self.photodiode = None
         self.connected = None
-        self.initialized = None
        
         # Variables I may want to change or exist as defaults defined in harware_configuration.json
         

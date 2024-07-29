@@ -54,7 +54,8 @@
         "vendor_id": 5824,
         "product_id": 1155,
         "serial_number": "9881850",
-        "baudrate": 115200
+        "baudrate": 115200,
+        "home_on_init": false
     },
     "loadcell": {
         "dummy": false,
@@ -63,6 +64,7 @@
         "product_id": 1155,
         "serial_number": "5712570",
         "baudrate": 115200,
+        "sample_period_us": 1000,
         "calibration_intercept": 34990.0,
         "calibration_slope": -2.1,
         "loadcell_planarization_enabled": true,

@@ -54,7 +54,8 @@
         "vendor_id": 5824,
         "product_id": 1155,
         "serial_number": "5800580",
-        "baudrate": 115200
+        "baudrate": 115200,
+        "home_on_init": false
     },
     "gpio": {
         "dummy": false,
@@ -67,6 +68,7 @@
         "product_id": 1155,
         "serial_number": "9881500",
         "baudrate": 115200,
+        "sample_period_us": 1000,
         "calibration_intercept": 33218.0,
         "calibration_slope": -3.75,
         "loadcell_planarization_enabled": true,

@@ -1,8 +1,9 @@
 import logging
 
+from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
+from printer_server.printer_control.print_control import PrintControl, run_in_thread
 from printer_server.hardware_configuration.hardware_configuration import  driver_handles
-from printer_server.printer_control.print_control import PrintControl
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -12,23 +13,36 @@ class AccelerometerControl(PrintControl):
     def __init__(self):
         super().__init__()
         self.accelerometer = driver_handles.accelerometer
-
         self.accelerometer_log = str(self.current_job / "logs" / "accelerometer_data.csv")
 
     def create_logs(self):
         super().create_logs()
-
         async_file_hander.write(
             self.accelerometer_log, "system_time,accel_time,index,data\n"
         )
         self.accelerometer.set_log_file(self.accelerometer_log)
 
     def connect_hardware(self):
-        accel_connect = self.accelerometer.connect(self.shutdown)
+        accel = Thread(log, name="accel_control_connect_thread", target=self.accelerometer.connect, args=[self.shutdown])
+        accel.start()
         super().connect_hardware()
-        if not accel_connect:
+        accel.join()
+        if not self.accelerometer.connected:
             log.error("Accelerometer failed to connect!")
             self.all_hardware_connected = False
+
+    def initialize_hardware(self):
+        accel = Thread(log, name="accel_control_init_thread", target=self.accelerometer.initialize)
+        accel.start()
+        super().initialize_hardware()
+        accel.join()
+
+    @run_in_thread("planarizing", "Planarization Step 1")
+    def planarization_step_1(self):
+        """Lower the build platform for planarization."""
+        if self.state in ["initialized", "planarized", "completed", "stopped"]:
+            self.accelerometer.start()
+            super().planarization_step_1()
 
     def print_worker(self):
         if self.state != "printing":

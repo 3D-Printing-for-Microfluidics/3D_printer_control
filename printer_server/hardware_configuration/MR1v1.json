@@ -104,7 +104,8 @@
         "vendor_id": 5824,
         "product_id": 1155,
         "serial_number": "3794660",
-        "baudrate": 115200
+        "baudrate": 115200,
+        "home_on_init": false
     },
     "keyence": {
         "dummy": false,
@@ -126,6 +127,7 @@
         "product_id": 1155,
         "serial_number": "9400820",
         "baudrate": 115200,
+        "sample_period_us": 1000,
         "calibration_intercept": 32635.00,
         "calibration_slope": -1.24,
         "loadcell_planarization_enabled": true,

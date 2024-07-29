@@ -16,6 +16,7 @@ class TipTilt(USBSerial, TTRStageDriver):
 
         super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=config_dict["baudrate"], logger=self.log)
 
+        self.config_dict = config_dict
         self.r = re.compile(r"\d*\.?\d*$")  # regex for getter functions
 
     # Override USBSerial recive to recieve until 'Done' message
