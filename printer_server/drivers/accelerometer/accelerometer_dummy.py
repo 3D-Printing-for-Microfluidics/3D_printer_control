@@ -26,7 +26,6 @@ class Accelerometer_dummy:
     def stop(self, *args, **kwargs):
         pass
 
-    @dummy_log
     def loop(self, *args, **kwargs):
         pass
 
@@ -34,14 +33,11 @@ class Accelerometer_dummy:
     def accel_start(self, *args, **kwargs):
         pass
 
-    @dummy_log
     def accel_pause(self, *args, **kwargs):
         pass
 
-    @dummy_log
     def accel_stop(self, *args, **kwargs):
         pass
 
-    @dummy_log
     def set_sample_period(self, *args, **kwargs):
         pass
