@@ -207,7 +207,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         a = self.convertAxis(axis)
         self.send(f"VEL({a}) = {speed}")
 
-    def wait_for_buffer_completion(self, buffer_number, check_interval=1):
+    def wait_for_buffer_completion(self, buffer_number, check_interval=0.1):
         while True:
             response = self.send(f"?{buffer_number}")
             if "terminated" in response:
@@ -370,10 +370,15 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         counter = 0
         time_count = 0
         limit_switch_triggered = False
-        in_motion = not bool(self.send(f"?MST{a}.#INPOS", notify=False))
-        while in_motion:
+        time.sleep(0.01)
+        in_motion = bool(int(self.send(f"?MST{a}.#MOVE", notify=False)))
+        in_position = bool(int(self.send(f'?MST{a}.#INPOS', notify=False)))
+        # print(f"Axis {a},IM: {in_motion}, IP: {in_position}")
+        while in_motion or not in_position:
             time.sleep(0.01)
-            in_motion = not bool(self.send(f"?MST{a}.#INPOS", notify=False))
+            in_motion = bool(int(self.send(f"?MST{a}.#MOVE", notify=False)))
+            in_position = bool(int(self.send(f'?MST{a}.#INPOS', notify=False)))
+            # print(f"Axis {a},IM: {in_motion}, IP: {in_position}")
             upper, lower = self.checkLimits(axis=a)
             position = self.current_position[a]
             if (
@@ -393,6 +398,9 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
             # only proceed when 10 good consecutive counts have been read
             error = self.error_window[a]
             while counter <= 5:
+                # in_motion = bool(int(self.send(f"?MST{a}.#MOVE", notify=False)))
+                # in_position = bool(int(self.send(f'?MST{a}.#INPOS', notify=False)))
+                # print(f"Axis {a},IM: {in_motion}, IP: {in_position}")
                 time.sleep(0.01)
                 position = self.current_position[a]
                 if any(self.checkLimits(axis=a)):
