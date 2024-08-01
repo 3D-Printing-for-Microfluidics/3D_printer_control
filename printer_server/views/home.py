@@ -24,6 +24,10 @@ from printer_server.printer_control.print_control import PrintControl
 
 parent_classes = []
 
+if "loadcell" in config_dict:
+    from printer_server.printer_control.loadcell_control import LoadcellControl
+    parent_classes.append(LoadcellControl)
+
 if "bp" in config_dict["stages"]:
     from printer_server.printer_control.bp_control import BPControl
     parent_classes.append(BPControl)
@@ -57,10 +61,6 @@ if "light_engines" in config_dict:
 if "spectrometer" in config_dict and "photodiode" in config_dict:
     from printer_server.printer_control.light_measurement_control import LightMeasurementControl
     parent_classes.append(LightMeasurementControl)
-
-if "loadcell" in config_dict:
-    from printer_server.printer_control.loadcell_control import LoadcellControl
-    parent_classes.append(LoadcellControl)
 
 if "t_t_r" in config_dict["stages"]:
     from printer_server.printer_control.ttr_control import TTRControl
