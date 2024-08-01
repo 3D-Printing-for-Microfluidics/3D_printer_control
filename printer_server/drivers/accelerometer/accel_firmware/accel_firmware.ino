@@ -57,11 +57,12 @@ void setup() {
   myIMU.setAccelRange(2);
   myIMU.setGyroRange(125);
 
+  delay(1000);
   for (int i = 0; i < 10; i++){
     x_offset += myIMU.readFloatAccelX();
     y_offset += myIMU.readFloatAccelY();
     z_offset += myIMU.readFloatAccelZ();
-    delay(10);
+    delay(100);
   }
   x_offset = x_offset/10;
   y_offset = y_offset/10;
@@ -168,7 +169,7 @@ void samplingISR() {
   float y = myIMU.readFloatAccelY() - y_offset;
   float z = myIMU.readFloatAccelZ() - z_offset;
 
-  float accel = (sqrt(sq(x) + sq(y) + sq(z)), 3);
+  float accel = sqrt(sq(x) + sq(y) + sq(z));
   int scale = 16384;
   accel = accel*scale;
 
@@ -190,8 +191,8 @@ void samplingISR() {
   byte buf2[2];
   buf2[0] = (uint16_t)accel & 255;
   buf2[1] = ((uint16_t)accel >> 8)  & 255;
-
   Serial.write(buf2, sizeof(buf2));
+
   Serial.print('\n');
 
     // increment samples counter
