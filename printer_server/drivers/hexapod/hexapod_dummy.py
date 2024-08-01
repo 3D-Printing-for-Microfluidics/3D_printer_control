@@ -75,11 +75,11 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         return self.get_pose()[2]
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        self.set_pivot_point(self.config_dict["pivot_x_mm"],self.config_dict["pivot_y_mm"],self.config_dict["pivot_z_mm"]-mm)
+        # self.set_pivot_point(self.config_dict["pivot_x_mm"],self.config_dict["pivot_y_mm"],self.config_dict["pivot_z_mm"]-mm)
         self.move_to_position_axis(self.convertAxis("Focus"), mm)
 
     def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        self.step_pivot_point("T", -mm)
+        # self.step_pivot_point("T", -mm)
         self.step_axis(self.convertAxis("Focus"), mm)
 
     def startFocusJog(self, speed=None, acceleration=None):

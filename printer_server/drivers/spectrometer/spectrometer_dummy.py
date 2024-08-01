@@ -33,4 +33,4 @@ class Spectrometer_dummy:
     
 
     def get_spectrum(self, num_averages=1):
-        return np.array([1,2,3,4,5], [0,0,100,100,0])
+        return np.array([[1,2,3,4,5], [0,0,100,100,0]])

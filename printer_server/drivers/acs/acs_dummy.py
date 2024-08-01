@@ -260,26 +260,6 @@ class ACS_dummy(BPStageDriver, XYStageDriver):
         self.stopJog(axis=axis)
 
     @dummy_log
-    def getFocusPosition(self, notify=True):
-        return self.getPosition(axis="Focus")
-
-    @dummy_log
-    def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
-
-    @dummy_log
-    def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
-
-    @dummy_log
-    def startFocusJog(self, speed=None, acceleration=None):
-        self.startJog(speed=speed, acceleration=acceleration, axis="Focus")
-
-    @dummy_log
-    def stopFocusJog(self):
-        self.stopJog(axis="Focus")
-
-    @dummy_log
     def getBPPosition(self, notify=True):
         return self.getPosition(axis="Build Platform")
 

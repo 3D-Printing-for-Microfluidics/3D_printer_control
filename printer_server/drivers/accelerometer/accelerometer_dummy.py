@@ -5,6 +5,7 @@ class Accelerometer_dummy:
     @dummy_log
     def __init__(self, *args, **kwargs):
         self.connected = None
+        self.running = False
 
     @dummy_log
     def connect(self, *args, **kwargs):
@@ -21,7 +22,7 @@ class Accelerometer_dummy:
 
     @dummy_log
     def start(self, *args, **kwargs):
-        pass
+        self.running = True
 
     @dummy_log
     def set_log_file(self, *args, **kwargs):
@@ -29,7 +30,7 @@ class Accelerometer_dummy:
 
     @dummy_log
     def stop(self, *args, **kwargs):
-        pass
+        self.running = False
 
     def loop(self, *args, **kwargs):
         pass
