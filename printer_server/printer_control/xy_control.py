@@ -29,8 +29,8 @@ class XYControl(PrintControl):
             self.all_hardware_connected = False
 
     def initialize_hardware(self):
-        x_pos = self.coord_systems["visitech"]["X"]
-        y_pos = self.coord_systems["visitech"]["Y"]
+        x_pos = self.coord_systems["parked"]["X"]
+        y_pos = self.coord_systems["parked"]["Y"]
         self.xy_thread = Thread(log, name="xy_control_init_thread", target=self.xy_stage.initialize_and_positionXY, args=[x_pos, y_pos])
         self.xy_thread.start()
         super().initialize_hardware()
@@ -81,8 +81,8 @@ class XYControl(PrintControl):
     def post_print_tasks(self):
         super().post_print_tasks()
         # set paused position
-        x_pos = self.coord_systems["visitech"]["X"]
-        y_pos = self.coord_systems["visitech"]["Y"]
+        x_pos = self.coord_systems["parked"]["X"]
+        y_pos = self.coord_systems["parked"]["Y"]
         self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False, speed_x=None, speed_y=None, acceleration_x=None, acceleration_y=None)
         for thread in self.xy_threads:
             if thread is not None:

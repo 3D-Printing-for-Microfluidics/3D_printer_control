@@ -56,25 +56,31 @@
         "global": {
             "X": 0,
             "Y": 0,
-            "Focus": 0,
+            "Focus": -1128,
+            "Build Platform": 0
+        },
+        "parked": {
+            "X": 100,
+            "Y": 100,
+            "Focus": -1.128,
             "Build Platform": 0
         },
         "visitech": {
             "X": 0,
             "Y": 0,
-            "Focus": 0,
+            "Focus": -1.128,
             "Build Platform": 0
         },
         "keyence_visitech": {
             "X": 0,
             "Y": -30,
-            "Focus": 0,
+            "Focus": -1.128,
             "Build Platform": 0
         },
         "fiber_visitech": {
             "X": -85,
             "Y": 69,
-            "Focus": 0,
+            "Focus": -1.128,
             "Build Platform": 0
         }
     },
@@ -135,7 +141,8 @@
             "Tip",
             "Tilt",
             "Rotate"
-        ]
+        ],
+        "home_on_init": true
     },
     "keyence": {
         "dummy": false,

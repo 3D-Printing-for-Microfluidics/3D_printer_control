@@ -197,5 +197,5 @@ class KeyenceControl(PrintControl):
         self.defocus_um = (defocus_um + keyence_measurement)
 
     def post_print_tasks(self):
-        self.focused_position = self.coord_systems["visitech"]["Focus"]
+        self.focused_position = self.coord_systems["parked"]["Focus"]
         super().post_print_tasks()

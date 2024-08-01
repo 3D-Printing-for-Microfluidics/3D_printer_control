@@ -76,7 +76,7 @@ class FocusControl(PrintControl):
 
     def initialize_hardware(self):
         if self.coord_systems is not None:
-            self.focused_position = self.coord_systems["visitech"]["Focus"]
+            self.focused_position = self.coord_systems["parked"]["Focus"]
         else:
             self.focused_position = get_last_calibration_positions_from_logs().get("distance",0) / 1000
         self.focus_thread = Thread(log, name="focus_control_init_thread", target=self.focus_stage.initialize_and_positionFocus, args=[self.focused_position])
