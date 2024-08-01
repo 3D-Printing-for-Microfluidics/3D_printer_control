@@ -19,6 +19,7 @@ if (loadcell_exists) {
         }
     };
     var loadcell_traces = [loadcell_trace];
+    var initial_point_removed = false;
 
     function draw_loadcell_graph() {
         var defaultPlotlyConfiguration = {
@@ -73,6 +74,13 @@ if (loadcell_exists) {
     function update_loop(message) {
         let data = message.data;
         if (data != 0) {
+            if (!initial_point_removed) {
+                // Remove the initial point
+                loadcell_traces[0].x.splice(0, 1);
+                loadcell_traces[0].y.splice(0, 1);
+                initial_point_removed = true;
+            }
+
             data.forEach(
                 element => {
                     let time = new Date(element.timestamp);
@@ -395,7 +403,7 @@ $(document).ready(function () {
 
     socket.on("planarizing", function (message) {
         $("#printer-state").text("Planarizing");
-        show_print_btn("#plana2-btn, #admin-btn");
+        show_print_btn("#plana2-btn, #admin-btn, #shutdown-btn");
     });
 
     socket.on("planarized", function (message) {
