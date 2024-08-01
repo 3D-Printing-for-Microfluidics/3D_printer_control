@@ -4,14 +4,15 @@ class MKSTeensy_dummy():
     def __init__(self, *args, **kwargs):
         self.sensors = [0, 0, 0, 0, 0]
         self.relays = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.connected = None
 
     @dummy_log
     def connect(self, *args, **kwargs):
-        return True
+        self.connected = True
     
     @dummy_log
     def disconnect(self, *args, **kwargs):
-        pass
+        self.connected = None
             
     @dummy_log
     def set_relay(self, relay_num, state, *args, **kwargs):

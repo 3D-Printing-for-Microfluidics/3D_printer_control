@@ -2,11 +2,11 @@ from printer_server.logging_handler import dummy_log
 
 class MKS946_dummy():
     def __init__(self, *args, **kwargs):
-        pass
+        self.connected = None
 
     @dummy_log
     def connect(self, *args, **kwargs):
-        return True
+        self.connected = True
     
     @dummy_log
     def initialize(self, *args, **kwargs):
@@ -14,7 +14,7 @@ class MKS946_dummy():
 
     @dummy_log
     def disconnect(self, *args, **kwargs):
-        pass
+        self.connected = None
 
     @dummy_log
     def read_pressure(self, channel):

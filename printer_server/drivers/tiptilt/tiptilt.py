@@ -19,8 +19,14 @@ class TipTilt(USBSerial, TTRStageDriver):
         self.config_dict = config_dict
         self.r = re.compile(r"\d*\.?\d*$")  # regex for getter functions
 
+    def send(self, cmd, recieve=True):
+        ret = super().send(cmd, recieve=False)
+        if ret and recieve:
+            return self._receive(cmd)
+        return ret
+
     # Override USBSerial recive to recieve until 'Done' message
-    def receive(self, cmd):
+    def _receive(self, cmd):
         buffer = b""  # buffer for incoming serial communication
         message = ""  # response to be returned
         error = False  # indicates an error from the

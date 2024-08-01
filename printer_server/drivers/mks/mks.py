@@ -80,7 +80,7 @@ class MKS946(USBSerial):
                 else:
                     self.set_relay_mode(relay_num, 'CLEAR')
             self.start_thread()
-            self.log.info("MSK initialized")
+            self.log.info("MKS initialized")
 
     def disconnect(self):
         if self.connected:
