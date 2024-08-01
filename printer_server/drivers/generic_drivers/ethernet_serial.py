@@ -6,11 +6,13 @@ import logging
 import threading
 
 class EthernetSerial():
-    def __init__(self, host=None, port=None, line_ending='\r', logger=logging.getLogger(__name__)):
+    def __init__(self, host=None, port=None, line_ending='\r', timeout=10, logger=logging.getLogger(__name__)):
+        super().__init__()
         self.log = logger
         self.host = host
         self.port = port
         self.line_ending = line_ending
+        self.timeout = timeout
         self.socket = None
         self.connected = None
         self.sendLock = threading.Lock()
@@ -28,10 +30,11 @@ class EthernetSerial():
                 i += 1
                 try:
                     self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    self.socket.settimeout(10)
+                    self.socket.settimeout(self.timeout)
                     self.socket.connect((self.host, self.port))
                     self.connected = True
                     self.shutdown = shutdown
+                    break
                 except (OSError, socket.timeout) as e:
                     if "timed out" in str(e):
                         break
@@ -45,7 +48,7 @@ class EthernetSerial():
                 return False
             
             atexit.register(self.disconnect)
-            self.log.info("Connected to device")
+            self.log.info("Connected to device (%s:%s)", self.host, self.port)
             return True
         else:
             while self.connected is False:
@@ -81,6 +84,7 @@ class EthernetSerial():
                 sys.exit(msg)
             except Exception as ex:
                 self.log.error("Failed to send packet: %s", ex)
+                return None
 
             try:
                 rsp = self.socket.recv(1024).decode()
