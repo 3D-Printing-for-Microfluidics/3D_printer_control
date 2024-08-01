@@ -10,6 +10,7 @@ log.setLevel(logging.INFO)
 
 class FocusStageDriver:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
+        super().__init__()
         self.initialized = None
         self.connected = None
 

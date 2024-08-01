@@ -22,6 +22,8 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.movement_log = None
         self.config_dict = config_dict
 
+        super().__init__()
+
         self.gclib_error = gclib.GclibError
         self.sendLock = threading.Lock()
 

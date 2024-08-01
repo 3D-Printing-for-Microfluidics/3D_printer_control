@@ -8,6 +8,7 @@ log.setLevel(logging.INFO)
 
 class TTRStageDriver:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
+        super().__init__()
         self.initialized = None
 
     def connect(self, shutdown):
@@ -22,19 +23,19 @@ class TTRStageDriver:
     def absMoveTTR( self, mdeg=None, axis=None):
         log.warn("Function not implemented. Using abstract XYStageDriver class")
 
-    def initialize_and_positionTTR(self, pos):
+    def initialize_and_positionTTR(self, tip, tilt, rotate):
         if self.initialized is None:
             self.initialized = False
             self.initialize()
-            if self.config_dict["home_on_init"]:
+            if self.config_dict.get("home_on_init", True):
                 self.home()
             self.initialized = True
 
         while not self.initialized:
             time.sleep(0.1)
 
-        if self.config_dict["home_on_init"]:
-            return self.threadedTTRMove(log, pos, join=True)
+        if self.config_dict.get("home_on_init", True):
+            return self.threadedTTRMove(log, tip, tilt, rotate, join=True)
         return True
     
     def threadedTTRMove(

@@ -1,0 +1,30 @@
+.columns_section {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.bordered_section{
+    border: 1px solid #3498DB;
+    border-radius: 10px; /* Adjust the radius as needed */
+    padding: 20px; /* Adjust the padding to create space between text and border */
+    margin: 10px;
+}
+
+.central_column{
+    width:70%;
+}
+
+.centered_section {
+    display: flex;
+    justify-content: center;
+}
+
+.left_section{
+    display: flex;
+    justify-content: flex-end;
+}
+
+.opposite_sides_section {
+    display: flex;
+    justify-content: space-between;
+}

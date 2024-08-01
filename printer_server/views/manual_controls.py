@@ -34,6 +34,8 @@ if "galil" in config_dict.keys():
     import printer_server.drivers.galil.galil_snip
 if "gpio" in config_dict.keys():
     import printer_server.drivers.gpio.gpio_snip
+if "hexapod" in config_dict.keys():
+    import printer_server.drivers.hexapod.hexapod_snip
 if "kdc101" in config_dict.keys():
     import printer_server.drivers.kdc101.kdc101_snip
 if "keyence" in config_dict.keys():

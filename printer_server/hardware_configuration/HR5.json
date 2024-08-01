@@ -5,16 +5,9 @@
     ],
     "stages": {
         "bp": "acs",
-        "focus": "kdc101",
+        "focus": "hexapod",
         "x_y": "acs",
-        "t_t_r": "tiptilt"
-    },
-    "kdc101": {
-        "dummy": true,
-        "vendor_id": 1027,
-        "product_id": 64240,
-        "baudrate": 115200,
-        "moving_shifts_image": true
+        "t_t_r": "hexapod"
     },
     "light_engines": [
         "visitech"
@@ -124,14 +117,25 @@
         "bottom_position": 93.6390039,
         "top_position": 0
     },
-    "tiptilt": {
-        "dummy": true,
-        "hwid": "PID=16C0:0483 SER=9881850",
-        "vendor_id": 5824,
-        "product_id": 1155,
-        "serial_number": "9881850",
-        "baudrate": 115200,
-        "home_on_init": false
+    "hexapod": {
+        "dummy": false,
+        "address": "192.168.0.6",
+        "port": 50000,
+        "pivot_x_mm": 0,
+        "pivot_y_mm": 0,
+        "pivot_z_mm": 432,
+        "axes": [
+            "Z",
+            "U",
+            "V",
+            "W"
+        ],
+        "axes_common_names": [
+            "Focus",
+            "Tip",
+            "Tilt",
+            "Rotate"
+        ]
     },
     "keyence": {
         "dummy": false,
