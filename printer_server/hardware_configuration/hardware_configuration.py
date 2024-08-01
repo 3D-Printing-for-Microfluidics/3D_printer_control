@@ -17,6 +17,14 @@ class Printer3D:
     def __init__(self):
         # Dynamically import python snippits
         global config_dict
+        if "accelerometer" in config_dict.keys():
+            from printer_server.drivers.accelerometer import Accelerometer, Accelerometer_dummy
+
+            if config_dict["accelerometer"]["dummy"]:
+                self.accelerometer = Accelerometer_dummy()
+            else:
+                self.accelerometer = Accelerometer(config_dict=config_dict["accelerometer"], log_level=default_log_level)
+
         if "acs" in config_dict.keys():
             from printer_server.drivers.acs import ACS, ACS_dummy
 
@@ -38,14 +46,6 @@ class Printer3D:
                 self.environmental_sensors = EnvironmentalSensors_dummy()
             else:
                 self.environmental_sensors = EnvironmentalSensors(config_dict=config_dict["environmental_sensors"], log_level=default_log_level)
-
-        if "accelerometer" in config_dict.keys():
-            from printer_server.drivers.accelerometer import Accelerometer, Accelerometer_dummy
-
-            if config_dict["accelerometer"]["dummy"]:
-                self.accelerometer = Accelerometer_dummy()
-            else:
-                self.accelerometer = Accelerometer(config_dict=config_dict["accelerometer"], log_level=default_log_level)
 
         if "galil" in config_dict.keys():
             from printer_server.drivers.galil import Galil, Galil_dummy

@@ -172,7 +172,7 @@
         "measurement_period_ms": 1000
     },
     "accelerometer": {
-        "dummy": true,
+        "dummy": false,
         "hwid": "USB VID:PID=16C0:0483 SER=16038530",
         "vendor_id": 5824,
         "product_id": 1155,
