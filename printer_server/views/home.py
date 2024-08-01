@@ -41,6 +41,11 @@ if "accelerometer" in config_dict:
     from printer_server.printer_control.accelerometer_control import AccelerometerControl
     parent_classes.append(AccelerometerControl)
 
+# keyence needs to be before focus
+if "keyence" in config_dict:
+    from printer_server.printer_control.keyence_control import KeyenceControl
+    parent_classes.append(KeyenceControl)
+
 if "focus" in config_dict["stages"]:
     from printer_server.printer_control.focus_control import FocusControl
     parent_classes.append(FocusControl)
@@ -49,10 +54,6 @@ if "gpio" in config_dict:
     if "film_pin" in config_dict["gpio"]:
         from printer_server.printer_control.gpio_control import FilmGPIOControl
         parent_classes.append(FilmGPIOControl)   
-
-if "keyence" in config_dict:
-    from printer_server.printer_control.keyence_control import KeyenceControl
-    parent_classes.append(KeyenceControl)
 
 if "light_engines" in config_dict:
     from printer_server.printer_control.screen_control import ScreenControl
