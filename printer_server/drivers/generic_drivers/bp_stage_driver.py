@@ -8,6 +8,7 @@ log.setLevel(logging.INFO)
 
 class BPStageDriver:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
+        super().__init__()
         self.initialized = None
         self.calibration_position = None
         self.bottom_position = None

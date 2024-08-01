@@ -1,119 +1,121 @@
+import os
+import time
+import atexit
+import logging
+import traceback
+
 from pipython import GCSDevice, pitools
 from pipython.pidevice.gcscommands import GCSCommands
 from pipython.pidevice.gcsmessages import GCSMessages
 from pipython.pidevice.interfaces.pisocket import PISocket
-import time
-import logging
-import os
-import traceback
 
-CONTROLLER_IP_ADDRESS = '192.168.0.6' # '172.16.244.33'
-CONTROLLER_PORT = 50000
-CONTROLLER_NAME = 'C-887'
+from printer_server.drivers.generic_drivers import TTRStageDriver, FocusStageDriver
 
-WINDOWS_OS = "nt"
-LINUX_OS = "posix"
-
-class Hexapod:
-    def __init__(self, log_directory, log_level=logging.INFO, controller_ip=CONTROLLER_IP_ADDRESS, controller_port=CONTROLLER_PORT):
+class Hexapod(TTRStageDriver, FocusStageDriver):
+    def __init__(self, config_dict=None, log_level=logging.INFO):
         """ HexapodController
 
         Args:
             log_directory (str): root directory where the log file of this controller will be stored
         """
+        super().__init__()
+        
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+
+        self.config_dict = config_dict
+        self.connected = None
         self.initialized = False
-        self.initialize_logs(log_directory, log_level)
-        self.os = os.name
-        self.controller_ip = controller_ip
-        self.controller_port = controller_port
+        self.axes = config_dict["axes"]
+        self.axes_common_names = config_dict["axes_common_names"]
 
-    def check_initialization(self):
-        """ Check if the hexapod controller has been initialized
-
-        Returns:
-            bool: flag for whether the hexapod has been initialized or not
-        """
-        return self.initialized
-
-    def connect(self):
+    def connect(self, shutdown):
         """ Run routine for connecting to the hexapod and reference it if it hasn't been referenced yet upon powerup
         """
-        os_used = ""
-        try:
-            if (self.os == WINDOWS_OS):
-                self.controller = GCSDevice()
-                self.controller.InterfaceSetupDlg()  # Opens a dialog to set up the connection
-                pitools.startup(self.controller)
-                os_used = "Windows"
-                
-            elif (self.os == LINUX_OS):
-                gateway = PISocket(host=self.controller_ip, port=self.controller_port)
+        if self.connected is None:
+            self.connected = False
+            try:    
+                gateway = PISocket(host=self.config_dict["address"], port=self.config_dict["port"])
                 messages = GCSMessages(gateway)
                 self.controller = GCSCommands(gcsmessage=messages)
-                os_used = "Linux"
-
-        except Exception as ex:
-            self.logging_handle.error(f"Failed to establish connection to the hexapod controller. Traceback: {traceback.print_exc()}")
-            self.initialized = False
-            
+                self.connected = True
+            except Exception as ex:
+                # self.log.error(f"Failed to establish connection to the hexapod controller. Traceback: {traceback.print_exc()}")
+                self.connected = None
+                msg = f"Hexopod not found!"
+                self.log.critical(msg)
+                return False
+                
+            atexit.register(self.disconnect)
+            self.log.info(f"Connected to hexapod controller")
+            return True
         else:
-            self.logging_handle.info(f"Connected to hexapod controller on {os_used} OS platform")
+            while self.connected is False:
+                time.sleep(0.1)
+        return None
+    
+    def initialize(self):
+        # check if it has been referenced, else do referencing
+        referenced_axes_flags = self.controller.qFRF() # ourput: referenced_axes_flags: OrderedDict([('X', True), ('Y', True), ('Z', True), ('U', True), ('V', True), ('W', True)])
+        if False in referenced_axes_flags.values():
+            self.reference_axes()
+        self.initialized = True
 
-            # check if it has been referenced, else do referencing
-            referenced_axes_flags = self.controller.qFRF() # ourput: referenced_axes_flags: OrderedDict([('X', True), ('Y', True), ('Z', True), ('U', True), ('V', True), ('W', True)])
-        
-            if False in referenced_axes_flags.values():
-                self.logging_handle.info("Referencing axes...")
-                self.reference_axes()
-            
-            self.initialized = True
-
-    def reference_axes(self):
-        """ Run routine for referencing all the axes of the hexapod
-        """
-        self.controller.FRF()
-        pitools.waitontarget(self.controller)
-        self.logging_handle.info(f"Referencing axes completed")
-
-    def close(self):
+    def disconnect(self):
         """ Close connection to the hexapod
         """
-        self.controller.CloseConnection()
-        self.logging_handle.info("Connection closed")
+        if self.connected is not None and self.connected and self.socket is not None:
+            self.connected = None
+            self.initialized = False
+            self.controller.CloseConnection()
+            self.log.info("Disconnected from hexapod")
 
-    def initialize_logs(self, log_directory, log_level):
-        """ Initialize log handle
+    def convertAxis(self, axis):
+        """Return converted axis name (eg. maps X,Y,Z to A,B,C)"""
+        for i in range(len(self.axes)):
+            if axis in (self.axes[i], self.axes_common_names[i]):
+                return self.axes[i]
+            if axis.upper() in (self.axes[i], self.axes_common_names[i]):
+                return self.axes[i]
+        raise ValueError("Invalid axis supplied")
 
-        Args:
-            log_directory (str): directory where the log handle will store the log file
-        """
-        # Initialize the logging info format
-        self.logging_handle = logging.getLogger(__name__)
-        self.logging_handle.setLevel(log_level)
 
-        # File handler
-        self.log_local_directory = log_directory
-        file_name = __name__.split(".")[-1]
-        log_file_name = f"{file_name}.log"
-        full_log_file_name = os.path.join(log_directory, log_file_name)
-        file_handler = logging.FileHandler(full_log_file_name, mode="w") 
+    ################################# Parent class functions #######################################
+    def home(self):
+        self.home_all_axes()
+        self.set_pivot_point(self.config_dict["pivot_x_mm"],self.config_dict["pivot_y_mm"],self.config_dict["pivot_z_mm"])
 
-        # Format log entries
-        file_formatter  = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        file_handler.setFormatter(file_formatter) 
+    def absMoveTTR(self, mdeg=None, axis=None):
+        self.move_to_angle_axis(self.convertAxis(axis), mdeg/1000)
 
-        # Format console entries
-        stream_formatter = logging.Formatter(f'%(asctime)s - {file_name} - %(levelname)s - %(message)s')
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(stream_formatter)
+    def setup_log_file(self, filename):
+        pass
 
-        # Add handlers to logger
-        self.logging_handle.addHandler(file_handler) 
-        self.logging_handle.addHandler(stream_handler)
+    def logging_start(self):
+        pass
 
-        # Info message of log initialization
-        self.logging_handle.info("Microfluidic Testing Control Logger initialized")
+    def logging_stop(self):
+        pass
 
+    def getFocusPosition(self, notify=True):
+        return self.get_pose(self.convertAxis("Focus"))
+
+    def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        # self.set_pivot_point(self.config_dict["pivot_x_mm"],self.config_dict["pivot_y_mm"],self.config_dict["pivot_z_mm"]-mm)
+        self.move_to_position_axis(self.convertAxis("Focus"), mm)
+
+    def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        # self.step_pivot_point("T", -mm)
+        self.step_axis(self.convertAxis("Focus"), mm)
+
+    def startFocusJog(self, speed=None, acceleration=None):
+        self.log.error("Hexapod Jogging not implemented")
+
+    def stopFocusJog(self):
+        self.log.error("Hexapod Jogging not implemented")
+
+    ################################# End parent class functions #######################################
+        
     def get_status(self):
         """ Retrieve any error codes from the hexapod
 
@@ -121,15 +123,23 @@ class Hexapod:
             int: error code
         """
         status = self.controller.qERR()
-        self.logging_handle.info(f"Querying hexapod error code number: {status}")
+        self.log.info(f"Querying hexapod error code number: {status}")
         return status
+
+    def reference_axes(self):
+        """ Run routine for referencing all the axes of the hexapod
+        """
+        self.log.info("Referencing axes...")
+        self.controller.FRF()
+        pitools.waitontarget(self.controller)
+        self.log.info(f"Referencing axes completed")
     
     def home_all_axes(self):
         """ Home all the axes in the hexapod
         """
-        self.controller.GOH()
-        pitools.waitontarget(self.controller)
-        self.logging_handle.info(f"Homed all axes")
+        self.log.info(f"Homing axes...")
+        self.set_pose(0,0,0,0,0,0, suppress_message=True)
+        self.log.info(f"Homing axes completed")
 
     def move_to_position_axis(self, axis, value):
         """ Perform absolute displacement of axis to target value
@@ -140,7 +150,7 @@ class Hexapod:
         """
         self.controller.MOV(axis, value)
         pitools.waitontarget(self.controller)
-        self.logging_handle.info(f"Translated axis {axis} to {value} [mm]")
+        self.log.info(f"Translated axis {axis} to {value} [mm]")
 
     def move_to_position_compound(self, x, y, z):
         """ Perform absolute simultaneous translation of all translational axes to the specified positions in X, Y, and Z 
@@ -153,13 +163,13 @@ class Hexapod:
         params = [x, y, z]
         for param in params:
             if param == None:
-                self.logging_handle.info(f"parameter provided is None. No motion performed")
+                self.log.warn(f"parameter provided is None. No motion performed")
                 return
 
         self.controller.MOV({'X': x, 'Y': y, 'Z': z}, None) # Try this one out!
 
         pitools.waitontarget(self.controller)
-        self.logging_handle.info(f"Moved to position: ({x}, {y}, {z})")
+        self.log.info(f"Moved to position: ({x}, {y}, {z})")
 
     def move_to_angle_axis(self, axis, value):
         """ Perform absolute rotation of axes to the target value
@@ -170,7 +180,7 @@ class Hexapod:
         """
         self.controller.MOV(axis, value)
         pitools.waitontarget(self.controller)
-        self.logging_handle.info(f"Rotated axis {axis} to {value} [degrees]")
+        self.log.info(f"Rotated axis {axis} to {value} [degrees]")
 
     def move_to_angle_compound(self, u, v, w):
         """ Perform absolute simultaneous rotation of all rotational axes to the specified angles in U, V, and W
@@ -183,15 +193,15 @@ class Hexapod:
         params = [u, v, w]
         for param in params:
             if type(param) == None:
-                self.logging_handle.info(f"parameter provided is None. No motion performed")
+                self.log.warn(f"parameter provided is None. No motion performed")
                 return
 
         self.controller.MOV({'U': u, 'V': v, 'W': w}, None) # Try this one out!
 
         pitools.waitontarget(self.controller)
-        self.logging_handle.info(f"Moved to angle: ({u}, {v}, {w})")
+        self.log.info(f"Moved to angle: ({u}, {v}, {w})")
     
-    def set_pose(self, x, y, z, u, v, w):
+    def set_pose(self, x, y, z, u, v, w, suppress_message=False):
         """ Perform absolute simultaneous translation and rotation of all translational and rotational axes to the specified 
         positions and angles in X, Y, Z, U, V, and W to specify the pose of the coordinate system that corresponds to the current 
         pivot point
@@ -207,7 +217,8 @@ class Hexapod:
         self.controller.MOV({'X': x, 'Y': y, 'Z': z, 'U': u, 'V': v, 'W': w})
         pitools.waitontarget(self.controller)
 
-        self.logging_handle.info(f"Concurrently adjusted the pose to: \n\t* Translation- 'X': {x}, 'Y': {y}, 'Z': {z}\n\t* Rotation- 'U': {u}, 'V': {v}, 'W': {w}")
+        if not suppress_message:
+            self.log.info(f"Concurrently adjusted the pose to: 'X': {x}, 'Y': {y}, 'Z': {z}, 'U': {u}, 'V': {v}, 'W': {w}")
 
     def step_axis(self, axis, step_size):
         """ Perform relative actuation of the specified axis by the specified step size
@@ -218,29 +229,29 @@ class Hexapod:
         """
         self.controller.MVR(axis, step_size)
         pitools.waitontarget(self.controller)
-        self.logging_handle.info(f"Stepped axis {axis} by {step_size}")
+        self.log.info(f"Stepped axis {axis} by {step_size}")
 
-    def get_pose(self):
+    def get_pose(self, axis=None):
         """ Get the current pose (translation and rotation) of the coordiante system corresponding to the current pivot point of the system
 
         Returns:
             list: values of the translational and rotational axes of the hexapod
         """
-        positions_raw = self.controller.qPOS()
-        positions = [round(list(positions_raw.values())[0], 1), 
-                     round(list(positions_raw.values())[1], 1), 
-                     round(list(positions_raw.values())[2], 1), 
-                     round(list(positions_raw.values())[3], 1), 
-                     round(list(positions_raw.values())[4], 1), 
-                     round(list(positions_raw.values())[5], 1)]
-        self.logging_handle.info(f"Current pose: {positions}")
-        return positions
+        if axis is None:
+            positions_raw = self.controller.qPOS()
+            return positions_raw
+        else:
+            a = self.convertAxis(axis)
+            positions_raw = self.controller.qPOS(a)
+            position = round(positions_raw[a],3)
+            self.log.info(f"Get {axis}/{a} pos: {position}")
+            return position
 
     def hard_stop(self):
         """ Stop any actuations within the hexapod currently beign executed
         """
         self.controller.STP()
-        self.logging_handle.info("Motion stopped")
+        self.log.info("Motion stopped")
 
     def get_pivot_point(self):
         """ Retrieve the current pivot point
@@ -262,19 +273,24 @@ class Hexapod:
             bool: successful change of pivot point
         """
         current_pose = self.get_pose()
-        rotational_axes = current_pose[3:]
+        # rotational_axes = current_pose[3:]
+        rotational_axes = [
+            current_pose["U"],
+            current_pose["V"],
+            current_pose["W"]
+        ]
         all_rotational_axes_zero = True
         for axis in rotational_axes:
-            if axis != 0.0:
+            if axis >= 0.001:
                 all_rotational_axes_zero = False
         if all_rotational_axes_zero:
             self.controller.SPI({'R': r, 'S': s, 'T': t})
             pitools.waitontarget(self.controller)
             ret_val = self.get_pivot_point()
-            self.logging_handle.info(f"Pivot point set to: {ret_val}")
+            self.log.info(f"Pivot point set to: {ret_val['R']}, {ret_val['S']}, {ret_val['T']}")
             return True
         else:
-            self.logging_handle.warning(f"Not all rotational axes (U, V, W) are 0. Set them to 0 before attempting pivot point adjustment")
+            self.log.warning(f"Not all rotational axes (U, V, W) are 0. Set them to 0 before attempting pivot point adjustment")
             return False
     
     def step_pivot_point(self, axis, step_size):
@@ -296,7 +312,7 @@ class Hexapod:
             new_pivot["T"] += step_size
 
         self.set_pivot_point(new_pivot["R"], new_pivot["S"], new_pivot["T"])
-        self.logging_handle.info(f"Pivot point stepped by {step_size} on {axis} axis")
+        self.log.info(f"Pivot point stepped by {step_size} on {axis} axis")
 
     def get_simple_dynamic_range(self, target_axis:str):
         """ Get the range of motion of the requested axis. Due to the complexity of the hexapod joint configuration, dynamic ranges change if 
@@ -315,13 +331,13 @@ class Hexapod:
             request = {target_axis: -1}
             negative_limit = float(self.controller.qTRA(request)[target_axis])
         except Exception as ex:
-            self.logging_handle.error(f"Failed to retrieve dynamic range for axis {target_axis}. Exception: {ex}")
+            self.log.error(f"Failed to retrieve dynamic range for axis {target_axis}. Exception: {ex}")
             dynamic_range =  (None, None)
         else:
             dynamic_range = (negative_limit, positive_limit)
-            self.logging_handle.info(f"Dynamic range queried for axis {target_axis}: {dynamic_range}")
+            # self.log.info(f"Dynamic range queried for axis {target_axis}: {dynamic_range}")
         finally:
-            print(f"request: {request}. range: {dynamic_range}")
+            # print(f"request: {request}. range: {dynamic_range}")
             return dynamic_range
 
     def get_compound_dynamic_range(self, target_axes:list, target_pose:list):
@@ -338,7 +354,7 @@ class Hexapod:
             OrderedDict: ordered dictionary (native PI type) describing the range for each of hte queried axes in the direction of the target pose
         """
         if (len(target_axes) != len(target_pose)):
-            self.logging_handle.error(f"The amount of axes queried is not equal to the coordinates for target pose")
+            self.log.error(f"The amount of axes queried is not equal to the coordinates for target pose")
             return None
         
         try:
@@ -347,10 +363,10 @@ class Hexapod:
                 params_dict[axis] = target_pose[i]
             dynamic_range = self.controller.qTRA(params_dict)
         except Exception as ex:
-            self.logging_handle.error(f"Failed to retrieve the dynamic range for the request: {params_dict}")
+            self.log.error(f"Failed to retrieve the dynamic range for the request: {params_dict}")
             dynamic_range = None
-        else:
-            self.logging_handle.info(f"Dynamic range queried for compound pose {params_dict}: {dynamic_range}")
+        # else:
+            # self.log.info(f"Dynamic range queried for compound pose {params_dict}: {dynamic_range}")
         finally:
             return dynamic_range
 
@@ -358,6 +374,7 @@ class Hexapod:
 if __name__ == "__main__":
     hexapod = Hexapod("")
     hexapod.connect()
+    hexapod.initialize()
     try:
         hexapod.get_status()
         hexapod.move_to_position_compound(0, 0, 0)
@@ -370,4 +387,4 @@ if __name__ == "__main__":
     except Exception as ex:
         print(f"ERROR: {ex}")
     finally:
-        hexapod.close()
+        hexapod.disconnect()

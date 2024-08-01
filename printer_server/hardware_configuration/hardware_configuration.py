@@ -65,6 +65,14 @@ class Printer3D:
             else:
                 self.gpio = GPIO(config_dict=config_dict["gpio"], log_level=default_log_level)
 
+        if "hexapod" in config_dict.keys():
+            from printer_server.drivers.hexapod import Hexapod, Hexapod_dummy
+
+            if config_dict["hexapod"]["dummy"]:
+                self.hexapod = Hexapod_dummy(config_dict=config_dict["hexapod"], log_level=default_log_level)
+            else:
+                self.hexapod = Hexapod(config_dict=config_dict["hexapod"], log_level=default_log_level)
+
 
         if "kdc101" in config_dict.keys():
             from printer_server.drivers.kdc101 import KDC101, KDC101_dummy

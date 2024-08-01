@@ -1,66 +1,18 @@
-import logging
-import os
-from datetime import datetime
-from flask import Flask, render_template
-from flask_socketio import SocketIO
-from hexapod import Hexapod
+from printer_server.extensions import socketio
+from printer_server.hardware_configuration.hardware_configuration import driver_handles
 
-def create_driver_logs_folder():
-    # ============ Create folder for the logs of the current system run ============
-    # Parent Directory path
-    parent_folder = os.getcwd()
-
-    log_folder_name = "logs"
-    logs_path_folder = os.path.join(parent_folder, log_folder_name)
-
-    now = datetime.now()
-    log_run_folder = now.strftime("%m-%d-%Y__%H-%M-%S")
-
-    
-    # Path to new folder
-    path_including_new_folder = os.path.join(logs_path_folder, log_run_folder)
-    
-    # # Create the directory
-    os.makedirs(path_including_new_folder)
-    # print(f"Log folder for system run created: {path_including_new_folder}")
-
-    # Create local directory to be used for file creation
-    local_log_run_directory = os.path.join(logs_path_folder, log_run_folder)
-
-    return local_log_run_directory
+hexapod = driver_handles.hexapod
 
 PIVOT_SET_COMMAND = "pivot"
 TRANSLATION_COMMAND = "translation"
 ROTATION_COMMAND = "rotation"
 
-app = Flask(__name__)
-
-# This section gets rid of console messages from the server (that way we don't loose error messages from the system in development after a long run time)
-app.logger.disabled = True
-log = logging.getLogger('werkzeug')
-log.disabled = True
-logging.getLogger("socketio").setLevel(logging.ERROR)
-logging.getLogger("engineio").setLevel(logging.ERROR)
-
-log_directory = create_driver_logs_folder() # Create folder for log files
-
-socketio = SocketIO()
-socketio.init_app(app)
-
-hexapod = Hexapod(log_directory)
-
-
-@app.route("/")
-@app.route("/manual_control")
-def manual_control():
-    return render_template("manual_control.html")
-
-@socketio.on("initialize_hexapod")
+@socketio.on("initialize_hexapod", namespace="/manual")
 def initialize_hexapod():
     print(f"Init command received")
 
     hexapod.connect()
-    init_flag = hexapod.check_initialization()
+    init_flag = hexapod.initialized
     if (init_flag):
         error_codes = hexapod.get_status()
         pivot_update = hexapod.get_pivot_point()
@@ -71,13 +23,13 @@ def initialize_hexapod():
         pivot_update = None
         pose_update = None
 
-    socketio.emit("init_msg", [init_flag, error_codes, pivot_update, pose_update])
+    socketio.emit("init_msg", [init_flag, error_codes, pivot_update, pose_update], namespace="/manual")
 
-@socketio.on("check_init")
+@socketio.on("check_init", namespace="/manual")
 def check_init():
     print(f"check_init received")
 
-    init_flag = hexapod.check_initialization()
+    init_flag = hexapod.initialized
     if (init_flag):
         error_codes = hexapod.get_status()
         pivot_update = hexapod.get_pivot_point()
@@ -88,18 +40,18 @@ def check_init():
         pivot_update = None
         pose_update = None
 
-    socketio.emit("init_msg", [init_flag, error_codes, pivot_update, pose_update])
+    socketio.emit("init_msg", [init_flag, error_codes, pivot_update, pose_update], namespace="/manual")
 
-@socketio.on("stop_motion")
+@socketio.on("stop_motion", namespace="/manual")
 def stop_motion():
     print(f"Stop command received")
 
     hexapod.hard_stop()
     pose_update = hexapod.get_pose()
 
-    socketio.emit("pose_update", pose_update)
+    socketio.emit("pose_update", pose_update, namespace="/manual")
 
-@socketio.on("axis_step")
+@socketio.on("axis_step", namespace="/manual")
 def axis_step(step_information):
     print(f"step_information: {step_information}")
 
@@ -111,14 +63,14 @@ def axis_step(step_information):
     if (command_type == PIVOT_SET_COMMAND):
         hexapod.step_pivot_point(axis, value)
         pivot_update = hexapod.get_pivot_point()
-        socketio.emit("pivot_update", pivot_update)
+        socketio.emit("pivot_update", pivot_update, namespace="/manual")
 
     elif (command_type == TRANSLATION_COMMAND) or (command_type == ROTATION_COMMAND):
         hexapod.step_axis(axis, value)
         pose_update = hexapod.get_pose()
-        socketio.emit("pose_update", pose_update)        
+        socketio.emit("pose_update", pose_update, namespace="/manual")        
 
-@socketio.on("pivot_command")
+@socketio.on("pivot_command", namespace="/manual")
 def pivot_command(pivot_information):
     print(f"pivot_information: {pivot_information}")
 
@@ -129,9 +81,9 @@ def pivot_command(pivot_information):
     hexapod.set_pivot_point(x_pivot_pos, y_pivot_pos, z_pivot_pos)
     pivot_update = hexapod.get_pivot_point()
 
-    socketio.emit("pivot_update", pivot_update)
+    socketio.emit("pivot_update", pivot_update, namespace="/manual")
 
-@socketio.on("pose_command")
+@socketio.on("pose_command", namespace="/manual")
 def pose_command(pose_information):
     print(f"pose_information: {pose_information}")
 
@@ -147,9 +99,9 @@ def pose_command(pose_information):
     # hexapod.set_pose(x, y, z, u, v, w)
     pose_update = hexapod.get_pose()
 
-    socketio.emit("pose_update", pose_update)
+    socketio.emit("pose_update", pose_update, namespace="/manual")
 
-@socketio.on("request_dynamic_ranges")
+@socketio.on("request_dynamic_ranges", namespace="/manual")
 def request_dynamic_ranges():
     print(f"SERVER: request_dynamic_ranges()")
 

@@ -8,6 +8,7 @@ log.setLevel(logging.INFO)
 
 class XYStageDriver:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
+        super().__init__()
         self.initialized = None
 
     def setup_log_file(self, filename):

@@ -1,47 +1,94 @@
 
 import time
+import logging
 from printer_server.logging_handler import dummy_log
 
-class Hexapod_dummy:
-    def __init__(self):
+from printer_server.drivers.generic_drivers import TTRStageDriver, FocusStageDriver
+
+class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
+    def __init__(self, config_dict=None, log_level=logging.INFO):
         """ HexapodController
 
         Args:
             log_directory (str): root directory where the log file of this controller will be stored
         """
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+
+        self.config_dict = config_dict
+
+        self.connected = None
         self.initialized = False
-        self.referenced  = False
         self.pose = {'X':0, 'Y':0, 'Z':0, 'U':0, 'V':0, 'W':0}
         self.pivot_point = {'R':0, 'S':0, 'T':0}
+        self.axes = config_dict["axes"]
+        self.axes_common_names = config_dict["axes_common_names"]
 
     @dummy_log
-    def check_initialization(self):
-        """ Check if the hexapod controller has been initialized
-
-        Returns:
-            bool: flag for whether the hexapod has been initialized or not
-        """
-        return self.initialized
-
-    @dummy_log
-    def connect(self):
+    def connect(self, shutdown):
         """ Run routine for connecting to the hexapod and reference it if it hasn't been referenced yet upon powerup
         """
-        self.logging_handle.info(f"Connected to hexapod controller")
+        self.log.info(f"Connected to hexapod controller")
+        self.connected = True
+
+    def initialize(self):
         self.initialized = True
 
     @dummy_log
-    def reference_axes(self):
-        """ Run routine for referencing all the axes of the hexapod
-        """
-        self.referenced = True
-        self.logging_handle.info(f"Referencing axes completed")
-
-    @dummy_log
-    def close(self):
+    def disconnect(self):
         """ Close connection to the hexapod
         """
-        self.logging_handle.info("Connection closed")
+        self.log.info("Connection closed")
+        self.connected = None
+        self.initialized = False
+
+    def convertAxis(self, axis):
+        """Return converted axis name (eg. maps X,Y,Z to A,B,C)"""
+        for i in range(len(self.axes)):
+            if axis in (self.axes[i], self.axes_common_names[i]):
+                return self.axes[i]
+            if axis.upper() in (self.axes[i], self.axes_common_names[i]):
+                return self.axes[i]
+        raise ValueError("Invalid axis supplied")
+
+    ################################# Parent class functions #######################################
+    def home(self):
+        # check if it has been referenced, else do referencing
+        self.log.info("Referencing axes...")
+        self.reference_axes()
+        self.home_all_axes()
+        self.set_pivot_point(self.config_dict["pivot_x_mm"],self.config_dict["pivot_y_mm"],self.config_dict["pivot_z_mm"])
+
+    def absMoveTTR(self, mdeg=None, axis=None):
+        self.move_to_angle_axis(self.convertAxis(axis), mdeg/1000)
+
+    def setup_log_file(self, filename):
+        pass
+
+    def logging_start(self):
+        pass
+
+    def logging_stop(self):
+        pass
+
+    def getFocusPosition(self, notify=True):
+        return self.get_pose()[2]
+
+    def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.set_pivot_point(self.config_dict["pivot_x_mm"],self.config_dict["pivot_y_mm"],self.config_dict["pivot_z_mm"]-mm)
+        self.move_to_position_axis(self.convertAxis("Focus"), mm)
+
+    def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.step_pivot_point("T", -mm)
+        self.step_axis(self.convertAxis("Focus"), mm)
+
+    def startFocusJog(self, speed=None, acceleration=None):
+        self.log.error("Hexapod Jogging not implemented")
+
+    def stopFocusJog(self):
+        self.log.error("Hexapod Jogging not implemented")
+
+    ################################# End parent class functions #######################################
 
     @dummy_log
     def get_status(self):
@@ -51,15 +98,21 @@ class Hexapod_dummy:
             int: error code
         """
         status = 0
-        self.logging_handle.info(f"Querying hexapod error code number: {status}")
+        self.log.info(f"Querying hexapod error code number: {status}")
         return status
+    
+    @dummy_log
+    def reference_axes(self):
+        """ Run routine for referencing all the axes of the hexapod
+        """
+        self.log.info(f"Referencing axes completed")
 
     @dummy_log    
     def home_all_axes(self):
         """ Home all the axes in the hexapod
         """
         self.pose = {'X':0, 'Y':0, 'Z':0, 'U':0, 'V':0, 'W':0}
-        self.logging_handle.info(f"Homed all axes")
+        self.log.info(f"Homed all axes")
 
     @dummy_log
     def move_to_position_axis(self, axis, value):
@@ -72,9 +125,9 @@ class Hexapod_dummy:
         try:
             self.pose[axis] = value
         except Exception as ex:
-            self.logging_handle.error(f"Failed to move axis {axis} to {value}. {ex}")
+            self.log.error(f"Failed to move axis {axis} to {value}. {ex}")
         else:
-            self.logging_handle.info(f"Translated axis {axis} to {value} [mm]")
+            self.log.info(f"Translated axis {axis} to {value} [mm]")
 
     @dummy_log
     def move_to_position_compound(self, x, y, z):
@@ -88,7 +141,7 @@ class Hexapod_dummy:
         self.pose['X'] = x
         self.pose['Y'] = y
         self.pose['Z'] = z
-        self.logging_handle.info(f"Moved to position: ({x}, {y}, {z})")
+        self.log.info(f"Moved to position: ({x}, {y}, {z})")
 
     @dummy_log
     def move_to_angle_axis(self, axis, value):
@@ -101,9 +154,9 @@ class Hexapod_dummy:
         try:
             self.pose[axis] = value
         except Exception as ex:
-            self.logging_handle.error(f"Failed to rotate axis {axis} to {value}. {ex}")
+            self.log.error(f"Failed to rotate axis {axis} to {value}. {ex}")
         else:
-            self.logging_handle.info(f"Rotated axis {axis} to {value} [degrees]")
+            self.log.info(f"Rotated axis {axis} to {value} [degrees]")
 
     @dummy_log
     def move_to_angle_compound(self, u, v, w):
@@ -117,7 +170,7 @@ class Hexapod_dummy:
         self.pose['U'] = u
         self.pose['V'] = v
         self.pose['W'] = w
-        self.logging_handle.info(f"Moved to angle: ({u}, {v}, {w})")
+        self.log.info(f"Moved to angle: ({u}, {v}, {w})")
 
     @dummy_log    
     def set_pose(self, x, y, z, u, v, w):
@@ -139,7 +192,7 @@ class Hexapod_dummy:
         self.pose['U'] = u
         self.pose['V'] = v
         self.pose['W'] = w
-        self.logging_handle.info(f"Concurrently adjusted the pose to: \n\t* Translation- 'X': {x}, 'Y': {y}, 'Z': {z}\n\t* Rotation- 'U': {u}, 'V': {v}, 'W': {w}")
+        self.log.info(f"Concurrently adjusted the pose to: \n\t* Translation- 'X': {x}, 'Y': {y}, 'Z': {z}\n\t* Rotation- 'U': {u}, 'V': {v}, 'W': {w}")
 
     @dummy_log
     def step_axis(self, axis, step_size):
@@ -150,7 +203,7 @@ class Hexapod_dummy:
             step_size (float): step size of the translation or rotation of the specified axis
         """
         self.pose[axis] += step_size
-        self.logging_handle.info(f"Stepped axis {axis} by {step_size}")
+        self.log.info(f"Stepped axis {axis} by {step_size}")
 
     @dummy_log
     def get_pose(self):
@@ -166,7 +219,7 @@ class Hexapod_dummy:
     def hard_stop(self):
         """ Stop any actuations within the hexapod currently beign executed
         """
-        self.logging_handle.info("Motion stopped")
+        self.log.info("Motion stopped")
 
     @dummy_log
     def get_pivot_point(self):
@@ -201,7 +254,7 @@ class Hexapod_dummy:
             self.pivot_point['T'] = t
             return True
         else:
-            self.logging_handle.warning(f"Not all rotational axes (U, V, W) are 0. Set them to 0 before attempting pivot point adjustment")
+            self.log.warning(f"Not all rotational axes (U, V, W) are 0. Set them to 0 before attempting pivot point adjustment")
             return False
 
     @dummy_log    
@@ -224,7 +277,7 @@ class Hexapod_dummy:
             new_pivot["T"] += step_size
 
         self.set_pivot_point(new_pivot["R"], new_pivot["S"], new_pivot["T"])
-        self.logging_handle.info(f"Pivot point stepped by {step_size} on {axis} axis")
+        self.log.info(f"Pivot point stepped by {step_size} on {axis} axis")
 
     @dummy_log
     def get_simple_dynamic_range(self, target_axis:str):
@@ -256,7 +309,7 @@ class Hexapod_dummy:
             OrderedDict: ordered dictionary (native PI type) describing the range for each of hte queried axes in the direction of the target pose
         """
         if (len(target_axes) != len(target_pose)):
-            self.logging_handle.error(f"The amount of axes queried is not equal to the coordinates for target pose")
+            self.log.error(f"The amount of axes queried is not equal to the coordinates for target pose")
             return None
         
         dynamic_range = dict()
@@ -264,7 +317,7 @@ class Hexapod_dummy:
             for axis in target_axes:
                 dynamic_range[axis] = self.get_simple_dynamic_range(axis)
         except Exception as ex:
-            self.logging_handle.error(f"Failed to retrieve the dynamic range for the target_axes: {target_axes}, and target_pose: {target_pose}")
+            self.log.error(f"Failed to retrieve the dynamic range for the target_axes: {target_axes}, and target_pose: {target_pose}")
             dynamic_range = None
         finally:
             return dynamic_range
@@ -285,4 +338,4 @@ if __name__ == "__main__":
     except Exception as ex:
         print(f"ERROR: {ex}")
     finally:
-        hexapod.close()
+        hexapod.disconnect()

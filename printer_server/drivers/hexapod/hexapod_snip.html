@@ -1,25 +1,3 @@
-{% extends "base.html" %}
-
-{% block title %}Manual Control{% endblock %}
-
-{% block styles %}
-    {{ super() }}
-    <link href="{{ url_for('static', filename='styles/manual_control.css') }}" rel="stylesheet">
-{% endblock %}
-
-{% block scripts %}
-    {{super()}}
-    <script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='lib/plotly-1.54.6.min.js') }}"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="{{ url_for('static', filename='manual_control.js') }}"></script>
-{% endblock %}
-
-{% block station_state %}
-    <h3 id='hexapod-state' style="display: inline"> - Uninitialized - </h3>
-{% endblock %}
-
-{% block content %}
 <div class="centered_section">
     <div class="central_column">
         <div class="opposite_sides_section">
@@ -42,13 +20,17 @@
                             <input type="text" id="pivot_R_state_input" placeholder="Position (mm)">
                         </div>
                         <div class="col btn-group">
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="pivot_R_-10">-10</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="pivot_R_-1">-1</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="pivot_R_+1">+1</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="pivot_R_+10">+10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="pivot_R_-10">-10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="pivot_R_-1">-1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="pivot_R_+1">1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="pivot_R_+10">10</button>
                         </div>
                     </div>
-    
+
                     <div class="row">
                         <div class="col">
                             <h5>S axis (Y) -</h5>
@@ -60,13 +42,17 @@
                             <input type="text" id="pivot_S_state_input" placeholder="Position (mm)">
                         </div>
                         <div class="col btn-group">
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="pivot_S_-10">-10</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="pivot_S_-1">-1</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="pivot_S_+1">+1</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="pivot_S_+10">+10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="pivot_S_-10">-10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="pivot_S_-1">-1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="pivot_S_+1">1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="pivot_S_+10">10</button>
                         </div>
                     </div>
-    
+
                     <div class="row">
                         <div class="col">
                             <h5>T axis (Z) -</h5>
@@ -78,17 +64,21 @@
                             <input type="text" id="pivot_T_state_input" placeholder="Position (mm)">
                         </div>
                         <div class="col btn-group">
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="pivot_T_-10">-10</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="pivot_T_-1">-1</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="pivot_T_+1">+1</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="pivot_T_+10">+10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="pivot_T_-10">-10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="pivot_T_-1">-1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="pivot_T_+1">1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="pivot_T_+10">10</button>
                         </div>
                     </div>
                 </div>
                 <button class="btn btn-outline-success" id="set_pivot_btn">SET PIVOT POINT</button>
             </div>
-            
-            <div class="bordered_section">  
+
+            <div class="bordered_section">
                 <h3>Rotational Axes</h3>
                 <div class="container">
                     <div class="row">
@@ -96,52 +86,76 @@
                             <h5>U axis -</h5>
                         </div>
                         <div class="col">
-                            <h5 class="col text-right" id="rotation_U_state">0.0 &deg</h5>
+                            <h5 class="col text-right" id="rotation_U_state">0 m&deg</h5>
                         </div>
                         <div class="col">
-                            <input type="text" id="rotation_U_state_input" placeholder="Angle (degrees)">
+                            <input type="text" id="rotation_U_state_input" placeholder="Angle (mdeg)">
                         </div>
                         <div class="col btn-group">
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="rotation_U_-1">-1&deg</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="rotation_U_-.1">-0.1&deg</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="rotation_U_+.1">+0.1&deg</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="rotation_U_+1">+1&deg</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_U_-100">-100</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_U_-10">-10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_U_-1">-1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_U_+1">1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_U_+10">10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_U_+100">100</button>
                         </div>
                     </div>
-    
+
                     <div class="row">
                         <div class="col">
                             <h5>V axis -</h5>
                         </div>
                         <div class="col">
-                            <h5 class="col text-right" id="rotation_V_state">0.0 &deg</h5>
+                            <h5 class="col text-right" id="rotation_V_state">0 m&deg</h5>
                         </div>
                         <div class="col">
-                            <input type="text" id="rotation_V_state_input" placeholder="Angle (degrees)">
+                            <input type="text" id="rotation_V_state_input" placeholder="Angle (mdeg)">
                         </div>
                         <div class="col btn-group">
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="rotation_V_-1">-1&deg</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="rotation_V_-.1">-0.1&deg</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="rotation_V_+.1">+0.1&deg</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="rotation_V_+1">+1&deg</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_V_-100">-100</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_V_-10">-10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_V_-1">-1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_V_+1">1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_V_+10">10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_V_+100">100</button>
                         </div>
                     </div>
-    
+
                     <div class="row">
                         <div class="col">
                             <h5>W axis -</h5>
                         </div>
                         <div class="col">
-                            <h5 class="col text-right" id="rotation_W_state">0.0 &deg</h5>
+                            <h5 class="col text-right" id="rotation_W_state">0 m&deg</h5>
                         </div>
                         <div class="col">
-                            <input type="text" id="rotation_W_state_input" placeholder="Angle (degrees)">
+                            <input type="text" id="rotation_W_state_input" placeholder="Angle (mdeg)">
                         </div>
                         <div class="col btn-group">
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="rotation_W_-1">-1&deg</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="rotation_W_-.1">-0.1&deg</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="rotation_W_+.1">+0.1&deg</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="rotation_W_+1">+1&deg</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_W_-100">-100</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_W_-10">-10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_W_-1">-1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_W_+1">1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_W_+10">10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="rotation_W_+100">100</button>
                         </div>
                     </div>
                 </div>
@@ -152,52 +166,88 @@
                             <h5>X axis -</h5>
                         </div>
                         <div class="col">
-                            <h5 class="col text-right" id="translation_X_state">0.0mm</h5>
+                            <h5 class="col text-right" id="translation_X_state">0um</h5>
                         </div>
                         <div class="col">
-                            <input type="text" id="translation_X_state_input" placeholder="Position (mm)">
+                            <input type="text" id="translation_X_state_input" placeholder="Position (um)">
                         </div>
                         <div class="col btn-group">
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="translation_X_-10">-10</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="translation_X_-1">-1</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="translation_X_+1">+1</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="translation_X_+10">+10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_X_-1000">-1000</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_X_-100">-100</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_X_-10">-10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_X_-1">-1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_X_+1">1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_X_+10">10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_X_+100">100</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_X_+1000">1000</button>
                         </div>
                     </div>
-    
+
                     <div class="row">
                         <div class="col">
                             <h5>Y axis -</h5>
                         </div>
                         <div class="col">
-                            <h5 class="col text-right" id="translation_Y_state">0.0mm</h5>
+                            <h5 class="col text-right" id="translation_Y_state">0um</h5>
                         </div>
                         <div class="col">
-                            <input type="text" id="translation_Y_state_input" placeholder="Position (mm)">
+                            <input type="text" id="translation_Y_state_input" placeholder="Position (um)">
                         </div>
                         <div class="col btn-group">
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="translation_Y_-10">-10</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="translation_Y_-1">-1</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="translation_Y_+1">+1</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="translation_Y_+10">+10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Y_-1000">-1000</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Y_-100">-100</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Y_-10">-10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Y_-1">-1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Y_+1">1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Y_+10">10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Y_+100">100</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Y_+1000">1000</button>
                         </div>
                     </div>
-    
+
                     <div class="row">
                         <div class="col">
                             <h5>Z axis -</h5>
                         </div>
                         <div class="col">
-                            <h5 class="col text-right" id="translation_Z_state">0.0mm</h5>
+                            <h5 class="col text-right" id="translation_Z_state">0um</h5>
                         </div>
                         <div class="col">
-                            <input type="text" id="translation_Z_state_input" placeholder="Position (mm)">
+                            <input type="text" id="translation_Z_state_input" placeholder="Position (um)">
                         </div>
                         <div class="col btn-group">
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="translation_Z_-10">-10</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="translation_Z_-1">-1</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="translation_Z_+1">+1</button>
-                            <button type="button" onclick="step_axis(this)" class="btn btn-outline-info" id="translation_Z_+10">+10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Z_-1000">-1000</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Z_-100">-100</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Z_-10">-10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Z_-1">-1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Z_+1">1</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Z_+10">10</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Z_+100">100</button>
+                            <button type="button" class="btn btn-outline-info hexapod-cntrl-btn"
+                                id="translation_Z_+1000">1000</button>
                         </div>
                     </div>
                 </div><br>
@@ -206,10 +256,8 @@
                     <button class="btn btn-outline-danger" id="stop_motion_btn">STOP MOTION</button>
                 </div>
             </div>
-            
+
         </div>
     </div>
 </div>
-{% endblock %}
-        
-        
+<script src="{{ url_for('manual_controls.static', filename='hexapod/hexapod_snip.js') }}"></script>
