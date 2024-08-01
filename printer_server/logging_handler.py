@@ -11,7 +11,7 @@ from printer_server.models import ServerLog
 from printer_server.settings import Config
 
 host = Config.HOSTNAME
-fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(shortname)-24s  %(message)s  "
+fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(shortname)-30s  %(message)s  "
 
 
 def dummy_log(f):
