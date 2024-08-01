@@ -58,11 +58,14 @@ void setup() {
   myIMU.setGyroRange(125);
 
   for (int i = 0; i < 10; i++){
-    x_offset = myIMU.readFloatAccelX();
-    y_offset = myIMU.readFloatAccelY();
-    z_offset = myIMU.readFloatAccelZ();
+    x_offset += myIMU.readFloatAccelX();
+    y_offset += myIMU.readFloatAccelY();
+    z_offset += myIMU.readFloatAccelZ();
     delay(10);
   }
+  x_offset = x_offset/10;
+  y_offset = y_offset/10;
+  z_offset = z_offset/10;
 }
 
 void loop() {
