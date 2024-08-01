@@ -1,7 +1,10 @@
+import logging
 from printer_server.logging_handler import dummy_log
 
 class MKS946_dummy():
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, log_level=logging.DEBUG, **kwargs):
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
         self.connected = None
 
     @dummy_log

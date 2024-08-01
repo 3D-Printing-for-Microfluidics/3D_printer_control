@@ -1,9 +1,13 @@
+import logging
 from printer_server.logging_handler import dummy_log
 
 
 class Accelerometer_dummy:
     @dummy_log
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, log_level=logging.DEBUG, **kwargs):
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+        
         self.connected = None
         self.running = False
 

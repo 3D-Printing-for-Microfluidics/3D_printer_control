@@ -1,9 +1,12 @@
+import logging
 from printer_server.logging_handler import dummy_log
 
 
 class GPIO_dummy:
     @dummy_log
-    def __init__(self):
+    def __init__(self, log_level=logging.DEBUG, **kwargs):
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
         self.film_relay_state = None
 
     @dummy_log
