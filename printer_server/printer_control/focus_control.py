@@ -102,8 +102,8 @@ class FocusControl(PrintControl):
         if need_to_shift_image:
             self.image = shift_image(self.image, x=um_to_px(self.defocus_um))
         
-        if self.defocus_um != 0:
-            self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position + self.defocus_um/1000, join=False)
+        # if self.defocus_um != 0:
+        self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position + self.defocus_um/1000, join=False)
         return super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, light_engine):
@@ -116,8 +116,8 @@ class FocusControl(PrintControl):
     def post_exposure_tasks(self, light_engine, msg):
         """If layer is defocused, return KDC to focus position"""
         # fix focus if this exposure was defocused
-        if self.defocus_um != 0:
-            self.focus_stage.threadedFocusMove(log, self.focused_position, join=True)
+        # if self.defocus_um != 0:
+        #     self.focus_stage.threadedFocusMove(log, self.focused_position, join=True)
         super().post_exposure_tasks(light_engine, msg)
 
     def post_print_tasks(self):
