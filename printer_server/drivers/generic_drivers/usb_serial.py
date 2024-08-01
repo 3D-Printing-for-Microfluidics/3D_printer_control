@@ -5,6 +5,17 @@ import serial
 import logging
 import serial.tools.list_ports
 
+# first_load = True
+# if first_load:
+#     first_load = False
+#     ports = list(serial.tools.list_ports.comports())
+#     print("USB:")
+#     for p in ports:
+#         print(f"\t{p.hwid}")
+#         print(f"\t{p.vid}:{p.pid}:{p.serial_number}")
+#         print(f"\t{p.manufacturer} {p.product}")
+#         print("\t")
+
 class USBSerial(serial.Serial):
     def __init__(self, vid=None, pid=None, sn=None, baudrate=115200, timeout=None, line_ending='\r', logger=logging.getLogger(__name__)):
         super().__init__(baudrate=baudrate, timeout=timeout)
@@ -20,12 +31,6 @@ class USBSerial(serial.Serial):
     def findUsbPort(self, vid, pid, sn=None):
         ports = list(serial.tools.list_ports.comports())
         for p in ports:
-            self.log.debug(p.hwid)
-            self.log.debug(p.vid)
-            self.log.debug(p.pid)
-            self.log.debug(p.serial_number)
-            self.log.debug(p.manufacturer)
-            self.log.debug(p.product)
             if p.vid == vid and p.pid == pid:
                 if sn is None or sn.upper() in p.serial_number:
                     self.log.debug("Found '%s %s' at '%s'", p.manufacturer, p.product, p.device)

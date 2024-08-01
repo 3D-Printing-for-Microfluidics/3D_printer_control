@@ -148,18 +148,19 @@
         }
     },
     "spectrometer": {
-        "dummy": true,
+        "dummy": false,
         "serial num": "",
-        "default_integration_time": 1000,
+        "default_integration_time": 25,
         "default_number_of_averages": 5
     },
     "photodiode": {
-        "dummy": true,
+        "dummy": false,
         "beam_diameter": 0.05,
         "default_wavelength": 365,
         "attenuation_db": 0,
         "vendor_id": 4883,
-        "product_id": 32882
+        "product_id": 32882,
+        "serial_number": "1928351"
     },
     "environmental_sensors": {
         "dummy": true,
@@ -199,8 +200,8 @@
         "address": "192.168.0.10",
         "port": 5000,
         "dual_led": false,
-        "leds": [
-            "365nm"
+        "leds_nm": [
+            365
         ],
         "resolution": [
             2560,

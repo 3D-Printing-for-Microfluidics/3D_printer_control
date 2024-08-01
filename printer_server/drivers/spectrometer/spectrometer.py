@@ -4,6 +4,13 @@ import logging
 import numpy as np
 import seabreeze.spectrometers as sb
 
+# first_load = True
+# if first_load:
+#     first_load = False
+#     print("Seabreeze:")
+#     print(f"\t{sb.list_devices()}")
+#     print("\t")
+
 class Spectrometer:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.log = logging.getLogger(__name__)

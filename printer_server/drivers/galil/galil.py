@@ -11,6 +11,13 @@ from printer_server.async_file_handler import async_file_hander
 from printer_server.threading_wrapper import Thread
 from printer_server.drivers.generic_drivers import BPStageDriver, FocusStageDriver, XYStageDriver
 
+# first_load = True
+# if first_load:
+#     first_load = False
+#     print("Galil:")
+#     print(f"\t{gclib.py().GAddresses()}")
+#     print("\t")
+
 class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def __init__(
         self,

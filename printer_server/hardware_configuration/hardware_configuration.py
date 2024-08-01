@@ -178,7 +178,7 @@ class Printer3D:
 
             if config_dict["visitech"]["dummy"]:
                 self.visitech = Visitech_dummy(
-                    config_dict["visitech"]["leds"],
+                    config_dict["visitech"]["leds_nm"],
                     log_level=default_log_level,
                     dual_led=config_dict["visitech"]["dual_led"],)
             else:

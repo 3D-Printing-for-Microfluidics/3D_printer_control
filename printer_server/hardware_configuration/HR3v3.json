@@ -81,8 +81,8 @@
         "address": "192.168.0.10",
         "port": 5000,
         "dual_led": false,
-        "leds": [
-            "365nm"
+        "leds_nm": [
+            365
         ],
         "resolution": [
             2560,

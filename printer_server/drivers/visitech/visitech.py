@@ -85,7 +85,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
         self.exposure_time = 0
         self.led_on = False
         self.dual_led = config_dict["dual_led"]
-        self.leds = config_dict["leds"]
+        self.leds = config_dict["leds_nm"]
         self.suppress_ocp_error = False
 
     def initialize(self):

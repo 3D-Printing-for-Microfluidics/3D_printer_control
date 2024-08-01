@@ -140,9 +140,9 @@
         "address": "192.168.0.10",
         "port": 5000,
         "dual_led": true,
-        "leds": [
-            "405nm",
-            "365nm"
+        "leds_nm": [
+            405,
+            365
         ],
         "resolution": [
             2560,
@@ -153,8 +153,8 @@
         "dummy": false,
         "vendor_id": "0x0451",
         "product_id": "0xC900",
-        "leds": [
-            "365nm"
+        "leds_nm": [
+            365
         ],
         "resolution": [
             1920,

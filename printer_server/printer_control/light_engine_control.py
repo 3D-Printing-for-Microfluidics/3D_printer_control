@@ -17,9 +17,9 @@ def getLightEngineFromJSON(light_engine):
 def getLEDFromJSON(light_engine):
     led = 0
     _light_engine = getLightEngineFromJSON(light_engine)
-    if len(config_dict[_light_engine]["leds"]) > 1:
-        for i, wavelength in enumerate(config_dict[_light_engine]["leds"]):
-            if wavelength in light_engine:
+    if len(config_dict[_light_engine]["leds_nm"]) > 1:
+        for i, wavelength in enumerate(config_dict[_light_engine]["leds_nm"]):
+            if str(wavelength) in light_engine:
                 led = i
                 break
     return led
