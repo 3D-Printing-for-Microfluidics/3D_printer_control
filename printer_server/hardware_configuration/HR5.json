@@ -180,7 +180,7 @@
         "measurement_period_ms": 100
     },
     "loadcell": {
-        "dummy": true,
+        "dummy": false,
         "hwid": "PID=16C0:0483 SER=5712360",
         "vendor_id": 5824,
         "product_id": 1155,

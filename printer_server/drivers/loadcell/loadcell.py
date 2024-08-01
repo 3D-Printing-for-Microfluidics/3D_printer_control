@@ -1,3 +1,4 @@
+import time
 import logging
 import datetime
 from serial import SerialException
@@ -18,7 +19,7 @@ class LoadCell(USBSerial):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"],  baudrate=config_dict["baudrate"], timeout=1, line_ending='\n', logger=self.log)
+        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"],  baudrate=config_dict["baudrate"], timeout=0.1, line_ending='\n', logger=self.log)
 
         self.config_dict = config_dict
         self.currentData = []
@@ -42,15 +43,14 @@ class LoadCell(USBSerial):
     
     def initialize(self):
         self.loadcell_stop()
-        self.flush_buffers()
-        self.log.debug("%s", self.set_sample_period(int(self.config_dict["sample_period_us"])))
+        time.sleep(0.1)
+        us = int(self.config_dict["sample_period_us"])
+        self.log.debug("Period set to '%s'", us)
+        self.set_sample_period(us)
 
     def disconnect(self):
         if self.connected:
-            if self.running:
-                self.running = False
-                self.thread.join()
-                self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
+            self.stop()
         super().disconnect()
 
     def start(self):
@@ -68,6 +68,7 @@ class LoadCell(USBSerial):
                 self.start_time = datetime.datetime.now() - datetime.timedelta(
                     milliseconds=loadcell_time
                 )
+            time.sleep(0.1)
             self.thread.start()
 
     def set_log_file(self, filename):
@@ -89,9 +90,7 @@ class LoadCell(USBSerial):
             self.running = False
             self.thread.join()
             self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
-
-        self.flush_buffers()
-
+        time.sleep(0.1)
         self.log.info("Loadcell paused")
 
     def stop(self):
@@ -105,8 +104,7 @@ class LoadCell(USBSerial):
             self.thread.join()
             self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
 
-        self.flush_buffers()
-
+        time.sleep(0.1)
         self.log.info("Loadcell stopped")
         self.start_time = 0
 
@@ -154,6 +152,16 @@ class LoadCell(USBSerial):
         """
         Threading loop
         """
+        self.log.debug("Starting loop")
+        self.flush_buffers()
+        ret = self.read_bytes(1)
+        while ret != b'\n':
+            if not self.running:
+                return
+            bad_data = True
+            ret = self.read_bytes(1)
+        self.log.debug("Reached first new line")
+
         front_end_counter = 0
         front_end_array = []
         while self.running:
@@ -173,6 +181,8 @@ class LoadCell(USBSerial):
                 bad_data = False
                 ret = self.read_bytes(1)
                 while ret != b'\n':
+                    if not self.running:
+                        return
                     bad_data = True
                     ret = self.read_bytes(1)
                 if bad_data:
@@ -223,6 +233,7 @@ class LoadCell(USBSerial):
         """
         Sample at a frequency of freq (in Hz)
         """
+        self.flush_buffers()
         return self.send("b")
 
     def loadcell_pause(self):
@@ -230,6 +241,8 @@ class LoadCell(USBSerial):
         Pause sampling
         """
         self.send("p", recieve=False)
+        time.sleep(0.1)
+        self.flush_buffers()
         return
 
     def loadcell_stop(self):
@@ -237,11 +250,13 @@ class LoadCell(USBSerial):
         Stop sampling
         """
         self.send("e", recieve=False)
+        time.sleep(0.1)
+        self.flush_buffers()
         return
 
     def set_sample_period(self, us):
         """
         Set the sampling frequency to freq_hz (in hz)
         """
-        self.log.debug("Period set to '%s'", us)
+        self.flush_buffers()
         return self.send("f {}".format(us)), us
