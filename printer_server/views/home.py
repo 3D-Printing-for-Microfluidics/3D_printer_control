@@ -24,6 +24,7 @@ from printer_server.printer_control.print_control import PrintControl
 
 parent_classes = []
 
+# Loadcell needs to be before bp
 if "loadcell" in config_dict:
     from printer_server.printer_control.loadcell_control import LoadcellControl
     parent_classes.append(LoadcellControl)
