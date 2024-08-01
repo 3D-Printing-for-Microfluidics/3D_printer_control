@@ -25,7 +25,6 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
 
         self.config_dict = config_dict
         self.connected = None
-        self.initialized = False
         self.axes = config_dict["axes"]
         self.axes_common_names = config_dict["axes_common_names"]
 
@@ -59,14 +58,12 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         referenced_axes_flags = self.controller.qFRF() # ourput: referenced_axes_flags: OrderedDict([('X', True), ('Y', True), ('Z', True), ('U', True), ('V', True), ('W', True)])
         if False in referenced_axes_flags.values():
             self.reference_axes()
-        self.initialized = True
 
     def disconnect(self):
         """ Close connection to the hexapod
         """
         if self.connected is not None and self.connected and self.socket is not None:
             self.connected = None
-            self.initialized = False
             self.controller.CloseConnection()
             self.log.info("Disconnected from hexapod")
 
@@ -241,10 +238,9 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             positions_raw = self.controller.qPOS()
             return positions_raw
         else:
-            a = self.convertAxis(axis)
-            positions_raw = self.controller.qPOS(a)
-            position = round(positions_raw[a],3)
-            self.log.info(f"Get {axis}/{a} pos: {position}")
+            positions_raw = self.controller.qPOS(axis)
+            position = round(positions_raw[axis],3)
+            self.log.info(f"Get {axis} pos: {position}")
             return position
 
     def hard_stop(self):
