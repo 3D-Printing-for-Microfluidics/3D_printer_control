@@ -43,7 +43,6 @@ def get_relay_status(emit=False):
 
 @socketio.on("mks_switch_relay", namespace="/manual")
 def switchRelay(message):
-    print(message)
     if message["relay"] in config_dict["mks"]["relays"].keys():
         relay_num = config_dict["mks"]["relays"][message["relay"]]["relay_num"]
         if message["state"]:

@@ -63,6 +63,7 @@ class MKS946(USBSerial):
         self.pressures = None
         self.thread = Thread(self.log, name="mks_poll_thread", target=self.loop)
         self.sendLock = threading.Lock()
+        self.relay_requests = [0,0,0,0,0,0,0,0,0,0,0,0,0]
 
     def initialize(self):
         if self.connected:
@@ -78,7 +79,7 @@ class MKS946(USBSerial):
                     self.set_relay_hysteresis(relay_num, relay["hysterisis"])
                     self.set_relay_mode(relay_num, 'ENABLE')
                 else:
-                    self.set_relay_mode(relay_num, 'CLEAR')
+                    self.set_relay_mode(relay_num, 'CLEAR', force=True)
             self.start_thread()
             self.log.info("MKS initialized")
 
@@ -88,7 +89,7 @@ class MKS946(USBSerial):
             self.log.info("Clearing relays")
             for _, relay in self.config_dict["relays"].items():
                 if relay["mode"] != "auto":
-                    self.set_relay_mode(relay['relay_num'], 'CLEAR')
+                    self.set_relay_mode(relay['relay_num'], 'CLEAR', force=True)
         super().disconnect()
 
     def start_thread(self):
@@ -387,13 +388,25 @@ class MKS946(USBSerial):
         rsp = self.query("EN", n=relay)
         return rsp
 
-    def set_relay_mode(self, relay, state):
-        self.log.info("Set relay %s to %s", relay, state)
+    def set_relay_mode(self, relay, state, force=False):
+        # self.log.info("Set relay %s to %s", relay, state)
         if relay < 1 or relay > 12:
             return False
         if state != "SET" and state != "ENABLE" and state != "CLEAR":
             return False
-        return self.set("EN", n=relay, parameter=state)
+        
+        if force:
+            self.relay_requests[relay] = 0
+        if state == "SET":
+            self.relay_requests[relay] += 1
+        elif state == "CLEAR":
+            if self.relay_requests[relay] > 0:
+                self.relay_requests[relay] -= 1
+        else:
+            self.relay_requests[relay] = None
+        
+        if (state == "SET" and self.relay_requests[relay] == 1) or (state == "CLEAR" and self.relay_requests[relay] == 0) or (state == "ENABLE"):
+            return self.set("EN", n=relay, parameter=state)
 
     '''
     SSm
