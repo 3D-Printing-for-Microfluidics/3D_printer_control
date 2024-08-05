@@ -57,8 +57,8 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         self.home_all_axes()
         self.set_pivot_point(self.config_dict["pivot_x_mm"],self.config_dict["pivot_y_mm"],self.config_dict["pivot_z_mm"])
 
-    def absMoveTTR(self, mdeg=None, axis=None):
-        self.move_to_angle_axis(self.convertAxis(axis), mdeg/1000)
+    def absMoveTTR(self, deg=None, axis=None):
+        self.move_to_angle_axis(self.convertAxis(axis), deg)
 
     def setup_log_file(self, filename):
         pass

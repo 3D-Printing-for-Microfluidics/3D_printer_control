@@ -20,7 +20,7 @@ class TTRStageDriver:
     def home(self):
         log.warn("Function not implemented. Using abstract TTRStageDriver class")
 
-    def absMoveTTR( self, mdeg=None, axis=None):
+    def absMoveTTR( self, deg=None, axis=None):
         log.warn("Function not implemented. Using abstract XYStageDriver class")
 
     def initialize_and_positionTTR(self, tip, tilt, rotate):
@@ -57,7 +57,7 @@ class TTRStageDriver:
                 name="xy_stage_driver_tip_thread",
                 target=self.absMoveTTR,
                 kwargs={
-                    "mdeg": tip,
+                    "deg": tip,
                     "axis": "Tip",
                 },
             )
@@ -68,7 +68,7 @@ class TTRStageDriver:
                 name="xy_stage_driver_tilt_thread",
                 target=self.absMoveTTR,
                 kwargs={
-                    "mdeg": tilt,
+                    "deg": tilt,
                     "axis": "Tilt",
                 },
             )
@@ -79,7 +79,7 @@ class TTRStageDriver:
                 name="xy_stage_driver_rotate_thread",
                 target=self.absMoveTTR,
                 kwargs={
-                    "mdeg": rotate,
+                    "deg": rotate,
                     "axis": "Rotate",
                 },
             )
