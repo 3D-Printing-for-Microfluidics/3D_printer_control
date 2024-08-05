@@ -11,3 +11,8 @@ def get_photodiode_power(message, emit=True):
     if emit:
         socketio.emit("photodiode_return_power", {"power":power}, namespace="/manual")
     return power
+
+@socketio.on("photodiode_zero", namespace="/manual")
+def zero_photodiode():
+    photodiode.zero()
+    socketio.emit("photodiode_done", namespace="/manual")

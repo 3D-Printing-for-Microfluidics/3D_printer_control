@@ -1,4 +1,5 @@
 # Create photodiode instrument 
+import time
 import pyvisa
 import usbtmc
 import atexit
@@ -94,6 +95,15 @@ class Photodiode:
         if self.power_meter:
             self.power_meter.sense.correction.loss.input.magnitude = attenuation
             self.log.debug("Set attenuation: %s dB", self.power_meter.sense.correction.loss.input.magnitude)
+
+    def zero(self):
+        # zeros the photodiode
+        if self.power_meter:
+            self.log.debug("Zero point: %s", self.power_meter.sense.correction.collect.zero.magnitude)
+            self.power_meter.sense.correction.collect.zero.initiate()
+            while bool(self.power_meter.sense.correction.collect.zero.state):
+                time.sleep(0.01)
+            self.log.debug("Zero point: %s", self.power_meter.sense.correction.collect.zero.magnitude)
 
     def get_power_density(self):
         # ## also in init 

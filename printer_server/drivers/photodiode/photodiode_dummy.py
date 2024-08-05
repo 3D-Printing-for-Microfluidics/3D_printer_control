@@ -33,6 +33,10 @@ class Photodiode_dummy:
     @dummy_log
     def set_attenuation_db(self, attenuation):
         self.log.debug("Set attenuation to %s dB", attenuation)
+
+    @dummy_log
+    def zero(self):
+        pass
     
     @dummy_log
     def get_power_density(self):      
