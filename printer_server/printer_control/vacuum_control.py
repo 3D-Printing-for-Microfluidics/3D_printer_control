@@ -67,16 +67,17 @@ class VacuumControl(PrintControl):
         self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vacuum"), True)
         self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vent2"), False)
         for p, w, h in zip(set_pressures, waits, hysteresis):
+            log.info("Degassing to %s Torr and holding for %s seconds", p, w)
             t = 0.0
-            in_hyst = True
             while t < w and self.degass_running:
                 if self.mks.pressures[1] >= h:
                     in_hyst = True
-                while (in_hyst and self.mks.pressures[1] >= p and self.degass_running):
                     self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), True)
+                while (in_hyst and self.mks.pressures[1] >= p and self.degass_running):
                     time.sleep(0.1)
-                in_hyst = False
-                self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), False)
+                if in_hyst:
+                    in_hyst = False
+                    self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), False)
                 time.sleep(0.1)
                 t += 0.1
         self.degass_state = "finish"
