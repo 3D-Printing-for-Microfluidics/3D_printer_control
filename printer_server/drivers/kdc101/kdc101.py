@@ -8,7 +8,7 @@ class KDC101(USBSerial, FocusStageDriver):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], baudrate=config_dict["baudrate"], timeout=0.1, logger=self.log)
+        super().__init__("KDC", vid=config_dict["vendor_id"], pid=config_dict["product_id"], baudrate=config_dict["baudrate"], timeout=0.1, logger=self.log)
 
         self.homed = False
         self.Device_Unit_SF = 34304.0  # pg 34 of protocol PDF (as of Issue 23)
@@ -72,7 +72,7 @@ class KDC101(USBSerial, FocusStageDriver):
         self.write_bytes(
             pack("<HBBBB", 0x0443, self.Channel, 0x00, self.destination, self.source)
         )
-        self.log.info("Homing stage...")
+        self.log.info("Homing KDC...")
 
         # Confirm stage homed before advancing; MGMSG_MOT_MOVE_HOMED
         Rx = ""
@@ -98,7 +98,7 @@ class KDC101(USBSerial, FocusStageDriver):
             attempts = attempts + 1
 
         self.homed = True
-        self.log.info("Stage Homed")
+        self.log.info("Homed KDC")
         self.flush_buffers()
 
     def move(self, pos, microns=True, relative=True):

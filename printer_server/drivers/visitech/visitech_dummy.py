@@ -245,7 +245,7 @@ class Visitech_dummy(LightEngineDriver):
 
         min_t = 4.046
         max_t = 10000
-        self.log.info(
+        self.log.debug(
             "Setting up exposure at %s for %s ms at power setting %s. Repeat %s",
             self.leds[led_num],
             exposure_time_ms,
@@ -273,22 +273,27 @@ class Visitech_dummy(LightEngineDriver):
     @dummy_log
     def perform_exposure(self):
         self.led_on = True
-        if self.exposure_time != 0:
-            self.log.info("Exposing for %s ms", self.exposure_time)
+        if self.repeats == 0:
+            self.log.info(
+                "Exposing %s at a power of %s indefinatly",
+                self.led,
+                self.led_power
+            )
             self.start_sequencer()
-            time.sleep(self.exposure_time * 1e-3)
-        self.led_on = False
+        else:
+            if self.exposure_time != 0:
+                self.log.info(
+                    "Exposing %s for %s ms at a power of %s",
+                    self.led,
+                    self.exposure_time,
+                    self.led_power
+                )
+                self.start_sequencer()
+                time.sleep(self.exposure_time * 1e-3)
+            self.led_on = False
 
     @dummy_log
     def project(self, exposure, power, repeats=1, led_num=0):
-        self.log.info(
-            "Exposing %s for %s ms at power setting %s. Repeat %s",
-            self.leds[led_num],
-            exposure,
-            power,
-            repeats,
-        )
-
         if self.dual_led:
             if led_num == 0:
                 self.led_driver_enable(led_num=0)
@@ -300,12 +305,23 @@ class Visitech_dummy(LightEngineDriver):
         self.set_led_amplitude(power, led_num=led_num)
         self.led_on = True
         if repeats == 0:  # if continuous display is desired
+            self.log.info(
+                "Exposing %s at a power of %s indefinatly",
+                self.leds[led_num],
+                power
+            )
             # this provides the minimum blanking of 233 us of the full 33333 us cycle
             # (at 30Hz on HDMI)
             self.set_sequencer_lut_definition(33100, 0, 0, 8, 0, 0, 0)
             self.set_sequencer_lut_config(repeats=0)
             self.start_sequencer()  # sequencer will be stopped on program exit
         else:  # normal display is desired
+            self.log.info(
+                "Exposing %s for %s ms at a power of %s",
+                self.leds[led_num],
+                exposure,
+                power
+            )
             for t in self.split_exposure_time(exposure):
                 # the TI board expects exposure in microseconds
                 self.set_sequencer_lut_definition(exposure=int(t * 1000))

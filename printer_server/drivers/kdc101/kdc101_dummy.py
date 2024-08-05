@@ -33,15 +33,10 @@ class KDC101_dummy(FocusStageDriver):
         if self.connected is None:
             self.connected = False
             self.port = self.find_device()
-            if self.port is None:
-                msg = "Thor Labs stage not found!"
-                self.log.critical(msg)
-                return False
             self.serial_handle = "dummy_serial_handle"
             self.getHardwareInfo()
             self.enableStage(enable=True)
             self.connected = True
-            self.log.info("Connected to Thor Labs stage")
             return True
         else:
             while self.connected is False:
@@ -53,7 +48,6 @@ class KDC101_dummy(FocusStageDriver):
             if self.serial_handle is not None:
                 self.enableStage(enable=False)
                 self.serial_handle = None
-                self.log.info("Disconnected from Thor Labs stage")
 
     # @dummy_log
     def setup_log_file(self, filename):
@@ -96,7 +90,6 @@ class KDC101_dummy(FocusStageDriver):
     @dummy_log
     def home(self):
         self.homed = True
-        self.log.info("Stage Homed")
         self.position = 0.0
 
     @dummy_log

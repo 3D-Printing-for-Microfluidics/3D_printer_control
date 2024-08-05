@@ -7,11 +7,12 @@ class MKSTeensy(USBSerial):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__(vid=config_dict["teensy_vendor_id"], pid=config_dict["teensy_product_id"], sn=config_dict["teensy_serial_number"],  baudrate=config_dict["teensy_baudrate"], logger=self.log)
+        super().__init__("MKSTeensy", vid=config_dict["teensy_vendor_id"], pid=config_dict["teensy_product_id"], sn=config_dict["teensy_serial_number"],  baudrate=config_dict["teensy_baudrate"], logger=self.log)
 
         self.sendLock = Lock()
             
     def switch_relay(self, relay_num, state):
+        self.log.info("Set relay %s to %s", relay_num, state)
         if state:
             return self.send(f"H{relay_num}")
         else:
@@ -46,13 +47,16 @@ class MKSTeensy(USBSerial):
                 continue 
     
     def move_crane(self, mm, relative=False):
+        self.log.info("Move crane to %s", mm)
         if relative:
             return self.send(f"MR{mm}")
         else:
             return self.send(f"MA{mm}")
         
     def move_crane_top(self):
+        self.log.info("Move crane to top")
         return self.send("MT")
         
     def move_crane_bottom(self):
+         self.log.info("Move crane to bottom")
          return self.send("MB")

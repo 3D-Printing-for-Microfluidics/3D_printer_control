@@ -28,15 +28,21 @@ class Wintech(LightEngineDriver):
 
     def connect(self, shutdown):
         """Connect to the DMD controller."""
+        self.log.info("Connecting to Wintech...")
         self.connected = self.dmd_controller.connect(int(self.config_dict["vendor_id"], 16), int(self.config_dict["product_id"], 16))
+        self.log.info("Connected to Wintech...")
         return self.connected
 
     def initialize(self):
         """Initialize the DMD controller."""
+        self.log.info("Initializing Wintech...")
         self.dmd_controller.initialize()
+        self.log.info("Initialized Wintech")
 
     def disconnect(self):
+        self.log.info("Disconnecting from Wintech...")
         self.dmd_controller.disconnect()
+        self.log.info("Disconnected from Wintech")
         
     def stop_sequencer(self):
         """
@@ -70,9 +76,10 @@ class Wintech(LightEngineDriver):
         """
         self.repeats = repeat
         self.exposure_time = exposure_time_ms
+        self.led_power = led_power
         min_t = 4.046
         max_t = 10000
-        self.log.info(
+        self.log.debug(
             "Setting up exposure for %s ms at power setting %s. Repeat %s",
             exposure_time_ms,
             led_power,
@@ -100,11 +107,18 @@ class Wintech(LightEngineDriver):
         """
         self.led_on = True
         if self.repeats == 0:
-            self.log.info("Starting exposure")
+            self.log.info(
+                "Exposing at a power of %s indefinatly",
+                self.led_power
+            )
             self.dmd_controller.start_sequence()
         else:
             if self.exposure_time != 0:
-                self.log.info("Exposing for %s ms", self.exposure_time)
+                self.log.info(
+                    "Exposing for %s ms at a power of %s",
+                    self.exposure_time,
+                    self.led_power
+                )
                 self.dmd_controller.start_sequence()
                 time.sleep(self.exposure_time * 0.001 + 0.1)
             self.led_on = False
@@ -121,20 +135,23 @@ class Wintech(LightEngineDriver):
         """
         min_t = 4.046
         max_t = 10000
-        self.log.info(
-            "Exposing for %s ms at a power of %s. Repeat %s.",
-            exposure_time_ms,
-            led_power,
-            repeat,
-        )
         self.dmd_controller.set_led_power(led_power)
         
         if repeat == 0:
+            self.log.info(
+                "Exposing at a power of %s indefinatly",
+                led_power
+            )
             self.led_on = True
             self.dmd_controller.define_pattern(10000)
             self.dmd_controller.configure_pattern_LUT(repeat=repeat)
             self.dmd_controller.start_sequence()
         else:
+            self.log.info(
+                "Exposing for %s ms at a power of %s",
+                exposure_time_ms,
+                led_power
+            )
             if exposure_time_ms == 0:
                 return
             if exposure_time_ms > max_t:

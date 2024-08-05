@@ -55,7 +55,7 @@ class MKS946(USBSerial):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__(vid=config_dict["mks_vendor_id"], pid=config_dict["mks_product_id"], sn=config_dict["mks_serial_number"], baudrate=config_dict["mks_baudrate"], timeout=0.1, logger=self.log)
+        super().__init__("MKS", vid=config_dict["mks_vendor_id"], pid=config_dict["mks_product_id"], sn=config_dict["mks_serial_number"], baudrate=config_dict["mks_baudrate"], timeout=0.1, logger=self.log)
 
         self.config_dict = config_dict
         self.address = config_dict["mks_address"]
@@ -388,6 +388,7 @@ class MKS946(USBSerial):
         return rsp
 
     def set_relay_mode(self, relay, state):
+        self.log.info("Set relay %s to %s", relay, state)
         if relay < 1 or relay > 12:
             return False
         if state != "SET" and state != "ENABLE" and state != "CLEAR":

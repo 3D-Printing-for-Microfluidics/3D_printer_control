@@ -22,9 +22,6 @@ class Keyence_dummy:
     @dummy_log
     def connect(self, shutdown):
         self.connected = False
-        self.log.info(
-            "Connected to Keyence sensor"
-        )
         self.connected = True
         atexit.register(self.disconnect)
         return True
@@ -33,7 +30,6 @@ class Keyence_dummy:
     def disconnect(self):
         if self.connected:
             self.connected = False
-            self.log.info("Disconnected from Keyence sensor")
 
 
     # @dummy_log

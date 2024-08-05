@@ -239,12 +239,12 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         else:
             return self.cntsToMm(int(pos), axis=axis)
 
-    # @dummy_log
+    @dummy_log
     def motorOn(self, axis=None):
         """Turn on the specified axis."""
         pass
 
-    # @dummy_log
+    @dummy_log
     def motorOff(self, axis=None):
         """Turn off the specified axis."""
         a = self.convertAxis(axis)
@@ -257,7 +257,7 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         acc = 1000
         return int(acc) / self.ctspmm[a]
 
-    # @dummy_log
+    @dummy_log
     def setAcceleration(self, acceleration, axis=None):
         """Set the acceleration for the specified axis (mm/sec^2)."""
         a = self.convertAxis(axis)
@@ -270,7 +270,7 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         speed = 1000
         return int(speed) / self.ctspmm[a]
 
-    # @dummy_log
+    @dummy_log
     def setSpeed(self, speed, axis=None):
         """Set the speed for the specified axis (mm/sec)."""
         a = self.convertAxis(axis)
@@ -424,56 +424,48 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         a = self.convertAxis(axis)
         self.log.info("Stop jog on axis %s", a)
 
-    # @dummy_log
+    @dummy_log
     def motionPlanningComplete(self, axis=None):
         """Check if motion planning is complete."""
-        a = self.convertAxis(axis)
-        self.log.info("Motion planning complete for axis %s", a)
+        pass
 
-    # @dummy_log
+    @dummy_log
     def waitForMotionComplete(self, cnts, wait_for_settling=True, axis=None):
         """Blocks execution until the encoder reaches the target value."""
-        a = self.convertAxis(axis)
-        self.log.info("Waiting for motion complete on axis %s to %s counts", a, cnts)
+        pass
 
-    # @dummy_log
+    @dummy_log
     def setup_log_file(self, filename):
         """Set the log file."""
         if self.movement_log is None and filename is not None:
             self.movement_log = str(Path(filename) / "galil_movement_data.csv")
-            self.log.info("Log file set to %s", self.movement_log)
         elif self.movement_log is not None and filename is None:
             self.movement_log = None
 
-    # @dummy_log
+    @dummy_log
     def logging_start(self):
         """Starts collecting position data."""
-        self.logging_running = True
-        self.log.info("Galil logging started")
+        pass
 
-    # @dummy_log
+    @dummy_log
     def logging_stop(self):
         """Stops collecting position data."""
-        self.logging_running = False
-        self.log.info("Galil logging stopped")
+        pass
 
-    # @dummy_log
+    @dummy_log
     def loop(self):
         """Main loop to update positions and log data."""
         while self.thread_running:
             for a in self.axes:
                 self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
-            if self.logging_running and self.movement_log:
-                # self.log.info("Logging data to %s", self.movement_log)
-                pass
             time.sleep(0.01)
 
-    # @dummy_log
+    @dummy_log
     def downloadProgram(self, filename):
         """Download a DMC file to the Galil controller."""
         self.log.info("Downloading '%s' to controller...", filename)
 
-    # @dummy_log
+    @dummy_log
     def interactiveMode(self):
         """Start interactive mode."""
         if not self.connected:

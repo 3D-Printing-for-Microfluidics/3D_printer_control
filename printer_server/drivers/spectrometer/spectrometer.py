@@ -4,13 +4,6 @@ import logging
 import numpy as np
 import seabreeze.spectrometers as sb
 
-# first_load = True
-# if first_load:
-#     first_load = False
-#     print("Seabreeze:")
-#     print(f"\t{sb.list_devices()}")
-#     print("\t")
-
 class Spectrometer:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.log = logging.getLogger(__name__)
@@ -50,12 +43,14 @@ class Spectrometer:
         # use full range of ADC
 
         if i_time is not None:
+            self.log.info("Integration time set to %s ms", i_time)
             i_time = float(i_time)*1000
             if i_time >= self.spectrometer.integration_time_micros_limits[0] or i_time <= self.spectrometer.integration_time_micros_limits[1]:
                 self.spectrometer.integration_time_micros(i_time)
                 return i_time
             return -1
         else:
+            self.log.info("Calculating integration time...")
             i_time = self.config_dict["default_integration_time"]*1000
             self.spectrometer.integration_time_micros(i_time)
             time.sleep(1)
@@ -87,6 +82,7 @@ class Spectrometer:
                 time.sleep(1)
                 intensity = self.get_max_intensity()
                 self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
+            self.log.info("Integration time set to %s ms", i_time)
             return i_time/1000
 
     def get_integration_limits(self):
@@ -102,6 +98,7 @@ class Spectrometer:
     
 
     def get_spectrum(self, num_averages=1):
+        self.log.info("Capturing spectra")
         if num_averages == 1:
             return self.spectrometer.spectrum(correct_dark_counts=True, correct_nonlinearity=True)[:, 25:].tolist()
         else:

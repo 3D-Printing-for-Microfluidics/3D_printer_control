@@ -79,7 +79,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__(host=config_dict["address"], port=config_dict["port"], line_ending="\r\n\r\n", logger=self.log)
+        super().__init__("Visitech", host=config_dict["address"], port=config_dict["port"], line_ending="\r\n\r\n", logger=self.log)
 
         self.repeats = 1
         self.exposure_time = 0
@@ -90,6 +90,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
 
     def initialize(self):
         # set default state for light engine and clear previous errors
+        self.log.info("Initializing Visitech...")
         self.get_sticky_errors(warn="NONE")
         self.set_video_source("HDMI")
         if self.dual_led:
@@ -98,7 +99,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
         else:
             self.set_led_driver_regulation_mode("LIGHT")
         self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
-        self.log.info("Visitech light engine initialized")
+        self.log.info("Initialized Visitech")
 
     def disconnect(self):
         if self.connected is not None and self.connected and self.socket is not None:
@@ -106,7 +107,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
                 self.stop_sequencer()  # make sure DMD is stopped on exit
             except:
                 pass
-            super().disconnect()
+        super().disconnect()
             
 
     def send(self, data):
@@ -737,7 +738,9 @@ class Visitech(EthernetSerial, LightEngineDriver):
             repeat - number of repeats
         """
         self.exposure_time = exposure_time_ms
+        self.led_power = led_power
         self.repeats = repeat
+        self.led = self.leds[led_num]
 
         if self.dual_led:
             if led_num == 0:
@@ -749,7 +752,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
 
         min_t = 4.046
         max_t = 10000
-        self.log.info(
+        self.log.debug(
             "Setting up exposure at %s for %s ms at power setting %s. Repeat %s",
             self.leds[led_num],
             exposure_time_ms,
@@ -780,11 +783,20 @@ class Visitech(EthernetSerial, LightEngineDriver):
         """
         self.led_on = True
         if self.repeats == 0:
-            self.log.info("Starting exposure")
+            self.log.info(
+                "Exposing %s at a power of %s indefinatly",
+                self.led,
+                self.led_power
+            )
             self.start_sequencer()
         else:
             if self.exposure_time != 0:
-                self.log.info("Exposing for %s ms", self.exposure_time)
+                self.log.info(
+                    "Exposing %s for %s ms at a power of %s",
+                    self.led,
+                    self.exposure_time,
+                    self.led_power
+                )
                 self.start_sequencer()
                 time.sleep(self.exposure_time * 1e-3)
             self.led_on = False
@@ -794,14 +806,6 @@ class Visitech(EthernetSerial, LightEngineDriver):
         Call all of the necessary methods to project an image, and block
         until projection is complete.
         """
-
-        self.log.info(
-            "Exposing %s for %s ms at power setting %s. Repeat %s",
-            self.leds[led_num],
-            exposure,
-            power,
-            repeats,
-        )
 
         if self.dual_led:
             if led_num == 0:
@@ -814,12 +818,23 @@ class Visitech(EthernetSerial, LightEngineDriver):
         self.set_led_amplitude(power, led_num=led_num)
         self.led_on = True
         if repeats == 0:  # if continuous display is desired
+            self.log.info(
+                "Exposing %s at a power of %s indefinatly",
+                self.leds[led_num],
+                power
+            )
             # this provides the minimum blanking of 233 us of the full 33333 us cycle
             # (at 30Hz on HDMI)
             self.set_sequencer_lut_definition(33100, 0, 0, 8, 0, 0, 0)
             self.set_sequencer_lut_config(repeats=0)
             self.start_sequencer()  # sequencer will be stopped on program exit
         else:  # normal display is desired
+            self.log.info(
+                "Exposing %s for %s ms at a power of %s",
+                self.leds[led_num],
+                exposure,
+                power
+            )
             for t in self.split_exposure_time(exposure):
                 # the TI board expects exposure in microseconds
                 self.set_sequencer_lut_definition(exposure=int(t * 1000))

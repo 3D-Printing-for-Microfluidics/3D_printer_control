@@ -33,6 +33,11 @@ class Photodiode:
     def connect(self):
         # connect to the photodiode 
         try:
+            self.log.info(f"Connecting ThorlabsPM100...")
+            self.log.debug("Available PYVISA devices:")
+            for r in self.rm.list_resources():
+                self.log.debug("\t%s", r)
+
             self.resource = None
             for r in self.rm.list_resources():
                 if f"{self.vendor_id}" in r and f"{self.product_id}" in r and self.serial_number in r:
@@ -44,7 +49,7 @@ class Photodiode:
             self.power_meter = ThorlabsPM100(inst=self.inst)
             atexit.register(self.disconnect)
             self.connected = True
-            self.log.info(f"Connect to Photodiode (ThorlabsPM100)")
+            self.log.info(f"Connected ThorlabsPM100")
             return True
           
         except Exception as e:
@@ -54,25 +59,13 @@ class Photodiode:
             
     def initialize(self):
        # sending cmds to photodiode to set parameters that I want to set initialy
+        self.log.info(f"Initializing ThorlabsPM100...")
         self.set_wavelength(self.defaultWavelength)
         self.set_attenuation_db(self.attenuation) 
         self.set_beam_diameter(self.beamdiameter)
         self.power_meter.configure.scalar.pdensity() 
-        
-    #    self.power_meter.sense.correction.wavelength = self.defaultWavelength
-    #    self.power_meter.sense.correction.loss.input.magnitude = self.attenuation
-        # self.power_meter.sense.correction.beamdiameter = 0.05
-        # print(f"Dia: {power_meter.sense.correction.beamdiameter}")
+        self.log.info(f"Initialized ThorlabsPM100")
 
-        # # power_meter.sense.average.count = 10
-        # power_meter.configure.scalar.power()
-        # print(f"{power_meter.read * 1000*1000} uW")
-
-        # power_meter.configure.scalar.pdensity()
-        # print(f"{power_meter.read*1000} mW/cm^2")
-
-        # power_meter.configure.scalar.temperature()
-        # print(f"T: {[pwer_meter.read} C")
          
     def disconnect(self):
         # disconnects the photodiode     
@@ -87,20 +80,20 @@ class Photodiode:
         # Args: diameter is float 
         if self.power_meter:
             self.power_meter.sense.correction.beamdiameter = diameter
-            self.log.info("Set diameter: %s um",int(self.power_meter.sense.correction.beamdiameter*1000))    
+            self.log.debug("Set diameter: %s um",int(self.power_meter.sense.correction.beamdiameter*1000))    
         
     def set_wavelength(self, length):
         # sets the operation wavelength in nm
         # args: length is float 
         if self.power_meter:
             self.power_meter.sense.correction.wavelength = length
-            self.log.info("Set wavelength: %s nm", self.power_meter.sense.correction.wavelength)
+            self.log.debug("Set wavelength: %s nm", self.power_meter.sense.correction.wavelength)
             
     def set_attenuation_db(self, attenuation):
         # sets attenuation in dB
         if self.power_meter:
             self.power_meter.sense.correction.loss.input.magnitude = attenuation
-            self.log.info("Set attenuation: %s dB", self.power_meter.sense.correction.loss.input.magnitude)
+            self.log.debug("Set attenuation: %s dB", self.power_meter.sense.correction.loss.input.magnitude)
 
     def get_power_density(self):
         # ## also in init 
@@ -110,22 +103,3 @@ class Photodiode:
             self.log.info("Irradiance is %s mW/cm^2", power_density)
             return power_density
         return None
-    # or the following code: 
-        # power_meter.confivure.scalar.pdensity()
-        # print(f"{power_meter.read*1000} mW/cm^2")
-        
-
-"""       
-beam diameter never changes
-wavelength only changes on the MR1
-what changes among printers? attenuation
-don't put in shape or profile if there is no code to set it
-
-
-Potential variables to put in config_dict. Unsure how to change in hardware.
-- attenuation
-- bandwidth
-- resolution
-- range dynamic
-        
- """      

@@ -33,6 +33,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         """
         if self.connected is None:
             self.connected = False
+            self.log.info(f"Connecting to hexapod...")
             try:    
                 gateway = PISocket(host=self.config_dict["address"], port=self.config_dict["port"])
                 messages = GCSMessages(gateway)
@@ -46,7 +47,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
                 return False
                 
             atexit.register(self.disconnect)
-            self.log.info(f"Connected to hexapod controller")
+            self.log.info(f"Connected to hexapod")
             return True
         else:
             while self.connected is False:
@@ -55,9 +56,11 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
     
     def initialize(self):
         # check if it has been referenced, else do referencing
+        self.log.info(f"Initializing hexapod...")
         referenced_axes_flags = self.controller.qFRF() # ourput: referenced_axes_flags: OrderedDict([('X', True), ('Y', True), ('Z', True), ('U', True), ('V', True), ('W', True)])
         if False in referenced_axes_flags.values():
             self.reference_axes()
+        self.log.info(f"Initialized hexapod")
 
     def disconnect(self):
         """ Close connection to the hexapod
@@ -240,7 +243,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         else:
             positions_raw = self.controller.qPOS(axis)
             position = round(positions_raw[axis],3)
-            self.log.info(f"Get {axis} pos: {position}")
+            self.log.debug(f"Get {axis} pos: {position}")
             return position
 
     def hard_stop(self):

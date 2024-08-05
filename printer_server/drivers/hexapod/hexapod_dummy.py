@@ -28,7 +28,6 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
     def connect(self, shutdown):
         """ Run routine for connecting to the hexapod and reference it if it hasn't been referenced yet upon powerup
         """
-        self.log.info(f"Connected to hexapod controller")
         self.connected = True
 
     def initialize(self):
@@ -38,7 +37,6 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
     def disconnect(self):
         """ Close connection to the hexapod
         """
-        self.log.info("Connection closed")
         self.connected = None
         self.initialized = False
 
@@ -192,7 +190,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         self.pose['U'] = u
         self.pose['V'] = v
         self.pose['W'] = w
-        self.log.info(f"Concurrently adjusted the pose to: \n\t* Translation- 'X': {x}, 'Y': {y}, 'Z': {z}\n\t* Rotation- 'U': {u}, 'V': {v}, 'W': {w}")
+        self.log.info(f"Concurrently adjusted the pose to: 'X': {x}, 'Y': {y}, 'Z': {z}, 'U': {u}, 'V': {v}, 'W': {w}")
 
     @dummy_log
     def step_axis(self, axis, step_size):

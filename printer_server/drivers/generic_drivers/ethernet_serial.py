@@ -6,9 +6,10 @@ import logging
 import threading
 
 class EthernetSerial():
-    def __init__(self, host=None, port=None, line_ending='\r', timeout=10, logger=logging.getLogger(__name__)):
+    def __init__(self, name, host=None, port=None, line_ending='\r', timeout=10, logger=logging.getLogger(__name__)):
         super().__init__()
         self.log = logger
+        self.name = name
         self.host = host
         self.port = port
         self.line_ending = line_ending
@@ -21,7 +22,7 @@ class EthernetSerial():
         """Find the device and connect to it."""
         if self.connected is None:
             self.connected = False
-            self.log.info("Connecting to device (%s), this may take up to 1 minute...", self.host)
+            self.log.info("Connecting to %s (%s:%s), this may take up to 1 minute...", self.name, self.host, self.port)
 
             attempts=10
             timeout=1
@@ -43,12 +44,12 @@ class EthernetSerial():
                     time.sleep(timeout)  # wait to try again
             if not self.connected:
                 self.connected = None
-                msg = f"Device not found!"
+                msg = f"{self.name} not found!"
                 self.log.critical(msg)
                 return False
             
             atexit.register(self.disconnect)
-            self.log.info("Connected to device (%s:%s)", self.host, self.port)
+            self.log.info("Connected to %s", self.name)
             return True
         else:
             while self.connected is False:
@@ -60,10 +61,11 @@ class EthernetSerial():
         if self.connected is not None and self.connected and self.socket is not None:
             self.connected = None
             try:
+                self.log.info("Disconnecting from %s...", self.name)
                 with self.sendLock:
                     self.socket.close()
                 self.socket = None
-                self.log.info("Disconnected from device")
+                self.log.info("Disconnected from %s", self.name)
             except:
                 self.log.error("Unexpected error on disconnect")
 

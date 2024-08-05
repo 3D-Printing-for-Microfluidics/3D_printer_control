@@ -7,14 +7,13 @@ class Accelerometer_dummy:
     def __init__(self, *args, log_level=logging.DEBUG, **kwargs):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
-        
+
         self.connected = None
         self.running = False
 
     @dummy_log
     def connect(self, *args, **kwargs):
         self.connected = True
-        return True
     
     @dummy_log
     def disconnect(self, *args, **kwargs):
@@ -22,7 +21,7 @@ class Accelerometer_dummy:
     
     @dummy_log
     def initialize(self, *args, **kwargs):
-        return True
+        pass
 
     @dummy_log
     def start(self, *args, **kwargs):
@@ -36,6 +35,7 @@ class Accelerometer_dummy:
     def stop(self, *args, **kwargs):
         self.running = False
 
+    @dummy_log
     def loop(self, *args, **kwargs):
         pass
 
@@ -43,11 +43,14 @@ class Accelerometer_dummy:
     def accel_start(self, *args, **kwargs):
         pass
 
+    @dummy_log
     def accel_pause(self, *args, **kwargs):
         pass
 
+    @dummy_log
     def accel_stop(self, *args, **kwargs):
         pass
 
+    @dummy_log
     def set_sample_period(self, *args, **kwargs):
         pass

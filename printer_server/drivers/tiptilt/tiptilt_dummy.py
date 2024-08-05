@@ -26,18 +26,15 @@ class TipTilt_dummy:
         self.connected = True
         self.initialize()
         atexit.register(self.disconnect)
-        self.log.info("Connected to tip/tilt stage (%s)", self.port)
         return True
 
     @dummy_log
     def disconnect(self):
         if self.connected:
             self.connected = False
-            self.log.info("Disconnected from Tip/tilt stage")
 
     # @dummy_log
     def send(self, cmd):
-        self.log.debug("Sent: '%s'", cmd)
         response = "Done" if "G" not in cmd else 0.0  # Dummy response
         error = False
         return response, error

@@ -30,7 +30,7 @@ class Loadcell_dummy:
         self.log_file = None
         self.connected = False
 
-    @dummy_log
+    # @dummy_log
     def adc_to_force(self, x):
         grams = (x - self.intercept) / self.slope
         n = grams / 1000 * 9.8
@@ -40,15 +40,10 @@ class Loadcell_dummy:
     def connect(self, shutdown, frequency=1000):
         self.freq = frequency
         self.port = "dummyPort"
-        if self.port is None:
-            msg = "Loadcell not found!"
-            self.log.critical(msg)
-            return False
         self.connected = True
         self.loadcell_stop()
         self.receiveAll()
         self.set_sample_frequency(int(self.freq))
-        self.log.info("Connected to loadcell (%s)", self.port)
         atexit.register(self.disconnect)
         return True
 

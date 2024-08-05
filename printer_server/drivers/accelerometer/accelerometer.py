@@ -16,7 +16,7 @@ class Accelerometer(USBSerial):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=config_dict["baudrate"], timeout=0.1, line_ending='\n', logger=self.log)
+        super().__init__("Accelerometers", vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=config_dict["baudrate"], timeout=0.1, line_ending='\n', logger=self.log)
 
         self.config_dict = config_dict
         self.start_time = 0

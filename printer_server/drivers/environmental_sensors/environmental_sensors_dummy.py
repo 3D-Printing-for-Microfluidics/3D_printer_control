@@ -16,7 +16,6 @@ class EnvironmentalSensors_dummy:
     @dummy_log
     def connect(self, *args, **kwargs):
         self.connected=True
-        return True
 
     @dummy_log
     def disconnect(self, *args, **kwargs):
@@ -43,33 +42,39 @@ class EnvironmentalSensors_dummy:
     # ESP32 serial wrappers
     ########################
             
-
+    @dummy_log
     def get_all_measurements(self, *args, **kwargs):
         pass
 
-    
+    @dummy_log
     def get_temperature(self, *args, **kwargs):
         pass
     
+    @dummy_log
     def get_humidity(self, *args, **kwargs):
         pass
 
+    @dummy_log
     def get_pressure(self, *args, **kwargs):
         pass
 
+    @dummy_log
     def get_gas(self, *args, **kwargs):
         pass
 
+    @dummy_log
     def get_airQuality(self, *args, **kwargs):
         pass
 
+    @dummy_log
     def get_voc(self, *args, **kwargs):
         pass
 
 
-
+    @dummy_log
     def send(self, *args, **kwargs):
         pass
     
+    @dummy_log
     def receive(self, *args, **kwargs):
         pass

@@ -8,20 +8,24 @@ class GPIO:
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         self.connected = False
-        self.film_relay = False
-
-        Device.pin_factory = LGPIOFactory(chip=4)
-
+        self.config_dict = config_dict
+        
         if "film_pin" in config_dict.keys():
+            self.film_relay = False
             self.film_relay_pin = config_dict["film_pin"]
             self.film_relay_state = None
+
+    def initialize(self):
+        self.log.info("Initializing GPIO...")
+        Device.pin_factory = LGPIOFactory(chip=4)
+
+        if "film_pin" in self.config_dict.keys():
             self.film_relay = True
             self.film_device = DigitalOutputDevice(self.film_relay_pin, active_high=True, initial_value=False)
 
-    def initialize(self):
         self.connected = True
         atexit.register(self.disconnect)
-        self.log.info("GPIO initialized")
+        self.log.info("Initialized GPIO")
 
     def disconnect(self):
         if self.connected:

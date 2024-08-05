@@ -14,7 +14,7 @@ class TipTilt(USBSerial, TTRStageDriver):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__(vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=config_dict["baudrate"], logger=self.log)
+        super().__init__("Tiptilt", vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=config_dict["baudrate"], logger=self.log)
 
         self.config_dict = config_dict
         self.r = re.compile(r"\d*\.?\d*$")  # regex for getter functions
@@ -54,11 +54,17 @@ class TipTilt(USBSerial, TTRStageDriver):
 
     # returns "Done"
     def initialize(self):
-        return self.send("IN0")
+        self.log.info("Initializing TipTilt...")
+        r = self.send("IN0")
+        self.log.info("Initialized TipTilt")
+        return r
 
     # returns "Done" or "Error"
     def home(self):
-        return self.send("HM0")
+        self.log.info("Homing TipTilt...")
+        r = self.send("HM0")
+        self.log.info("Homed TipTilt")
+        return r
 
     # returns "Done"
     def reset(self):
@@ -98,12 +104,14 @@ class TipTilt(USBSerial, TTRStageDriver):
 
     # returns "Done" or "Error"
     def move_relative(self, axis, distance_um, fast=False):
+        self.log.info("Moving %s by %s um", axis, distance_um)
         if fast:  # coarse mode uses less precise positioning for quicker moves
             return self.send("Mr{} {}".format(get_axis_index(axis), distance_um))
         return self.send("MR{} {}".format(get_axis_index(axis), distance_um))
 
     # returns "Done" or "Error"
     def move_absolute(self, axis, distance_um, fast=False):
+        self.log.info("Moving %s to %s um", axis, distance_um)
         if fast:  # coarse mode uses less precise positioning for quicker moves
             return self.send("Ma{} {}".format(get_axis_index(axis), distance_um))
         return self.send("MA{} {}".format(get_axis_index(axis), distance_um))

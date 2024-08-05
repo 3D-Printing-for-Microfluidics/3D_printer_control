@@ -17,14 +17,15 @@ import serial.tools.list_ports
 #         print("\t")
 
 class USBSerial(serial.Serial):
-    def __init__(self, vid=None, pid=None, sn=None, baudrate=115200, timeout=None, line_ending='\r', logger=logging.getLogger(__name__)):
+    def __init__(self, name, vid=None, pid=None, sn=None, baudrate=115200, timeout=None, line_ending='\r', logger=logging.getLogger(__name__)):
         super().__init__(baudrate=baudrate, timeout=timeout)
         self.log = logger
         self.vid = vid
         self.pid = pid
         self.sn = sn
         self.port = None
-        self.name = None
+        self.name = name
+        self.type = None
         self.connected = None
         self.line_ending = line_ending
     
@@ -39,8 +40,9 @@ class USBSerial(serial.Serial):
     
     def connect(self, shutdown):
         if self.connected is None:
+            self.log.info("Connecting to %s...", self.name)
             self.connected = False
-            self.port, self.name = self.findUsbPort(self.vid, self.pid, self.sn)
+            self.port, self.type = self.findUsbPort(self.vid, self.pid, self.sn)
             if self.port is None:
                 self.connected = None
                 msg = "Device not found!"
@@ -52,7 +54,7 @@ class USBSerial(serial.Serial):
             self.flush_buffers()
             self.connected = True
             self.shutdown = shutdown
-            self.log.info("Connected to device (%s)", self.name)
+            self.log.info("Connected to %s (%s)", self.name, self.type)
             atexit.register(self.disconnect)
             return True
         else:
@@ -64,9 +66,10 @@ class USBSerial(serial.Serial):
     
     def disconnect(self):
         if self.connected is not None and self.connected:
+            self.log.info("Disconnecting from %s...", self.name)
             self.close()
             self.connected = None
-            self.log.info("Disconnected from device (%s)", self.name)
+            self.log.info("Disconnected from %s", self.name)
 
     # line endings \r, \n
     def send(self, cmd, recieve=True):

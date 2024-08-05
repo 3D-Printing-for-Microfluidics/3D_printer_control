@@ -20,7 +20,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__(host=config_dict["address"], port=config_dict["port"], logger=self.log)
+        super().__init__("ACS", host=config_dict["address"], port=config_dict["port"], logger=self.log)
 
         self.movement_log = None
         self.config_dict = config_dict
@@ -97,8 +97,10 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         return self.default_acceleration[a]
 
     def initialize(self):
+        self.log.info("Initializing ACS...")
         for axis in self.axes:
             self.motorOn(axis)
+        self.log.info("Initialized ACS")
 
     def goToBPcalibration(self):
         self.absMove(mm=self.calibration_position, axis="Build Platform")
@@ -175,6 +177,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
 
     def motorOn(self, axis=None):
         """Turn on the specified axis."""
+        self.log.debug("Turning ACS %s motor on", axis)
         a = self.convertAxis(axis)
         self.send(f"ENABLE {a}")
 
