@@ -91,6 +91,7 @@ class LoadCell(USBSerial):
             self.thread.join()
             self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
         time.sleep(0.1)
+        self.flush_buffers()
         self.log.info("Loadcell paused")
 
     def stop(self):
@@ -105,6 +106,7 @@ class LoadCell(USBSerial):
             self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
 
         time.sleep(0.1)
+        self.flush_buffers()
         self.log.info("Loadcell stopped")
         self.start_time = 0
 
@@ -233,7 +235,6 @@ class LoadCell(USBSerial):
         """
         Sample at a frequency of freq (in Hz)
         """
-        self.flush_buffers()
         return self.send("b")
 
     def loadcell_pause(self):
@@ -241,22 +242,15 @@ class LoadCell(USBSerial):
         Pause sampling
         """
         self.send("p", recieve=False)
-        time.sleep(0.1)
-        self.flush_buffers()
-        return
 
     def loadcell_stop(self):
         """
         Stop sampling
         """
         self.send("e", recieve=False)
-        time.sleep(0.1)
-        self.flush_buffers()
-        return
 
     def set_sample_period(self, us):
         """
-        Set the sampling frequency to freq_hz (in hz)
+        Set the sampling period to us
         """
-        self.flush_buffers()
-        return self.send("f {}".format(us)), us
+        return self.send("t {}".format(us)), us

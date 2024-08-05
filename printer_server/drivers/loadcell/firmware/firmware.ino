@@ -32,6 +32,7 @@ ADC *adc = new ADC();       // adc object;
 
 //objects
 IntervalTimer timer0;                     // timer
+bool in_isr = false;
 
 //declare helpers
 void translate();
@@ -74,14 +75,15 @@ void loop() {
 
 void translate(){
     //set sample period
-    if(opcode == 'F' || opcode == 'f'){
+    if(opcode == 'T' || opcode == 't'){
         if(data.toInt() == 0){
             Serial.print("Error: Invalid input. Value must be a integer.");
             return;
         }
         period = data.toInt();
         Serial.print("Info: Sample Period set to ");
-        Serial.println(period);
+        Serial.print(period);
+        Serial.println(" us");
     }
     //begins sampling
     else if(opcode == 'B' || opcode == 'b'){
@@ -94,15 +96,15 @@ void translate(){
     }
     //ends sampling
     else if(opcode == 'P' || opcode == 'p'){
-        Serial.println("Info: Pausing Sampling");
-        //start sampling
         timerPause();
+        Serial.println("Info: Paused Sampling");
+        
     }
     //ends sampling
     else if(opcode == 'E' || opcode == 'e'){
-        Serial.println("Info: Stopping Sampling");
-        //start sampling
         timerStop();
+        Serial.println("Info: Stopped Sampling");
+        
     }
     else{
         Serial.print("Error: Invalid opcode.");
@@ -129,6 +131,9 @@ void timerStart() {
 void timerPause() {
     if(timer_running){
         timer0.end();
+        while(in_isr){
+            delay(10);
+        }
         timer_running = false;
         is_paused = true;
     }
@@ -137,12 +142,16 @@ void timerPause() {
 void timerStop() {
     if(timer_running){
         timer0.end();
+        while(in_isr){
+            delay(10);
+        }
         timer_running = false;
         is_paused = false;
     }
 }
 
 void samplingISR() {
+    in_isr = true;
     // check if it's first time sampling for sampling set
 //    if(samples_counter == 0) { // is first
 //        start_millis = millis();
@@ -182,6 +191,7 @@ void samplingISR() {
 
     // increment samples counter
     samples_counter++;
+    in_isr = false;
 }
 
 
