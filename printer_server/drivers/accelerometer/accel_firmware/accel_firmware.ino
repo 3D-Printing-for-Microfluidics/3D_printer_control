@@ -13,7 +13,7 @@
 LSM6DSO myIMU;
 
 // DEFINES AND ENUMS
-#define DEFAULT_PERIOD 1000             // set default sampling period to 1 millisecond
+#define DEFAULT_PERIOD 5000             // set default sampling period to 5 millisecond
 
 //variables
 char opcode;
@@ -33,6 +33,7 @@ float z_offset = 0.0;
 #include <Time.h>
 
 //objects
+bool in_isr = false;
 IntervalTimer timer0;                     // timer
 
 //declare helpers
@@ -44,15 +45,8 @@ void setup() {
 
   Wire.begin();
   delay(10);
-  if( myIMU.begin() )
-    Serial.println("Ready.");
-  else { 
-    Serial.println("Could not connect to IMU.");
-    Serial.println("Freezing");
-  }
-
-  if( myIMU.initialize(BASIC_SETTINGS) )
-    Serial.println("Loaded Settings.");
+  myIMU.begin();
+  myIMU.initialize(BASIC_SETTINGS);
 
   myIMU.setAccelRange(2);
   myIMU.setGyroRange(125);
@@ -102,7 +96,8 @@ void translate(){
         }
         period = data.toInt();
         Serial.print("Info: Sample Period set to ");
-        Serial.println(period);
+        Serial.print(period);
+        Serial.println(" us");
     }
     //begins sampling
     else if(opcode == 'B' || opcode == 'b'){
@@ -115,15 +110,13 @@ void translate(){
     }
     //ends sampling
     else if(opcode == 'P' || opcode == 'p'){
-        Serial.println("Info: Pausing Sampling");
-        //start sampling
         timerPause();
+        Serial.println("Info: Pausing Sampling");
     }
     //ends sampling
     else if(opcode == 'E' || opcode == 'e'){
-        Serial.println("Info: Stopping Sampling");
-        //start sampling
         timerStop();
+        Serial.println("Info: Stopped Sampling"); 
     }
     else{
         Serial.print("Error: Invalid opcode.");
@@ -150,6 +143,9 @@ void timerStart() {
 void timerPause() {
     if(timer_running){
         timer0.end();
+        while(in_isr){
+            delay(10);
+        }
         timer_running = false;
         is_paused = true;
     }
@@ -158,13 +154,16 @@ void timerPause() {
 void timerStop() {
     if(timer_running){
         timer0.end();
+        while(in_isr){
+            delay(10);
+        }
         timer_running = false;
         is_paused = false;
     }
 }
 
 void samplingISR() {
-
+  in_isr = true;
   float x = myIMU.readFloatAccelX() - x_offset;
   float y = myIMU.readFloatAccelY() - y_offset;
   float z = myIMU.readFloatAccelZ() - z_offset;
@@ -195,6 +194,7 @@ void samplingISR() {
 
   Serial.print('\n');
 
-    // increment samples counter
-    samples_counter++;
+  // increment samples counter
+  samples_counter++;
+  in_isr = false;
 }

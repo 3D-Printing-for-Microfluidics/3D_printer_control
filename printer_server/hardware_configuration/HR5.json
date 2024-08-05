@@ -185,7 +185,7 @@
         "product_id": 1155,
         "serial_number": "16038530",
         "baudrate": 115200,
-        "measurement_period_ms": 100
+        "measurement_period_us": 5000
     },
     "loadcell": {
         "dummy": false,

@@ -26,11 +26,10 @@ class Accelerometer(USBSerial):
         self.log_file = None
 
     def initialize(self):
-        self.accel_stop()
-        time.sleep(0.1)
-        ms = self.config_dict["measurement_period_ms"]
-        self.log.debug("Period set to '%s'", ms)
-        self.set_sample_period(ms)
+        self.stop()
+        us = int(self.config_dict["measurement_period_us"])
+        self.log.debug("Period set to '%s'", us)
+        self.set_sample_period(us)
 
     def disconnect(self):
         if self.connected:
@@ -76,6 +75,7 @@ class Accelerometer(USBSerial):
             self.thread = Thread(self.log, name="accelerometer_loop_thread", target=self.loop)
 
         time.sleep(0.1)
+        self.flush_buffers()
         self.log.info("Accelerometer paused")
 
     def stop(self):
@@ -90,6 +90,7 @@ class Accelerometer(USBSerial):
             self.thread = Thread(self.log, name="accelerometer_loop_thread", target=self.loop)
 
         time.sleep(0.1)
+        self.flush_buffers()
         self.log.info("Accelerometer stopped")
         self.start_time = 0
 
@@ -155,7 +156,6 @@ class Accelerometer(USBSerial):
         """
         Sample at a frequency of freq (in Hz)
         """
-        self.flush_buffers()
         return self.send("b")
 
     def accel_pause(self):
@@ -163,22 +163,16 @@ class Accelerometer(USBSerial):
         Pause sampling
         """
         self.send("p", recieve=False)
-        time.sleep(0.1)
-        self.flush_buffers()
-        return
 
     def accel_stop(self):
         """
         Stop sampling
         """
         self.send("e", recieve=False)
-        time.sleep(0.1)
-        self.flush_buffers()
-        return
+
 
     def set_sample_period(self, ms):
         """
         Set the sampling period to ms (in ms)
         """
-        self.flush_buffers()
         return self.send("t {}".format(ms)), ms
