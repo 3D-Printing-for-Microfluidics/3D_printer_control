@@ -79,6 +79,10 @@ $(document).ready(function () {
         send_event("initialize_hexapod");
     }
 
+    socket.on("dynamic_ranges", function (ranges) {
+        console.log(ranges);
+    });
+
     socket.on("init_msg", function (init_output) {
         var init_flag = init_output[0]
         var init_error_codes = init_output[1];

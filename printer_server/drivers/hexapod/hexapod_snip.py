@@ -37,9 +37,6 @@ def get_hexapod_positions(emit=True, log=False):
 
 @socketio.on("initialize_hexapod", namespace="/manual")
 def initialize_hexapod():
-    print(f"Init command received")
-
-    hexapod.connect()
     init_flag = hexapod.initialized
     if (init_flag):
         error_codes = hexapod.get_status()
@@ -55,8 +52,6 @@ def initialize_hexapod():
 
 @socketio.on("check_init", namespace="/manual")
 def check_init():
-    print(f"check_init received")
-
     init_flag = hexapod.initialized
     if (init_flag):
         error_codes = hexapod.get_status()
@@ -72,8 +67,6 @@ def check_init():
 
 @socketio.on("stop_motion", namespace="/manual")
 def stop_motion():
-    print(f"Stop command received")
-
     hexapod.hard_stop()
     pose_update = hexapod.get_pose()
 
@@ -81,8 +74,6 @@ def stop_motion():
 
 @socketio.on("axis_step", namespace="/manual")
 def axis_step(step_information):
-    print(f"step_information: {step_information}")
-
     command_type = step_information[0]
     axis = step_information[1]
     value = step_information[2]
@@ -101,8 +92,6 @@ def axis_step(step_information):
 
 @socketio.on("pivot_command", namespace="/manual")
 def pivot_command(pivot_information):
-    print(f"pivot_information: {pivot_information}")
-
     x_pivot_pos = pivot_information[0]
     y_pivot_pos = pivot_information[1]
     z_pivot_pos = pivot_information[2]
@@ -114,8 +103,6 @@ def pivot_command(pivot_information):
 
 @socketio.on("pose_command", namespace="/manual")
 def pose_command(pose_information):
-    print(f"pose_information: {pose_information}")
-
     x = pose_information[0]
     y = pose_information[1]
     z = pose_information[2]
@@ -133,12 +120,12 @@ def pose_command(pose_information):
 
 @socketio.on("request_dynamic_ranges", namespace="/manual")
 def request_dynamic_ranges():
-    print(f"SERVER: request_dynamic_ranges()")
-
-    # hexapod.interesting_functions()
-    hexapod.get_simple_dynamic_range('X')
-    hexapod.get_simple_dynamic_range('Y')
-    hexapod.get_simple_dynamic_range('Z')
-    hexapod.get_simple_dynamic_range('U')
-    hexapod.get_simple_dynamic_range('V')
-    hexapod.get_simple_dynamic_range('W')
+    ranges = {
+        "X": hexapod.get_simple_dynamic_range('X'),
+        "Y": hexapod.get_simple_dynamic_range('Y'),
+        "Z": hexapod.get_simple_dynamic_range('Z'),
+        "U": hexapod.get_simple_dynamic_range('U'),
+        "V": hexapod.get_simple_dynamic_range('V'),
+        "W": hexapod.get_simple_dynamic_range('W')
+    }
+    socketio.emit("dynamic_ranges", ranges, namespace="/manual")
