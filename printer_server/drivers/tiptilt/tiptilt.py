@@ -18,6 +18,7 @@ class TipTilt(USBSerial, TTRStageDriver):
 
         self.config_dict = config_dict
         self.r = re.compile(r"\d*\.?\d*$")  # regex for getter functions
+        self.initialized = None
 
     def send(self, cmd, recieve=True):
         ret = super().send(cmd, recieve=False)
@@ -54,9 +55,11 @@ class TipTilt(USBSerial, TTRStageDriver):
 
     # returns "Done"
     def initialize(self):
+        self.initialized = False
         self.log.info("Initializing TipTilt...")
         r = self.send("IN0")
         self.log.info("Initialized TipTilt")
+        self.initialized = True
         return r
 
     # returns "Done" or "Error"
