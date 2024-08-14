@@ -74,7 +74,7 @@ def galil_move(message):
     global start_time, stop_time
     mode = message["mode"]
     distance = float(message["distance"]) / 1000
-    axis = message["axis"]
+    axis = message.get("axis",None)
     speed = message.get("speed", galil.getDefaultSpeed(axis))
     acceleration = message.get("acceleration", galil.getDefaultAcceleration(axis))
     wait_for_settling=message.get("wait_for_settling", True)
