@@ -31,14 +31,14 @@
         <button type="button" class="printer-btn btn btn-lg btn-outline-info d-none" data-toggle="modal"
             data-target="#confirmModal" id="stop-btn">Stop</button>
     </div>
-    {% if degass_state is defined %}
+    {% if degas_state is defined %}
     <div class="col-auto mr-auto">
-        <button type="button" class="degass-btn btn btn-lg btn-outline-info d-none" id="start-degass-btn">Start
-            Degass</button>
-        <button type="button" class="degass-btn btn btn-lg btn-outline-info d-none" id="stop-degass-btn">Stop
-            Degass</button>
-        <button type="button" class="degass-btn btn btn-lg btn-outline-info d-none" id="finish-degass-btn">Finish
-            Degass</button>
+        <button type="button" class="degas-btn btn btn-lg btn-outline-info d-none" id="start-degas-btn">Start
+            Degas</button>
+        <button type="button" class="degas-btn btn btn-lg btn-outline-info d-none" id="stop-degas-btn">Stop
+            Degas</button>
+        <button type="button" class="degas-btn btn btn-lg btn-outline-info d-none" id="finish-degas-btn">Finish
+            Degas</button>
     </div>
     {% endif %}
     <div class="col-auto">
@@ -182,8 +182,8 @@
     var graph_autoscale = {{ graph_autoscale| lower
     }}
     {% endif %}
-    {% if degass_state is defined %}
-    var degass_state = '{{ degass_state| lower}}'
+    {% if degas_state is defined %}
+    var degas_state = '{{ degas_state| lower}}'
     {% endif %}
 </script>
 <script src="{{ url_for('static', filename='lib/ajax-socket.io-4.7.5.min.js') }}"></script>

@@ -103,8 +103,8 @@ var show_print_btn = function (btn) {
     $(btn).prop("disabled", false).removeClass("d-none");
 };
 
-var show_degass_btn = function (btn) {
-    $(".degass-btn").prop("disabled", true).addClass("d-none");
+var show_degas_btn = function (btn) {
+    $(".degas-btn").prop("disabled", true).addClass("d-none");
     $(btn).prop("disabled", false).removeClass("d-none");
 };
 
@@ -271,17 +271,17 @@ $(document).ready(function () {
     }
 
     try {
-        if (degass_state == "idle") {
-            show_degass_btn("#start-degass-btn");
+        if (degas_state == "idle") {
+            show_degas_btn("#start-degas-btn");
         }
-        else if (degass_state == "running") {
-            show_degass_btn("#stop-degass-btn");
+        else if (degas_state == "running") {
+            show_degas_btn("#stop-degas-btn");
         }
-        else if (degass_state == "finish") {
-            show_degass_btn("#finish-degass-btn");
+        else if (degas_state == "finish") {
+            show_degas_btn("#finish-degas-btn");
         }
-        else if (degass_state == "none") {
-            show_degass_btn();
+        else if (degas_state == "none") {
+            show_degas_btn();
         }
     } catch (error) {
         console.error(error);
@@ -530,27 +530,27 @@ $(document).ready(function () {
     });
 
     try {
-        $("#start-degass-btn").click(function () {
-            socket.emit("degass", "run");
+        $("#start-degas-btn").click(function () {
+            socket.emit("degas", "run");
         });
-        $("#stop-degass-btn").click(function () {
-            socket.emit("degass", "stop");
+        $("#stop-degas-btn").click(function () {
+            socket.emit("degas", "stop");
         });
-        $("#finish-degass-btn").click(function () {
-            socket.emit("degass", "finish");
+        $("#finish-degas-btn").click(function () {
+            socket.emit("degas", "finish");
         });
-        socket.on("update_degass_state", function (message) {
+        socket.on("update_degas_state", function (message) {
             if (message == "idle") {
-                show_degass_btn("#start-degass-btn");
+                show_degas_btn("#start-degas-btn");
             }
             else if (message == "running") {
-                show_degass_btn("#stop-degass-btn");
+                show_degas_btn("#stop-degas-btn");
             }
             else if (message == "finish") {
-                show_degass_btn("#finish-degass-btn");
+                show_degas_btn("#finish-degas-btn");
             }
             else if (message == "none") {
-                show_degass_btn();
+                show_degas_btn();
             }
         });
     } catch (error) {

@@ -93,7 +93,7 @@ def index():
         kwargs["graph_autoscale"] = print_control.loadcell.graph_autoscale
 
     if "mks" in config_dict.keys():
-        kwargs["degass_state"] = print_control.degass_state
+        kwargs["degas_state"] = print_control.degas_state
 
     return render_template(
         "home.html",
@@ -177,9 +177,9 @@ def stop(message):
     print_control.stop(run_in_thread=True, top_level=True)
 
 
-@socketio.on("degass", namespace="/printing")
-def degass(msg):
-    print_control.degass(msg)
+@socketio.on("degas", namespace="/printing")
+def degas(msg):
+    print_control.degas(msg)
 
 
 @socketio.on("shutdown", namespace="/printing")

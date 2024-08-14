@@ -14,9 +14,9 @@ class VacuumControl(PrintControl):
         super().__init__()
         self.mks = driver_handles.mks
         self.mks_teensy = driver_handles.mks_teensy
-        self.degass_running = False
-        self.degass_thread = None
-        self.degass_state = None
+        self.degas_running = False
+        self.degas_thread = None
+        self.degas_state = None
 
     def connect_hardware(self):
         mks_thread = Thread(log, name="mks_connect_thread", target=self.mks.connect, args=[self.shutdown])
@@ -38,26 +38,26 @@ class VacuumControl(PrintControl):
         mks_thread.start()
         super().initialize_hardware()
         mks_thread.join()
-        self.degass_state = "idle"
-        socketio.emit(f"update_degass_state", self.degass_state, namespace="/printing")
+        self.degas_state = "idle"
+        socketio.emit(f"update_degas_state", self.degas_state, namespace="/printing")
 
-    def degass(self, msg):
+    def degas(self, msg):
         if msg == "run":
-            self.degass_running = True
-            self.degass_thread = Thread(log, name="degass_thread", target=self.run_degass, args=[])
-            self.degass_thread.start()
-            self.degass_state = "running"
+            self.degas_running = True
+            self.degas_thread = Thread(log, name="degas_thread", target=self.run_degas, args=[])
+            self.degas_thread.start()
+            self.degas_state = "running"
         elif msg == "stop":
-            self.degass_running = False
-            self.degass_thread.join()
-            self.finish_degass()
-            self.degass_state = "idle"
+            self.degas_running = False
+            self.degas_thread.join()
+            self.finish_degas()
+            self.degas_state = "idle"
         elif msg == "finish":
-            self.finish_degass()
-            self.degass_state = "idle"
-        socketio.emit(f"update_degass_state", self.degass_state, namespace="/printing")
+            self.finish_degas()
+            self.degas_state = "idle"
+        socketio.emit(f"update_degas_state", self.degas_state, namespace="/printing")
 
-    def run_degass(self):
+    def run_degas(self):
         set_pressures = [50, 10, 7, 5, 3, 1, 0.9, 0.8, 0.1]
         waits = [30, 30, 30, 30, 30, 30, 30, 30, 30]
         hysteresis = [50.5, 10.5, 7.5, 5.5, 3.5, 1.5, 1, 0.9, 0.15]
@@ -70,22 +70,22 @@ class VacuumControl(PrintControl):
         for p, w, h in zip(set_pressures, waits, hysteresis):
             log.info("Degassing to %s Torr and holding for %s seconds", p, w)
             t = 0.0
-            while t < w and self.degass_running:
+            while t < w and self.degas_running:
                 if self.mks.pressures[1] >= h:
                     pumping = True
                     self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), True, force=True)
-                while (pumping and self.mks.pressures[1] >= p and self.degass_running):
+                while (pumping and self.mks.pressures[1] >= p and self.degas_running):
                     time.sleep(0.1)
                 if pumping:
                     pumping = False
                     self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), False, force=True)
                 time.sleep(0.1)
                 t += 0.1
-        self.degass_state = "finish"
-        socketio.emit(f"update_degass_state", self.degass_state, namespace="/printing")
+        self.degas_state = "finish"
+        socketio.emit(f"update_degas_state", self.degas_state, namespace="/printing")
 
 
-    def finish_degass(self):
+    def finish_degas(self):
         relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
         self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), False, force=True)
         self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vent2"), True, force=True)
