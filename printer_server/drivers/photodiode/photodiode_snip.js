@@ -14,7 +14,7 @@ var disable_button = function (object) {
 $(document).ready(function () {
 
     socket.on("photodiode_return_power", function (message) {
-        document.getElementById(`photodiode_power`).innerHTML = message["power"];
+        document.getElementById(`photodiode_power`).innerHTML = message["power"] + " mW/cm²";
         enable_button(`#read_photodiode_power`);
         enable_button(`#zero_photodiode`);
     });

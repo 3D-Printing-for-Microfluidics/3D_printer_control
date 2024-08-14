@@ -7,7 +7,7 @@ photodiode = driver_handles.photodiode
 def get_photodiode_power(message, emit=True):
     wavelength = int(message["wavelength"])
     photodiode.set_wavelength(wavelength)
-    power = photodiode.get_power_density()
+    power = round(photodiode.get_power_density(),2)
     if emit:
         socketio.emit("photodiode_return_power", {"power":power}, namespace="/manual")
     return power
