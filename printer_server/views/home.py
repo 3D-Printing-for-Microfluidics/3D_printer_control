@@ -24,6 +24,12 @@ from printer_server.printer_control.print_control import PrintControl
 
 parent_classes = []
 
+# film gpio needs to be before bp
+if "gpio" in config_dict:
+    if "film_pin" in config_dict["gpio"]:
+        from printer_server.printer_control.gpio_control import FilmGPIOControl
+        parent_classes.append(FilmGPIOControl)   
+
 # Loadcell needs to be before bp
 if "loadcell" in config_dict:
     from printer_server.printer_control.loadcell_control import LoadcellControl
@@ -49,11 +55,6 @@ if "keyence" in config_dict:
 if "focus" in config_dict["stages"]:
     from printer_server.printer_control.focus_control import FocusControl
     parent_classes.append(FocusControl)
-
-if "gpio" in config_dict:
-    if "film_pin" in config_dict["gpio"]:
-        from printer_server.printer_control.gpio_control import FilmGPIOControl
-        parent_classes.append(FilmGPIOControl)   
 
 if "light_engines" in config_dict:
     from printer_server.printer_control.screen_control import ScreenControl
