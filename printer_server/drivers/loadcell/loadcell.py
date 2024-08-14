@@ -44,7 +44,7 @@ class LoadCell(USBSerial):
         return n
     
     def initialize(self):
-        self.loadcell_stop()
+        self.stop()
         time.sleep(0.1)
         us = int(self.config_dict["sample_period_us"])
         self.log.debug("Period set to '%s'", us)
@@ -64,10 +64,8 @@ class LoadCell(USBSerial):
 
             self.log.info("Loadcell started")
             loadcell_time = self.loadcell_start()
+
             if self.start_time == 0:
-                self.log.error(loadcell_time)
-                # loadcell_time = loadcell_time.split("'")
-                # loadcell_time = float(loadcell_time[1])
                 self.start_time = datetime.datetime.now() - datetime.timedelta(
                     milliseconds=loadcell_time
                 )

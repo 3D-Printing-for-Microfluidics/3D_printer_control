@@ -88,7 +88,8 @@ void translate()
         if (data.toInt() == 0)
         {
             Serial.print("Error: Invalid input. Value must be a integer.");
-            Serial.println("Done") return;
+            Serial.println("Done");
+            return;
         }
         period = data.toInt();
         Serial.print("Info: Sample Period set to ");
@@ -120,9 +121,10 @@ void translate()
     else
     {
         Serial.print("Error: Invalid opcode.");
-        Serial.println("Done") return;
+        Serial.println("Done");
+        return;
     }
-    Serial.println("Done")
+    Serial.println("Done");
 }
 
 void setStartTime()
