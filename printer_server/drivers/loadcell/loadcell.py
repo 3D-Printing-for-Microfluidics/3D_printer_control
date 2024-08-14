@@ -1,3 +1,4 @@
+import re
 import time
 import logging
 import datetime
@@ -29,6 +30,7 @@ class LoadCell(USBSerial):
         self.running = False
         self.graph_newtons = True
         self.graph_autoscale = False
+        self.multiline = True
 
         self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
         self.log_file = None
@@ -61,10 +63,11 @@ class LoadCell(USBSerial):
             self.running = True
 
             self.log.info("Loadcell started")
-            temp = self.loadcell_start()
+            loadcell_time = self.loadcell_start()
             if self.start_time == 0:
-                loadcell_time = temp.split("'")
-                loadcell_time = float(loadcell_time[1])
+                self.log.error(loadcell_time)
+                # loadcell_time = loadcell_time.split("'")
+                # loadcell_time = float(loadcell_time[1])
                 self.start_time = datetime.datetime.now() - datetime.timedelta(
                     milliseconds=loadcell_time
                 )
@@ -253,4 +256,4 @@ class LoadCell(USBSerial):
         """
         Set the sampling period to us
         """
-        return self.send("t {}".format(us)), us
+        self.send("t {}".format(us)), us

@@ -1,8 +1,10 @@
-
+import re
+import sys
 import time
 import atexit
 import serial
 import logging
+import threading
 import serial.tools.list_ports
 
 # first_load = True
@@ -28,6 +30,9 @@ class USBSerial(serial.Serial):
         self.type = None
         self.connected = None
         self.line_ending = line_ending
+
+        self._lock = threading.Lock()
+        self.r = re.compile(r"\d*\.?\d*\s*$")
     
     def findUsbPort(self, vid, pid, sn=None):
         ports = list(serial.tools.list_ports.comports())
@@ -71,49 +76,78 @@ class USBSerial(serial.Serial):
             self.connected = None
             self.log.info("Disconnected from %s", self.name)
 
-    # line endings \r, \n
     def send(self, cmd, recieve=True):
-        try:
-            self.write(bytes(cmd + self.line_ending, encoding="ascii"))
-            self.log.debug("Sent: '%s'", cmd)
-        except serial.SerialException as e:
-            msg = "Failed to send message! (%s)", e
-            self.log.error(msg)
-            return False
-        if recieve:
-            response = self.receive()
-            self.log.debug("Response: '%s'", response)
-            return response
-        return True
+        with self._lock:
+            try:
+                self.write(bytes(cmd + self.line_ending, encoding="ascii"))
+                self.log.debug("Sent: '%s'", cmd)
+            except serial.SerialException as e:
+                msg = "Failed to send message! (%s)", e
+                # self.log.error(msg)
+                # return False
+                self.log.critical(msg)
+                self.shutdown(is_critical = True)
+                sys.exit(msg)
+            if recieve:
+                response = self.receive()
+                return self.parse_message(cmd, response)
+            return True
 
     def receive(self):
-        response = b""
-        try:
-            response += self.readline()
-        except serial.SerialException as e:
-            msg = "Failed to receive message! (%s)", e
-            self.log.error(msg)
-            return None
-        return (
-            response.decode().rstrip()
-        )
+        message = ""
+        while True:
+            response = b""
+            try:
+                response += self.readline()
+            except serial.SerialException as e:
+                msg = "Failed to receive message! (%s)", e
+                # self.log.error(msg)
+                # return False
+                self.log.critical(msg)
+                self.shutdown(is_critical = True)
+                sys.exit(msg)
+            response = response.decode().rstrip()
+            message += response
+            message += " "
+
+            if "Error" in response:
+                self.log.warning("Response: '%s'", response)
+            else:
+                self.log.debug("Response: '%s'", response)
+
+            if not self.multiline or (self.multiline and "Done" in message):
+                break
+        return message
     
+    def parse_message(self, cmd, message):
+        if not self.multiline:
+            return message
+        message = message.replace(" Done", "")  # strip out done message
+        if "G" in cmd or cmd.upper() == "B":
+            message = float(
+                re.findall(self.r, message)[0]
+            )  # parse out values for getter commands
+        return message
+        
+
     def write_bytes(self, bytes):
         try:
             self.write(bytes)
             return True
         except serial.SerialException as e:
             msg = "Failed to write bytes! (%s)", e
-            self.log.error(msg)
-            return False
+            self.log.critical(msg)
+            self.shutdown(is_critical = True)
+            sys.exit(msg)
     
     def read_bytes(self, number_of_bytes):
         try:
             return self.read(number_of_bytes)
         except serial.SerialException as e:
             msg = "Failed to read bytes! (%s)", e
-            self.log.error(msg)
-            return False
+            self.log.critical(msg)
+            self.shutdown(is_critical = True)
+            sys.exit(msg)
         
     def flush_buffers(self):
         # self.flush()
