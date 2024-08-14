@@ -8,12 +8,7 @@ from flask import request, Blueprint, render_template
 from printer_server.extensions import socketio
 from printer_server.settings import Config
 import printer_server.views.home
-
-
-# Dynamically get hardware components
-configuration_path = Path(Config.PRINT_SERVER_FOLDER).joinpath('hardware_configuration').rglob(f"{Config.HOSTNAME}.json")
-with open(next(configuration_path), "r") as file_handle:
-    config_dict = json.load(file_handle)
+from printer_server.hardware_configuration.hardware_configuration import config_dict
 
 # Generate HTML snippit list
 hardware = {}

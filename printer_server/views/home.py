@@ -8,11 +8,7 @@ from flask_socketio import join_room, leave_room, emit
 from printer_server.settings import Config
 from printer_server.models import PrintQueue
 from printer_server.extensions import socketio
-
-# Dynamically get hardware components
-configuration_path = Path(Config.PRINT_SERVER_FOLDER).joinpath('hardware_configuration').rglob(f"{Config.HOSTNAME}.json")
-with open(next(configuration_path), "r") as file_handle:
-    config_dict = json.load(file_handle)
+from printer_server.hardware_configuration.hardware_configuration import config_dict
 
 blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static")
 log = logging.getLogger(__name__)
