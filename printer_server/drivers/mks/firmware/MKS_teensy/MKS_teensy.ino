@@ -2,9 +2,9 @@ int ENCODER_PIN = A6;
 int PWM_PIN = A5;
 int DIR_PIN = A4;
 
-int solenoid_pins[5] = {0,1,2,3,4};
+int solenoid_pins[6] = {0,1,2,3,4,5};
+int solenoid_state[6] = {0, 0, 0, 0, 0, 0};
 int reed_pins[5] = {13,14,15,16,17};
-int solenoid_state[5] = {0, 0, 0, 0, 0};
 
 int ADC_RANGE = 1024;
 int ENCODER_RANGE_MM = 660;
@@ -17,7 +17,7 @@ void setup() {
   Serial.begin(9600);
 
   // Setup solenoids
-  for(int i = 0; i < 5; i++){
+  for(int i = 0; i < 6; i++){
     pinMode(solenoid_pins[i], OUTPUT);
     digitalWrite(solenoid_pins[i], LOW);
   }
@@ -117,7 +117,7 @@ void loop() {
       Serial.println();
     }
     else if(opcode[0] == 'R'){ // Get all relay status
-      for(int i = 0; i < 5; i++){
+      for(int i = 0; i < 6; i++){
         Serial.print(solenoid_state[i]);
       }
       Serial.println();
