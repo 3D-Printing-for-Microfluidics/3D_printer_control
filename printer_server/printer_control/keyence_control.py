@@ -104,8 +104,9 @@ class KeyenceControl(PrintControl):
             x_pos = self.default_x_offset/1000 + self.coord_systems[f"keyence_{light_engine}"]["X"]
             y_pos = self.default_y_offset/1000 + self.coord_systems[f"keyence_{light_engine}"]["Y"]
             if "wintech" in light_engine:
-                x_pos += calibration_positions.get("x_drift",0.0)/1000
-                y_pos += calibration_positions.get("y_drift",0.0)/1000
+                x_pos += (calibration_positions.get("x_drift",0.0) + calibration_positions.get("x_shift",0.0)*self.default_y_offset/1000)/1000
+                y_pos += (calibration_positions.get("y_drift",0.0) + calibration_positions.get("y_shift",0.0)*self.default_x_offset/1000)/1000
+
             focus_pos = self.coord_systems[f"keyence_{light_engine}"]["Focus"]
             self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
             self.focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False)
