@@ -87,7 +87,7 @@ void translate()
     {
         if (data.toInt() == 0)
         {
-            Serial.print("Error: Invalid input. Value must be a integer.");
+            Serial.println("Error: Invalid input. Value must be a integer.");
             Serial.println("Done");
             return;
         }
@@ -101,7 +101,7 @@ void translate()
     {
         setStartTime();
         Serial.print("Info: Starting Sampling at '");
-        Serial.println(start_millis);
+        Serial.print(start_millis);
         Serial.println("' ms");
         // start sampling
         timerStart();
@@ -120,7 +120,7 @@ void translate()
     }
     else
     {
-        Serial.print("Error: Invalid opcode.");
+        Serial.println("Error: Invalid opcode.");
         Serial.println("Done");
         return;
     }

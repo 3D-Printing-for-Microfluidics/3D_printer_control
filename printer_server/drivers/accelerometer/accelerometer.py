@@ -27,6 +27,7 @@ class Accelerometer(USBSerial):
 
     def initialize(self):
         self.stop()
+        time.sleep(0.1)
         us = int(self.config_dict["measurement_period_us"])
         self.log.debug("Period set to '%s'", us)
         self.set_sample_period(us)
