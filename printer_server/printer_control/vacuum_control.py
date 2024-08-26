@@ -65,6 +65,7 @@ class VacuumControl(PrintControl):
 
         self.mks.set_relay_mode(relay_num, "SET")
         self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vacuum"), True)
+        self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("stirring"), True)
         self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vent2"), False, force=True)
         pumping = False
         for p, w, h in zip(set_pressures, waits, hysteresis):
@@ -87,6 +88,7 @@ class VacuumControl(PrintControl):
 
     def finish_degas(self):
         relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
+        self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("stirring"), False)
         self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), False, force=True)
         self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vent2"), True, force=True)
         self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vacuum"), False)

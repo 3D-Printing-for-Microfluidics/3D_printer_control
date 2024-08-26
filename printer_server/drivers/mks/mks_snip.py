@@ -19,27 +19,23 @@ def get_gauges(emit=False):
 def get_relay_status(emit=False):
     relay_settings_list = mks.get_all_relay_status()
     teensy_relay_settings_list = mks_teensy.get_all_relay_status()
-    teensy_relay_status_list = mks_teensy.get_all_sensor_status()
     relay_settings_dict = {}
-    relay_status_dict = {}
     for k, v in config_dict["mks"]["relays"].items():
         relay_settings_dict[k] = relay_settings_list[v["relay_num"]-1]
 
     for i, k in enumerate(config_dict["mks"]["teensy relays"]):
         relay_settings_dict[k] = teensy_relay_settings_list[i]
-        relay_status_dict[k] = teensy_relay_status_list[i]
         
     if emit:
         socketio.emit(
             "mks_update_relay_status", 
             {
-                "relay_setting": relay_settings_dict,
-                "relay_status": relay_status_dict
+                "relay_setting": relay_settings_dict
             }, 
             namespace="/manual"
         )
 
-    return relay_settings_dict, relay_status_dict
+    return relay_settings_dict
 
 @socketio.on("mks_switch_relay", namespace="/manual")
 def switchRelay(message):

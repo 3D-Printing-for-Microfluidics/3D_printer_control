@@ -1136,7 +1136,8 @@ if __name__ == '__main__':
             "valve_pump2",
             "valve_vacuum",
             "valve_pump1",
-            "valve_vent1"
+            "valve_vent1",
+            "stirring"
         ]
     }
 

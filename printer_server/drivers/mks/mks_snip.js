@@ -1,6 +1,5 @@
 let btn_on = 'btn-info';
 let btn_off = 'btn-outline-info';
-let btn_warn = 'btn-outline-warn';
 let chamber_vent = 'bg-light';
 let chamber_mid = 'bg-warning';
 let chamber_vac = 'bg-success';
@@ -21,40 +20,16 @@ var update_dist_position = function (message) {
 
 
 $(document).ready(function () {
-    // After 60 minutes of inactivity, close socket and timeout web page
-    var event = 'click',
-        timer,
-        delay = 10000,
-        logout = function () {
-            document.removeEventListener(event, reset, false);
-            var content = 'This page has timed out. Please reload the page.';
-            document.getElementById('base-body').innerHTML = content;
-            socket.disconnect();
-        },
-        reset = function () {
-            clearTimeout(timer);
-            timer = setTimeout(logout, 3600000);
-        };
-    document.addEventListener(event, reset, false);
-    window.addEventListener('beforeunload', logout, false);
-    reset();
-
     // Initiaize to starting values
-    let pumpSetting = Boolean(Number(hardware["mks"]["relay_setting"]["vacuum_pump"]));
-    let craneSetting = Boolean(Number(hardware["mks"]["relay_setting"]["crane"]));
-    let valveSetting = {
+    let settings = {
         valve_pump1: Boolean(Number(hardware["mks"]["relay_setting"]["valve_pump1"])),
         valve_vent1: Boolean(Number(hardware["mks"]["relay_setting"]["valve_vent1"])),
         valve_pump2: Boolean(Number(hardware["mks"]["relay_setting"]["valve_pump2"])),
         valve_vent2: Boolean(Number(hardware["mks"]["relay_setting"]["valve_vent2"])),
         valve_vacuum: Boolean(Number(hardware["mks"]["relay_setting"]["valve_vacuum"])),
-    };
-    let valveStatus = {
-        valve_pump1: Boolean(Number(hardware["mks"]["relay_status"]["valve_pump1"])),
-        valve_vent1: Boolean(Number(hardware["mks"]["relay_status"]["valve_vent1"])),
-        valve_pump2: Boolean(Number(hardware["mks"]["relay_status"]["valve_pump2"])),
-        valve_vent2: Boolean(Number(hardware["mks"]["relay_status"]["valve_vent2"])),
-        valve_vacuum: Boolean(Number(hardware["mks"]["relay_status"]["valve_vacuum"])),
+        stirring: Boolean(Number(hardware["mks"]["relay_setting"]["stirring"])),
+        vacuum_pump: Boolean(Number(hardware["mks"]["relay_setting"]["vacuum_pump"])),
+        crane: Boolean(Number(hardware["mks"]["relay_setting"]["crane"]))
     };
     let gaugeReading1 = hardware["mks"]["gauge"][0];
     let gaugeReading2 = hardware["mks"]["gauge"][1];
@@ -62,36 +37,24 @@ $(document).ready(function () {
     let target2 = hardware["mks"]["target"][1];
     let atm = hardware["mks"]["atm"];
 
-    updateAllValveStatus();
-    updatePumpStatus();
-    updateCraneStatus();
-    updateChamberStatus();
+    updateAllButtonStatus();
 
-    function updatePumpStatus() {
-        document.getElementById('pump_status').innerText = pumpSetting ? 'ON' : 'OFF';
-        document.getElementById('vacuum_pump').classList.remove(btn_on, btn_off, btn_warn);
-        document.getElementById('vacuum_pump').classList.add(pumpSetting ? btn_on : btn_off);
+    function updateAllButtonStatus() {
+        updateButtonStatus("valve_pump1", "OPEN", "CLOSED");
+        updateButtonStatus("valve_vent1", "OPEN", "CLOSED");
+        updateButtonStatus("valve_pump2", "OPEN", "CLOSED");
+        updateButtonStatus("valve_vent2", "OPEN", "CLOSED");
+        updateButtonStatus("valve_vacuum", "OPEN", "CLOSED");
+        updateButtonStatus("stirring", "ON", "OFF");
+        updateButtonStatus("vacuum_pump", "ON", "OFF");
+        updateButtonStatus("crane", "ENABLED", "DISABLED");
+
     }
 
-    function updateCraneStatus() {
-        document.getElementById('crane_status').innerText = craneSetting ? 'ENABLED' : 'DISABLED';
-        document.getElementById('crane_status').classList.remove(btn_on, btn_off, btn_warn);
-        document.getElementById('crane_status').classList.add(craneSetting ? btn_on : btn_off);
-    }
-
-    function updateAllValveStatus() {
-        updateValveStatus("valve_pump1");
-        updateValveStatus("valve_vent1");
-        updateValveStatus("valve_pump2");
-        updateValveStatus("valve_vent2");
-        updateValveStatus("valve_vacuum");
-    }
-
-    function updateValveStatus(valveId) {
-        document.getElementById(`${valveId}_status`).innerText = valveSetting[valveId] ? 'Open' : 'Closed';
-        document.getElementById(valveId).classList.remove(btn_on, btn_off);
-        document.getElementById(valveId).classList.add(valveSetting[valveId] ? btn_on : btn_off);
-        document.getElementById(valveId).classList.add(valveSetting[valveId] ? (valveStatus[valveId] ? btn_on : btn_warn) : (valveStatus[valveId] ? btn_warn : btn_off));
+    function updateButtonStatus(id, on_name, off_name) {
+        document.getElementById(`${id}_status`).innerText = settings[id] ? on_name : off_name;
+        document.getElementById(id).classList.remove(btn_on, btn_off);
+        document.getElementById(id).classList.add(settings[id] ? btn_on : btn_off);
     }
 
     function updateChamberStatus() {
@@ -130,40 +93,25 @@ $(document).ready(function () {
         document.getElementById('vacuum_chamber2').classList.add(chamber2);
     }
 
-    function togglePump() {
-        pumpSetting = !pumpSetting;
-        updatePumpStatus();
+    function toggleButton(id, on_name, off_name) {
+        settings[id] = !settings[id];
+        updateButtonStatus(id, on_name, off_name);
         updateChamberStatus();
-        socket.emit("mks_switch_relay", { "relay": "vacuum_pump", "state": pumpSetting });
-    }
-
-    function toggleValve(valveId) {
-        valveSetting[valveId] = !valveSetting[valveId];
-        updateValveStatus(valveId);
-        updateChamberStatus();
-        socket.emit("mks_switch_relay", { "relay": valveId, "state": valveSetting[valveId] });
+        socket.emit("mks_switch_relay", { "relay": id, "state": settings[id] });
     }
 
     socket.on("mks_update_relay_status", function (message) {
-        pumpSetting = Boolean(Number(message["relay_setting"]["vacuum_pump"]));
-        craneSetting = Boolean(Number(message["relay_setting"]["crane"]));
-        valveSetting = {
+        settings = {
             valve_pump1: Boolean(Number(message["relay_setting"]["valve_pump1"])),
             valve_vent1: Boolean(Number(message["relay_setting"]["valve_vent1"])),
             valve_pump2: Boolean(Number(message["relay_setting"]["valve_pump2"])),
             valve_vent2: Boolean(Number(message["relay_setting"]["valve_vent2"])),
             valve_vacuum: Boolean(Number(message["relay_setting"]["valve_vacuum"])),
+            stirring: Boolean(Number(message["relay_setting"]["stirring"])),
+            vacuum_pump: Boolean(Number(message["relay_setting"]["vacuum_pump"])),
+            crane: Boolean(Number(message["relay_setting"]["crane"]))
         };
-        valveStatus = {
-            valve_pump1: Boolean(Number(message["relay_status"]["valve_pump1"])),
-            valve_vent1: Boolean(Number(message["relay_status"]["valve_vent1"])),
-            valve_pump2: Boolean(Number(message["relay_status"]["valve_pump2"])),
-            valve_vent2: Boolean(Number(message["relay_status"]["valve_vent2"])),
-            valve_vacuum: Boolean(Number(message["relay_status"]["valve_vacuum"])),
-        };
-        updatePumpStatus();
-        updateCraneStatus();
-        updateAllValveStatus();
+        updateAllButtonStatus();
     });
 
     socket.on("mks_update_pressure_readings", function (message) {
@@ -172,28 +120,17 @@ $(document).ready(function () {
         updateChamberStatus();
     });
 
-    $("#vacuum_pump").click(function () {
-        togglePump();
-    });
-
-    $("#valve_pump1").click(function () {
-        toggleValve("valve_pump1");
-    });
-
-    $("#valve_vent1").click(function () {
-        toggleValve("valve_vent1");
-    });
-
-    $("#valve_pump2").click(function () {
-        toggleValve("valve_pump2");
-    });
-
-    $("#valve_vent2").click(function () {
-        toggleValve("valve_vent2");
-    });
-
-    $("#valve_vacuum").click(function () {
-        toggleValve("valve_vacuum");
+    $(".mks_button").click(function () {
+        let id = $(this).attr('id');
+        if (id.includes("valve")) {
+            toggleButton(id, "OPEN", "CLOSED");
+        }
+        else if (id == "crane") {
+            toggleButton(id, "ENABLED", "DISABLED");
+        }
+        else {
+            toggleButton(id, "ON", "OFF");
+        }
     });
 
     socket.on("mks_crane_done", function (message) {

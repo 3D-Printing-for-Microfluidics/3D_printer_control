@@ -148,9 +148,8 @@ def index():
             ] = printer_server.drivers.loadcell.loadcell_snip.get_graph_mode()
 
         if "mks" in config_dict.keys():
-            relay_setting, relay_status = printer_server.drivers.mks.mks_snip.get_relay_status()
+            relay_setting = printer_server.drivers.mks.mks_snip.get_relay_status()
             hardware["mks"]["relay_setting"] = relay_setting
-            hardware["mks"]["relay_status"] = relay_status
             hardware["mks"]["gauge"] = printer_server.drivers.mks.mks_snip.get_gauges()
             hardware["mks"]["target"] =config_dict["mks"]["target"]
             hardware["mks"]["atm"] = config_dict["mks"]["atm pressure"]-50
