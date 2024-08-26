@@ -349,10 +349,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
 
         self.setAcceleration(acceleration)
         self.log.info("Start jog on axis %s at speed %s mm/sec", a, speed)
-        if speed > 0:
-            self.send(f"JOG/v {a}, {speed}, +")
-        else:
-            self.send(f"JOG/v {a}, {speed}, -")
+        self.send(f"JOG/v {a}, {speed}, +")
         self.logging_move_status[a] = 0
 
     def stopJog(self, axis=None):
