@@ -19,7 +19,7 @@ import serial.tools.list_ports
 #         print("\t")
 
 class USBSerial(serial.Serial):
-    def __init__(self, name, vid=None, pid=None, sn=None, baudrate=115200, timeout=None, line_ending='\r', logger=logging.getLogger(__name__)):
+    def __init__(self, name, vid=None, pid=None, sn=None, baudrate=115200, timeout=None, line_ending='\r', multiline=False, logger=logging.getLogger(__name__)):
         super().__init__(baudrate=baudrate, timeout=timeout)
         self.log = logger
         self.vid = vid
@@ -30,9 +30,11 @@ class USBSerial(serial.Serial):
         self.type = None
         self.connected = None
         self.line_ending = line_ending
+        self.multiline = multiline
 
         self._lock = threading.Lock()
-        self.r = re.compile(r"\d*\.?\d*\s*$")
+        # self.r = re.compile(r"\d*\.?\d*\s*$")
+        self.r = re.compile(r"\d*\.?\d*")
     
     def findUsbPort(self, vid, pid, sn=None):
         ports = list(serial.tools.list_ports.comports())
@@ -83,8 +85,6 @@ class USBSerial(serial.Serial):
                 self.log.debug("Sent: '%s'", cmd)
             except serial.SerialException as e:
                 msg = "Failed to send message! (%s)", e
-                # self.log.error(msg)
-                # return False
                 self.log.critical(msg)
                 self.shutdown(is_critical = True)
                 sys.exit(msg)
@@ -101,14 +101,12 @@ class USBSerial(serial.Serial):
                 response += self.readline()
             except serial.SerialException as e:
                 msg = "Failed to receive message! (%s)", e
-                # self.log.error(msg)
-                # return False
                 self.log.critical(msg)
                 self.shutdown(is_critical = True)
                 sys.exit(msg)
             response = response.decode().rstrip()
             message += response
-            message += " "
+            message += "\n"
 
             if "Error" in response:
                 self.log.warning("Response: '%s'", response)
@@ -121,14 +119,13 @@ class USBSerial(serial.Serial):
     
     def parse_message(self, cmd, message):
         if not self.multiline:
-            return message
-        message = message.replace(" Done", "")  # strip out done message
+            return message.rstrip()
+        message = message.replace("Done", "").rstrip()  # strip out done message
         if "G" in cmd or cmd.upper() == "B":
             message = float(
                 re.findall(self.r, message)[0]
             )  # parse out values for getter commands
         return message
-        
 
     def write_bytes(self, bytes):
         try:

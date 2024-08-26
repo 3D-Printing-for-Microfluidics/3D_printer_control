@@ -18,9 +18,9 @@ class LoadCell(USBSerial):
         Initializes the loadcell
         """
         self.log = logging.getLogger(__name__)
-        self.log.setLevel(log_level)
+        self.log.setLevel(logging.DEBUG)
 
-        super().__init__("Loadcell", vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"],  baudrate=config_dict["baudrate"], timeout=0.1, line_ending='\n', logger=self.log)
+        super().__init__("Loadcell", vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"],  baudrate=config_dict["baudrate"], timeout=0.1, line_ending='\n', multiline=True, logger=self.log)
 
         self.config_dict = config_dict
         self.currentData = []
@@ -30,7 +30,6 @@ class LoadCell(USBSerial):
         self.running = False
         self.graph_newtons = True
         self.graph_autoscale = False
-        self.multiline = True
 
         self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
         self.log_file = None

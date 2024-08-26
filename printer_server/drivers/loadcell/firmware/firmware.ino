@@ -100,9 +100,9 @@ void translate()
     else if (opcode == 'B' || opcode == 'b')
     {
         setStartTime();
-        // Serial.print("Info: Starting Sampling at '");
+        Serial.print("Info: Starting Sampling at '");
         Serial.println(start_millis);
-        // Serial.println("' ms");
+        Serial.println("' ms");
         // start sampling
         timerStart();
     }
