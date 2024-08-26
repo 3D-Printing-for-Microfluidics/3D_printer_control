@@ -127,9 +127,9 @@
         "dummy": false,
         "address": "192.168.0.6",
         "port": 50000,
-        "pivot_x_mm": 0,
-        "pivot_y_mm": 0,
-        "pivot_z_mm": 432,
+        "pivot_x_mm": 0.73,
+        "pivot_y_mm": -0.38,
+        "pivot_z_mm": 461.8,
         "axes": [
             "Z",
             "U",

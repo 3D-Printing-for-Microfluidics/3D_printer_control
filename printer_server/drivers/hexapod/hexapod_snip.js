@@ -17,26 +17,26 @@ $(document).ready(function () {
     function update_pivot_fields(new_pivot) {
 
         // Update html elements
-        document.getElementById("pivot_R_state").innerHTML = new_pivot.R.toFixed(1) + "mm";
-        document.getElementById("pivot_S_state").innerHTML = new_pivot.S.toFixed(1) + "mm";
-        document.getElementById("pivot_T_state").innerHTML = new_pivot.T.toFixed(1) + "mm";
+        document.getElementById("pivot_R_state").innerHTML = new_pivot.R.toFixed(2) + "mm";
+        document.getElementById("pivot_S_state").innerHTML = new_pivot.S.toFixed(2) + "mm";
+        document.getElementById("pivot_T_state").innerHTML = new_pivot.T.toFixed(2) + "mm";
 
-        document.getElementById("pivot_R_state_input").value = parseFloat(new_pivot.R.toFixed(1));
-        document.getElementById("pivot_S_state_input").value = parseFloat(new_pivot.S.toFixed(1));
-        document.getElementById("pivot_T_state_input").value = parseFloat(new_pivot.T.toFixed(1));
+        document.getElementById("pivot_R_state_input").value = parseFloat(new_pivot.R.toFixed(2));
+        document.getElementById("pivot_S_state_input").value = parseFloat(new_pivot.S.toFixed(2));
+        document.getElementById("pivot_T_state_input").value = parseFloat(new_pivot.T.toFixed(2));
     }
 
     function update_rotation_fields(rotation) {
         console.log("rotation update", rotation);
 
         // Update html elements
-        document.getElementById("rotation_U_state").innerHTML = (rotation[0] * 1000).toFixed(0) + " m&deg";
-        document.getElementById("rotation_V_state").innerHTML = (rotation[1] * 1000).toFixed(0) + " m&deg";
-        document.getElementById("rotation_W_state").innerHTML = (rotation[2] * 1000).toFixed(0) + " m&deg";
+        document.getElementById("rotation_U_state").innerHTML = (rotation[0] * 1000).toFixed(1) + " mrad";
+        document.getElementById("rotation_V_state").innerHTML = (rotation[1] * 1000).toFixed(1) + " mrad";
+        document.getElementById("rotation_W_state").innerHTML = (rotation[2] * 1000).toFixed(1) + " mrad";
 
-        document.getElementById("rotation_U_state_input").value = parseFloat((rotation[0] * 1000).toFixed(0));
-        document.getElementById("rotation_V_state_input").value = parseFloat((rotation[1] * 1000).toFixed(0));
-        document.getElementById("rotation_W_state_input").value = parseFloat((rotation[2] * 1000).toFixed(0));
+        document.getElementById("rotation_U_state_input").value = parseFloat((rotation[0] * 1000).toFixed(1));
+        document.getElementById("rotation_V_state_input").value = parseFloat((rotation[1] * 1000).toFixed(1));
+        document.getElementById("rotation_W_state_input").value = parseFloat((rotation[2] * 1000).toFixed(1));
     }
 
     function update_translation_fields(translation) {

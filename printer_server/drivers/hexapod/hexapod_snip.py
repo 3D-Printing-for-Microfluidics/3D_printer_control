@@ -14,11 +14,13 @@ def get_hexapod_positions(emit=True, log=False):
         printer_server.views.manual_controls.get_last_calibration_positions_from_logs()
     )
 
+    new_focus = hexapod.get_pose("Focus")*1000
     new_tip = hexapod.get_pose("Tip")*1000
     new_tilt = hexapod.get_pose("Tilt")*1000
     new_rotate = hexapod.get_pose("Rotate")*1000
 
-    if new_tip is not None:
+    if new_focus is not None:
+        last_positions["distance"] = new_focus
         last_positions["tip"] = new_tip
         last_positions["tilt"] = new_tilt
         last_positions["rotate"] = new_rotate
