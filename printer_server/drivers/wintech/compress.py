@@ -230,7 +230,7 @@ def encode(image):
 
     size = bytecount
 
-    # print(f"{size}"")
+    # print(f"{size}")
 
     # update size that was previously set to 0
     total = numToBits(size, 32)
