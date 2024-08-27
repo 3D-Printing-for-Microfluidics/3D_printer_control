@@ -18,7 +18,7 @@ class LoadCell(USBSerial):
         Initializes the loadcell
         """
         self.log = logging.getLogger(__name__)
-        self.log.setLevel(logging.DEBUG)
+        self.log.setLevel(log_level)
 
         super().__init__("Loadcell", vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"],  baudrate=config_dict["baudrate"], timeout=0.1, line_ending='\n', multiline=True, logger=self.log)
 
