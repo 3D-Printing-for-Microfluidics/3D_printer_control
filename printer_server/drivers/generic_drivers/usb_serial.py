@@ -128,25 +128,28 @@ class USBSerial(serial.Serial):
         return message
 
     def write_bytes(self, bytes):
-        try:
-            self.write(bytes)
-            return True
-        except serial.SerialException as e:
-            msg = "Failed to write bytes! (%s)", e
-            self.log.critical(msg)
-            self.shutdown(is_critical = True)
-            sys.exit(msg)
+        with self._lock:
+            try:
+                self.write(bytes)
+                return True
+            except serial.SerialException as e:
+                msg = "Failed to write bytes! (%s)", e
+                self.log.critical(msg)
+                self.shutdown(is_critical = True)
+                sys.exit(msg)
     
     def read_bytes(self, number_of_bytes):
-        try:
-            return self.read(number_of_bytes)
-        except serial.SerialException as e:
-            msg = "Failed to read bytes! (%s)", e
-            self.log.critical(msg)
-            self.shutdown(is_critical = True)
-            sys.exit(msg)
+        with self._lock:
+            try:
+                return self.read(number_of_bytes)
+            except serial.SerialException as e:
+                msg = "Failed to read bytes! (%s)", e
+                self.log.critical(msg)
+                self.shutdown(is_critical = True)
+                sys.exit(msg)
         
     def flush_buffers(self):
-        # self.flush()
-        self.reset_input_buffer()
-        self.reset_output_buffer()
+        with self._lock:
+            # self.flush()
+            self.reset_input_buffer()
+            self.reset_output_buffer()
