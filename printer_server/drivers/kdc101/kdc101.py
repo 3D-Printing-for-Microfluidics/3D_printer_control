@@ -19,6 +19,7 @@ class KDC101(USBSerial, FocusStageDriver):
         self.minPos = 0.0
         self.relativeMode = True
         self.config_dict = config_dict
+        self.initialized = None
 
     def connect(self, shutdown):
         super().connect(shutdown)
