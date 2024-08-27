@@ -16,6 +16,8 @@ class Thread(threading.Thread):
         # self.exc = None        
         try:
             if self._target is not None:
+                if Config.LOG_THREADING:
+                    self.log.info("Starting Thread: %s", self.name)
                 if Config.PROFILE_CODE:
                     # Create profiles directory if it doesn't exist
                     profiles_dir = Path(Config.PROFILES_FOLDER)
@@ -45,4 +47,6 @@ class Thread(threading.Thread):
         finally:
             # Avoid a refcycle if the thread is running a function with
             # an argument that has a member that points to the thread.
+            if Config.LOG_THREADING:
+                self.log.info("Stopping Thread: %s", self.name)
             del self._target, self._args, self._kwargs
