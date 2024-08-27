@@ -230,7 +230,7 @@ def encode(image):
 
     size = bytecount
 
-    # print(size)
+    # print(f"{size}"")
 
     # update size that was previously set to 0
     total = numToBits(size, 32)
@@ -327,7 +327,7 @@ def test():
 
         for i in range(packnum):
             if i %100==0:
-                print(i,packnum)
+                print(f"{i},{packnum}")
             payload=[]
             if i<packnum-1:
                 leng=numToBits(504,16)
@@ -344,7 +344,7 @@ def test():
             self.send('w', 0x1a2b, payload, sequenceByte=0x11)
 
 
-        print(time.clock()-t)
+        print(f"{time.clock()-t}")
         self.checkAllStatus()
 
     def sendBmp(self,image,exp,rep=1):

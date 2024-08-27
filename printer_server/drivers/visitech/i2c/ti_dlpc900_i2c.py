@@ -126,7 +126,7 @@ class TI_DLPC900_I2C:
             self.logger.log(lvl, msg)
         except AttributeError:
             if lvl >= self.verbosity:
-                print(msg)
+                print(f"{msg}")
 
     def load_default_configuration(self):
         """Load the default hardware configuration."""
@@ -403,4 +403,4 @@ class TI_DLPC900_I2C:
 
 if __name__ == "__main__":
     dmd = TI_DLPC900_I2C(verbosity=logging.DEBUG)
-    print(dmd.get_all_status())
+    print(f"{dmd.get_all_status()}")

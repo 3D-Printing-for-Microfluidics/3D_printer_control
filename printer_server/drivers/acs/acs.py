@@ -493,7 +493,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
                 cmd = input("Give ACS a command>> ")
                 cmd.strip()
                 with sendLock:
-                    print(self.send(cmd))
+                    print(f"{self.send(cmd)}")
         except KeyboardInterrupt:
             print(f"\nExited by KeyboardInterrupt")
         except:

@@ -108,5 +108,5 @@ class TipTilt_dummy:
 if __name__ == "__main__":
     t = TipTilt_dummy()
     t.connect(exit)
-    print(t.get_position("tip"))
-    print(t.get_position("tilt"))
+    print(f"{t.get_position("tip")}")
+    print(f"{t.get_position("tilt")}")

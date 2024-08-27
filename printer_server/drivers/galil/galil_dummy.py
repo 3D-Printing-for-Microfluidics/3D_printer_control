@@ -476,7 +476,7 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
             while True:
                 cmd = input("Give Galil a command>> ").strip()
                 self.log.info("Command given: %s", cmd)
-                print(self.send(cmd.upper()))
+                print(f"{self.send(cmd.upper())}")
         except KeyboardInterrupt:
             self.log.info("Exited by KeyboardInterrupt")
 

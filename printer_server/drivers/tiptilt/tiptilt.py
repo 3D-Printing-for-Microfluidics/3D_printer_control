@@ -134,5 +134,5 @@ if __name__ == "__main__":
     t = TipTilt()
     t.connect(exit)
     # t.home()
-    print(t.get_position("tip"))
-    print(t.get_position("tilt"))
+    print(f"{t.get_position("tip")}")
+    print(f"{t.get_position("tilt")}")

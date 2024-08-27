@@ -230,6 +230,6 @@ if __name__ == "__main__":
     lc.connect(exit)
     lc.start()
     lc.set_log_file("loadcell_data.txt")
-    print(lc.get_current_force())
+    print(f"{lc.get_current_force()}")
     lc.stop()
     lc.disconnect()

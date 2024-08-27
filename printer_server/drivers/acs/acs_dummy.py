@@ -368,7 +368,7 @@ class ACS_dummy(BPStageDriver, XYStageDriver):
             while True:
                 cmd = input("Give ACS a command>> ").strip()
                 self.log.info("Command given: %s", cmd)
-                print(self.send(cmd.upper()))
+                print(f"{self.send(cmd.upper())}")
         except KeyboardInterrupt:
             self.log.info("Exited by KeyboardInterrupt")
 
