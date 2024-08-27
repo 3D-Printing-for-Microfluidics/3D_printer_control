@@ -34,7 +34,7 @@ class USBSerial(serial.Serial):
 
         self._lock = threading.Lock()
         # self.r = re.compile(r"\d*\.?\d*\s*$")
-        self.r = re.compile(r"\d*\.?\d*")
+        self.r = re.compile(r"\d*\.?\d+")
     
     def findUsbPort(self, vid, pid, sn=None):
         ports = list(serial.tools.list_ports.comports())
