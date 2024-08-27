@@ -9,9 +9,9 @@ from ThorlabsPM100 import ThorlabsPM100
 # first_load = True
 # if first_load:
 #     first_load = False
-#     print("PYVISA:")
+#     print(f"PYVISA:")
 #     print(f"\t{pyvisa.ResourceManager('@py').list_resources()}")
-#     print("\t")
+#     print(f"\t")
 
 class Photodiode:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):

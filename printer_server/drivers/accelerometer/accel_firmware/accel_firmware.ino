@@ -220,7 +220,7 @@ void samplingISR()
     buf2[1] = ((uint16_t)accel >> 8) & 255;
     Serial.write(buf2, sizeof(buf2));
 
-    Serial.print('\n');
+    Serial.print("\n");
 
     // increment samples counter
     samples_counter++;

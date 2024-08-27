@@ -210,7 +210,7 @@ void samplingISR()
     buf2[0] = adc_value & 255;
     buf2[1] = (adc_value >> 8) & 255;
     Serial.write(buf2, sizeof(buf2));
-    Serial.print('\n');
+    Serial.print("\n");
 
     //    Serial.printf("%d,%d,%d\r\n", (uint32_t) samples_counter, (uint32_t) millis(), (uint16_t) adc_value);
 

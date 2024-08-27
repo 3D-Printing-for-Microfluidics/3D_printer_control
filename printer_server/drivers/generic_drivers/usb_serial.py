@@ -11,12 +11,12 @@ import serial.tools.list_ports
 # if first_load:
 #     first_load = False
 #     ports = list(serial.tools.list_ports.comports())
-#     print("USB:")
+#     print(f"USB:")
 #     for p in ports:
 #         print(f"\t{p.hwid}")
 #         print(f"\t{p.vid}:{p.pid}:{p.serial_number}")
 #         print(f"\t{p.manufacturer} {p.product}")
-#         print("\t")
+#         print(f"\t")
 
 class USBSerial(serial.Serial):
     def __init__(self, name, vid=None, pid=None, sn=None, baudrate=115200, timeout=None, line_ending='\r', multiline=False, logger=logging.getLogger(__name__)):

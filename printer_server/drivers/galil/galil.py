@@ -14,9 +14,9 @@ from printer_server.drivers.generic_drivers import BPStageDriver, FocusStageDriv
 # first_load = True
 # if first_load:
 #     first_load = False
-#     print("Galil:")
+#     print(f"Galil:")
 #     print(f"\t{gclib.py().GAddresses()}")
-#     print("\t")
+#     print(f"\t")
 
 class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def __init__(
@@ -635,7 +635,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
                 cmd.strip()
                 print(self.send(cmd.upper()))
         except KeyboardInterrupt:
-            print("\nExited by KeyboardInterrupt")
+            print(f"\nExited by KeyboardInterrupt")
 
 
 if __name__ == "__main__":

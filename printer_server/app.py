@@ -31,7 +31,7 @@ def create_app(config_object=ProdConfig):
         with app.app_context():
             cleanup_db()
     except:
-        print("Error cleaning DB. Does it exist?")
+        print(f"Error cleaning DB. Does it exist?")
 
     return app
 

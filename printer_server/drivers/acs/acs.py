@@ -373,12 +373,10 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         time.sleep(0.01)
         in_motion = bool(int(self.send(f"?MST{a}.#MOVE", notify=False)))
         in_position = bool(int(self.send(f'?MST{a}.#INPOS', notify=False)))
-        # print(f"Axis {a},IM: {in_motion}, IP: {in_position}")
         while in_motion or not in_position:
             time.sleep(0.01)
             in_motion = bool(int(self.send(f"?MST{a}.#MOVE", notify=False)))
             in_position = bool(int(self.send(f'?MST{a}.#INPOS', notify=False)))
-            # print(f"Axis {a},IM: {in_motion}, IP: {in_position}")
             upper, lower = self.checkLimits(axis=a)
             position = self.current_position[a]
             if (
@@ -398,9 +396,6 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
             # only proceed when 10 good consecutive counts have been read
             error = self.error_window[a]
             while counter <= 5:
-                # in_motion = bool(int(self.send(f"?MST{a}.#MOVE", notify=False)))
-                # in_position = bool(int(self.send(f'?MST{a}.#INPOS', notify=False)))
-                # print(f"Axis {a},IM: {in_motion}, IP: {in_position}")
                 time.sleep(0.01)
                 position = self.current_position[a]
                 if any(self.checkLimits(axis=a)):
@@ -500,9 +495,9 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
                 with sendLock:
                     print(self.send(cmd))
         except KeyboardInterrupt:
-            print("\nExited by KeyboardInterrupt")
+            print(f"\nExited by KeyboardInterrupt")
         except:
-            print("\nError processing command")
+            print(f"\nError processing command")
 
 
 if __name__ == "__main__":
