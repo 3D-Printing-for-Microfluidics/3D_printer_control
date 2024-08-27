@@ -235,7 +235,7 @@ class LoadCell(USBSerial):
         """
         Sample at a frequency of freq (in Hz)
         """
-        return self.send("b")
+        return self.send("b", parse_float_at_index=0)
 
     def loadcell_pause(self):
         """

@@ -11,7 +11,6 @@ class MKSTeensy(USBSerial):
 
         self.config_dict = config_dict
 
-        self.sendLock = Lock()
         self.relay_requests = []
         for _ in config_dict["teensy relays"]:
             self.relay_requests.append(0)

@@ -78,7 +78,7 @@ class USBSerial(serial.Serial):
             self.connected = None
             self.log.info("Disconnected from %s", self.name)
 
-    def send(self, cmd, recieve=True):
+    def send(self, cmd, recieve=True, parse_float_at_index=None):
         with self._lock:
             try:
                 self.write(bytes(cmd + self.line_ending, encoding="ascii"))
@@ -90,7 +90,7 @@ class USBSerial(serial.Serial):
                 sys.exit(msg)
             if recieve:
                 response = self.receive()
-                return self.parse_message(cmd, response)
+                return self.parse_message(cmd, response, parse_float_at_index)
             return True
 
     def receive(self):
@@ -117,13 +117,13 @@ class USBSerial(serial.Serial):
                 break
         return message
     
-    def parse_message(self, cmd, message):
+    def parse_message(self, cmd, message, parse_float_at_index=None):
         if not self.multiline:
             return message.rstrip()
         message = message.replace("Done", "").rstrip()  # strip out done message
-        if "G" in cmd or cmd.upper() == "B":
+        if parse_float_at_index is not None:
             message = float(
-                re.findall(self.r, message)[0]
+                re.findall(self.r, message)[parse_float_at_index]
             )  # parse out values for getter commands
         return message
 

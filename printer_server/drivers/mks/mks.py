@@ -62,7 +62,7 @@ class MKS946(USBSerial):
         self.thread_running = False
         self.pressures = None
         self.thread = Thread(self.log, name="mks_poll_thread", target=self.loop)
-        self.sendLock = threading.Lock()
+        # self.sendLock = threading.Lock()
         self.relay_requests = [0,0,0,0,0,0,0,0,0,0,0,0,0]
 
     def initialize(self):
@@ -126,34 +126,34 @@ class MKS946(USBSerial):
         @003ACK7.602E+2;FF
         Here, <aaa>=003; <Command>=PR1; <Response>=7.602E+2
         '''
-        with self.sendLock:
-            cmd_str = f"@{self.address}{command}"
-            if n != None:
-                cmd_str += f"{n}"
-            cmd_str += f"?"
-            if parameter != "":
-                cmd_str += f"{parameter}"
-            cmd_str += f";FF"
+        # with self.sendLock:
+        cmd_str = f"@{self.address}{command}"
+        if n != None:
+            cmd_str += f"{n}"
+        cmd_str += f"?"
+        if parameter != "":
+            cmd_str += f"{parameter}"
+        cmd_str += f";FF"
 
-            trys = 3
-            for _ in range(trys):
-                rsp_str = self.send(cmd_str)
+        trys = 3
+        for _ in range(trys):
+            rsp_str = self.send(cmd_str)
 
-                if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
-                    rsp_str = rsp_str.replace(f"@{self.address}ACK","")
-                    rsp_str = rsp_str.replace(f";FF","")
-                    
-                    return rsp_str
+            if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
+                rsp_str = rsp_str.replace(f"@{self.address}ACK","")
+                rsp_str = rsp_str.replace(f";FF","")
                 
-                elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
-                    rsp_str = rsp_str.replace(f"@{self.address}NAK","")
-                    rsp_str = rsp_str.replace(f";FF","")
-                    self.log.error(self.parse_error_code(int(rsp_str)))
-                    return None
-                
-                else:
-                    self.log.error("NAK: QUERY RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
-            return None
+                return rsp_str
+            
+            elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
+                rsp_str = rsp_str.replace(f"@{self.address}NAK","")
+                rsp_str = rsp_str.replace(f";FF","")
+                self.log.error(self.parse_error_code(int(rsp_str)))
+                return None
+            
+            else:
+                self.log.error("NAK: QUERY RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
+        return None
         
 
     def set(self, command, n=None, parameter=""):
@@ -172,50 +172,50 @@ class MKS946(USBSerial):
         Here, <aaa>=001; <Command>=BR; <Parameter>=19200;
         <Response>=19200
         '''
-        with self.sendLock:
-            cmd_str = f"@{self.address}{command}"
-            if n != None:
-                cmd_str += f"{n}"
-            cmd_str += f"!"
-            if parameter != "":
-                cmd_str += f"{parameter}"
-            cmd_str += f";FF"
+        # with self.sendLock:
+        cmd_str = f"@{self.address}{command}"
+        if n != None:
+            cmd_str += f"{n}"
+        cmd_str += f"!"
+        if parameter != "":
+            cmd_str += f"{parameter}"
+        cmd_str += f";FF"
 
-            rsp_str = self.send(cmd_str)
+        rsp_str = self.send(cmd_str)
 
-            if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
-                rsp_str = rsp_str.replace(f"@{self.address}ACK","")
-                rsp_str = rsp_str.replace(f";FF","")
-                
-                if type(parameter) is int:
-                    if command == "SST" and rsp_str == "OFF":
-                        rsp_str = 0
-                    if int(rsp_str) != parameter:
+        if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
+            rsp_str = rsp_str.replace(f"@{self.address}ACK","")
+            rsp_str = rsp_str.replace(f";FF","")
+            
+            if type(parameter) is int:
+                if command == "SST" and rsp_str == "OFF":
+                    rsp_str = 0
+                if int(rsp_str) != parameter:
+                    self.log.error(f"Set command '{command}' failed (value '{parameter}' != response '{rsp_str}')")
+                    return False
+                return True
+
+            elif type(parameter) is str:
+                if rsp_str != parameter:
+                    if command == "PT" and parameter in rsp_str:
+                        return True
+                    else:
                         self.log.error(f"Set command '{command}' failed (value '{parameter}' != response '{rsp_str}')")
                         return False
-                    return True
+                return True
 
-                elif type(parameter) is str:
-                    if rsp_str != parameter:
-                        if command == "PT" and parameter in rsp_str:
-                            return True
-                        else:
-                            self.log.error(f"Set command '{command}' failed (value '{parameter}' != response '{rsp_str}')")
-                            return False
-                    return True
-
-                else:
-                    return rsp_str
-            
-            elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
-                rsp_str = rsp_str.replace(f"@{self.address}NAK","")
-                rsp_str = rsp_str.replace(f";FF","")
-                self.log.error(self.parse_error_code(int(rsp_str)))
-                return False
-            
             else:
-                self.log.error("NAK: SET RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
-                return False
+                return rsp_str
+        
+        elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
+            rsp_str = rsp_str.replace(f"@{self.address}NAK","")
+            rsp_str = rsp_str.replace(f";FF","")
+            self.log.error(self.parse_error_code(int(rsp_str)))
+            return False
+        
+        else:
+            self.log.error("NAK: SET RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
+            return False
         
         
     def parse_error_code(self, code):

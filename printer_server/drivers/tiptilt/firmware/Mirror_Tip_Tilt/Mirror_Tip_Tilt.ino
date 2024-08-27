@@ -43,71 +43,105 @@ void loop() {
 }
 
 void translate(){
+    bool valid_op = true;
   //init
     if(opcode[0] == 'I'){
-        tt->connectAxis();
         Serial.println("Info: Connecting");
-        Serial.println("Connected");
-        Serial.println("Done");
-        
+        if(tt->connectAxis()){
+            Serial.println("Connected");
+        }
     }
     //home
     else if(opcode[0] == 'H'){
         Serial.println("Info: Homing");
-        tt->homeAxis();
-        Serial.println("Done");
+        if(tt->homeAxis()){
+            Serial.println("Info: Homed");
+        }
     }
     //reset
     else if(opcode[0] == 'R'){
         Serial.println("Info: Disconnecting");
-        tt->disconnectAxis();
-        Serial.println("Disconnected");
-        Serial.println("Done");
+        if(tt->disconnectAxis()){
+            Serial.println("Disconnected");
+        }
     }
     //move commands
     else if(opcode[0] == 'M'){
       //relative
       if(opcode[1] == 'R'){
           if(opcode[2] == '1'){
+              Serial.print("Info: Moving tip axis by ");
+              Serial.println(data.toFloat());
               tt->moveTipAxisByDistance(data.toFloat(), false);
+              Serial.println("Info: Move finished");
           }
           else if(opcode[2] == '2'){
+              Serial.print("Info: Moving tilt axis by ");
+              Serial.println(data.toFloat());
               tt->moveTiltAxisByDistance(data.toFloat(), false);
+              Serial.println("Info: Move finished");
           }
-          else{}
+          else{
+            valid_op = false;
+          }
       }
       //coarse relative
       else if(opcode[1] == 'r'){
           if(opcode[2] == '1'){
+              Serial.print("Info: Moving (quick) tip axis by ");
+              Serial.println(data.toFloat());
               tt->moveTipAxisByDistance(data.toFloat(), true);
+              Serial.println("Info: Move finished");
           }
           else if(opcode[2] == '2'){
+              Serial.print("Info: Moving (quick) tilt axis by ");
+              Serial.println(data.toFloat());
               tt->moveTiltAxisByDistance(data.toFloat(), true);
+              Serial.println("Info: Move finished");
           }
-          else{}
+          else{
+            valid_op = false;
+          }
       }
       //absolute
       else if(opcode[1] == 'A'){
           if(opcode[2] == '1'){
+              Serial.print("Info: Moving tip axis to ");
+              Serial.println(data.toFloat());
               tt->moveTipAxisToLocation(data.toFloat(), false);
+              Serial.println("Info: Move finished");
           }
           else if(opcode[2] == '2'){
+              Serial.print("Info: Moving tilt axis to ");
+              Serial.println(data.toFloat());
               tt->moveTiltAxisToLocation(data.toFloat(), false);
+              Serial.println("Info: Move finished");
           }
-          else{}
+          else{
+            valid_op = false;
+          }
       }
       //absolute fast
       else if(opcode[1] == 'a'){
           if(opcode[2] == '1'){
+              Serial.print("Info: Moving (quick) tip axis to ");
+              Serial.println(data.toFloat());
               tt->moveTipAxisToLocation(data.toFloat(), true);
+              Serial.println("Info: Move finished");
           }
           else if(opcode[2] == '2'){
+              Serial.print("Info: Moving (quick) tilt axis to ");
+              Serial.println(data.toFloat());
               tt->moveTiltAxisToLocation(data.toFloat(), true);
+              Serial.println("Info: Move finished");
           }
-          else{}
+          else{
+            valid_op = false;
+          }
       }
-      else{}
-      Serial.println("Done");
+      else{
+        valid_op = false;
+      }
     }
     //getters
     else if(opcode[0] == 'G'){
@@ -121,8 +155,9 @@ void translate(){
               Serial.println("Info: Getting Tilt Position");
               Serial.println(tt->tiltLocation());
           }
-          else{}
-          Serial.println("Done");
+          else{
+            valid_op = false;
+          }
       }
       //max
       else if(opcode[1] == 'U'){
@@ -134,8 +169,9 @@ void translate(){
               Serial.println("Info: Getting Max Tilt");
               Serial.println(tt->getMaxTilt());
           }
-          else{}
-          Serial.println("Done");
+          else{
+            valid_op = false;
+          }
       }
       //min
       else if(opcode[1] == 'L'){
@@ -147,8 +183,9 @@ void translate(){
               Serial.println("Info: Getting Min Tilt");
               Serial.println(tt->getMinTilt());
           }
-          else{}
-          Serial.println("Done");
+          else{
+            valid_op = false;
+          }
       }
       //acceleration
       else if(opcode[1] == 'A'){
@@ -160,8 +197,9 @@ void translate(){
               Serial.println("Info: Getting Acceleration");
               Serial.println(tt->getStepperAcceleration());
           }
-          else{}
-          Serial.println("Done");
+          else{
+            valid_op = false;
+          }
       }
       //velocity
       else if(opcode[1] == 'V'){
@@ -173,10 +211,13 @@ void translate(){
             Serial.println("Info: Getting Speed");
               Serial.println(tt->getStepperSpeed());
           }
-          else{}
-          Serial.println("Done");
+          else{
+            valid_op = false;
+          }
       }
-      else{}
+      else{
+        valid_op = false;
+      }
     }
     //setters
     else if(opcode[0] == 'S'){
@@ -192,8 +233,9 @@ void translate(){
               Serial.println(data.toInt());
               tt->setStepperAcceleration(data.toInt());
           }
-          else{}
-          Serial.println("Done");
+          else{
+            valid_op = false;
+          }
       }
       //velocity
       else if(opcode[1] == 'V'){
@@ -207,11 +249,19 @@ void translate(){
               Serial.println(data.toInt());
               tt->setStepperSpeed(data.toInt());
           }
-          else{}
-          Serial.println("Done");
+          else{
+            valid_op = false;
+          }
       }
-      else{}
+      else{
+        valid_op = false;
+      }
     }
+
+    if(!valid_op){
+        Serial.println("Error: Invalid opcode");
+    }
+    Serial.println("Done");
 }
 
 

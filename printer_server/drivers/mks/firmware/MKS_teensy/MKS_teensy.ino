@@ -108,13 +108,11 @@ void loop() {
       int pin = data.toInt();
       digitalWrite(solenoid_pins[pin], HIGH);
       solenoid_state[pin] = 1;
-      Serial.println();
     }
     else if(opcode[0] == 'L'){ // Set relay low
       int pin = data.toInt();
       digitalWrite(solenoid_pins[pin], LOW);
       solenoid_state[pin] = 0;
-      Serial.println();
     }
     else if(opcode[0] == 'R'){ // Get all relay status
       for(int i = 0; i < 6; i++){
@@ -150,49 +148,7 @@ void loop() {
       }
     }
     else{
-      Serial.println();
+      Serial.println("Error: Invalid opcode");
     }
+    Serial.println("Done");
   }
-
-  // Solenoid example
-  // for(int i = 0; i < 5; i++){
-  //   Serial.println(i);
-  //   digitalWrite(solenoid_pins[i], HIGH);  // turn the LED on (HIGH is the voltage level)
-  //   delay(1000);                      // wait for a second
-  //   digitalWrite(solenoid_pins[i], LOW);   // turn the LED off by making the voltage LOW
-  //   delay(1000);                      // wait for a second
-  // }
-
-  // // Reed switch example
-  // for(int i = 0; i < 5; i++){
-  //   Serial.print(digitalRead(reed_pins[i]));
-  //   Serial.print(", ");
-  // }
-  // Serial.println();
-  // delay(1000);
-
-
-  // // Solenoid/reed example
-  // for(int i = 0; i < 5; i++){
-  //   Serial.print(i);
-  //   Serial.print(" ");
-  //   digitalWrite(solenoid_pins[i], HIGH);  // turn the LED on (HIGH is the voltage level)
-  //   for(int j = 0; j < 5; j++){
-  //     Serial.print(digitalRead(reed_pins[j]));
-  //     Serial.print(", ");
-  //   }
-  //   Serial.println();
-  //   delay(1000);                      // wait for a second
-  //   digitalWrite(solenoid_pins[i], LOW);   // turn the LED off by making the voltage LOW
-  //   delay(1000);                      // wait for a second
-  // }
-
-
-  // //Encoder example
-  // float a = analogRead(ENCODER_PIN);
-  // Serial.println(a/ADC_RANGE*ENCODER_RANGE_MM/MM_to_IN);
-  // delay(250);
-
-  // //Crane example 
-  // analogWrite(PWM_PIN, 127);
-  // digitalWrite(DIR_PIN, HIGH);

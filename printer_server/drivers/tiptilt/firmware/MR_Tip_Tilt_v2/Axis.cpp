@@ -78,7 +78,7 @@ bool Axis::moveAxis(float move_location, bool coarseMove){
 
     //check if homed
     if(!homed){
-        Serial.print("Error: Stage must be homed before motion.");
+        Serial.println("Error: Stage must be homed before motion.");
         return false;
     }
     
@@ -90,7 +90,7 @@ bool Axis::moveAxis(float move_location, bool coarseMove){
         return false;
     }
     else if(move_location > MAX_POS){
-      Serial.print("Error: ");
+        Serial.print("Error: ");
         Serial.print(name);
         Serial.println(" value outside positive bound.");
         return false;
@@ -205,7 +205,7 @@ bool Axis::moveAxis(float move_location, bool coarseMove){
 bool Axis::homeAxis(float offset_in_rotations){
     digitalWrite(en_pin, LOW);
     //if on limit get off it
-    Serial.println("Move off");
+    Serial.println("Move off limit switch");
     if(digitalRead(limit)){
         if(!moveOffLimitSwitch()){
             Serial.print("Error: ");
@@ -217,7 +217,7 @@ bool Axis::homeAxis(float offset_in_rotations){
     }
 
     //move to limit switch
-    Serial.println("Move to");
+    Serial.println("Move to limit switch");
     if(!moveToLimitSwitch()){
         Serial.print("Error: ");
         Serial.print(name);
@@ -226,14 +226,14 @@ bool Axis::homeAxis(float offset_in_rotations){
         return false;
     }
 
-    Serial.println("Move");
+    Serial.println("Move forward offset");
     if(offset_in_rotations != 0){
         int steps = offset_in_rotations*STEPS_PER_ROTATION*correction_factor;
         stepper->setTargetRel(steps);
         controller.move(*stepper);
     }
 
-    Serial.println("Back up");
+    Serial.println("Back up to index pulse");
     //back up to index
     if(!backupToIndex()){
         Serial.print("Error: ");

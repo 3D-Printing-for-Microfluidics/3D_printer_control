@@ -141,6 +141,7 @@ bool Tip_Tilt::homeAxis(){
 //this function is called on serial connection
 void Tip_Tilt::connectAxis(){
     //reset to defaults?
+    return true;
 }
 
 //query location for tip using encoder location (converted to microns)
@@ -155,33 +156,21 @@ float Tip_Tilt::tiltLocation(){
 
 //move tip axis to location (absolute positioning)
 bool Tip_Tilt::moveTipAxisToLocation(float location, bool coarseMove){
-    Serial.print("Info: Moving Tip Axis to ");
-    Serial.println(location);
     return tipAxis->moveAxis(location, coarseMove);
 }
 
 //move tilt axis to location (absolute positioning)
 bool Tip_Tilt::moveTiltAxisToLocation(float location, bool coarseMove){
-    Serial.print("Info: Moving Tilt Axis to ");
-    Serial.println(location);
     return tiltAxis->moveAxis(location, coarseMove);
 }
 
 //move tip axis by number of microns (relative positioning (uses absolute internally))
 bool Tip_Tilt::moveTipAxisByDistance(float distance, bool coarseMove){
-    Serial.print("Info: Moving Tip Axis by ");
-    Serial.println(distance);
-    Serial.print("Info: Moving Tip Axis to ");
-    Serial.println(tipAxis->getLocation() + distance);
     return tipAxis->moveAxis(tipAxis->getLocation() + distance, coarseMove);
 }
 
 //move tilt axis by number of microns (relative positioning (uses absolute internally))
 bool Tip_Tilt::moveTiltAxisByDistance(float distance, bool coarseMove){
-    Serial.print("Info: Moving Tilt Axis by ");
-    Serial.println(distance);
-    Serial.print("Info: Moving Tilt Axis to ");
-    Serial.println(tiltAxis->getLocation() + distance);
     return tiltAxis->moveAxis(tiltAxis->getLocation() + distance, coarseMove);
 }
 
@@ -231,5 +220,5 @@ void Tip_Tilt::setStepperSpeed(long s){
 
 //this is called when serial is closed
 void Tip_Tilt::disconnectAxis(){
-  
+    return true;
 }
