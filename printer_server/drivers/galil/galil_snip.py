@@ -5,10 +5,11 @@ import printer_server.views.manual_controls
 import time
 
 galil = driver_handles.galil
-try:
-    coord_systems_control = driver_handles.coord_systems_control
-except:
+if "coord_systems" in config_dict:
+    from printer_server.drivers.coord_systems.coord_systems_snip import coord_systems_control
+else:
     coord_systems_control = None
+    
 start_time = 0
 stop_time = 0
 @socketio.on("galil_set_coodinate_system", namespace="/manual")

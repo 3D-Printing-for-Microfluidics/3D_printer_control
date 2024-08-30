@@ -93,11 +93,8 @@ class PrintControl:
         self.xy_threads = None
 
         try:
-            self.coord_systems_control = driver_handles.coord_systems_control
             self.coord_systems = config_dict["coord_systems"]
-            
         except:
-            self.coord_systems_control = None
             self.coord_systems = None
 
         # values used during printing

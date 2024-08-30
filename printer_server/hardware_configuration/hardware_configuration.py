@@ -35,10 +35,6 @@ class Printer3D:
                     config_dict=config_dict["acs"], log_level=default_log_level
                 )
 
-        if "coord_systems" in config_dict.keys():
-            from printer_server.drivers.coord_systems import Coord_Systems
-            self.coord_systems_control = Coord_Systems()
-
         if "environmental_sensors" in config_dict:
             from printer_server.drivers.environmental_sensors import EnvironmentalSensors, EnvironmentalSensors_dummy
 
