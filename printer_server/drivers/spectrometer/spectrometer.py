@@ -3,6 +3,7 @@ import atexit
 import logging
 import numpy as np
 import seabreeze.spectrometers as sb
+import seabreeze.pyseabreeze as psb
 
 class Spectrometer:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
@@ -15,7 +16,8 @@ class Spectrometer:
 
     def connect(self):
         self.log.debug("Available Spectrometers:")
-        for s in sb.list_devices():
+        api = psb.SeaBreezeAPI()
+        for s in api.list_devices():
             self.log.debug("\t%s", s)
 
         try:
