@@ -8,7 +8,7 @@ var enable_tiptilt_motor_buttons = function () {
 
 // helper function to update positions on all calibration axes
 var update_tiptilt_positions = function (message) {
-    for (var axis of axes) {
+    for (let axis of axes) {
         if (!$.isEmptyObject(message)) {
             document.getElementById(`${axis}-state`).innerHTML = message[axis];
         }
@@ -30,17 +30,17 @@ $(document).ready(function () {
         socket.emit("tiptilt_motor_home");
     });
 
-    for (var a of axes) {
+    for (let a of axes) {
         // Calibration motor text inputs for absolute positioning
         $(`.${a}-cntrl-txt`).on('change', function () {
             // Disable calibration motor buttons
             disable_tiptilt_motor_buttons();
             // Parse button content and construct message
-            var microns = $(this).val();
-            var axis = $(this).closest(".container").attr('aria-label');
-            var fast = document.getElementById(`${axis}_quick_move`).classList.contains("active");
+            let mrad = $(this).val();
+            let axis = $(this).closest(".container").attr('aria-label');
+            let fast = document.getElementById(`${axis}_quick_move`).classList.contains("active");
             console.log(fast)
-            var message = { "axis": axis, "microns": microns, "mode": "absolute", "fast": fast, "log": true };
+            let message = { "axis": axis, "mrad": mrad, "mode": "absolute", "fast": fast, "log": true };
             // Emit control message with parsed values
             socket.emit("tiptilt_motor_move", message);
         });
@@ -50,12 +50,12 @@ $(document).ready(function () {
             // Disable calibration motor buttons
             disable_tiptilt_motor_buttons();
             // Parse button content and construct message
-            var microns = $(this).text();
-            var axis = $(this).closest(".container").attr('aria-label');
-            var fast = document.getElementById(`${axis}_quick_move`).classList.contains("active");
+            let mrad = $(this).text();
+            let axis = $(this).closest(".container").attr('aria-label');
+            let fast = document.getElementById(`${axis}_quick_move`).classList.contains("active");
             console.log(fast)
             console.log(document.getElementById(`${axis}_quick_move`).classList.contains("active"))
-            var message = { "axis": axis, "microns": microns, "mode": "relative", "fast": fast, "log": true };
+            let message = { "axis": axis, "mrad": mrad, "mode": "relative", "fast": fast, "log": true };
             // Emit control message with parsed values
             socket.emit("tiptilt_motor_move", message);
         });

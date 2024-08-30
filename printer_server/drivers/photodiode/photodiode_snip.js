@@ -25,9 +25,9 @@ $(document).ready(function () {
     });
 
     $(`#read_photodiode_power`).on("click", function () {
-        var wavelengthElement = document.getElementById("wavelength_350_405");
-        var activeButton = $("#wavelength_350_405 .active");
-        var wavelength = activeButton.text().trim().split(" ")[0]; // Split to get the wavelength value
+        let wavelengthElement = document.getElementById("wavelength_350_405");
+        let activeButton = $("#wavelength_350_405 .active");
+        let wavelength = activeButton.text().trim().split(" ")[0]; // Split to get the wavelength value
         socket.emit("photodiode_get_power", { "wavelength": wavelength })
         disable_button(`#read_photodiode_power`);
         disable_button(`#zero_photodiode`);

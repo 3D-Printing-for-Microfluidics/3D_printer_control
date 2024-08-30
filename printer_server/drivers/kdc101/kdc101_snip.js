@@ -29,8 +29,8 @@ $(document).ready(function () {
         // Disable calibration motor buttons
         disable_kdc_motor_buttons();
         // Parse button content and construct message
-        var axis = $(this).closest(".container").attr('aria-label');
-        var message = { "axis": axis };
+        let axis = $(this).closest(".container").attr('aria-label');
+        let message = { "axis": axis };
         // Emit control message with parsed values
         socket.emit("kdc_motor_home", message);
     });
@@ -40,9 +40,9 @@ $(document).ready(function () {
         // Disable calibration motor buttons
         disable_kdc_motor_buttons();
         // Parse button content and construct message
-        var microns = $(this).val();
-        var axis = $(this).closest(".container").attr('aria-label');
-        var message = { "axis": axis, "microns": microns, "mode": "absolute", "fast": false, "log": true };
+        let microns = $(this).val();
+        let axis = $(this).closest(".container").attr('aria-label');
+        let message = { "axis": axis, "microns": microns, "mode": "absolute", "fast": false, "log": true };
         // Emit control message with parsed values
         socket.emit("kdc_motor_move", message);
     });
@@ -52,9 +52,9 @@ $(document).ready(function () {
         // Disable calibration motor buttons
         disable_kdc_motor_buttons();
         // Parse button content and construct message
-        var microns = $(this).text();
-        var axis = $(this).closest(".container").attr('aria-label');
-        var message = { "axis": axis, "microns": microns, "mode": "relative", "fast": false, "log": true };
+        let microns = $(this).text();
+        let axis = $(this).closest(".container").attr('aria-label');
+        let message = { "axis": axis, "microns": microns, "mode": "relative", "fast": false, "log": true };
         // Emit control message with parsed values
         socket.emit("kdc_motor_move", message);
     });

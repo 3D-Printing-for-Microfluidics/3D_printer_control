@@ -57,11 +57,11 @@ $(document).ready(function () {
     }
 
     $(`.hexapod-cntrl-btn`).click(function () {
-        var command_elements = $(this).attr("id").split("_");
+        let command_elements = $(this).attr("id").split("_");
 
-        var command_type = command_elements[0];
-        var axis = command_elements[1];
-        var value = parseFloat(command_elements[2]) / 1000;
+        let command_type = command_elements[0];
+        let axis = command_elements[1];
+        let value = parseFloat(command_elements[2]) / 1000;
 
         console.log("command_type", command_type);
         console.log("axis", axis);
@@ -84,13 +84,13 @@ $(document).ready(function () {
     });
 
     socket.on("init_msg", function (init_output) {
-        var init_flag = init_output[0]
-        var init_error_codes = init_output[1];
-        var init_pivot = init_output[2];
-        var init_pose = init_output[3];
+        let init_flag = init_output[0]
+        let init_error_codes = init_output[1];
+        let init_pivot = init_output[2];
+        let init_pose = init_output[3];
 
-        var rotation = [init_pose["U"], init_pose["V"], init_pose["W"]];
-        var translation = [init_pose["X"], init_pose["Y"], init_pose["Z"]];
+        let rotation = [init_pose["U"], init_pose["V"], init_pose["W"]];
+        let translation = [init_pose["X"], init_pose["Y"], init_pose["Z"]];
 
         if (init_flag) {
             // Update fields
@@ -102,16 +102,16 @@ $(document).ready(function () {
 
     set_pivot_btn.onclick = function () {
         // Compile inputs from all the boxes
-        var pivot_R_state_text = parseFloat(document.getElementById("pivot_R_state_input").value);
-        var pivot_S_state_text = parseFloat(document.getElementById("pivot_S_state_input").value);
-        var pivot_T_state_text = parseFloat(document.getElementById("pivot_T_state_input").value);
+        let pivot_R_state_text = parseFloat(document.getElementById("pivot_R_state_input").value);
+        let pivot_S_state_text = parseFloat(document.getElementById("pivot_S_state_input").value);
+        let pivot_T_state_text = parseFloat(document.getElementById("pivot_T_state_input").value);
 
         // console.log("pivot_R_state_text", pivot_R_state_text);
         // console.log("pivot_S_state_text", pivot_S_state_text);
         // console.log("pivot_T_state_text", pivot_T_state_text);
 
         // Pack values on a list
-        var new_pivot_point = [pivot_R_state_text, pivot_S_state_text, pivot_T_state_text];
+        let new_pivot_point = [pivot_R_state_text, pivot_S_state_text, pivot_T_state_text];
 
         // Send event
         send_event("pivot_command", new_pivot_point);
@@ -124,12 +124,12 @@ $(document).ready(function () {
 
     send_command_btn.onclick = function () {
         // Compile inputs from all the boxes
-        var translation_X_state_text = parseFloat(document.getElementById("translation_X_state_input").value) / 1000;
-        var translation_Y_state_text = parseFloat(document.getElementById("translation_Y_state_input").value) / 1000;
-        var translation_Z_state_text = parseFloat(document.getElementById("translation_Z_state_input").value) / 1000;
-        var rotation_U_state_text = parseFloat(document.getElementById("rotation_U_state_input").value) / 1000;
-        var rotation_V_state_text = parseFloat(document.getElementById("rotation_V_state_input").value) / 1000;
-        var rotation_W_state_text = parseFloat(document.getElementById("rotation_W_state_input").value) / 1000;
+        let translation_X_state_text = parseFloat(document.getElementById("translation_X_state_input").value);
+        let translation_Y_state_text = parseFloat(document.getElementById("translation_Y_state_input").value);
+        let translation_Z_state_text = parseFloat(document.getElementById("translation_Z_state_input").value);
+        let rotation_U_state_text = parseFloat(document.getElementById("rotation_U_state_input").value);
+        let rotation_V_state_text = parseFloat(document.getElementById("rotation_V_state_input").value);
+        let rotation_W_state_text = parseFloat(document.getElementById("rotation_W_state_input").value);
 
 
         // console.log("translation_X_state_text", translation_X_state_text);
@@ -140,7 +140,7 @@ $(document).ready(function () {
         // console.log("rotation_W_state_text", rotation_W_state_text);
 
         // Pack values on a list
-        var new_pose = [translation_X_state_text, translation_Y_state_text, translation_Z_state_text,
+        let new_pose = [translation_X_state_text, translation_Y_state_text, translation_Z_state_text,
             rotation_U_state_text, rotation_V_state_text, rotation_W_state_text]
 
         // Send event
@@ -150,8 +150,8 @@ $(document).ready(function () {
     socket.on("pose_update", function (pose) {
         console.log("pose update", pose);
 
-        var rotation = [pose["U"], pose["V"], pose["W"]];
-        var translation = [pose["X"], pose["Y"], pose["Z"]];
+        let rotation = [pose["U"], pose["V"], pose["W"]];
+        let translation = [pose["X"], pose["Y"], pose["Z"]];
 
         update_translation_fields(translation);
         update_rotation_fields(rotation);

@@ -22,14 +22,14 @@ if (loadcell_exists) {
     var initial_point_removed = false;
 
     function draw_loadcell_graph() {
-        var defaultPlotlyConfiguration = {
+        let defaultPlotlyConfiguration = {
             displayModeBar: false,
             displaylogo: false,
             scrollZoom: true,
             showTips: false
         };
 
-        var layout = {
+        let layout = {
             xaxis: {
                 linecolor: 'white',
                 linewidth: 1,
@@ -114,7 +114,7 @@ var write_to_message_box = function (message) {
     const isScrolledToBottom = message_box.scrollHeight - message_box.clientHeight <= message_box.scrollTop + 1
 
     if (!$.isEmptyObject(message)) {
-        var new_text = `<div class='log-message'>${message}</div>`;
+        let new_text = `<div class='log-message'>${message}</div>`;
         $("#print-message").append(new_text);
     }
 
@@ -126,7 +126,7 @@ var write_to_message_box = function (message) {
 
 
 function initDropbox() {
-    var $dropbox = $("#dropbox");
+    let $dropbox = $("#dropbox");
 
     // On drag enter...
     $dropbox.on("dragenter", function (e) {
@@ -153,7 +153,7 @@ function initDropbox() {
         $(this).removeClass("active");
 
         // Get the files.
-        var files = e.originalEvent.dataTransfer.files;
+        let files = e.originalEvent.dataTransfer.files;
         addFiles(files);
     });
 
@@ -173,23 +173,23 @@ var get_file_str = function () {
     if (PENDING_FILES.length <= 0) {
         return "No files selected."
     }
-    var file_str = PENDING_FILES.length > 1 ? " files" : " file";
+    let file_str = PENDING_FILES.length > 1 ? " files" : " file";
     return PENDING_FILES.length + file_str + " selected"
 }
 
 function addFiles(files) {
-    var $selected = $("#selected-files");
+    let $selected = $("#selected-files");
 
     // Add them to the pending files list.
-    for (var i = 0; i < files.length; i++) {
+    for (let i = 0; i < files.length; i++) {
         PENDING_FILES.push(files[i]);
 
         // Append files to show on page
-        var li_file = $("<li/>", {
+        let li_file = $("<li/>", {
             class: "list-group-item d-flex justify-content-between align-items-center",
             text: files[i].name
         }).appendTo($selected);
-        var del_file = $("<button/>", {
+        let del_file = $("<button/>", {
             type: "button",
             class: "ml-auto btn btn-sm btn-danger",
             html: "&times;"
@@ -216,22 +216,22 @@ function doUpload() {
 
     // Collect the form data.
     // fd = collectFormData();
-    var fd = new FormData();
+    let fd = new FormData();
 
     // Attach the files.
-    for (var i = 0; i < PENDING_FILES.length; i++) {
+    for (let i = 0; i < PENDING_FILES.length; i++) {
         // Collect the other form data.
         fd.append("file", PENDING_FILES[i]);
     }
 
-    var xhr = $.ajax({
+    let xhr = $.ajax({
         xhr: function () {
             var xhrobj = $.ajaxSettings.xhr();
             if (xhrobj.upload) {
                 xhrobj.upload.addEventListener("progress", function (event) {
-                    var percent = 0;
-                    var position = event.loaded || event.position;
-                    var total = event.total;
+                    let percent = 0;
+                    let position = event.loaded || event.position;
+                    let total = event.total;
                     if (event.lengthComputable) {
                         percent = Math.ceil(position / total * 100);
                     }
@@ -390,7 +390,7 @@ $(document).ready(function () {
     socket.on("uninitialized", function (message) {
         $("#printer-state").text("Uninitialized");
         show_print_btn("#init-btn, #shutdown-btn");
-        var content = '3D printer has been shutdown';
+        let content = '3D printer has been shutdown';
         if (document.getElementById('base-body').innerHTML == content) {
             location.reload()
         }
@@ -456,7 +456,7 @@ $(document).ready(function () {
 
     socket.on("shutdown completed", function (message) {
         $(".navbar").prop("disabled", true).addClass("d-none");
-        var content = '3D printer has been shutdown';
+        let content = '3D printer has been shutdown';
         document.getElementById('base-body').innerHTML = content;
 
     });
@@ -470,8 +470,8 @@ $(document).ready(function () {
     });
 
     $("#print-alert-confirm").click(function () {
-        var operation = $("#print-alert-title").text();
-        var msg;
+        let operation = $("#print-alert-title").text();
+        let msg;
 
         if (loadcell_exists && (operation === "Start" || operation === "Planarization Step 1" || operation === "Planarization Step 2" || operation === "Resume")) {
             show_loadcell();
@@ -564,7 +564,7 @@ $(document).ready(function () {
 
     // Database interaction
     socket.on("job uploaded", function (message) {
-        var new_row = `
+        let new_row = `
     <tr id="row-${message.id}" class="clickable-row">
       <th scope="row">${$("#job-table > tbody > tr").length + 1}</th>
       <td>${message.name}</td>
@@ -574,7 +574,7 @@ $(document).ready(function () {
     </tr>
         `;
         $("#job-table > tbody").append(new_row);
-        var new_msg = { time: message.upload_time, text: "Print Job (" + message.name + ") Uploaded" };
+        let new_msg = { time: message.upload_time, text: "Print Job (" + message.name + ") Uploaded" };
         $("#create-job").text("Upload a job");
         $("#collapseUpload").removeClass('show');
 
@@ -591,7 +591,7 @@ $(document).ready(function () {
     });
 
     socket.on("bootstrap alert", function (message) {
-        var flash_msg = `
+        let flash_msg = `
        <div class="alert alert-${message.category}">
          <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
         <pre>${message.text}</pre>

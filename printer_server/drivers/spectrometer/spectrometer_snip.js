@@ -11,8 +11,8 @@ var disable_button = function () {
 }
 
 $(document).ready(function () {
-    var SpectrometerIntegrationElement = document.getElementById("spectrometer-integration-txt");
-    var SpectrometerAveragesElement = document.getElementById("spectrometer-averages-txt");
+    let SpectrometerIntegrationElement = document.getElementById("spectrometer-integration-txt");
+    let SpectrometerAveragesElement = document.getElementById("spectrometer-averages-txt");
 
     socket.on("spectrometer_done", function (message) {
         document.getElementById("spectrometer-integration-txt").value = message['integration'];
@@ -46,8 +46,8 @@ $(document).ready(function () {
     });
 
     $("#spectrometer-auto-chkbx").click(function () {
-        var autoCheckboxElement = document.getElementById("spectrometer-auto-chkbx");
-        var auto = Number(autoCheckboxElement.checked);
+        let autoCheckboxElement = document.getElementById("spectrometer-auto-chkbx");
+        let auto = Number(autoCheckboxElement.checked);
         if (auto == 1) {
             SpectrometerIntegrationElement.classList.remove("is-invalid")
             $('#spectrometer-integration-txt').prop('disabled', true);
@@ -83,10 +83,10 @@ $(document).ready(function () {
     })
 
     $(`#download-spectra-btn`).on("click", function (e) {
-        var autoCheckboxElement = document.getElementById("spectrometer-auto-chkbx");
-        var integration = SpectrometerIntegrationElement.value;
-        var averages = SpectrometerAveragesElement.value;
-        var auto = Number(autoCheckboxElement.checked);
+        let autoCheckboxElement = document.getElementById("spectrometer-auto-chkbx");
+        let integration = SpectrometerIntegrationElement.value;
+        let averages = SpectrometerAveragesElement.value;
+        let auto = Number(autoCheckboxElement.checked);
 
         if (!/^\d+$/.test(averages) && !averages > 0) {
             SpectrometerAveragesElement.classList.add("is-invalid")

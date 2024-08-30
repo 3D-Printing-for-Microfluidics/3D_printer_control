@@ -7,7 +7,7 @@ var enable_acs_buttons = function () {
 }
 
 var update_acs_positions = function (message) {
-    for (var stage in hardware["acs"]["stages"]) {
+    for (let stage in hardware["acs"]["stages"]) {
         if (!$.isEmptyObject(message)) {
             document.getElementById(`acs-${stage}-state`).innerHTML = message[stage];
         }
@@ -38,14 +38,14 @@ $(document).ready(function () {
         socket.emit("acs_home");
     });
 
-    for (var stage in hardware["acs"]["stages"]) {
+    for (let stage in hardware["acs"]["stages"]) {
         // ACS stages text inputs for absolute positioning
         $(`.acs-${stage}-cntrl-txt`).on('change', function () {
             disable_acs_buttons();
             // Parse button content and construct message
-            var distance = $(this).val();
-            var axis = $(this).closest(".container").attr('aria-label');
-            var message = { "mode": "absolute", "distance": distance, "axis": axis, "log": true };
+            let distance = $(this).val();
+            let axis = $(this).closest(".container").attr('aria-label');
+            let message = { "mode": "absolute", "distance": distance, "axis": axis, "log": true };
             socket.emit("acs_move", message);
         });
 
@@ -53,9 +53,9 @@ $(document).ready(function () {
         $(`.acs-${stage}-cntrl-btn`).click(function () {
             disable_acs_buttons();
             // Parse button content and construct message
-            var distance = $(this).text();
-            var axis = $(this).closest(".container").attr('aria-label');
-            var message = { "mode": "relative", "distance": distance, "axis": axis, "log": true };
+            let distance = $(this).text();
+            let axis = $(this).closest(".container").attr('aria-label');
+            let message = { "mode": "relative", "distance": distance, "axis": axis, "log": true };
             socket.emit("acs_move", message);
         });
     }

@@ -1,7 +1,7 @@
 $(document).ready(function () {
     socket.on("coodinate_system_done", function (message) {
         if (!$.isEmptyObject(message)) {
-            for (var adj in hardware['coord_systems']['coord_adjustments']) {
+            for (let adj in hardware['coord_systems']['coord_adjustments']) {
                 if (hardware['coord_systems']['coord_adjustments'].hasOwnProperty(adj)) {
                     document.getElementById(adj).innerHTML = message[adj];
                 }
@@ -35,11 +35,11 @@ $(document).ready(function () {
     });
 
     $(`.wintech-adj-cntrl-txt`).on('change', function () {
-        var value = $(this).val();
-        var adj_name = $(this).closest(".container").attr('aria-label');
+        let value = $(this).val();
+        let adj_name = $(this).closest(".container").attr('aria-label');
 
         if (!isNaN(parseFloat(value)) && isFinite(value)) {
-            var message = {}
+            let message = {}
             message[adj_name] = parseFloat(value);
             socket.emit("coodinate_system_set_wintech_adjustments", message);
         }

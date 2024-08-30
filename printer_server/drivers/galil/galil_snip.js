@@ -38,14 +38,14 @@ $(document).ready(function () {
         socket.emit("galil_home");
     });
 
-    for (var stage in hardware["galil"]["stages"]) {
+    for (let stage in hardware["galil"]["stages"]) {
         // Galil stages text inputs for absolute positioning
         $(`.galil-${stage}-cntrl-txt`).on('change', function () {
             disable_galil_buttons();
             // Parse button content and construct message
-            var distance = $(this).val();
-            var axis = $(this).closest(".container").attr('aria-label');
-            var message = { "mode": "absolute", "distance": distance, "axis": axis, "log": true };
+            let distance = $(this).val();
+            let axis = $(this).closest(".container").attr('aria-label');
+            let message = { "mode": "absolute", "distance": distance, "axis": axis, "log": true };
             socket.emit("galil_move", message);
         });
 
@@ -53,9 +53,9 @@ $(document).ready(function () {
         $(`.galil-${stage}-cntrl-btn`).click(function () {
             disable_galil_buttons();
             // Parse button content and construct message
-            var distance = $(this).text();
-            var axis = $(this).closest(".container").attr('aria-label');
-            var message = { "mode": "relative", "distance": distance, "axis": axis, "log": true };
+            let distance = $(this).text();
+            let axis = $(this).closest(".container").attr('aria-label');
+            let message = { "mode": "relative", "distance": distance, "axis": axis, "log": true };
             socket.emit("galil_move", message);
         });
     }

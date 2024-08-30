@@ -143,8 +143,8 @@ $(document).ready(function () {
         // Disable calibration motor buttons
         disable_crane_motor_buttons();
         // Parse button content and construct message
-        var mm = $(this).val();
-        var message = { "mm": mm, "mode": "absolute" };
+        let mm = $(this).val();
+        let message = { "mm": mm, "mode": "absolute" };
         // Emit control message with parsed values
         socket.emit("mks_crane_move", message);
     });
@@ -154,8 +154,8 @@ $(document).ready(function () {
         // Disable calibration motor buttons
         disable_crane_motor_buttons();
         // Parse button content and construct message
-        var mm = $(this).text();
-        var message = { "mm": mm, "mode": "relative" };
+        let mm = $(this).text();
+        let message = { "mm": mm, "mode": "relative" };
         // Emit control message with parsed values
         socket.emit("mks_crane_move", message);
     });
