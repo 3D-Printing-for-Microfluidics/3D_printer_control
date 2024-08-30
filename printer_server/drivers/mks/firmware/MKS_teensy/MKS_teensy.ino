@@ -7,7 +7,7 @@ int solenoid_state[6] = {0, 0, 0, 0, 0, 0};
 int reed_pins[5] = {13,14,15,16,17};
 
 int ADC_RANGE = 1024;
-int ENCODER_RANGE_MM = 660;
+int ENCODER_RANGE_MM = 1000;
 
 char opcode[2];
 String data = "";
