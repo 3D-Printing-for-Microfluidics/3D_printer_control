@@ -18,8 +18,8 @@ def get_tiptilt_positions(emit=True, log=False):
         printer_server.views.manual_controls.get_last_calibration_positions_from_logs()
     )
 
-    new_tip = tiptilt.get_position("tip")
-    new_tilt = tiptilt.get_position("tilt")
+    new_tip = tiptilt.get_position("tip")*1000
+    new_tilt = tiptilt.get_position("tilt")*1000
 
     if new_tip is not None and new_tip == "undef":
         last_positions["tip"] = new_tip
@@ -40,13 +40,13 @@ def get_tiptilt_positions(emit=True, log=False):
 @socketio.on("tiptilt_motor_move", namespace="/manual")
 def moveTipTiltMotor(message):
     axis = message["axis"]
-    distance_um = float(message["microns"])
+    distance_mrad = float(message["mrad"])
     mode = message["mode"]
     fast = message["fast"]
     mode = (
         mode != "absolute"
     )  # convert mode to True/False, absolute is true, all else is false
-    tiptilt.move(axis, distance_um, relative=mode, fast=fast)
+    tiptilt.move(axis, distance_mrad/1000, relative=mode, fast=fast)
     get_tiptilt_positions(log=message["log"])
 
 
