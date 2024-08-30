@@ -55,10 +55,10 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         self.log.info("Referencing axes...")
         self.reference_axes()
         self.home_all_axes()
-        self.set_pivot_point(self.config_dict["pivot_x_mm"],self.config_dict["pivot_y_mm"],self.config_dict["pivot_z_mm"])
+        self.set_pivot_point(self.config_dict["pivot_x_um"],self.config_dict["pivot_y_um"],self.config_dict["pivot_z_um"])
 
-    def absMoveTTR(self, deg=None, axis=None):
-        self.move_to_angle_axis(self.convertAxis(axis), deg)
+    def absMoveTTR(self, mrad=None, axis=None):
+        self.move_to_angle_axis(self.convertAxis(axis), mrad)
 
     def setup_log_file(self, filename):
         pass
@@ -70,15 +70,15 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         pass
 
     def getFocusPosition(self, notify=True):
-        return self.get_pose()[2]
+        return self.get_pose()[2]/1000
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        # self.set_pivot_point(self.config_dict["pivot_x_mm"],self.config_dict["pivot_y_mm"],self.config_dict["pivot_z_mm"]-mm)
-        self.move_to_position_axis(self.convertAxis("Focus"), mm)
+        # self.set_pivot_point(self.config_dict["pivot_x_um"],self.config_dict["pivot_y_um"],self.config_dict["pivot_z_um"]-mm)
+        self.move_to_position_axis(self.convertAxis("Focus"), mm*1000)
 
     def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
         # self.step_pivot_point("T", -mm)
-        self.step_axis(self.convertAxis("Focus"), mm)
+        self.step_axis(self.convertAxis("Focus"), mm*1000)
 
     def startFocusJog(self, speed=None, acceleration=None):
         self.log.error("Hexapod Jogging not implemented")
@@ -118,14 +118,14 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
 
         Args:
             axis (str): which axis is being actuated (e.g. 'X', 'Y', or 'Z')
-            value (float): target position in mm for the given axis
+            value (float): target position in um for the given axis
         """
         try:
             self.pose[axis] = value
         except Exception as ex:
             self.log.error(f"Failed to move axis {axis} to {value}. {ex}")
         else:
-            self.log.info(f"Translated axis {axis} to {value} [mm]")
+            self.log.info(f"Translated axis {axis} to {value} [um]")
 
     @dummy_log
     def move_to_position_compound(self, x, y, z):
@@ -139,7 +139,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         self.pose['X'] = x
         self.pose['Y'] = y
         self.pose['Z'] = z
-        self.log.info(f"Moved to position: ({x}, {y}, {z})")
+        self.log.info(f"Moved to position: ({x}, {y}, {z}) um")
 
     @dummy_log
     def move_to_angle_axis(self, axis, value):
@@ -147,14 +147,14 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
 
         Args:
             axis (str): which axis is being actuated(e.g. 'U', 'V', or 'W')
-            value (float): target position in degrees for the given axis
+            value (float): target position in mrad for the given axis
         """
         try:
             self.pose[axis] = value
         except Exception as ex:
             self.log.error(f"Failed to rotate axis {axis} to {value}. {ex}")
         else:
-            self.log.info(f"Rotated axis {axis} to {value} [degrees]")
+            self.log.info(f"Rotated axis {axis} to {value} [mrad]")
 
     @dummy_log
     def move_to_angle_compound(self, u, v, w):
@@ -168,7 +168,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         self.pose['U'] = u
         self.pose['V'] = v
         self.pose['W'] = w
-        self.log.info(f"Moved to angle: ({u}, {v}, {w})")
+        self.log.info(f"Moved to angle: ({u}, {v}, {w}) mrad")
 
     @dummy_log    
     def set_pose(self, x, y, z, u, v, w):

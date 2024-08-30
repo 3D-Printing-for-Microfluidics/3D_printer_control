@@ -18,22 +18,22 @@ public:
     void connectAxis();
     
     //get pos
-    float tipLocation(); //in microns
-    float tiltLocation(); //in microns
+    float tipLocation(); //in rad
+    float tiltLocation(); //in rad
     
     //set pos absolute
-    bool moveTipAxisToLocation(float location, bool coarseMove); //in microns
-    bool moveTiltAxisToLocation(float location, bool coarseMove); //in microns
+    bool moveTipAxisToLocation(float location, bool coarseMove); //in rad
+    bool moveTiltAxisToLocation(float location, bool coarseMove); //in rad
     
     //set pos relative
-    bool moveTipAxisByDistance(float distance, bool coarseMove); //in microns
-    bool moveTiltAxisByDistance(float distance, bool coarseMove); //in microns
+    bool moveTipAxisByDistance(float distance, bool coarseMove); //in rad
+    bool moveTiltAxisByDistance(float distance, bool coarseMove); //in rad
     
     //get max/min pos
-    float getMinTip();
-    float getMaxTip();
-    float getMinTilt();
-    float getMaxTilt();
+    float getMinTip(); //in rad
+    float getMaxTip(); //in rad
+    float getMinTilt(); //in rad
+    float getMaxTilt(); //in rad
     
     //get/set acceleration
     long getStepperAcceleration();

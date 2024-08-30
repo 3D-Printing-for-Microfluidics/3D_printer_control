@@ -90,10 +90,10 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
     ################################# Parent class functions #######################################
     def home(self):
         self.home_all_axes()
-        self.set_pivot_point(self.config_dict["pivot_x_mm"],self.config_dict["pivot_y_mm"],self.config_dict["pivot_z_mm"])
+        self.set_pivot_point(self.config_dict["pivot_x_um"],self.config_dict["pivot_y_um"],self.config_dict["pivot_z_um"])
 
-    def absMoveTTR(self, deg=None, axis=None):
-        self.move_to_angle_axis(axis, deg)
+    def absMoveTTR(self, mrad=None, axis=None):
+        self.move_to_angle_axis(axis, mrad)
 
     def setup_log_file(self, filename):
         pass
@@ -105,15 +105,15 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         pass
 
     def getFocusPosition(self, notify=True):
-        return self.get_pose("Focus")
+        return self.get_pose("Focus")/1000
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        # self.set_pivot_point(self.config_dict["pivot_x_mm"],self.config_dict["pivot_y_mm"],self.config_dict["pivot_z_mm"]-mm)
-        self.move_to_position_axis("Focus", mm)
+        # self.set_pivot_point(self.config_dict["pivot_x_um"],self.config_dict["pivot_y_um"],self.config_dict["pivot_z_um"]-mm)
+        self.move_to_position_axis("Focus", mm*1000)
 
     def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
         # self.step_pivot_point("T", -mm)
-        self.step_axis("Focus", mm)
+        self.step_axis("Focus", mm*1000)
 
     def startFocusJog(self, speed=None, acceleration=None):
         self.log.error("Hexapod Jogging not implemented")
@@ -153,12 +153,12 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
 
         Args:
             axis (str): which axis is being actuated (e.g. 'X', 'Y', or 'Z')
-            value (float): target position in mm for the given axis
+            value (float): target position in um for the given axis
         """
         axis = self.convertAxis(axis)
-        self.controller.MOV(axis, value)
+        self.controller.MOV(axis, value/1000)
         pitools.waitontarget(self.controller)
-        self.log.info("Translated axis %s to %.3f [mm]", axis, value)
+        self.log.info("Translated axis %s to %.3f [um]", axis, value)
 
     def move_to_position_compound(self, x, y, z):
         """ Perform absolute simultaneous translation of all translational axes to the specified positions in X, Y, and Z 
@@ -174,10 +174,10 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
                 self.log.warn(f"parameter provided is None. No motion performed")
                 return
 
-        self.controller.MOV({'X': x, 'Y': y, 'Z': z}, None) # Try this one out!
+        self.controller.MOV({'X': x/1000, 'Y': y/1000, 'Z': z/1000}, None) # Try this one out!
 
         pitools.waitontarget(self.controller)
-        self.log.info("Moved to position: (%.3f, %.3f, %.3f)", x, y, z)
+        self.log.info("Moved to position: (%.3f, %.3f, %.3f) um", x, y, z)
 
     def move_to_angle_axis(self, axis, value):
         """ Perform absolute rotation of axes to the target value
@@ -187,10 +187,10 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             value (float): target position in radians for the given axis
         """
         axis = self.convertAxis(axis)
-        deg = radians_to_degrees(value)
+        deg = radians_to_degrees(value/1000)
         self.controller.MOV(axis, deg)
         pitools.waitontarget(self.controller)
-        self.log.info("Rotated axis %s to %.4f [rad]", axis, value)
+        self.log.info("Rotated axis %s to %.4f [mrad]", axis, value)
 
     def move_to_angle_compound(self, u, v, w):
         """ Perform absolute simultaneous rotation of all rotational axes to the specified angles in U, V, and W
@@ -206,13 +206,13 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
                 self.log.warn(f"parameter provided is None. No motion performed")
                 return
             
-        u_deg = radians_to_degrees(u)
-        v_deg = radians_to_degrees(v)
-        w_deg = radians_to_degrees(w)
+        u_deg = radians_to_degrees(u/1000)
+        v_deg = radians_to_degrees(v/1000)
+        w_deg = radians_to_degrees(w/1000)
         self.controller.MOV({'U': u_deg, 'V': v_deg, 'W': w_deg}, None) # Try this one out!
 
         pitools.waitontarget(self.controller)
-        self.log.info("Moved to angle: (%.4f, %.4f, %.4f) [rad]", u, v, w)
+        self.log.info("Moved to angle: (%.4f, %.4f, %.4f) [mrad]", u, v, w)
     
     def set_pose(self, x, y, z, u, v, w, suppress_message=False):
         """ Perform absolute simultaneous translation and rotation of all translational and rotational axes to the specified 
@@ -241,35 +241,42 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
 
         Args:
             axis (str): axis to be actuated (translated or rotated)
-            step_size (float): step size of the translation or rotation of the specified axis
+            step_size (float): step size of the translation or rotation of the specified axis in microns or milliradians
         """
         axis = self.convertAxis(axis)
         if axis == "U" or axis == "V" or axis == "W":
-           deg = radians_to_degrees(step_size) 
-        self.controller.MVR(axis, deg)
-        pitools.waitontarget(self.controller)
-        self.log.info("Stepped axis %s by %.4f rad", axis, step_size)
+            deg = radians_to_degrees(step_size/1000) 
+            self.controller.MVR(axis, deg)
+            pitools.waitontarget(self.controller)
+            self.log.info("Stepped axis %s by %.4f mrad", axis, step_size)
+        else:
+            self.controller.MVR(axis, step_size/1000)
+            pitools.waitontarget(self.controller)
+            self.log.info("Stepped axis %s by %.4f um", axis, step_size)
 
     def get_pose(self, axis=None):
         """ Get the current pose (translation and rotation) of the coordiante system corresponding to the current pivot point of the system
 
         Returns:
-            list: values of the translational and rotational axes of the hexapod
+            list: values of the translational and rotational axes of the hexapod (converted to um and milliradians)
         """
         if axis is None:
             positions_raw = self.controller.qPOS()
             positions_raw["U"] = degrees_to_radians(positions_raw["U"])
             positions_raw["V"] = degrees_to_radians(positions_raw["V"])
             positions_raw["W"] = degrees_to_radians(positions_raw["W"])
+
+            for key in positions_raw.keys():
+                positions_raw[key] *= 1000
             return positions_raw
         else:
             axis = self.convertAxis(axis)
             positions_raw = self.controller.qPOS(axis)
             if axis == "U" or axis == "V" or axis == "W":
-                position = round(degrees_to_radians(positions_raw[axis]),4)
+                position = round(degrees_to_radians(positions_raw[axis])*1000,1)
                 self.log.debug("Get %s pos: %.4f", axis, position)
             else:
-                position = round(positions_raw[axis],3)
+                position = round(positions_raw[axis]*1000)
                 self.log.debug("Get %s pos: %.3f", axis, position)
             
             return position
@@ -284,9 +291,12 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         """ Retrieve the current pivot point
 
         Returns:
-            OrderedDict: dictionary containing the axes and values of the pivot point
+            OrderedDict: dictionary containing the axes and values of the pivot point (converted to um)
         """
-        return self.controller.qSPI()
+        dict = self.controller.qSPI()
+        for key in dict.keys():
+            dict[key] *= 1000
+        return dict
 
     def set_pivot_point(self, r, s, t):
         """ Set the value of the pivot point about which the rotational commands are executed
@@ -311,10 +321,10 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             if axis >= 0.001:
                 all_rotational_axes_zero = False
         if all_rotational_axes_zero:
-            self.controller.SPI({'R': r, 'S': s, 'T': t})
+            self.controller.SPI({'R': r/1000, 'S': s/1000, 'T': t/1000})
             pitools.waitontarget(self.controller)
             ret_val = self.get_pivot_point()
-            self.log.info("Pivot point set to: %.3f, %.3f, %.3f", ret_val['R'], ret_val['S'], ret_val['T'])
+            self.log.info("Pivot point set to: %.3f, %.3f, %.3f um", ret_val['R'], ret_val['S'], ret_val['T'])
             return True
         else:
             self.log.warning(f"Not all rotational axes (U, V, W) are 0. Set them to 0 before attempting pivot point adjustment")
@@ -325,21 +335,21 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
 
         Args:
             axis (str): pivot point axis (e.g. 'R', 'S'. or 'T')
-            step_size (float): step size for moving the pivot point
+            step_size (float): step size for moving the pivot point in microns
         """
         current_pivot = self.get_pivot_point()
         new_pivot = current_pivot
         if (axis == "R"):
-            new_pivot["R"] += step_size
+            new_pivot["R"] += step_size/1000
 
         elif (axis == "S"):
-            new_pivot["S"] += step_size
+            new_pivot["S"] += step_size/1000
 
         elif (axis == "T"):
-            new_pivot["T"] += step_size
+            new_pivot["T"] += step_size/1000
 
         self.set_pivot_point(new_pivot["R"], new_pivot["S"], new_pivot["T"])
-        self.log.info("Pivot point stepped by %.3f on %s axis", step_size, axis)
+        self.log.info("Pivot point stepped by %.3f um on %s axis", step_size, axis)
 
     def get_simple_dynamic_range(self, target_axis:str):
         """ Get the range of motion of the requested axis. Due to the complexity of the hexapod joint configuration, dynamic ranges change if 
@@ -365,7 +375,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             self.log.error(f"Failed to retrieve dynamic range for axis {target_axis}. Exception: {ex}")
             dynamic_range =  (None, None)
         else:
-            dynamic_range = (negative_limit, positive_limit)
+            dynamic_range = (negative_limit*1000, positive_limit*1000)
             # self.log.info(f"Dynamic range queried for axis {target_axis}: {dynamic_range}")
         finally:
             # print(f"request: {request}. range: {dynamic_range}")
@@ -400,6 +410,9 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
                 dynamic_range["V"] = degrees_to_radians(dynamic_range["V"]) 
             if "W" in target_axes:
                 dynamic_range["W"] = degrees_to_radians(dynamic_range["W"]) 
+
+            for key in dynamic_range.keys():
+                dynamic_range[key] *= 1000
 
         except Exception as ex:
             self.log.error(f"Failed to retrieve the dynamic range for the request: {params_dict}")

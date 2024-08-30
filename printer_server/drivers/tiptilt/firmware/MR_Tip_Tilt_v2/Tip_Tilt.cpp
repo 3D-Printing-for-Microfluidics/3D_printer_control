@@ -42,6 +42,17 @@ const int SLOW_SPEED = 1000; //slow homing speed
 const int DEFAULT_SPEED = 4000; //default speed
 const int DEFAULT_ACCELERATION = 100000;
 
+const int TIP_BASE = 292100; //11.5
+const int TILT_BASE = 165100; //6.5
+
+float um_to_rad(float o, float a){
+    return atan(o/a);
+}
+
+float rad_to_um(float rad, float a){
+    return tan(rad)*a;
+}
+
 //set up device on power up
 Tip_Tilt::Tip_Tilt(){
 
@@ -144,54 +155,54 @@ void Tip_Tilt::connectAxis(){
     return true;
 }
 
-//query location for tip using encoder location (converted to microns)
+//query location for tip using encoder location (converted to rad)
 float Tip_Tilt::tipLocation(){
-    return tipAxis->getLocation();
+    return um_to_rad(tipAxis->getLocation(), TIP_BASE);
 }
 
-//query location for tilt using encoder location (converted to microns)
+//query location for tilt using encoder location (converted to rad)
 float Tip_Tilt::tiltLocation(){
-    return tiltAxis->getLocation();
+    return um_to_rad(tiltAxis->getLocation(), TILT_BASE);
 }
 
-//move tip axis to location (absolute positioning)
+//move tip axis to location in rad (absolute positioning)
 bool Tip_Tilt::moveTipAxisToLocation(float location, bool coarseMove){
-    return tipAxis->moveAxis(location, coarseMove);
+    return tipAxis->moveAxis(rad_to_um(location, TIP_BASE), coarseMove);
 }
 
-//move tilt axis to location (absolute positioning)
+//move tilt axis to location in rad (absolute positioning)
 bool Tip_Tilt::moveTiltAxisToLocation(float location, bool coarseMove){
-    return tiltAxis->moveAxis(location, coarseMove);
+    return tiltAxis->moveAxis(rad_to_um(location, TILT_BASE), coarseMove);
 }
 
-//move tip axis by number of microns (relative positioning (uses absolute internally))
+//move tip axis by number of rad (relative positioning (uses absolute internally))
 bool Tip_Tilt::moveTipAxisByDistance(float distance, bool coarseMove){
-    return tipAxis->moveAxis(tipAxis->getLocation() + distance, coarseMove);
+    return tipAxis->moveAxis(rad_to_um(this->tipLocation() + distance, TIP_BASE), coarseMove);
 }
 
-//move tilt axis by number of microns (relative positioning (uses absolute internally))
+//move tilt axis by number of rad (relative positioning (uses absolute internally))
 bool Tip_Tilt::moveTiltAxisByDistance(float distance, bool coarseMove){
-    return tiltAxis->moveAxis(tiltAxis->getLocation() + distance, coarseMove);
+    return tiltAxis->moveAxis(rad_to_um(this->tiltLocation() + distance, TILT_BASE), coarseMove);
 }
 
 //returns the minimum tip (set distance from machine 0)
 float Tip_Tilt::getMinTip(){
-    return 0;
+    return um_to_rad(0, TIP_BASE);
 }
 
-//returns the minimum tilt (set distance from machine 0)
+//returns the minimum tilt in rad (set distance from machine 0)
 float Tip_Tilt::getMaxTip(){
-    return tipAxis->getMaxPos();
+    return um_to_rad(tipAxis->getMaxPos(), TIP_BASE);
 }
 
 //returns the minimum tip (defined 0 by hardware)
 float Tip_Tilt::getMinTilt(){
-    return 0;
+    return um_to_rad(0, TILT_BASE);
 }
 
-//returns the minimum tilt (defined 0 by hardware)
+//returns the minimum tilt in rad (defined 0 by hardware)
 float Tip_Tilt::getMaxTilt(){
-    return tiltAxis->getMaxPos();
+    return um_to_rad(tiltAxis->getMaxPos(), TILT_BASE);
 }
 
 //gets global acceleration
