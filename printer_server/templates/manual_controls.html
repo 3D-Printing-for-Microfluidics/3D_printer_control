@@ -15,17 +15,15 @@
 
 {% if initialized %}
 
-{% for driver, dict in hardware.items() %}
-{% if 'path' in dict %}
-{% include dict['path'] %}
+{% for driver, path in hardware['html_paths'].items() %}
+{% include path %}
 <hr class="bg-secondary">
-{% endif %}
 {% endfor %}
 
 {% else %}
 
-{% if "external_control" in hardware.keys() %}
-{% include hardware['external_control']['path'] %}
+{% if 'external_control' in hardware.keys() %}
+{% include hardware['html_paths']['external_control'] %}
 <hr class="bg-secondary">
 {% endif %}
 

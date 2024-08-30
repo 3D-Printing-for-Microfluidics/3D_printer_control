@@ -159,6 +159,7 @@
         "dummy": false,
         "vendor_id": "0x0451",
         "product_id": "0xC900",
+        "dual_led": false,
         "leds_nm": [
             365
         ],

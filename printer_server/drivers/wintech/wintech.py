@@ -166,3 +166,6 @@ class Wintech(LightEngineDriver):
             self.dmd_controller.start_sequence()
             time.sleep(exposure_time_ms * 0.001 + 0.1)
             self.led_on = False
+            
+    def get_led_status(self):
+        return self.led_on

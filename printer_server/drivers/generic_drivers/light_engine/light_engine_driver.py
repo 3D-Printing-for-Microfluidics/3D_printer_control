@@ -25,3 +25,6 @@ class LightEngineDriver:
 
     def stop_sequencer(self):
         log.warn("Function not implemented. Using abstract LightEngineDriver class")
+
+    def get_led_status(self):
+        log.warn("Function not implemented. Using abstract LightEngineDriver class")

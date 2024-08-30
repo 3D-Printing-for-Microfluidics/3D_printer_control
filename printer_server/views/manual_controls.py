@@ -12,11 +12,17 @@ from printer_server.hardware_configuration.hardware_configuration import config_
 
 # Generate HTML snippit list
 hardware = {}
+hardware["html_paths"] = {}
+
 for key in config_dict.keys():
+    hardware[key] = {}
     path = f"{key}/{key}_snip.html"
     if exists(f"{Config.PRINT_SERVER_FOLDER}/drivers/{path}"):
-        temp_dict = {"path": f"{path}"}
-        hardware[key] = temp_dict
+        hardware["html_paths"][key] = path
+
+for key in ["light_engine"]:
+    hardware["html_paths"][key] = f"generic_drivers/{key}/{key}_snip.html"
+
 
 # Dynamically import python snippits
 if "acs" in config_dict.keys():
@@ -47,10 +53,7 @@ if "spectrometer" in config_dict.keys():
     import printer_server.drivers.spectrometer.spectrometer_snip
 if "tiptilt" in config_dict.keys():
     import printer_server.drivers.tiptilt.tiptilt_snip
-if "visitech" in config_dict.keys():
-    import printer_server.drivers.visitech.visitech_snip
-if "wintech" in config_dict.keys():
-    import printer_server.drivers.wintech.wintech_snip
+import printer_server.drivers.generic_drivers.light_engine.light_engine_snip
 
 # Create bluprint
 blueprint = Blueprint(
@@ -160,9 +163,6 @@ def index():
             hardware["photodiode"]["power"] = printer_server.drivers.photodiode.photodiode_snip.get_photodiode_power({"wavelength": default_wavelength}, emit=False)
             hardware["photodiode"]["wavelength"] = default_wavelength 
 
-        if "screen" in config_dict.keys():
-            hardware["light_engines"] = config_dict["light_engines"]
-
         if "spectrometer" in config_dict.keys():
             hardware["spectrometer"]["default_integrations"] = config_dict["spectrometer"]["default_integration_time"]
             hardware["spectrometer"]["default_averages"] = config_dict["spectrometer"]["default_number_of_averages"]
@@ -171,17 +171,15 @@ def index():
             hardware["tiptilt"]["tip"] = calibration_positions.get("tip",0)
             hardware["tiptilt"]["tilt"] = calibration_positions.get("tilt",0)
 
-        if "visitech" in config_dict.keys():
-            hardware["visitech"][
-                "status"
-            ] = printer_server.drivers.visitech.visitech_snip.getLedStatus()
-            hardware["visitech"]["dual_led"] = config_dict["visitech"]["dual_led"]
-            hardware["visitech"]["leds_nm"] = config_dict["visitech"]["leds_nm"]
-
-        if "wintech" in config_dict.keys():
-            hardware["wintech"][
-                "status"
-            ] = printer_server.drivers.wintech.wintech_snip.getLedStatus()
+        # screen and light engines
+        for light_engine in config_dict["light_engines"]:
+            hardware["light_engines"][light_engine] = {}
+            if light_engine in config_dict.keys():
+                hardware["light_engines"][light_engine][
+                    "status"
+                ] = printer_server.drivers.generic_drivers.light_engine.light_engine_snip.getLedStatus(light_engine)
+                hardware["light_engines"][light_engine]["dual_led"] = config_dict[light_engine]["dual_led"]
+                hardware["light_engines"][light_engine]["leds_nm"] = config_dict[light_engine]["leds_nm"]
             
     return render_template(
         "manual_controls.html",
@@ -228,4 +226,4 @@ def get_last_calibration_positions_from_logs():
 
 
 def update_le_led_state(le, state):
-    socketio.emit(f"{le}_update_led_state", state, namespace="/manual")
+    socketio.emit(f"light_engine_update_led_state", {"light_engine": le, "state":state}, namespace="/manual")

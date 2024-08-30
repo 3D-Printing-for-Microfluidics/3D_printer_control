@@ -842,3 +842,6 @@ class Visitech(EthernetSerial, LightEngineDriver):
                 self.start_sequencer()
                 time.sleep(t * 1e-3)
                 self.led_on = False
+
+    def get_led_status(self):
+        return self.led_on

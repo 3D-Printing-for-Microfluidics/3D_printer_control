@@ -6,7 +6,7 @@
         </div>
     </div>
 
-    {% for light_engine in hardware['light_engines'] %}
+    {% for light_engine in hardware['light_engines'].keys() %}
     <div class="row {{ light_engine }}" aria-label="{{ light_engine }}">
         <h5 class="col-3 text-left">{{ light_engine|capitalize }}</h5>
         <form class="col-4">

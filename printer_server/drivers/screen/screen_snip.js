@@ -41,8 +41,7 @@ $(document).ready(function () {
         enable_upload_button(le);
     });
 
-
-    for (var le of hardware["light_engines"]) {
+    for (let le in hardware["light_engines"]) {
 
         disable_upload_button(le);
 

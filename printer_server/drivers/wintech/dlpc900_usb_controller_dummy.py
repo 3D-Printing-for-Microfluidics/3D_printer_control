@@ -16,7 +16,7 @@ class DLPC900_USB_Controller_dummy:
     @dummy_log
     def connect(self, vendor_id, product_id):
         self.connected = True
-        self.connected
+        return self.connected
 
     @dummy_log
     def disconnect(self):
