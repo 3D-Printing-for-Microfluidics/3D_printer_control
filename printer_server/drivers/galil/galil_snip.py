@@ -58,7 +58,7 @@ def galil_go_to_bottom():
 
 
 @socketio.on("galil_home", namespace="/manual")
-def home():
+def galil_home():
     """Home main z stage."""
     global start_time, stop_time
     start_time = time.time()
@@ -111,7 +111,7 @@ def galil_move(message):
 
 
 @socketio.on("galil_start_jog", namespace="/manual")
-def galil_startJog(message):
+def galil_start_jog(message):
     """Start jogging the main Z stage."""
     global start_time
     speed = float(message["speed"])
@@ -120,7 +120,7 @@ def galil_startJog(message):
 
 
 @socketio.on("galil_stop_jog", namespace="/manual")
-def galil_stopJog():
+def galil_stop_jog():
     """Stop jogging the main Z stage"""
     global stop_time
     galil.stopJog()

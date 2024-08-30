@@ -58,7 +58,7 @@ def acs_go_to_bottom():
 
 
 @socketio.on("acs_home", namespace="/manual")
-def home():
+def acs_home():
     """Home main z stage."""
     global start_time, stop_time
     start_time = time.time()
@@ -111,7 +111,7 @@ def acs_move(message):
 
 
 @socketio.on("acs_start_jog", namespace="/manual")
-def acs_startJog(message):
+def acs_start_jog(message):
     """Start jogging the main Z stage."""
     global start_time
     speed = float(message["speed"])
@@ -120,7 +120,7 @@ def acs_startJog(message):
 
 
 @socketio.on("acs_stop_jog", namespace="/manual")
-def acs_stopJog():
+def acs_stop_jog():
     """Stop jogging the main Z stage"""
     global stop_time
     acs.stopJog()
