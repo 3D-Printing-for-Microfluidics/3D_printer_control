@@ -65,6 +65,12 @@ class KDC101_dummy(FocusStageDriver):
     def initialize(self):
         pass
 
+    def getDefaultFocusSpeed(self):
+        return 0
+
+    def getDefaultFocusAcceleration(self):
+        return 0
+
     # @dummy_log
     def getFocusPosition(self, notify=True):
         return self.position/1000

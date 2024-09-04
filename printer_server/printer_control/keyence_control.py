@@ -184,7 +184,7 @@ class KeyenceControl(PrintControl):
 
     def get_exposure_defocus(self, settings, light_engine):
         screen_light_engine = self.convert_le_to_screen_le(light_engine)
-        self.focused_position = self.coord_systems[screen_light_engine]["Focus"]
+        self.focus = self.coord_systems[screen_light_engine]["Focus"]
 
         defocus_um = settings["Relative focus position (um)"]
         x_offset = float(settings.get("Image x offset (um)", self.default_x_offset))
@@ -198,5 +198,5 @@ class KeyenceControl(PrintControl):
         self.defocus_um = (defocus_um + keyence_measurement)
 
     def post_print_tasks(self):
-        self.focused_position = self.coord_systems["parked"]["Focus"]
+        self.focus = self.coord_systems["parked"]["Focus"]
         super().post_print_tasks()

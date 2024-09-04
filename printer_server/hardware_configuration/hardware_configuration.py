@@ -193,33 +193,33 @@ class Printer3D:
         self.ttr_stage = None
         self.light_engines = {}
 
-        if "bp" in config_dict["stages"]:
-            if hasattr(self, config_dict["stages"]["bp"]):
-                self.bp_stage = getattr(self, config_dict["stages"]["bp"])
+        if "bp_stage" in config_dict["stages"]:
+            if hasattr(self, config_dict["stages"]["bp_stage"]):
+                self.bp_stage = getattr(self, config_dict["stages"]["bp_stage"])
             else:
                 from printer_server.drivers.generic_drivers import BPStageDriver
                 self.bp_stage = BPStageDriver()
 
 
-        if "focus" in config_dict["stages"]:
-            if hasattr(self, config_dict["stages"]["focus"]):
-                self.focus_stage = getattr(self, config_dict["stages"]["focus"])
+        if "focus_stage" in config_dict["stages"]:
+            if hasattr(self, config_dict["stages"]["focus_stage"]):
+                self.focus_stage = getattr(self, config_dict["stages"]["focus_stage"])
             else:
                 from printer_server.drivers.generic_drivers import FocusStageDriver
                 self.focus_stage = FocusStageDriver()
 
 
-        if "x_y" in config_dict["stages"]:
-            if hasattr(self, config_dict["stages"]["x_y"]):
-                self.xy_stage = getattr(self, config_dict["stages"]["x_y"])
+        if "xy_stage" in config_dict["stages"]:
+            if hasattr(self, config_dict["stages"]["xy_stage"]):
+                self.xy_stage = getattr(self, config_dict["stages"]["xy_stage"])
             else:
                 from printer_server.drivers.generic_drivers import XYStageDriver
                 self.xy_stage = XYStageDriver()
    
 
-        if "t_t_r" in config_dict["stages"]:
-            if hasattr(self, config_dict["stages"]["t_t_r"]):
-                self.ttr_stage = getattr(self, config_dict["stages"]["t_t_r"])
+        if "ttr_stage" in config_dict["stages"]:
+            if hasattr(self, config_dict["stages"]["ttr_stage"]):
+                self.ttr_stage = getattr(self, config_dict["stages"]["ttr_stage"])
             else:
                 from printer_server.drivers.generic_drivers import TTRStageDriver
                 self.ttr_stage = TTRStageDriver()

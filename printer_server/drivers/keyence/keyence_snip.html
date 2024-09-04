@@ -9,8 +9,6 @@
     </div>
 
     {% for sensor in hardware['keyence']['sensors'] %}
-
-    <!-- Distance -->
     <div class="container" aria-label="{{sensor}}">
         <div class="row">
             <div class="col-2">
@@ -56,8 +54,7 @@
             </div>
         </div>
     </div>
-</div>
-{% endfor %}
+    {% endfor %}
 </div>
 
 <script src="{{ url_for('manual_controls.static', filename='keyence/keyence_snip.js') }}"></script>

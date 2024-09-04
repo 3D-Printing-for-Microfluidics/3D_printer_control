@@ -20,6 +20,28 @@ class TipTilt(USBSerial, TTRStageDriver):
         self.r = re.compile(r"\d*\.?\d*$")  # regex for getter functions
         self.initialized = None
 
+
+    ################################# Parent class functions #######################################
+    def getTTRPosition(self, axis=None, notify=True):
+        return self.get_position(axis)
+
+    def absMoveTTR(self, rad=None, axis=None):
+        self.move_absolute(self, axis, rad, fast=False)
+
+    def relMoveTTR(self, rad=None, axis=None):
+        self.move_relative(self, axis, rad, fast=False)
+
+    def setup_log_file(self, filename):
+        pass
+
+    def logging_start(self):
+        pass
+
+    def logging_stop(self):
+        pass
+
+    ################################# End parent class functions #######################################
+
     ## wrappers for commands from Teensyduino ##
 
     # returns "Done"

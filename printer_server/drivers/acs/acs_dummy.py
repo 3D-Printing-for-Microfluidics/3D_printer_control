@@ -35,7 +35,7 @@ class ACS_dummy(BPStageDriver, XYStageDriver):
         self.calibration_position = config_dict["calibration_position"]
         self.bottom_position = config_dict["bottom_position"]
         self.top_position = config_dict["top_position"]
-        self.tolerence = config_dict["axes_tolerance"]
+        self.tolerence = config_dict["axes_tolerance_um"]
 
         self.movement_log_times = []
         self.movement_log_array = []
@@ -231,6 +231,24 @@ class ACS_dummy(BPStageDriver, XYStageDriver):
             self.setAcceleration(self.getDefaultAcceleration(a), axis=a)
 
     ################################# Parent class functions #######################################
+            
+    def getDefaultBPSpeed(self):
+        return self.getDefaultSpeed("Build Platform")
+
+    def getDefaultBPAcceleration(self):
+        return self.getDefaultAcceleration("Build Platform")
+
+    def getDefaultFocusSpeed(self):
+        return self.getDefaultSpeed("Focus")
+
+    def getDefaultFocusAcceleration(self):
+        return self.getDefaultAcceleration("Focus")
+
+    def getDefaultXYSpeed(self, axis=None):
+        return self.getDefaultSpeed(axis)
+
+    def getDefaultXYAcceleration(self, axis=None):
+        return self.getDefaultAcceleration(axis)
 
     @dummy_log
     def getXYPosition(self, axis=None, notify=True):

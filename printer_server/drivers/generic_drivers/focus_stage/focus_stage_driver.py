@@ -32,6 +32,12 @@ class FocusStageDriver:
     def home(self):
         log.warn("Function not implemented. Using abstract FocusStageDriver class")
 
+    def getDefaultFocusSpeed(self):
+        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+
+    def getDefaultFocusAcceleration(self):
+        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+
     def getFocusPosition(self, notify=True):
         log.warn("Function not implemented. Using abstract FocusStageDriver class")
 

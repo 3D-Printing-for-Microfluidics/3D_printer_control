@@ -39,7 +39,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         self.calibration_position = config_dict["calibration_position"]
         self.bottom_position = config_dict["bottom_position"]
         self.top_position = config_dict["top_position"]
-        self.tolerence = config_dict["axes_tolerance"]
+        self.tolerence = config_dict["axes_tolerance_um"]
 
         self.movement_log_times = []
         self.movement_log_array = []
@@ -106,11 +106,11 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         self.absMove(mm=self.calibration_position, axis="Build Platform")
         return self.getPosition()
 
-    def goToBPmax(self):
+    def goToBPtop(self):
         self.absMove(mm=self.top_position, axis="Build Platform")
         return self.getPosition()
 
-    def goToBPmin(self):
+    def goToBPbottom(self):
         self.absMove(mm=self.bottom_position, axis="Build Platform")
         return self.getPosition()
 
@@ -235,6 +235,24 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
             self.setAcceleration(self.getDefaultAcceleration(a), axis=a)
 
     ################################# Parent class functions #######################################
+            
+    def getDefaultBPSpeed(self):
+        return self.getDefaultSpeed("Build Platform")
+
+    def getDefaultBPAcceleration(self):
+        return self.getDefaultAcceleration("Build Platform")
+
+    def getDefaultFocusSpeed(self):
+        return self.getDefaultSpeed("Focus")
+
+    def getDefaultFocusAcceleration(self):
+        return self.getDefaultAcceleration("Focus")
+
+    def getDefaultXYSpeed(self, axis=None):
+        return self.getDefaultSpeed(axis)
+
+    def getDefaultXYAcceleration(self, axis=None):
+        return self.getDefaultAcceleration(axis)
 
     def getXYPosition(self, axis=None, notify=True):
         return self.getPosition(axis=axis, notify=notify)
@@ -451,6 +469,9 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         if self.logging_running:
             self.logging_running = False
             self.log.info("ACS logging stopped")
+
+    def get_logging_results(self):
+        return self.movement_log_times, self.movement_log_array
 
     def loop(self):
         while self.thread_running:

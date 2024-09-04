@@ -77,10 +77,10 @@ class FocusControl(PrintControl):
 
     def initialize_hardware(self):
         if self.coord_systems is not None:
-            self.focused_position = self.coord_systems["parked"]["Focus"]
+            self.focus = self.coord_systems["parked"]["Focus"]
         else:
-            self.focused_position = get_last_calibration_positions_from_logs().get("distance",0) / 1000
-        self.focus_thread = Thread(log, name="focus_control_init_thread", target=self.focus_stage.initialize_and_positionFocus, args=[self.focused_position])
+            self.focus = get_last_calibration_positions_from_logs().get("focus",0) / 1000
+        self.focus_thread = Thread(log, name="focus_control_init_thread", target=self.focus_stage.initialize_and_positionFocus, args=[self.focus])
         self.focus_thread.start()
         super().initialize_hardware()
         self.focus_thread.join()
@@ -105,7 +105,7 @@ class FocusControl(PrintControl):
             self.image = shift_image(self.image, x=um_to_px(self.defocus_um))
         
         if self.defocus_um != self.previous_defocus:
-            self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position + self.defocus_um/1000, join=False)
+            self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focus + self.defocus_um/1000, join=False)
         return super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, light_engine):
@@ -115,16 +115,9 @@ class FocusControl(PrintControl):
                 self.focus_thread.join()
         return super().pre_exposure_joins(light_engine)
 
-    def post_exposure_tasks(self, light_engine, msg):
-        """If layer is defocused, return KDC to focus position"""
-        # fix focus if this exposure was defocused
-        # if self.defocus_um != 0:
-        #     self.focus_stage.threadedFocusMove(log, self.focused_position, join=True)
-        super().post_exposure_tasks(light_engine, msg)
-
     def post_print_tasks(self):
         super().post_print_tasks()
-        self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position, join=False)
+        self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focus, join=False)
         if self.focus_thread is not None:
             self.focus_thread.join()
 

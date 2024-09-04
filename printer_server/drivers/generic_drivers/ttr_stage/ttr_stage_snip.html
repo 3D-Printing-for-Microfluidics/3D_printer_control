@@ -1,0 +1,45 @@
+<!-- TTR Control -->
+<div class="container ttr">
+    <div class="row top-buffer">
+        <div class="col-9">
+            <h3>TTR Stage Controls</h3>
+        </div>
+        <div class="col-3">
+            <button type="button" class="btn btn-outline-info btn-block" id="ttr-home-btn">Home</button>
+        </div>
+    </div>
+    {% for axis in hardware['ttr_stage'].keys() %}
+    <div class="container" aria-label="{{ axis }}">
+        <div class="row">
+            <div class="col-3">
+                <h5>{{ axis|capitalize }}</h5>
+            </div>
+            <div class="col-2">
+                <h5 class="col text-right" id='ttr-{{ axis }}-state'>{{ hardware['ttr_stage'][axis]['position']
+                    }}
+                </h5>
+            </div>
+            <div class="col-7">
+                <input class="form-control ttr-{{ axis }}-cntrl-txt" type="text" id="ttr-{{ axis }}-txt"
+                    placeholder="Position (mrad)">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-2"></div>
+            <div class="col-10 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-info ttr-{{ axis }}-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-outline-info ttr-{{ axis }}-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-outline-info ttr-{{ axis }}-cntrl-btn">-0.1</button>
+                    <button type="button" class="btn btn-outline-info ttr-{{ axis }}-cntrl-btn">0.1</button>
+                    <button type="button" class="btn btn-outline-info ttr-{{ axis }}-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-outline-info ttr-{{ axis }}-cntrl-btn">10</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {% endfor %}
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='generic_drivers/ttr_stage/ttr_stage_snip.js') }}"></script>

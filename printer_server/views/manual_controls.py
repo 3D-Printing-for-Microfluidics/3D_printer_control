@@ -15,30 +15,27 @@ hardware = {}
 hardware["html_paths"] = {}
 
 for key in config_dict.keys():
-    hardware[key] = {}
-    path = f"{key}/{key}_snip.html"
-    if exists(f"{Config.PRINT_SERVER_FOLDER}/drivers/{path}"):
-        hardware["html_paths"][key] = path
-
-for key in ["light_engine"]:
-    hardware["html_paths"][key] = f"generic_drivers/{key}/{key}_snip.html"
-
+    if key == "light_engines":
+        hardware[key] = {}
+        key = "light_engine"
+        hardware["html_paths"][key] = f"generic_drivers/{key}/{key}_snip.html"
+    elif key == "stages":
+        for key in config_dict["stages"].keys():
+            hardware[key] = {}
+            hardware["html_paths"][key] = f"generic_drivers/{key}/{key}_snip.html"
+    else:
+        hardware[key] = {}
+        path = f"{key}/{key}_snip.html"
+        if exists(f"{Config.PRINT_SERVER_FOLDER}/drivers/{path}"):
+            hardware["html_paths"][key] = path
 
 # Dynamically import python snippits
-if "acs" in config_dict.keys():
-    import printer_server.drivers.acs.acs_snip
 if "coord_systems" in config_dict.keys():
     import printer_server.drivers.coord_systems.coord_systems_snip
 if "external_control" in config_dict.keys():
     import printer_server.drivers.external_control.external_control_snip
-if "galil" in config_dict.keys():
-    import printer_server.drivers.galil.galil_snip
 if "gpio" in config_dict.keys():
     import printer_server.drivers.gpio.gpio_snip
-if "hexapod" in config_dict.keys():
-    import printer_server.drivers.hexapod.hexapod_snip
-if "kdc101" in config_dict.keys():
-    import printer_server.drivers.kdc101.kdc101_snip
 if "keyence" in config_dict.keys():
     import printer_server.drivers.keyence.keyence_snip
 if "loadcell" in config_dict.keys():
@@ -51,9 +48,17 @@ if "screen" in config_dict.keys():
     import printer_server.drivers.screen.screen_snip
 if "spectrometer" in config_dict.keys():
     import printer_server.drivers.spectrometer.spectrometer_snip
-if "tiptilt" in config_dict.keys():
-    import printer_server.drivers.tiptilt.tiptilt_snip
-import printer_server.drivers.generic_drivers.light_engine.light_engine_snip
+    
+if "light_engines" in config_dict.keys():
+    import printer_server.drivers.generic_drivers.light_engine.light_engine_snip
+if "bp_stage" in config_dict["stages"].keys():
+    import printer_server.drivers.generic_drivers.bp_stage.bp_stage_snip
+if "focus_stage" in config_dict["stages"].keys():
+    import printer_server.drivers.generic_drivers.focus_stage.focus_stage_snip
+if "ttr_stage" in config_dict["stages"].keys():
+    import printer_server.drivers.generic_drivers.ttr_stage.ttr_stage_snip
+if "xy_stage" in config_dict["stages"].keys():
+    import printer_server.drivers.generic_drivers.xy_stage.xy_stage_snip
 
 # Create bluprint
 blueprint = Blueprint(
@@ -95,38 +100,11 @@ def index():
                     "y_shift": {"name": "Y Shift per mm X", "value":calibration_positions.get("y_shift",0.0)}
                 }
 
-        if "acs" in config_dict.keys():
-            acs_positions = (
-                printer_server.drivers.acs.acs_snip.acs_get_positions()
-            )
-            hardware["acs"]["stages"] = {}
-            for i in range(len(config_dict["acs"]["axes"])):
-                axis = config_dict["acs"]["axes"][i]
-                hardware["acs"]["stages"][axis] = {
-                    "common": config_dict["acs"]["axes_common_names"][i],
-                    "position": acs_positions[axis],
-                }
-
-        if "galil" in config_dict.keys():
-            galil_positions = (
-                printer_server.drivers.galil.galil_snip.galil_get_positions()
-            )
-            hardware["galil"]["stages"] = {}
-            for i in range(len(config_dict["galil"]["axes"])):
-                axis = config_dict["galil"]["axes"][i]
-                hardware["galil"]["stages"][axis] = {
-                    "common": config_dict["galil"]["axes_common_names"][i],
-                    "position": galil_positions[axis],
-                }
-
         if "gpio" in config_dict.keys():
             if "film_pin" in config_dict["gpio"].keys():
                 hardware["gpio"][
                     "film_state"
                 ] = printer_server.drivers.gpio.gpio_snip.getFilmRelayState()
-
-        if "kdc101" in config_dict.keys():
-            hardware["kdc101"]["distance"] = calibration_positions.get("distance",0)
 
         if "keyence" in config_dict.keys():
             sensors = list(config_dict["keyence"]["sensors"].keys())
@@ -167,19 +145,33 @@ def index():
             hardware["spectrometer"]["default_integrations"] = config_dict["spectrometer"]["default_integration_time"]
             hardware["spectrometer"]["default_averages"] = config_dict["spectrometer"]["default_number_of_averages"]
 
-        if "tiptilt" in config_dict.keys():
-            hardware["tiptilt"]["tip"] = calibration_positions.get("tip",0)
-            hardware["tiptilt"]["tilt"] = calibration_positions.get("tilt",0)
-
         # screen and light engines
-        for light_engine in config_dict["light_engines"]:
-            hardware["light_engines"][light_engine] = {}
-            if light_engine in config_dict.keys():
-                hardware["light_engines"][light_engine][
-                    "status"
-                ] = printer_server.drivers.generic_drivers.light_engine.light_engine_snip.getLedStatus(light_engine)
-                hardware["light_engines"][light_engine]["dual_led"] = config_dict[light_engine]["dual_led"]
-                hardware["light_engines"][light_engine]["leds_nm"] = config_dict[light_engine]["leds_nm"]
+        if "light_engines" in config_dict.keys() or "screen" in config_dict.keys():
+            for light_engine in config_dict["light_engines"]:
+                hardware["light_engines"][light_engine] = {}
+                if light_engine in config_dict.keys():
+                    hardware["light_engines"][light_engine][
+                        "status"
+                    ] = printer_server.drivers.generic_drivers.light_engine.light_engine_snip.getLedStatus(light_engine)
+                    hardware["light_engines"][light_engine]["dual_led"] = config_dict[light_engine]["dual_led"]
+                    hardware["light_engines"][light_engine]["leds_nm"] = config_dict[light_engine]["leds_nm"]
+
+        if "bp_stage" in config_dict["stages"].keys():
+            hardware["bp_stage"] = printer_server.drivers.generic_drivers.bp_stage.bp_stage_snip.bp_get_position(notify=False)
+
+        if "focus_stage" in config_dict["stages"].keys():
+            hardware["focus_stage"] = printer_server.drivers.generic_drivers.focus_stage.focus_stage_snip.focus_get_position(notify=False)
+            # hardware["kdc101"]["distance"] = calibration_positions.get("distance",0)
+
+
+        if "ttr_stage" in config_dict["stages"].keys():
+            hardware["ttr_stage"] = printer_server.drivers.generic_drivers.ttr_stage.ttr_stage_snip.ttr_get_position(notify=False)
+        #     # hexapod stuff...
+        #     # hardware["tiptilt"]["tip"] = calibration_positions.get("tip",0)
+        #     # hardware["tiptilt"]["tilt"] = calibration_positions.get("tilt",0)
+
+        if "xy_stage" in config_dict["stages"].keys():
+            hardware["xy_stage"] = printer_server.drivers.generic_drivers.xy_stage.xy_stage_snip.xy_get_position(notify=False)
             
     return render_template(
         "manual_controls.html",

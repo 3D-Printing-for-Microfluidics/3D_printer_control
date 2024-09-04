@@ -20,8 +20,14 @@ class TTRStageDriver:
     def home(self):
         log.warn("Function not implemented. Using abstract TTRStageDriver class")
 
-    def absMoveTTR( self, deg=None, axis=None):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+    def getTTRPosition(self, axis=None, notify=True):
+        log.warn("Function not implemented. Using abstract TTRStageDriver class")
+
+    def absMoveTTR(self, rad=None, axis=None):
+        log.warn("Function not implemented. Using abstract TTRStageDriver class")
+
+    def relMoveTTR(self, rad=None, axis=None):
+        log.warn("Function not implemented. Using abstract TTRStageDriver class")
 
     def initialize_and_positionTTR(self, tip, tilt, rotate):
         if self.initialized is None:
@@ -54,10 +60,10 @@ class TTRStageDriver:
         if tip is not None:
             threads[0] = Thread(
                 logger, 
-                name="xy_stage_driver_tip_thread",
+                name="ttr_stage_driver_tip_thread",
                 target=self.absMoveTTR,
                 kwargs={
-                    "deg": tip,
+                    "rad": tip,
                     "axis": "Tip",
                 },
             )
@@ -65,10 +71,10 @@ class TTRStageDriver:
         if tilt is not None:
             threads[1] = Thread(
                 logger, 
-                name="xy_stage_driver_tilt_thread",
+                name="ttr_stage_driver_tilt_thread",
                 target=self.absMoveTTR,
                 kwargs={
-                    "deg": tilt,
+                    "rad": tilt,
                     "axis": "Tilt",
                 },
             )
@@ -76,10 +82,10 @@ class TTRStageDriver:
         if rotate is not None:
             threads[2] = Thread(
                 logger, 
-                name="xy_stage_driver_rotate_thread",
+                name="ttr_stage_driver_rotate_thread",
                 target=self.absMoveTTR,
                 kwargs={
-                    "deg": rotate,
+                    "rad": rotate,
                     "axis": "Rotate",
                 },
             )

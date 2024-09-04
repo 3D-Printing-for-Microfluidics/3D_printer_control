@@ -51,8 +51,14 @@ class KDC101(USBSerial, FocusStageDriver):
     def initialize(self):
         pass
 
+    def getDefaultFocusSpeed(self):
+        return 0
+
+    def getDefaultFocusAcceleration(self):
+        return 0
+
     def getFocusPosition(self, notify=True):
-        return self.getCurrentPos()/1000
+        return self.getCurrentPos(microns=False)
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
         self.move(mm, microns=False, relative=False)
@@ -203,15 +209,15 @@ class KDC101(USBSerial, FocusStageDriver):
         )
         time.sleep(0.1)
 
-    def getCurrentPos(self):
+    def getCurrentPos(self, microns=True):
         # for some reason sometimes the first one fails.
         # if it is startup, the first 2 fail
         # so we get it twice
-        self.getCurrentPosHelper()
-        self.getCurrentPosHelper()
-        return self.getCurrentPosHelper()
+        self.getCurrentPosHelper(microns=microns)
+        self.getCurrentPosHelper(microns=microns)
+        return self.getCurrentPosHelper(microns=microns)
 
-    def getCurrentPosHelper(self):
+    def getCurrentPosHelper(self, microns=True):
         # Request Position; MGMSG_MOT_REQ_POSCOUNTER
         self.write_bytes(
             pack("<HBBBB", 0x0411, self.Channel, 0x00, self.destination, self.source)
@@ -229,9 +235,14 @@ class KDC101(USBSerial, FocusStageDriver):
         if int(getpos) == 125203:
             getpos = 0.0
 
-        getpos = round(
-            getpos * 1000, 1
-        )  # convert to microns and round to 1 decimal place
+        if microns:
+            getpos = round(
+                getpos * 1000, 1
+            )  # convert to microns and round to 1 decimal place
+        else:
+            getpos = round(
+                getpos, 4
+            )  # round to 4 decimal places
         self.flush_buffers()  # added to test if it fixes the read error
 
         if not self.homed and getpos == 0.0:

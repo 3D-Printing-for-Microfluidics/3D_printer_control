@@ -44,6 +44,27 @@ class TipTilt_dummy:
         message = "Done"
         error = False
         return message, error
+    
+    ################################# Parent class functions #######################################
+    def getTTRPosition(self, axis=None, notify=True):
+        return self.get_position(axis)
+
+    def absMoveTTR(self, rad=None, axis=None):
+        self.move_absolute(self, axis, rad, fast=False)
+
+    def relMoveTTR(self, rad=None, axis=None):
+        self.move_relative(self, axis, rad, fast=False)
+
+    def setup_log_file(self, filename):
+        pass
+
+    def logging_start(self):
+        pass
+
+    def logging_stop(self):
+        pass
+
+    ################################# End parent class functions #######################################
 
     @dummy_log
     def initialize(self):

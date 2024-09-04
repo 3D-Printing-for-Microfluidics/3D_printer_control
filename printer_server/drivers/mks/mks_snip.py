@@ -50,7 +50,6 @@ def switchRelay(message):
     time.sleep(0.1)
     get_relay_status(emit=True)
 
-@socketio.on("mks_crane_get_position", namespace="/manual")
 def cranePosition(emit=True):
     pos = mks_teensy.get_crane_position()
     if emit:

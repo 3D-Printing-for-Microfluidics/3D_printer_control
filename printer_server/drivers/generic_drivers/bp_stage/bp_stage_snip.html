@@ -1,0 +1,49 @@
+<!-- BP Control -->
+<div class="container bp">
+    <div class="row top-buffer">
+        <div class="col-6">
+            <h3>BP Stage Controls</h3>
+        </div>
+        <div class="col-3">
+            <button type="button" class="btn btn-outline-info btn-block" id="bp-home-btn">Home</button>
+        </div>
+        <div class="col-3">
+            <button type="button" class="btn btn-outline-info btn-block" id="bp-top-btn">Go to Top</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-3">
+                <h5>Build Platform</h5>
+            </div>
+            <div class="col-2">
+                <h5 class="col text-right" id='bp-state'>{{ hardware['bp_stage']['position'] }}
+                </h5>
+            </div>
+            <div class="col-7">
+                <input class="form-control bp-cntrl-txt" type="text" id="bp-txt"
+                    placeholder="Position (um)">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-2"></div>
+            <div class="col-10 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-info bp-cntrl-btn">-10000</button>
+                    <button type="button" class="btn btn-outline-info bp-cntrl-btn">-1000</button>
+                    <button type="button" class="btn btn-outline-info bp-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-outline-info bp-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-outline-info bp-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-outline-info bp-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-outline-info bp-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-outline-info bp-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-outline-info bp-cntrl-btn">1000</button>
+                    <button type="button" class="btn btn-outline-info bp-cntrl-btn">10000</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='generic_drivers/bp_stage/bp_stage_snip.js') }}"></script>

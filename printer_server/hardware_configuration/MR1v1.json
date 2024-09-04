@@ -4,16 +4,6 @@
         "v3",
         "v2"
     ],
-    "stages": {
-        "bp": "galil",
-        "focus": "galil",
-        "x_y": "galil",
-        "t_t_r": "tiptilt"
-    },
-    "light_engines": [
-        "visitech",
-        "wintech"
-    ],
     "external_control": {},
     "coord_systems": {
         "global": {
@@ -53,6 +43,12 @@
             "Build Platform": 0
         }
     },
+    "stages": {
+        "bp_stage": "galil",
+        "focus_stage": "galil",
+        "xy_stage": "galil",
+        "ttr_stage": "tiptilt"
+    },
     "galil": {
         "dummy": false,
         "controller_name": "DMC4040",
@@ -82,7 +78,7 @@
             "C": 51200,
             "D": 51200
         },
-        "axes_tolerance": {
+        "axes_tolerance_um": {
             "A": 0.125,
             "B": 0.125,
             "C": 0.125,
@@ -141,6 +137,10 @@
         "loadcell_print_start_force": 5.0
     },
     "screen": {},
+    "light_engines": [
+        "visitech",
+        "wintech"
+    ],
     "visitech": {
         "dummy": false,
         "address": "192.168.0.10",

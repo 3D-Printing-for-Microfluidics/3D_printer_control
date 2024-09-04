@@ -2,15 +2,12 @@
     "valid_schema_versions": [
         "v2"
     ],
-    "stages": {
-        "bp": "galil",
-        "focus": "kdc101",
-        "t_t_r": "tiptilt"
-    },
-    "light_engines": [
-        "visitech"
-    ],
     "external_control": {},
+    "stages": {
+        "bp_stage": "galil",
+        "focus_stage": "kdc101",
+        "ttr_stage": "tiptilt"
+    },
     "galil": {
         "dummy": false,
         "controller_name": "DMC31010",
@@ -28,7 +25,7 @@
         "axes_ctspmm": {
             "A": 8000
         },
-        "axes_tolerance": {
+        "axes_tolerance_um": {
             "A": 0.125
         },
         "axes_speed": {
@@ -72,6 +69,9 @@
         "loadcell_print_start_force": 5.0
     },
     "screen": {},
+    "light_engines": [
+        "visitech"
+    ],
     "visitech": {
         "dummy": false,
         "address": "192.168.0.10",

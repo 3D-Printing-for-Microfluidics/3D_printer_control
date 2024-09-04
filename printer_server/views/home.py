@@ -31,7 +31,7 @@ if "loadcell" in config_dict:
     from printer_server.printer_control.loadcell_control import LoadcellControl
     parent_classes.append(LoadcellControl)
 
-if "bp" in config_dict["stages"]:
+if "bp_stage" in config_dict["stages"]:
     from printer_server.printer_control.bp_control import BPControl
     parent_classes.append(BPControl)
 
@@ -48,7 +48,7 @@ if "keyence" in config_dict:
     from printer_server.printer_control.keyence_control import KeyenceControl
     parent_classes.append(KeyenceControl)
 
-if "focus" in config_dict["stages"]:
+if "focus_stage" in config_dict["stages"]:
     from printer_server.printer_control.focus_control import FocusControl
     parent_classes.append(FocusControl)
 
@@ -61,7 +61,7 @@ if "spectrometer" in config_dict and "photodiode" in config_dict:
     from printer_server.printer_control.light_measurement_control import LightMeasurementControl
     parent_classes.append(LightMeasurementControl)
 
-if "t_t_r" in config_dict["stages"]:
+if "ttr_stage" in config_dict["stages"]:
     from printer_server.printer_control.ttr_control import TTRControl
     parent_classes.append(TTRControl)
 
@@ -69,7 +69,7 @@ if "mks" in config_dict:
     from printer_server.printer_control.vacuum_control import VacuumControl
     parent_classes.append(VacuumControl)
 
-if "x_y" in config_dict["stages"]:
+if "xy_stage" in config_dict["stages"]:
     from printer_server.printer_control.xy_control import XYControl
     parent_classes.append(XYControl)
 

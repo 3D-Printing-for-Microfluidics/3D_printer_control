@@ -28,6 +28,12 @@ class XYStageDriver:
 
     def home(self):
         log.warn("Function not implemented. Using abstract XYStageDriver class")
+
+    def getDefaultXYSpeed(self, axis=None):
+        log.warn("Function not implemented. Using abstract XYStageDriver class")
+
+    def getDefaultXYAcceleration(self, axis=None):
+        log.warn("Function not implemented. Using abstract XYStageDriver class")
         
     def getXYPosition(self, axis=None, notify=True):
         log.warn("Function not implemented. Using abstract XYStageDriver class")

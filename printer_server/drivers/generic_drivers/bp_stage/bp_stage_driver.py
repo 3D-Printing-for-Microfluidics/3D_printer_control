@@ -23,6 +23,9 @@ class BPStageDriver:
     def logging_stop(self):
         log.warn("Function not implemented. Using abstract BPStageDriver class")
 
+    def get_logging_results(self):
+        log.warn("Function not implemented. Using abstract BPStageDriver class")
+
     def connect(self, shutdown):
         log.warn("Function not implemented. Using abstract BPStageDriver class")
 
@@ -30,6 +33,12 @@ class BPStageDriver:
         log.warn("Function not implemented. Using abstract BPStageDriver class")
 
     def home(self):
+        log.warn("Function not implemented. Using abstract BPStageDriver class")
+
+    def getDefaultBPSpeed(self):
+        log.warn("Function not implemented. Using abstract BPStageDriver class")
+
+    def getDefaultBPAcceleration(self):
         log.warn("Function not implemented. Using abstract BPStageDriver class")
 
     def getBPPosition(self, notify=True):
