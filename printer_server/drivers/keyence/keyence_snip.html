@@ -8,7 +8,7 @@
         </div>
     </div>
 
-    {% for sensor in hardware['keyence']['sensors'] %}
+    {% for sensor in manual_controls_data['keyence']['sensors'] %}
     <div class="container" aria-label="{{sensor}}">
         <div class="row">
             <div class="col-2">
@@ -19,38 +19,8 @@
             </div>
             <div class="col-3">
                 <h5 class="col text-left" id='{{ sensor }}-value'>{{
-                    hardware['keyence']['readings'][sensor] }} um
+                    manual_controls_data['keyence']['readings'][sensor] }} um
                 </h5>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-2"></div>
-            <div class="col-3 text-right">
-                <h5>Focus Setpoint:</h5>
-            </div>
-            <div class="col-3">
-                <h5 class="col text-left" id='{{ sensor }}-focus'>{{
-                    hardware['keyence']['focus'][sensor] }} um
-                </h5>
-            </div>
-            <div class="col-4">
-                <input class="form-control {{ sensor }}-cntrl-txt" type="text" id="{{ sensor }}-txt"
-                    placeholder="Position (um)">
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-4"></div>
-            <div class="col-8 text-right">
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">-1000</button>
-                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">-100</button>
-                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">-10</button>
-                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">-1</button>
-                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">1</button>
-                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">10</button>
-                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">100</button>
-                    <button type="button" class="btn btn-outline-info {{ sensor }}-cntrl-btn">1000</button>
-                </div>
             </div>
         </div>
     </div>

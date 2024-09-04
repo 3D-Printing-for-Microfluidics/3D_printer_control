@@ -11,7 +11,7 @@ var disable_button = function (id) {
 }
 
 $(document).ready(function () {
-    for (let light_engine in hardware["light_engines"]) {
+    for (let light_engine in manual_controls_data["light_engines"]) {
         // Handles to user inputs
         let LedPowerSliderElement = document.getElementById(`${light_engine}-led-power-slider`);
         let LedPowerLabelElement = document.getElementById(`${light_engine}-led-power-label`);

@@ -11,10 +11,10 @@
         <div class="col-6">
             <div id="loadcell_graph_mode" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
                 <label
-                    class="btn btn-outline-info btn-fixed-width shadow-none {% if not hardware['loadcell']['in_newtons'] %} active {% endif %}">Counts<input
+                    class="btn btn-outline-info btn-fixed-width shadow-none {% if not manual_controls_data['loadcell']['in_newtons'] %} active {% endif %}">Counts<input
                         type="radio"></label>
                 <label
-                    class="btn btn-outline-info btn-fixed-width shadow-none {% if hardware['loadcell']['in_newtons'] %} active {% endif %}">Newtons<input
+                    class="btn btn-outline-info btn-fixed-width shadow-none {% if manual_controls_data['loadcell']['in_newtons'] %} active {% endif %}">Newtons<input
                         type="radio"></label>
             </div>
         </div>
@@ -26,10 +26,10 @@
         <div class="col-6">
             <div id="loadcell_graph_autoscale" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
                 <label
-                    class="btn btn-outline-info btn-fixed-width shadow-none {% if hardware['loadcell']['autoscale'] %} active {% endif %}">True<input
+                    class="btn btn-outline-info btn-fixed-width shadow-none {% if manual_controls_data['loadcell']['autoscale'] %} active {% endif %}">True<input
                         type="radio"></label>
                 <label
-                    class="btn btn-outline-info btn-fixed-width shadow-none {% if not hardware['loadcell']['autoscale'] %} active {% endif %}">False<input
+                    class="btn btn-outline-info btn-fixed-width shadow-none {% if not manual_controls_data['loadcell']['autoscale'] %} active {% endif %}">False<input
                         type="radio"></label>
             </div>
         </div>

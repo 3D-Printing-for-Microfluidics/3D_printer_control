@@ -11,6 +11,9 @@ from pipython.pidevice.gcsmessages import GCSMessages
 from pipython.pidevice.interfaces.pisocket import PISocket
 
 from printer_server.drivers.generic_drivers import TTRStageDriver, FocusStageDriver
+from printer_server.views.calibration import (
+    get_last_calibration_positions_from_logs,
+)
 
 def radians_to_degrees(radians):
     return radians * (180 / math.pi)
@@ -90,7 +93,11 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
     ################################# Parent class functions #######################################
     def home(self):
         self.home_all_axes()
-        self.set_pivot_point(self.config_dict["pivot_x_um"]/1000,self.config_dict["pivot_y_um"]/1000,self.config_dict["pivot_z_um"]/1000)
+        calibration_positions = get_last_calibration_positions_from_logs()
+        x = calibration_positions.get("pivot_x",0)/1000
+        y = calibration_positions.get("pivot_y",0)/1000
+        z = calibration_positions.get("pivot_z",0)/1000
+        self.set_pivot_point(x,y,z)
 
     def getTTRPosition(self, axis=None, notify=True):
         return self.get_pose(self.convertAxis(axis))

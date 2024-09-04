@@ -7,47 +7,14 @@
             </div>
             <div class="col-8">
                 <div id="coord_systems" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
-                    {% for coord in hardware['coord_systems']['coord_systems'].keys() %}
+                    {% for coord in manual_controls_data['coord_systems']['coord_systems'].keys() %}
                     <label
-                        class="btn btn-outline-info shadow-none {% if coord == hardware['coord_systems']['active'] %} active {% endif %}">{{
+                        class="btn btn-outline-info shadow-none {% if coord == manual_controls_data['coord_systems']['active'] %} active {% endif %}">{{
                         coord|capitalize }}<input type="radio"></label>
                     {% endfor %}
                 </div>
             </div>
         </div>
-        {% if 'coord_adjustments' in hardware['coord_systems'].keys() %}
-        <div class="row mb-2">
-            <!--- <div class="col-auto mr-auto">
-                <h3>Wintech Adjustments</h3>
-            </div> -->
-            <div class="col-auto">
-                <button class="btn btn-sm btn-outline-info" type="button" data-toggle="collapse"
-                    id="toggle-wintech-adj">Show
-                    Wintech Alignment</button>
-            </div>
-        </div>
-        <div class="collapse" id="collapseWintechAdj">
-            <container>
-                {% for adj in hardware['coord_systems']['coord_adjustments'].keys() %}
-                <div class="container" aria-label="{{ adj }}">
-                    <div class="row">
-                        <div class="col-4">
-                            <h5>{{ hardware['coord_systems']['coord_adjustments'][adj]['name'] }}</h5>
-                        </div>
-                        <div class="col-2">
-                            <h5 class="col text-right" id="{{ adj }}">{{
-                                hardware['coord_systems']['coord_adjustments'][adj]['value'] }}
-                            </h5>
-                        </div>
-                        <div class="col-6">
-                            <input class="form-control wintech-adj-cntrl-txt" type="text" placeholder="um">
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </container>
-        </div>
-        {% endif %}
     </div>
 </div>
 

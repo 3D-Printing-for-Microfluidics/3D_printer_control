@@ -6,7 +6,7 @@ from pathlib import Path
 from printer_server.threading_wrapper import Thread
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
 from printer_server.printer_control.print_control import PrintControl, run_in_thread
-from printer_server.views.manual_controls import (
+from printer_server.views.calibration import (
     get_last_calibration_positions_from_logs,
 )
 

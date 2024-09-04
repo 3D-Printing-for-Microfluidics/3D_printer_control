@@ -11,23 +11,23 @@ import printer_server.views.home
 from printer_server.hardware_configuration.hardware_configuration import config_dict
 
 # Generate HTML snippit list
-hardware = {}
-hardware["html_paths"] = {}
+manual_controls_data = {}
+manual_controls_data["html_paths"] = {}
 
 for key in config_dict.keys():
     if key == "light_engines":
-        hardware[key] = {}
+        manual_controls_data[key] = {}
         key = "light_engine"
-        hardware["html_paths"][key] = f"generic_drivers/{key}/{key}_snip.html"
+        manual_controls_data["html_paths"][key] = f"generic_drivers/{key}/{key}_snip.html"
     elif key == "stages":
         for key in config_dict["stages"].keys():
-            hardware[key] = {}
-            hardware["html_paths"][key] = f"generic_drivers/{key}/{key}_snip.html"
+            manual_controls_data[key] = {}
+            manual_controls_data["html_paths"][key] = f"generic_drivers/{key}/{key}_snip.html"
     else:
-        hardware[key] = {}
+        manual_controls_data[key] = {}
         path = f"{key}/{key}_snip.html"
         if exists(f"{Config.PRINT_SERVER_FOLDER}/drivers/{path}"):
-            hardware["html_paths"][key] = path
+            manual_controls_data["html_paths"][key] = path
 
 # Dynamically import python snippits
 if "coord_systems" in config_dict.keys():
@@ -79,142 +79,94 @@ def index():
         enabled = printer_server.drivers.external_control.external_control_snip.get_external_control_enable(
             emit=False
         )
-        hardware["external_control"]["enabled"] = enabled
+        manual_controls_data["external_control"]["enabled"] = enabled
 
     if initialized:
-        calibration_positions = get_last_calibration_positions_from_logs()
         if "coord_systems" in config_dict:
             # set active coord system
             coord_system_name, _ = printer_server.drivers.coord_systems.coord_systems_snip.get_coodinate_system()
-            hardware["coord_systems"]["active"] = coord_system_name
+            manual_controls_data["coord_systems"]["active"] = coord_system_name
             # set coord system list
-            hardware["coord_systems"]["coord_systems"] = {}
+            manual_controls_data["coord_systems"]["coord_systems"] = {}
             for key in config_dict["coord_systems"].keys():
-                hardware["coord_systems"]["coord_systems"][key] = config_dict["coord_systems"][key]
-            # set coord adjustments
-            if "wintech" in config_dict.keys():
-                hardware["coord_systems"]["coord_adjustments"] = {
-                    "x_drift": {"name": "X Drift", "value":calibration_positions.get("x_drift",0.0)},
-                    "y_drift": {"name": "Y Drift", "value":calibration_positions.get("y_drift",0.0)},
-                    "x_shift": {"name": "X Shift per mm Y", "value":calibration_positions.get("x_shift",0.0)},
-                    "y_shift": {"name": "Y Shift per mm X", "value":calibration_positions.get("y_shift",0.0)}
-                }
+                manual_controls_data["coord_systems"]["coord_systems"][key] = config_dict["coord_systems"][key]
 
         if "gpio" in config_dict.keys():
             if "film_pin" in config_dict["gpio"].keys():
-                hardware["gpio"][
+                manual_controls_data["gpio"][
                     "film_state"
                 ] = printer_server.drivers.gpio.gpio_snip.getFilmRelayState()
 
         if "keyence" in config_dict.keys():
             sensors = list(config_dict["keyence"]["sensors"].keys())
-            hardware["keyence"]["sensors"] = sensors
-            hardware["keyence"]["readings"] = {}
-            hardware["keyence"]["focus"] = {}
+            manual_controls_data["keyence"]["sensors"] = sensors
+            manual_controls_data["keyence"]["readings"] = {}
+            manual_controls_data["keyence"]["focus"] = {}
             for sensor in sensors:
                 sensor_reading = printer_server.drivers.keyence.keyence_snip.read_sensor(
                     config_dict["keyence"]["sensors"][sensor]["measurement_index"]
                 )
-                hardware["keyence"]["focus"][sensor] = calibration_positions.get(
-                    f"keyence_{sensor}", 0
-                )
-                hardware["keyence"]["readings"][sensor] = sensor_reading
+                manual_controls_data["keyence"]["readings"][sensor] = sensor_reading
 
         if "loadcell" in config_dict.keys():
-            hardware["loadcell"][
+            manual_controls_data["loadcell"][
                 "autoscale"
             ] = printer_server.drivers.loadcell.loadcell_snip.get_graph_autoscale()
-            hardware["loadcell"][
+            manual_controls_data["loadcell"][
                 "in_newtons"
             ] = printer_server.drivers.loadcell.loadcell_snip.get_graph_mode()
 
         if "mks" in config_dict.keys():
             relay_setting = printer_server.drivers.mks.mks_snip.get_relay_status(emit=False)
-            hardware["mks"]["relay_setting"] = relay_setting
-            hardware["mks"]["gauge"] = printer_server.drivers.mks.mks_snip.get_gauges(emit=False)
-            hardware["mks"]["target"] =config_dict["mks"]["target"]
-            hardware["mks"]["atm"] = config_dict["mks"]["atm pressure"]-50
-            hardware["mks"]["crane_pos"] = printer_server.drivers.mks.mks_snip.cranePosition(emit=False)
+            manual_controls_data["mks"]["relay_setting"] = relay_setting
+            manual_controls_data["mks"]["gauge"] = printer_server.drivers.mks.mks_snip.get_gauges(emit=False)
+            manual_controls_data["mks"]["target"] =config_dict["mks"]["target"]
+            manual_controls_data["mks"]["atm"] = config_dict["mks"]["atm pressure"]-50
+            manual_controls_data["mks"]["crane_pos"] = printer_server.drivers.mks.mks_snip.cranePosition(emit=False)
 
         if "photodiode" in config_dict.keys():
             default_wavelength = config_dict["photodiode"]["default_wavelength"]
-            hardware["photodiode"]["power"] = printer_server.drivers.photodiode.photodiode_snip.get_photodiode_power({"wavelength": default_wavelength}, emit=False)
-            hardware["photodiode"]["wavelength"] = default_wavelength 
+            manual_controls_data["photodiode"]["power"] = printer_server.drivers.photodiode.photodiode_snip.get_photodiode_power({"wavelength": default_wavelength}, emit=False)
+            manual_controls_data["photodiode"]["wavelength"] = default_wavelength 
 
         if "spectrometer" in config_dict.keys():
-            hardware["spectrometer"]["default_integrations"] = config_dict["spectrometer"]["default_integration_time"]
-            hardware["spectrometer"]["default_averages"] = config_dict["spectrometer"]["default_number_of_averages"]
+            manual_controls_data["spectrometer"]["default_integrations"] = config_dict["spectrometer"]["default_integration_time"]
+            manual_controls_data["spectrometer"]["default_averages"] = config_dict["spectrometer"]["default_number_of_averages"]
 
         # screen and light engines
         if "light_engines" in config_dict.keys() or "screen" in config_dict.keys():
             for light_engine in config_dict["light_engines"]:
-                hardware["light_engines"][light_engine] = {}
+                manual_controls_data["light_engines"][light_engine] = {}
                 if light_engine in config_dict.keys():
-                    hardware["light_engines"][light_engine][
+                    manual_controls_data["light_engines"][light_engine][
                         "status"
                     ] = printer_server.drivers.generic_drivers.light_engine.light_engine_snip.getLedStatus(light_engine)
-                    hardware["light_engines"][light_engine]["dual_led"] = config_dict[light_engine]["dual_led"]
-                    hardware["light_engines"][light_engine]["leds_nm"] = config_dict[light_engine]["leds_nm"]
+                    manual_controls_data["light_engines"][light_engine]["dual_led"] = config_dict[light_engine]["dual_led"]
+                    manual_controls_data["light_engines"][light_engine]["leds_nm"] = config_dict[light_engine]["leds_nm"]
 
         if "bp_stage" in config_dict["stages"].keys():
-            hardware["bp_stage"] = printer_server.drivers.generic_drivers.bp_stage.bp_stage_snip.bp_get_position(notify=False)
+            manual_controls_data["bp_stage"] = printer_server.drivers.generic_drivers.bp_stage.bp_stage_snip.bp_get_position(notify=False)
 
         if "focus_stage" in config_dict["stages"].keys():
-            hardware["focus_stage"] = printer_server.drivers.generic_drivers.focus_stage.focus_stage_snip.focus_get_position(notify=False)
-            # hardware["kdc101"]["distance"] = calibration_positions.get("distance",0)
-
+            manual_controls_data["focus_stage"] = printer_server.drivers.generic_drivers.focus_stage.focus_stage_snip.focus_get_position(notify=False)
 
         if "ttr_stage" in config_dict["stages"].keys():
-            hardware["ttr_stage"] = printer_server.drivers.generic_drivers.ttr_stage.ttr_stage_snip.ttr_get_position(notify=False)
-        #     # hexapod stuff...
-        #     # hardware["tiptilt"]["tip"] = calibration_positions.get("tip",0)
-        #     # hardware["tiptilt"]["tilt"] = calibration_positions.get("tilt",0)
+            manual_controls_data["ttr_stage"] = printer_server.drivers.generic_drivers.ttr_stage.ttr_stage_snip.ttr_get_position(notify=False)
 
         if "xy_stage" in config_dict["stages"].keys():
-            hardware["xy_stage"] = printer_server.drivers.generic_drivers.xy_stage.xy_stage_snip.xy_get_position(notify=False)
+            manual_controls_data["xy_stage"] = printer_server.drivers.generic_drivers.xy_stage.xy_stage_snip.xy_get_position(notify=False)
             
     return render_template(
         "manual_controls.html",
         initialized=initialized,
         hostname=Config.HOSTNAME,
-        hardware=hardware,
+        manual_controls_data=manual_controls_data,
     )
 
 
 @blueprint.route("screen_image_upload", methods=["POST"])
 def upload():
     return printer_server.drivers.screen.screen_snip.handleUpload(request)
-
-
-position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
-
-
-def write_to_position_log(message):
-    with open(position_log_file, "a") as f:
-        f.write(
-            "{} {}\n".format(
-                datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), json.dumps(message)
-            )
-        )
-
-
-def get_last_calibration_positions_from_logs():
-    """Return the last focused position for the distance axis from the
-    position log file.
-    """
-    log_file = Path(Config.PROJECT_ROOT) / "logs" / "calibration_position_log.txt"
-    last_line = None
-    try:
-        with open(log_file) as f:
-            for line in f:
-                last_line = line.rstrip()
-
-        last_line = last_line[20:]
-        last_line = last_line.replace("'", '"')
-        temp = json.loads(last_line)
-        return temp
-    except FileNotFoundError:
-        return {}
 
 
 def update_le_led_state(le, state):

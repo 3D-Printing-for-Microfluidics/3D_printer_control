@@ -7,7 +7,7 @@ var enable_xy_buttons = function () {
 }
 
 var update_xy_positions = function (message) {
-    for (let stage in hardware["xy_stage"]) {
+    for (let stage in manual_controls_data["xy_stage"]) {
         if (!$.isEmptyObject(message)) {
             document.getElementById(`xy-${stage}-state`).innerHTML = message[stage]["position"];
         }
@@ -26,7 +26,7 @@ $(document).ready(function () {
         socket.emit("xy_home");
     });
 
-    for (let stage in hardware["xy_stage"]) {
+    for (let stage in manual_controls_data["xy_stage"]) {
         // xy stages text inputs for absolute positioning
         $(`.xy-${stage}-cntrl-txt`).on('change', function () {
             disable_xy_buttons();

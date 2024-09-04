@@ -27,22 +27,3 @@ def get_coodinate_system(emit=True):
     """Return the current coordinate system."""
     coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
     return coord_system_name, coord_system
-
-@socketio.on("coodinate_system_set_wintech_adjustments", namespace="/manual")
-def set_wintech_adjustments(message):
-
-    last_positions = (
-        printer_server.views.manual_controls.get_last_calibration_positions_from_logs()
-    )
-
-    for k,v in message.items():
-        if type(v) is int or type(v) is float:
-            last_positions[k] = v
-
-    printer_server.views.manual_controls.write_to_position_log(last_positions)
-
-    socketio.emit(
-        "coodinate_system_done",
-        last_positions,
-        namespace="/manual"
-    )

@@ -5,7 +5,7 @@ from printer_server.drivers.generic_drivers import USBSerial, TTRStageDriver
 # helper function for converting axis name into index
 def get_axis_index(axis):
     axis = axis.lower()
-    return {"tip": 1, "tilt": 2,}.get(
+    return {"Tip": 1, "Tilt": 2,}.get(
         axis, 0
     )  # 0 is default if axis is invalid
 
@@ -125,5 +125,5 @@ if __name__ == "__main__":
     t = TipTilt()
     t.connect(exit)
     # t.home()
-    print(f"{t.get_position('tip')}")
-    print(f"{t.get_position('tilt')}")
+    print(f"{t.get_position('Tip')}")
+    print(f"{t.get_position('Tilt')}")

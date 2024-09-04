@@ -5,7 +5,7 @@ from printer_server.logging_handler import dummy_log
 
 def get_axis_index(axis):
     axis = axis.lower()
-    return {"tip": 1, "tilt": 2}.get(axis, 0)
+    return {"Tip": 1, "Tilt": 2}.get(axis, 0)
 
 class TipTilt_dummy:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
@@ -129,5 +129,5 @@ class TipTilt_dummy:
 if __name__ == "__main__":
     t = TipTilt_dummy()
     t.connect(exit)
-    print(f"{t.get_position('tip')}")
-    print(f"{t.get_position('tilt')}")
+    print(f"{t.get_position('Tip')}")
+    print(f"{t.get_position('Tilt')}")

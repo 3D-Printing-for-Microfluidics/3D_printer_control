@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Focus ({{ hostname }}){% endblock %}
+
+{% block printer3d_state %}
+<h2>{{ hostname }} - Focus</h2>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link href="{{ url_for('static', filename='calibration.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block page_content %}
+
+{% for parameter in calibration_data %}
+<div class="container" aria-label="{{ parameter | replace(' ', '-') }}">
+    <div class="row">
+        <div class="col-3">
+            <h5>{{ parameter }}</h5>
+        </div>
+        <div class="col-2">
+            <h5 class="col text-right" id="{{ parameter | replace(' ', '-') }}-state">{{ calibration_data[parameter]}}
+            </h5>
+        </div>
+        <div class="col-7">
+            {% if ("Tip" in parameter) or ("Tilt" in parameter) or ("Rotate" in parameter) %}
+            <input class="form-control {{ parameter | replace(' ', '-') }}-cntrl-txt" type="text" id="{{ parameter | replace(' ', '-') }}-txt"
+                placeholder="Position (mrad)">
+            {% else %}
+            <input class="form-control {{ parameter | replace(' ', '-') }}-cntrl-txt" type="text" id="{{ parameter | replace(' ', '-') }}-txt"
+                placeholder="Position (um)">
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-2"></div>
+        <div class="col-10 text-right">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-10000</button>
+                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-1000</button>
+                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-100</button>
+                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-10</button>
+                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-1</button>
+                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">1</button>
+                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">10</button>
+                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">100</button>
+                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">1000</button>
+                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">10000</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+<script src="{{ url_for('static', filename='lib/ajax-socket.io-4.7.5.min.js') }}"></script>
+<script>
+    var socket;
+    var calibration_data = {{ calibration_data| tojson }};
+</script>
+<script src="{{ url_for('static', filename='calibration.js') }}"></script>
+{% endblock %}

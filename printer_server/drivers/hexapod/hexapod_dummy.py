@@ -4,6 +4,9 @@ import logging
 from printer_server.logging_handler import dummy_log
 
 from printer_server.drivers.generic_drivers import TTRStageDriver, FocusStageDriver
+from printer_server.views.calibration import (
+    get_last_calibration_positions_from_logs,
+)
 
 class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
     def __init__(self, config_dict=None, log_level=logging.INFO):
@@ -55,7 +58,11 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         self.log.info("Referencing axes...")
         self.reference_axes()
         self.home_all_axes()
-        self.set_pivot_point(self.config_dict["pivot_x_um"]/1000,self.config_dict["pivot_y_um"]/1000,self.config_dict["pivot_z_um"]/1000)
+        calibration_positions = get_last_calibration_positions_from_logs()
+        x = calibration_positions.get("pivot_x",0)/1000
+        y = calibration_positions.get("pivot_y",0)/1000
+        z = calibration_positions.get("pivot_z",0)/1000
+        self.set_pivot_point(x,y,z)
 
     def getTTRPosition(self, axis=None, notify=True):
         return self.get_pose(self.convertAxis(axis))

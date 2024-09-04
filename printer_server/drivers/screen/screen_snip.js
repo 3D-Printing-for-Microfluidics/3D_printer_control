@@ -41,7 +41,7 @@ $(document).ready(function () {
         enable_upload_button(le);
     });
 
-    for (let le in hardware["light_engines"]) {
+    for (let le in manual_controls_data["light_engines"]) {
 
         disable_upload_button(le);
 

@@ -7,7 +7,7 @@ var enable_ttr_buttons = function () {
 }
 
 var update_ttr_positions = function (message) {
-    for (let stage in hardware["ttr_stage"]) {
+    for (let stage in manual_controls_data["ttr_stage"]) {
         if (!$.isEmptyObject(message)) {
             document.getElementById(`ttr-${stage}-state`).innerHTML = message[stage]["position"];
         }
@@ -26,7 +26,7 @@ $(document).ready(function () {
         socket.emit("ttr_home");
     });
 
-    for (let stage in hardware["ttr_stage"]) {
+    for (let stage in manual_controls_data["ttr_stage"]) {
         // ttr stages text inputs for absolute positioning
         $(`.ttr-${stage}-cntrl-txt`).on('change', function () {
             disable_ttr_buttons();

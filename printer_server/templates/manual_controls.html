@@ -15,15 +15,15 @@
 
 {% if initialized %}
 
-{% for driver, path in hardware['html_paths'].items() %}
+{% for driver, path in manual_controls_data['html_paths'].items() %}
 {% include path %}
 <hr class="bg-secondary">
 {% endfor %}
 
 {% else %}
 
-{% if 'external_control' in hardware.keys() %}
-{% include hardware['html_paths']['external_control'] %}
+{% if 'external_control' in manual_controls_data.keys() %}
+{% include manual_controls_data['html_paths']['external_control'] %}
 <hr class="bg-secondary">
 {% endif %}
 
@@ -38,7 +38,7 @@
 <script src="{{ url_for('static', filename='lib/ajax-socket.io-4.7.5.min.js') }}"></script>
 <script>
     var socket;
-    var hardware = {{ hardware| tojson }};
+    var manual_controls_data = {{ manual_controls_data| tojson }};
 </script>
 <script src="{{ url_for('static', filename='manual_controls.js') }}"></script>
 {% endblock %}

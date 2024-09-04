@@ -59,7 +59,6 @@ def bp_move(message):
     if mode == "absolute":
         if coord_systems_control is not None:
             coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
-            calibration_positions = printer_server.views.manual_controls.get_last_calibration_positions_from_logs()
             distance += coord_system["Build Platform"]
             
         bp_stage.absMoveBP(mm=distance, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling)

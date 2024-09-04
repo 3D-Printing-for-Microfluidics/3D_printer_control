@@ -8,14 +8,14 @@
             <button type="button" class="btn btn-outline-info btn-block" id="ttr-home-btn">Home</button>
         </div>
     </div>
-    {% for axis in hardware['ttr_stage'].keys() %}
+    {% for axis in manual_controls_data['ttr_stage'].keys() %}
     <div class="container" aria-label="{{ axis }}">
         <div class="row">
             <div class="col-3">
                 <h5>{{ axis|capitalize }}</h5>
             </div>
             <div class="col-2">
-                <h5 class="col text-right" id='ttr-{{ axis }}-state'>{{ hardware['ttr_stage'][axis]['position']
+                <h5 class="col text-right" id='ttr-{{ axis }}-state'>{{ manual_controls_data['ttr_stage'][axis]['position']
                     }}
                 </h5>
             </div>

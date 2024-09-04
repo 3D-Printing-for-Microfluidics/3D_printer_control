@@ -22,20 +22,20 @@ var update_dist_position = function (message) {
 $(document).ready(function () {
     // Initiaize to starting values
     let settings = {
-        valve_pump1: Boolean(Number(hardware["mks"]["relay_setting"]["valve_pump1"])),
-        valve_vent1: Boolean(Number(hardware["mks"]["relay_setting"]["valve_vent1"])),
-        valve_pump2: Boolean(Number(hardware["mks"]["relay_setting"]["valve_pump2"])),
-        valve_vent2: Boolean(Number(hardware["mks"]["relay_setting"]["valve_vent2"])),
-        valve_vacuum: Boolean(Number(hardware["mks"]["relay_setting"]["valve_vacuum"])),
-        stirring: Boolean(Number(hardware["mks"]["relay_setting"]["stirring"])),
-        vacuum_pump: Boolean(Number(hardware["mks"]["relay_setting"]["vacuum_pump"])),
-        crane: Boolean(Number(hardware["mks"]["relay_setting"]["crane"]))
+        valve_pump1: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["valve_pump1"])),
+        valve_vent1: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["valve_vent1"])),
+        valve_pump2: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["valve_pump2"])),
+        valve_vent2: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["valve_vent2"])),
+        valve_vacuum: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["valve_vacuum"])),
+        stirring: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["stirring"])),
+        vacuum_pump: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["vacuum_pump"])),
+        crane: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["crane"]))
     };
-    let gaugeReading1 = hardware["mks"]["gauge"][0];
-    let gaugeReading2 = hardware["mks"]["gauge"][1];
-    let target1 = hardware["mks"]["target"][0];
-    let target2 = hardware["mks"]["target"][1];
-    let atm = hardware["mks"]["atm"];
+    let gaugeReading1 = manual_controls_data["mks"]["gauge"][0];
+    let gaugeReading2 = manual_controls_data["mks"]["gauge"][1];
+    let target1 = manual_controls_data["mks"]["target"][0];
+    let target2 = manual_controls_data["mks"]["target"][1];
+    let atm = manual_controls_data["mks"]["atm"];
 
     updateAllButtonStatus();
 

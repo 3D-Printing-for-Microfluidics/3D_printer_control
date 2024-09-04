@@ -1,6 +1,8 @@
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration.hardware_configuration import driver_handles, config_dict
-import printer_server.views.manual_controls
+from printer_server.views.calibration import (
+    get_last_calibration_positions_from_logs,
+)
 
 xy_stage = driver_handles.xy_stage
 if "coord_systems" in config_dict:
@@ -37,7 +39,7 @@ def xy_move(message):
     if mode == "absolute":
         if coord_systems_control is not None:
             coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
-            calibration_positions = printer_server.views.manual_controls.get_last_calibration_positions_from_logs()
+            calibration_positions = get_last_calibration_positions_from_logs()
             if "wintech" in coord_system_name:
                 distance += coord_system[axis]
                 if axis == "X":
@@ -64,7 +66,7 @@ def xy_get_position(notify=True):
         position = xy_stage.getXYPosition(axis=axis)
         if coord_systems_control is not None:
             coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
-            calibration_positions = printer_server.views.manual_controls.get_last_calibration_positions_from_logs()
+            calibration_positions = get_last_calibration_positions_from_logs()
             if "wintech" in coord_system_name:
                 position -= coord_system[axis]
                 position *= 1000
