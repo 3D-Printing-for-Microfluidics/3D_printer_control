@@ -4,46 +4,6 @@
         "v2"
     ],
     "external_control": {},
-    "mks": {
-        "dummy": true,
-        "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
-        "mks_vendor_id": 1027,
-        "mks_product_id": 24577,
-        "mks_serial_number": "A9AOVRT7",
-        "mks_baudrate": 115200,
-        "mks_address": "253",
-        "teensy_hwid": "PID=16C0:0483 SER=16035730",
-        "teensy_vendor_id": 5824,
-        "teensy_product_id": 1155,
-        "teensy_serial_number": "16035730",
-        "teensy_baudrate": 9600,
-        "atm pressure": 650,
-        "target": [
-            0.2,
-            0.15
-        ],
-        "relays": {
-            "crane": {
-                "relay_num": 1,
-                "mode": "auto",
-                "direction": "ABOVE",
-                "setpoint": 630,
-                "hysterisis": 560
-            },
-            "vacuum_pump": {
-                "relay_num": 2,
-                "mode": "manual"
-            }
-        },
-        "teensy relays": [
-            "valve_vent2",
-            "valve_pump2",
-            "valve_vacuum",
-            "valve_pump1",
-            "valve_vent1",
-            "stirring"
-        ]
-    },
     "coord_systems": {
         "global": {
             "X": 0,
@@ -117,17 +77,14 @@
             "1": 50,
             "2": 50
         },
-        "calibration_position": 75,
-        "bottom_position": 75,
+        "calibration_position": 50,
+        "bottom_position": 78,
         "top_position": 0
     },
     "hexapod": {
         "dummy": false,
         "address": "192.168.0.6",
         "port": 50000,
-        "pivot_x_um": 730,
-        "pivot_y_um": -380,
-        "pivot_z_um": 461800,
         "axes": [
             "Z",
             "U",
@@ -142,15 +99,45 @@
         ],
         "home_on_init": true
     },
-    "keyence": {
-        "dummy": true,
-        "address": "192.168.0.15",
-        "port": 24685,
-        "sensors": {
-            "visitech": {
-                "measurement_index": 0
+    "mks": {
+        "dummy": false,
+        "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
+        "mks_vendor_id": 1027,
+        "mks_product_id": 24577,
+        "mks_serial_number": "A9AOVRT7",
+        "mks_baudrate": 115200,
+        "mks_address": "253",
+        "teensy_hwid": "PID=16C0:0483 SER=16035730",
+        "teensy_vendor_id": 5824,
+        "teensy_product_id": 1155,
+        "teensy_serial_number": "16035730",
+        "teensy_baudrate": 9600,
+        "atm pressure": 650,
+        "target": [
+            0.2,
+            0.15
+        ],
+        "relays": {
+            "crane": {
+                "relay_num": 1,
+                "mode": "auto",
+                "direction": "ABOVE",
+                "setpoint": 630,
+                "hysterisis": 560
+            },
+            "vacuum_pump": {
+                "relay_num": 2,
+                "mode": "manual"
             }
-        }
+        },
+        "teensy relays": [
+            "valve_vent2",
+            "valve_pump2",
+            "valve_vacuum",
+            "valve_pump1",
+            "valve_vent1",
+            "stirring"
+        ]
     },
     "loadcell": {
         "dummy": true,
@@ -160,11 +147,21 @@
         "serial_number": "5712360",
         "baudrate": 115200,
         "sample_period_us": 1000,
-        "calibration_intercept": 32298.1,
-        "calibration_slope": -3.31,
+        "calibration_intercept": 32449.0,
+        "calibration_slope": -3.308,
         "loadcell_planarization_enabled": true,
-        "loadcell_planarization_force": 30.0,
+        "loadcell_planarization_force": 40.0,
         "loadcell_print_start_force": 5.0
+    },
+    "keyence": {
+        "dummy": false,
+        "address": "192.168.0.15",
+        "port": 24685,
+        "sensors": {
+            "visitech": {
+                "measurement_index": 0
+            }
+        }
     },
     "photodiode": {
         "dummy": true,
