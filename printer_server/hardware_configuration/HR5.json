@@ -97,7 +97,7 @@
             "Tilt",
             "Rotate"
         ],
-        "home_on_init": true
+        "auto_repositioning": true
     },
     "mks": {
         "dummy": false,

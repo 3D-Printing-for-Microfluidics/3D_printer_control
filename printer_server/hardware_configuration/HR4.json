@@ -96,7 +96,7 @@
             "Tip",
             "Tilt"
         ],
-        "home_on_init": false
+        "auto_repositioning": false
     },
     "keyence": {
         "dummy": false,

@@ -60,7 +60,7 @@
             "Tip",
             "Tilt"
         ],
-        "home_on_init": false
+        "auto_repositioning": false
     },
     "gpio": {
         "dummy": false,

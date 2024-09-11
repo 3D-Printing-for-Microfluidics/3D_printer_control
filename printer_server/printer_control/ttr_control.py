@@ -40,3 +40,24 @@ class TTRControl(PrintControl):
         self.ttr_thread.start()
         super().initialize_hardware()
         self.ttr_thread.join()
+
+
+    def pre_print_tasks(self):
+        if self.ttr_stage.config_dict.get("auto_repositioning", True):
+            self.tip = get_last_calibration_positions_from_logs().get("tip",None)
+            self.tilt = get_last_calibration_positions_from_logs().get("tilt",None)
+            self.rotate = get_last_calibration_positions_from_logs().get("rotate",None)
+            if self.tip is not None:
+                self.tip /= 1000
+            if self.tilt is not None:
+                self.tilt /= 1000
+            if self.rotate is not None:
+                self.rotate /= 1000
+            self.ttr_thread = self.ttr_stage.threadedTTRMove(log, self.tip, self.tilt, self.rotate, join=False)
+        super().pre_print_tasks()
+
+    def pre_print_joins(self):
+        if self.ttr_stage.config_dict.get("auto_repositioning", True):
+            if self.ttr_thread is not None:
+                self.ttr_thread.join()
+        super().pre_print_joins()

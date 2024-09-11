@@ -33,14 +33,14 @@ class TTRStageDriver:
         if self.initialized is None:
             self.initialized = False
             self.initialize()
-            if self.config_dict.get("home_on_init", True):
+            if self.config_dict.get("auto_repositioning", True):
                 self.home()
             self.initialized = True
 
         while not self.initialized:
             time.sleep(0.1)
 
-        if self.config_dict.get("home_on_init", True):
+        if self.config_dict.get("auto_repositioning", True):
             return self.threadedTTRMove(log, tip, tilt, rotate, join=True)
         return True
     
