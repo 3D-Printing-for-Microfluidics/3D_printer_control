@@ -52,6 +52,14 @@
         "product_id": 1155,
         "serial_number": "9881850",
         "baudrate": 115200,
+        "axes": [
+            1,
+            2
+        ],
+        "axes_common_names": [
+            "Tip",
+            "Tilt"
+        ],
         "home_on_init": false
     },
     "loadcell": {

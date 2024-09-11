@@ -30,7 +30,7 @@ def ttr_move(message):
 def ttr_get_position(notify=True):
     """Get the position the ttr stage in rad."""
     positions = {}
-    for axis in ["Tip", "Tilt", "Rotate"]:
+    for axis in ttr_stage.axes_common_names:
         position = ttr_stage.getTTRPosition(axis=axis)
         positions[axis] = {
             "position": f"{position*1000:.1f}"

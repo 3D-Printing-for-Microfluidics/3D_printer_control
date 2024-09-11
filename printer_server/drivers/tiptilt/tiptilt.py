@@ -2,12 +2,6 @@ import re
 import logging
 from printer_server.drivers.generic_drivers import USBSerial, TTRStageDriver
 
-# helper function for converting axis name into index
-def get_axis_index(axis):
-    axis = axis.lower()
-    return {"Tip": 1, "Tilt": 2,}.get(
-        axis, 0
-    )  # 0 is default if axis is invalid
 
 class TipTilt(USBSerial, TTRStageDriver):
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
@@ -19,6 +13,16 @@ class TipTilt(USBSerial, TTRStageDriver):
         self.config_dict = config_dict
         self.r = re.compile(r"\d*\.?\d*$")  # regex for getter functions
         self.initialized = None
+        self.axes = config_dict["axes"]
+        self.axes_common_names = config_dict["axes_common_names"]
+
+    def convertAxis(self, axis):
+        for i in range(len(self.axes)):
+            if axis in (self.axes[i], self.axes_common_names[i]):
+                return self.axes[i]
+            if axis.capitalize() in (self.axes[i], self.axes_common_names[i]):
+                return self.axes[i]
+        raise ValueError("Invalid axis supplied")
 
 
     ################################# Parent class functions #######################################
@@ -66,7 +70,7 @@ class TipTilt(USBSerial, TTRStageDriver):
 
     # returns a float
     def get_position(self, axis):
-        position = self.send(f"GP{get_axis_index(axis)}", parse_float_at_index=0)
+        position = self.send(f"GP{self.convertAxis(axis)}", parse_float_at_index=0)
         if position == 12345:
             return "undef"
         else:
@@ -74,41 +78,41 @@ class TipTilt(USBSerial, TTRStageDriver):
 
     # returns a float
     def get_min_position(self, axis):
-        return self.send(f"GL{get_axis_index(axis)}", parse_float_at_index=0)
+        return self.send(f"GL{self.convertAxis(axis)}", parse_float_at_index=0)
 
     # returns a float
     def get_max_position(self, axis):
-        return self.send(f"GU{get_axis_index(axis)}", parse_float_at_index=0)
+        return self.send(f"GU{self.convertAxis(axis)}", parse_float_at_index=0)
 
     # returns an int
     def get_acceleration(self, axis):
-        return self.send(f"GA{get_axis_index(axis)}", parse_float_at_index=0)
+        return self.send(f"GA{self.convertAxis(axis)}", parse_float_at_index=0)
 
     # returns "Done"
     def set_acceleration(self, axis, acceleration):
-        return self.send(f"SA{get_axis_index(axis)} {acceleration}")
+        return self.send(f"SA{self.convertAxis(axis)} {acceleration}")
 
     # returns an int
     def get_speed(self, axis):
-        return self.send(f"GV{get_axis_index(axis)}", parse_float_at_index=0)
+        return self.send(f"GV{self.convertAxis(axis)}", parse_float_at_index=0)
 
     # returns "Done"
     def set_speed(self, axis, acceleration):
-        return self.send(f"SV{get_axis_index(axis)} {acceleration}")
+        return self.send(f"SV{self.convertAxis(axis)} {acceleration}")
 
     # returns "Done" or "Error"
     def move_relative(self, axis, distance_um, fast=False):
         self.log.info("Moving %s by %s um", axis, distance_um)
         if fast:  # coarse mode uses less precise positioning for quicker moves
-            return self.send(f"Mr{get_axis_index(axis)} {distance_um}")
-        return self.send(f"MR{get_axis_index(axis)} {distance_um}")
+            return self.send(f"Mr{self.convertAxis(axis)} {distance_um}")
+        return self.send(f"MR{self.convertAxis(axis)} {distance_um}")
 
     # returns "Done" or "Error"
     def move_absolute(self, axis, distance_um, fast=False):
         self.log.info("Moving %s to %s um", axis, distance_um)
         if fast:  # coarse mode uses less precise positioning for quicker moves
-            return self.send(f"Ma{get_axis_index(axis)} {distance_um}")
-        return self.send(f"MA{get_axis_index(axis)} {distance_um}")
+            return self.send(f"Ma{self.convertAxis(axis)} {distance_um}")
+        return self.send(f"MA{self.convertAxis(axis)} {distance_um}")
 
     # wrapper to plug into existing calibration threads interface
     def move(self, axis, distance_um, relative=True, fast=False):

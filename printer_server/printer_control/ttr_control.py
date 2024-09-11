@@ -27,9 +27,15 @@ class TTRControl(PrintControl):
             self.all_hardware_connected = False
 
     def initialize_hardware(self):
-        self.tip = get_last_calibration_positions_from_logs().get("tip",0) / 1000
-        self.tilt = get_last_calibration_positions_from_logs().get("tilt",0) / 1000
-        self.rotate = get_last_calibration_positions_from_logs().get("rotate",0) / 1000
+        self.tip = get_last_calibration_positions_from_logs().get("tip",None)
+        self.tilt = get_last_calibration_positions_from_logs().get("tilt",None)
+        self.rotate = get_last_calibration_positions_from_logs().get("rotate",None)
+        if self.tip is not None:
+            self.tip /= 1000
+        if self.tilt is not None:
+            self.tilt /= 1000
+        if self.rotate is not None:
+            self.rotate /= 1000
         self.ttr_thread = Thread(log, name="ttr_control_init_thread", target=self.ttr_stage.initialize_and_positionTTR, args=[self.tip, self.tilt, self.rotate])
         self.ttr_thread.start()
         super().initialize_hardware()
