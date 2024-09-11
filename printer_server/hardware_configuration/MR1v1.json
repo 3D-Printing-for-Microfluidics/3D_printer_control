@@ -117,19 +117,6 @@
         ],
         "home_on_init": false
     },
-    "keyence": {
-        "dummy": false,
-        "address": "192.168.0.15",
-        "port": 24685,
-        "sensors": {
-            "visitech": {
-                "measurement_index": 1
-            },
-            "wintech": {
-                "measurement_index": 0
-            }
-        }
-    },
     "loadcell": {
         "dummy": false,
         "hwid": "PID=16C0:0483 SER=9400820",
@@ -143,6 +130,19 @@
         "loadcell_planarization_enabled": true,
         "loadcell_planarization_force": 35.0,
         "loadcell_print_start_force": 5.0
+    },
+    "keyence": {
+        "dummy": false,
+        "address": "192.168.0.15",
+        "port": 24685,
+        "sensors": {
+            "visitech": {
+                "measurement_index": 1
+            },
+            "wintech": {
+                "measurement_index": 0
+            }
+        }
     },
     "screen": {},
     "light_engines": [
