@@ -130,6 +130,7 @@ class LoadcellControl(PrintControl):
                 log.info(
                     "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
                 )
+                log.info("Loadcell position (post-step 1): %s", self.bp_stage.getBPPosition())
             else:
                 # estimate a 2mm movement for planarization
                 self.bp_stage.relMoveBP(mm=2.0, speed=2.5)
@@ -161,10 +162,6 @@ class LoadcellControl(PrintControl):
         third_count = self.move_bp_to_force(target_force, speed=-0.005)
         count = first_count + second_count + third_count
 
-        log.info(
-            "Loadcell force post planarization: %s", self.loadcell.get_current_force()
-        )
-        log.debug("Loadcell position: %s", self.planarized_position)
         self.planarized_position = self.bp_stage.getBPPosition()
         self.print_position = self.planarized_position
         log.info("Loadcell planarized %s steps", count)
