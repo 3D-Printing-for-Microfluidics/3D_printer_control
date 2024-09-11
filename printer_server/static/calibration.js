@@ -21,6 +21,15 @@ $(document).ready(function () {
         update_parameters(message)
     });
 
+    socket.on("goto_done", function (message) {
+        enable_all_buttons();
+    });
+
+    $("#goto").click(function () {
+        disable_all_buttons();
+        socket.emit("goto");
+    });
+
     for (let parameter in calibration_data) {
         parameter = parameter.replace(' ', '-');
         // text inputs for absolute changes

@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}Focus ({{ hostname }}){% endblock %}
+{% block title %}Calibration ({{ hostname }}){% endblock %}
 
 {% block printer3d_state %}
-<h2>{{ hostname }} - Focus</h2>
+<h2>{{ hostname }} - Calibration</h2>
 {% endblock %}
 
 {% block styles %}
@@ -12,6 +12,20 @@
 {% endblock %}
 
 {% block page_content %}
+
+{% if initialized %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <button type="button" class="btn btn-outline-info btn-block" id="goto">Go to position</button>
+        </div>
+    </div>
+</div>
+
+<hr class="bg-secondary">
+
+{% endif %}
 
 {% for parameter in calibration_data %}
 <div class="container" aria-label="{{ parameter | replace(' ', '-') }}">
