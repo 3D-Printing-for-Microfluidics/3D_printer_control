@@ -750,32 +750,37 @@ class Visitech(EthernetSerial, LightEngineDriver):
                 self.led_driver_enable(led_num=1)
                 self.led_driver_disable(led_num=0)
 
-        min_t = 4.046
-        max_t = 10000
-        self.log.debug(
-            "Setting up exposure at %s for %s ms at power setting %s. Repeat %s",
-            self.leds[led_num],
-            exposure_time_ms,
-            led_power,
-            repeat,
-        )
-        if exposure_time_ms == 0:
-            return
-        elif exposure_time_ms > max_t:
-            msg = f"Exposure time {exposure_time_ms} ms is greater than maximum possible exposure time "
-            msg += f"of {max_t} ms. Using exposure time of {max_t} ms instead."
-            self.log.warning(msg)
-            exposure_time_ms = max_t
-            self.exposure_time = max_t
-        elif exposure_time_ms < min_t:
-            msg = f"Exposure time {exposure_time_ms} ms is less than minimum possible exposure time "
-            msg += f"of {min_t} ms. Using exposure time of {min_t} ms instead."
-            self.log.warning(msg)
-            exposure_time_ms = min_t
-            self.exposure_time = min_t
         self.set_led_amplitude(led_power, led_num=led_num)
-        self.set_sequencer_lut_definition(exposure=int(exposure_time_ms * 1000))
-        self.set_sequencer_lut_config(repeats=repeat)
+        if repeat == 0:
+            self.set_sequencer_lut_definition(33100, 0, 0, 8, 0, 0, 0)
+            self.set_sequencer_lut_config(repeats=repeat)
+        else:
+            min_t = 4.046
+            max_t = 10000
+            self.log.debug(
+                "Setting up exposure at %s for %s ms at power setting %s. Repeat %s",
+                self.leds[led_num],
+                exposure_time_ms,
+                led_power,
+                repeat,
+            )
+            if exposure_time_ms == 0:
+                return
+            elif exposure_time_ms > max_t:
+                msg = f"Exposure time {exposure_time_ms} ms is greater than maximum possible exposure time "
+                msg += f"of {max_t} ms. Using exposure time of {max_t} ms instead."
+                self.log.warning(msg)
+                exposure_time_ms = max_t
+                self.exposure_time = max_t
+            elif exposure_time_ms < min_t:
+                msg = f"Exposure time {exposure_time_ms} ms is less than minimum possible exposure time "
+                msg += f"of {min_t} ms. Using exposure time of {min_t} ms instead."
+                self.log.warning(msg)
+                exposure_time_ms = min_t
+                self.exposure_time = min_t
+            
+            self.set_sequencer_lut_definition(exposure=int(exposure_time_ms * 1000))
+            self.set_sequencer_lut_config(repeats=repeat)
 
     def perform_exposure(self):
         """
