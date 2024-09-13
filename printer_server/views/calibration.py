@@ -166,7 +166,7 @@ def goto():
     # set hexapod pivot
     if pivot_x is not None:
         # move tt to 0
-        ttr_thread = Thread(log, name="ttr_control_init_thread", target=driver_handles.ttr_stage.initialize_and_positionTTR, args=[0, 0, 0])
+        ttr_thread = Thread(log, name="ttr_control_move_thread", target=driver_handles.ttr_stage.initialize_and_positionTTR, args=[0, 0, 0])
         ttr_thread.start()
         ttr_thread.join()
 
@@ -176,11 +176,11 @@ def goto():
         driver_handles.hexapod.set_pivot_point(x,y,z)
 
     # move ttr
-    ttr_thread = Thread(log, name="ttr_control_init_thread", target=driver_handles.ttr_stage.initialize_and_positionTTR, args=[tip, tilt, rotate])
+    ttr_thread = Thread(log, name="ttr_control_move_thread", target=driver_handles.ttr_stage.initialize_and_positionTTR, args=[tip, tilt, rotate])
     ttr_thread.start()
 
     # move focus (if not dynamic)
-    focus_thread = Thread(log, name="focus_control_init_thread", target=driver_handles.focus_stage.initialize_and_positionFocus, args=[focus])
+    focus_thread = Thread(log, name="focus_control_move_thread", target=driver_handles.focus_stage.initialize_and_positionFocus, args=[focus])
     focus_thread.start()
 
     ttr_thread.join()

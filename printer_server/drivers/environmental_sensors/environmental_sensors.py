@@ -19,7 +19,7 @@ class EnvironmentalSensors(USBSerial):
         
         self.rest_time = config_dict["measurement_period_ms"]
 
-        self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
+        self.thread = Thread(self.log, name="environmental_sensors_loop_thread", target=self.loop)
         self.log_file = None
         self.running = False
 

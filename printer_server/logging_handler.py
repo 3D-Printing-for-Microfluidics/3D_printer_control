@@ -87,9 +87,7 @@ class SocketIOHandler(logging.Handler):
         try:
             if record.shortname == "engineio" or record.shortname == "werkzeug":
                 return  # skip alert flashing for anything from engineio
-        except:
-            pass
-        try:
+            
             msg = fmt % {
                 "asctime": record.asctime.split(" ")[1],
                 "msecs": record.msecs,
