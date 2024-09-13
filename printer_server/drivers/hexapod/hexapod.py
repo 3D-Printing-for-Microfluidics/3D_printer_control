@@ -8,7 +8,7 @@ import traceback
 from pipython import GCSDevice, pitools
 from pipython.pidevice.gcscommands import GCSCommands
 from pipython.pidevice.gcsmessages import GCSMessages
-from pipython.pidevice.interfaces.pisocket import PISocket
+from printer_server.drivers.hexapod.pisocket import PISocket
 
 from printer_server.drivers.generic_drivers import TTRStageDriver, FocusStageDriver
 from printer_server.views.calibration import (
@@ -37,25 +37,19 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         self.connected = None
         self.axes = config_dict["axes"]
         self.axes_common_names = config_dict["axes_common_names"]
+        self.gateway = PISocket("Hexapod", host=self.config_dict["address"], port=self.config_dict["port"], logger=self.log)
 
     def connect(self, shutdown):
         """ Run routine for connecting to the hexapod and reference it if it hasn't been referenced yet upon powerup
         """
         if self.connected is None:
             self.connected = False
-            self.log.info(f"Connecting to hexapod...")
-            try:    
-                gateway = PISocket(host=self.config_dict["address"], port=self.config_dict["port"])
-                messages = GCSMessages(gateway)
-                self.controller = GCSCommands(gcsmessage=messages)
-                self.connected = True
-            except Exception as ex:
-                # self.log.error(f"Failed to establish connection to the hexapod controller. Traceback: {traceback.print_exc()}")
+            if not self.gateway.connect(shutdown):
                 self.connected = None
-                msg = f"Hexopod not found!"
-                self.log.critical(msg)
                 return False
-                
+            messages = GCSMessages(self.gateway)
+            self.controller = GCSCommands(gcsmessage=messages)
+            self.connected = True 
             atexit.register(self.disconnect)
             self.log.info(f"Connected to hexapod")
             return True
