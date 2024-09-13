@@ -45,7 +45,7 @@ def run_in_thread(state, text):
                 ret = f(self, *args, **kwargs)
                 if top_level:
                     if ret == False:
-                        state = "failed"
+                        self.state = "failed"
                     self.state = state
                     home.update_printer_state(self.state, dict())
 
