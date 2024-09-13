@@ -100,6 +100,7 @@ class BPControl(PrintControl):
         self.bp_thread.join()
         if not self.bp_stage.connected:
             log.error("Build platform stage failed to connect!")
+            self.failed_hardware["Build Platform Stage"] = self.bp_stage
             self.all_hardware_connected = False
 
     def initialize_hardware(self):

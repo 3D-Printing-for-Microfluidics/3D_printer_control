@@ -34,6 +34,7 @@ class EnvironmentalSensorsControl(PrintControl):
         self.env_thread.join()
         if not self.environmental_sensors.connected:
             log.error("Enviornmental sensors failed to connect!")
+            self.failed_hardware["Enviornmental Sensor"] = self.environmental_sensors
             self.all_hardware_connected = False
 
     def finish_print(self):

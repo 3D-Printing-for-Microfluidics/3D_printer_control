@@ -73,6 +73,7 @@ class FocusControl(PrintControl):
         self.focus_thread.join()
         if not self.focus_stage.connected:
             log.error("Focus stage failed to connect!")
+            self.failed_hardware["Focus Stage"] = self.focus_stage
             self.all_hardware_connected = False
 
     def initialize_hardware(self):

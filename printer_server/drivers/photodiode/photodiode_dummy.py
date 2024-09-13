@@ -11,7 +11,7 @@ class Photodiode_dummy:
         self.connected = None
 
     @dummy_log  
-    def connect(self):
+    def connect(self, shutdown):
         self.connected = True
     
     @dummy_log

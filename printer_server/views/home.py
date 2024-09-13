@@ -1,3 +1,4 @@
+import time
 import json
 from pathlib import Path
 import logging
@@ -13,8 +14,6 @@ from printer_server.hardware_configuration.hardware_configuration import config_
 blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static")
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
-
-shutdown_handle = None
 
 from printer_server.printer_control.print_control import PrintControl
 
@@ -138,7 +137,27 @@ def disconnect():
 @socketio.on("initialize", namespace="/printing")
 # pylint: disable=unused-argument
 def initialize(message):
-    print_control.initialize(run_in_thread=True, top_level=True)
+    print_control.initialize(initialize_failed, run_in_thread=False, top_level=True)
+
+
+@socketio.on("reinitialize", namespace="/printing")
+# pylint: disable=unused-argument
+def reinitialize(message):
+    print_control.reinitialize(initialize_failed, run_in_thread=False, top_level=True)
+
+
+def initialize_failed():
+    time.sleep(1)
+    msg = ""
+    for name in print_control.failed_hardware.keys():
+        msg += f"\t- {name}\n"
+    socketio.emit("initialize_failed", msg, namespace="/printing")
+
+
+@socketio.on("cancel_initialize", namespace="/printing")
+# pylint: disable=unused-argument
+def cancel_initialize():
+    print_control.cancel_initialize()
 
 
 @socketio.on("planarization step 1", namespace="/printing")

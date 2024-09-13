@@ -42,8 +42,10 @@ def run_in_thread(state, text):
             top_level = kwargs.get("top_level", top_level)
 
             def func(self, *args, **kwargs):
-                f(self, *args, **kwargs)
+                ret = f(self, *args, **kwargs)
                 if top_level:
+                    if ret == False:
+                        state = "failed"
                     self.state = state
                     home.update_printer_state(self.state, dict())
 
@@ -135,6 +137,7 @@ class PrintControl:
         if state in [
             "uninitialized",
             "initialized",
+            "failed",
             "planarizing",
             "planarized",
             "printing",
@@ -311,19 +314,49 @@ class PrintControl:
         return screen_light_engine
 
     @run_in_thread("initialized", "Initialize")
-    def initialize(self):
+    def initialize(self, failed_handle):
         """Put all hardware into starting configuration."""
         if self.state == "uninitialized":
             self.state = "busy"
+            self.failed_hardware = {}
             self.all_hardware_connected = True
             self.connect_hardware()
-            if not self.all_hardware_connected:
-                self.shutdown(is_critical=True)
-                return False
+            return self._initialize(failed_handle)
+        return False
+    
+    def _initialize(self, failed_handle):
+        if self.all_hardware_connected:
             self.initialize_hardware()
             log.info("Printer initialized, all hardware ready.")
             return True
-        return False
+        else:
+            failed_handle()
+            return False
+    
+    @run_in_thread("initialized", "Reinitialize")
+    def reinitialize(self, failed_handle):
+        self.all_hardware_connected = True
+        threads = []
+        for name, device in self.failed_hardware.items():
+            t = Thread(log, name=f"{name}_control_setup_thread", target=device.connect, args=[self.shutdown])
+            t.start()
+            threads.append(t)
+
+        for t in threads:
+            t.join()
+
+        for name in list(self.failed_hardware.keys()):
+            device = self.failed_hardware[name]
+            if not device.connected:
+                log.error("%s failed to connect!", name)
+                self.all_hardware_connected = False
+            else:
+                del self.failed_hardware[name]
+        return self._initialize(failed_handle)
+
+    def cancel_initialize(self):
+        self.state = "uninitialized"
+        self.shutdown()
             
     def connect_hardware(self):
         pass

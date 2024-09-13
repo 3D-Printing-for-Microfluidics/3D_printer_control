@@ -401,6 +401,11 @@ $(document).ready(function () {
         show_print_btn("#plana1-btn, #shutdown-btn, #admin-btn");
     });
 
+    socket.on("failed", function (message) {
+        $("#printer-state").text("Error");
+        show_print_btn("#shutdown-btn, #admin-btn");
+    });
+
     socket.on("planarizing", function (message) {
         $("#printer-state").text("Planarizing");
         show_print_btn("#plana2-btn, #admin-btn, #shutdown-btn");
@@ -481,6 +486,9 @@ $(document).ready(function () {
             msg = { job: start_job_id };
         } else if (operation === "Delete Job") {
             msg = { job: delete_job_id };
+        } else if (operation === "Initialization Failed") {
+            operation = "Reinitialize"
+            msg = {};
         } else {
             msg = {};
         }
@@ -490,6 +498,13 @@ $(document).ready(function () {
     });
 
     $("#print-alert-cancel").click(function () {
+        let operation = $("#print-alert-title").text();
+        let msg;
+
+        if (operation === "Initialization Failed") {
+            socket.emit("cancel_initialize");
+        }
+
         $("#print-alert-title").text("");
         $("#print-alert-body").text("");
     });
@@ -497,6 +512,14 @@ $(document).ready(function () {
     $("#init-btn").click(function () {
         $("#print-alert-title").text("Initialize");
         $("#print-alert-body").text("WARNING: Is the build platform taken off? Initializing with the platform on can seriously damage the printer!");
+    });
+
+    socket.on("initialize_failed", function (message) {
+        console.log(message);
+        show_print_btn();
+        $("#print-alert-title").text("Initialization Failed");
+        $("#print-alert-body").text("The following hardware was not found:\n" + message + "Click Confirm to retry initialization.");
+        $('#confirmModal').modal('show');
     });
 
     $("#plana1-btn").click(function () {

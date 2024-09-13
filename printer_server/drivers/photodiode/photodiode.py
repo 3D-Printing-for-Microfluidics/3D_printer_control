@@ -31,7 +31,7 @@ class Photodiode:
 
         self.rm = pyvisa.ResourceManager("@py")
        
-    def connect(self):
+    def connect(self, shutdown):
         # connect to the photodiode 
         try:
             self.log.info(f"Connecting ThorlabsPM100...")

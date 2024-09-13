@@ -177,6 +177,7 @@ class LoadcellControl(PrintControl):
         loadcell_t.join()
         if not self.loadcell.connected:
             log.error("Loadcell failed to connect!")
+            self.failed_hardware["Loadcell"] = self.loadcell
             self.all_hardware_connected = False
 
     def initialize_hardware(self):

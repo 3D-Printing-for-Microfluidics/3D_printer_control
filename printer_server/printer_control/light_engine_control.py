@@ -40,6 +40,7 @@ class LightEngineControl(ScreenControl):
             thread.join()
             if not self.light_engines[light_engine].connected:
                 log.error("%s failed to connect!", light_engine.capitalize())
+                self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = light_engine_driver
                 self.all_hardware_connected = False
         self.light_engine_threads = {}
 

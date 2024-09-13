@@ -14,7 +14,7 @@ class Spectrometer:
         self.spectrometer = None
         self.connected = None
 
-    def connect(self):
+    def connect(self, shutdown):
         self.log.debug("Available Spectrometers:")
         api = psb.SeaBreezeAPI()
         for s in api.list_devices():
@@ -47,14 +47,15 @@ class Spectrometer:
         if i_time is not None:
             self.log.info("Integration time set to %s ms", i_time)
             i_time = float(i_time)*1000
-            if i_time >= self.spectrometer.integration_time_micros_limits[0] or i_time <= self.spectrometer.integration_time_micros_limits[1]:
-                self.spectrometer.integration_time_micros(i_time)
+            limits = self.get_integration_limits()
+            if i_time >= limits[0] or i_time <= limits[1]:
+                self._set_integration_time(i_time)
                 return i_time
             return -1
         else:
             self.log.info("Calculating integration time...")
             i_time = self.config_dict["default_integration_time"]*1000
-            self.spectrometer.integration_time_micros(i_time)
+            self._set_integration_time(i_time)
             time.sleep(1)
             intensity = self.get_max_intensity()
             self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
@@ -62,12 +63,12 @@ class Spectrometer:
             while(intensity > 65000):
                 i_time = i_time/2
                 if i_time < self.get_integration_limits()[0]:
-                    self.spectrometer.integration_time_micros(self.get_integration_limits()[0])
+                    self._set_integration_time(limits[0])
                     time.sleep(1)
                     intensity = self.get_max_intensity()
                     self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
                     return self.get_integration_limits()[0]/1000
-                self.spectrometer.integration_time_micros(i_time)
+                self._set_integration_time(i_time)
                 time.sleep(1)
                 intensity = self.get_max_intensity()
                 self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
@@ -75,17 +76,20 @@ class Spectrometer:
             for _ in range(2):
                 i_time = i_time * 65000/intensity        
                 if i_time > self.get_integration_limits()[1]:
-                    self.spectrometer.integration_time_micros(self.get_integration_limits()[1])
+                    self._set_integration_time(limits[1])
                     time.sleep(1)
                     intensity = self.get_max_intensity()
                     self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
                     return self.get_integration_limits()[1]/1000 
-                self.spectrometer.integration_time_micros(i_time)
+                self._set_integration_time(i_time)
                 time.sleep(1)
                 intensity = self.get_max_intensity()
                 self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
             self.log.info("Integration time set to %s ms", i_time)
             return i_time/1000
+        
+    def _set_integration_time(self, i_time):
+        self.spectrometer.integration_time_micros(i_time)
 
     def get_integration_limits(self):
         return self.spectrometer.integration_time_micros_limits

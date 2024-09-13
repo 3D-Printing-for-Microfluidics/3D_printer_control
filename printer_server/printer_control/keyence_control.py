@@ -31,6 +31,7 @@ class KeyenceControl(PrintControl):
         keyence_thread.join()
         if not self.keyence.connected:
             log.error("Keyence failed to connect!")
+            self.failed_hardware["Keyence Sensor"] = self.keyence
             self.all_hardware_connected = False
 
     def update_measurement_progress(self):

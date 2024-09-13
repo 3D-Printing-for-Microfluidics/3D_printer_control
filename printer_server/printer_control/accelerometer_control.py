@@ -29,6 +29,7 @@ class AccelerometerControl(PrintControl):
         accel.join()
         if not self.accelerometer.connected:
             log.error("Accelerometer failed to connect!")
+            self.failed_hardware["Accelerometer"] = self.accelerometer
             self.all_hardware_connected = False
 
     def initialize_hardware(self):
