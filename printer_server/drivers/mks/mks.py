@@ -1,3 +1,4 @@
+import sys
 import time
 import logging
 import threading
@@ -82,6 +83,19 @@ class MKS946(USBSerial):
                     self.set_relay_mode(relay_num, 'CLEAR', force=True)
             self.start_thread()
             self.log.info("MKS initialized")
+
+    def connect(self, shutdown):
+        super().connect(shutdown)
+
+        # Check if actually connected
+        cmd_str = f"@{self.address}MD?;FF"
+        rsp_str = self.send(cmd_str)
+        if rsp_str != "@253ACK946;FF":
+            self.connected = None
+            msg = "MKS Controller not found!"
+            self.log.critical(msg)
+            return False
+        return True
 
     def disconnect(self):
         if self.connected:
