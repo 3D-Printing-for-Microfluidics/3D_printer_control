@@ -67,7 +67,7 @@ class FocusControl(PrintControl):
         )
 
     def connect_hardware(self):
-        self.focus_thread = Thread(log, name="focus_control_setup_thread", target=self.focus_stage.connect, args=[self.shutdown])
+        self.focus_thread = Thread(log, name="focus_control_connect_thread", target=self.focus_stage.connect, args=[self.shutdown])
         self.focus_thread.start()
         super().connect_hardware()
         self.focus_thread.join()

@@ -94,7 +94,7 @@ class BPControl(PrintControl):
         )
 
     def connect_hardware(self):
-        self.bp_thread = Thread(log, name="bp_control_setup_thread", target=self.bp_stage.connect, args=[self.shutdown])
+        self.bp_thread = Thread(log, name="bp_control_connect_thread", target=self.bp_stage.connect, args=[self.shutdown])
         self.bp_thread.start()
         super().connect_hardware()
         self.bp_thread.join()

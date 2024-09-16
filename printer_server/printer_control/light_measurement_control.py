@@ -23,8 +23,8 @@ class LightMeasurementControl(PrintControl):
 
     def connect_hardware(self):
         # Connect spectrometer and photodiode 
-        spectrometer_thread = Thread(log, name="spectrometer_setup_thread", target=self.spectrometer.connect, args=[self.shutdown])
-        photodiode_thread = Thread(log, name="photodiode_setup_thread", target=self.photodiode.connect, args=[self.shutdown])
+        spectrometer_thread = Thread(log, name="spectrometer_connect_thread", target=self.spectrometer.connect, args=[self.shutdown])
+        photodiode_thread = Thread(log, name="photodiode_connect_thread", target=self.photodiode.connect, args=[self.shutdown])
         spectrometer_thread.start()
         photodiode_thread.start()
         super().connect_hardware()

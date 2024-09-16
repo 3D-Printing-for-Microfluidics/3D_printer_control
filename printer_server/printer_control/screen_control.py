@@ -15,7 +15,7 @@ class ScreenControl(PrintControl):
 
     def connect_hardware(self):
         self.screen_thread = Thread(
-            log, name="screen_control_start_thread", target=driver_handles.screen.start, args=[]
+            log, name="screen_control_connect_thread", target=driver_handles.screen.start, args=[]
         )
         self.screen_thread.start()
         super().connect_hardware()

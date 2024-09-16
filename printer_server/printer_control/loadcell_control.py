@@ -113,7 +113,7 @@ class LoadcellControl(PrintControl):
             time.sleep(0.5)
             if self.loadcell_thread is None:
                 home.clear_loadcell_graph()
-                self.loadcell_thread = Thread(log, name="print_control_loadcell_graph_thread", target=self.loadcell_graph_loop)
+                self.loadcell_thread = Thread(log, name="print_control_loadcell_graph_loop_thread", target=self.loadcell_graph_loop)
                 self.loadcell_thread.start()
             loadcell_start_force = self.loadcell.get_current_force()
             super().planarization_step_1()
@@ -171,7 +171,7 @@ class LoadcellControl(PrintControl):
             log.warning("Move_to_force overshot target value")
 
     def connect_hardware(self):
-        loadcell_t = Thread(log, name="loadcell_control_setup_thread", target=self.loadcell.connect, args=[self.shutdown])
+        loadcell_t = Thread(log, name="loadcell_control_connect_thread", target=self.loadcell.connect, args=[self.shutdown])
         loadcell_t.start()
         super().connect_hardware()
         loadcell_t.join()

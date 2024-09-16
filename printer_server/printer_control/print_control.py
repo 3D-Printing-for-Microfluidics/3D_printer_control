@@ -338,7 +338,7 @@ class PrintControl:
         self.all_hardware_connected = True
         threads = []
         for name, device in self.failed_hardware.items():
-            t = Thread(log, name=f"{name}_control_setup_thread", target=device.connect, args=[self.shutdown])
+            t = Thread(log, name=f"{name}_control_connect_thread", target=device.connect, args=[self.shutdown])
             t.start()
             threads.append(t)
 

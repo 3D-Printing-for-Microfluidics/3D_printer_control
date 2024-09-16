@@ -62,7 +62,7 @@ class MKS946(USBSerial):
         self.address = config_dict["mks_address"]
         self.thread_running = False
         self.pressures = None
-        self.thread = Thread(self.log, name="mks_poll_thread", target=self.loop)
+        self.thread = Thread(self.log, name="mks_loop_thread", target=self.loop)
         # self.sendLock = threading.Lock()
         self.relay_requests = [0,0,0,0,0,0,0,0,0,0,0,0,0]
 
@@ -115,7 +115,7 @@ class MKS946(USBSerial):
         if self.thread_running:
             self.thread_running = False
             self.thread.join()
-            self.thread = Thread(self.log, name="mks_poll_thread", target=self.loop)
+            self.thread = Thread(self.log, name="mks_loop_thread", target=self.loop)
 
     def loop(self):
         from printer_server.drivers.mks.mks_snip import get_gauges, get_relay_status, cranePosition
@@ -167,7 +167,12 @@ class MKS946(USBSerial):
             
             else:
                 self.log.error("NAK: QUERY RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
-        return None
+
+        # # MKS is most likely powered off
+        # msg = "MKS recieved invalid response (most likley powered off)"
+        # self.log.critical(msg)
+        # self.shutdown(is_critical = True)
+        # sys.exit(msg)
         
 
     def set(self, command, n=None, parameter=""):
@@ -227,9 +232,13 @@ class MKS946(USBSerial):
             self.log.error(self.parse_error_code(int(rsp_str)))
             return False
         
-        else:
-            self.log.error("NAK: SET RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
-            return False
+        # else:
+        #     self.log.error("NAK: SET RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
+        #     # MKS is most likely powered off
+        #     msg = "MKS recieved invalid response (most likley powered off)"
+        #     self.log.critical(msg)
+        #     self.shutdown(is_critical = True)
+        #     sys.exit(msg)
         
         
     def parse_error_code(self, code):

@@ -25,7 +25,7 @@ class KeyenceControl(PrintControl):
         self.default_light_engine = None
 
     def connect_hardware(self):
-        keyence_thread = Thread(log, name="keyence_control_setup_thread", target=self.keyence.connect, args=[self.shutdown])
+        keyence_thread = Thread(log, name="keyence_control_connect_thread", target=self.keyence.connect, args=[self.shutdown])
         keyence_thread.start()
         super().connect_hardware()
         keyence_thread.join()
