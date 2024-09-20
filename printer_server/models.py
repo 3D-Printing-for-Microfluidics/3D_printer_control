@@ -115,7 +115,7 @@ class PrintQueue(SurrogatePK, Model):
                 log.info("Removing orphaned queue zip: {}".format(entry))
                 os.remove(entry)
             except FileNotFoundError:
-                log.warn("Error: Failed to remove zip")
+                log.warning("Error: Failed to remove zip")
 
 
 class PrintRecord(SurrogatePK, Model):
@@ -199,7 +199,7 @@ class PrintRecord(SurrogatePK, Model):
                 log.info("Removing orphaned print_history zip: {}".format(entry))
                 os.remove(entry)
             except FileNotFoundError:
-                log.warn("Error: Failed to remove zip")
+                log.warning("Error: Failed to remove zip")
 
     def remove_old_jobs(self):
         MAX_ENTRIES = 500

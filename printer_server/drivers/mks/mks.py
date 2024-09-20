@@ -23,28 +23,28 @@ def parse_pressure(log, pressure):
     elif "ATM" in pressure:
         return float("inf")
     elif "RP_OFF" in pressure:
-        log.error(f"HC and CC power is turned OFF from rear panel control")
+        log.warning("HC and CC power is turned OFF from rear panel control")
         return None
     elif "CTRL_OFF" in pressure:
-        log.error("CC or HC is OFF in controlled state")
+        log.warning("CC or HC is OFF in controlled state")
         return None
     elif "PROT_OFF" in pressure:
-        log.error("CC or HC is OFF in protected state")
+        log.warning("CC or HC is OFF in protected state")
         return None
     elif "OFF" in pressure:
-        log.error("Cold cathode HV is OFF, or HC/PR/CP power is OFF.")
+        log.warning("Cold cathode HV is OFF, or HC/PR/CP power is OFF.")
         return None
     elif "WAIT" in pressure:
-        log.error("CC or HC startup delay")
+        log.warning("CC or HC startup delay")
         return None
     elif "LowEmis" in pressure:
-        log.error("HC OFF due to low emission")
+        log.warning("HC OFF due to low emission")
         return None
     elif "MISCONN" in pressure:
-        log.error("Sensor improperly connected, or broken filament (PR, CP only)")
+        log.warning("Sensor improperly connected, or broken filament (PR, CP only)")
         return None
     elif "NO_GAUGE" in pressure or "NOGAUGE" in pressure:
-        log.error("Controller unable to determine sensor connection.")
+        log.warning("Controller unable to determine sensor connection.")
         return None
     elif ">1.0E+03" in pressure:
         return float(1000)
@@ -121,9 +121,15 @@ class MKS946(USBSerial):
         from printer_server.drivers.mks.mks_snip import get_gauges, get_relay_status, cranePosition
         while self.thread_running:
             if self.connected:
-                get_relay_status(emit=True)
-                get_gauges(emit=True)
-                cranePosition(emit=True)
+                try:
+                    get_relay_status(emit=True)
+                    get_gauges(emit=True)
+                    cranePosition(emit=True)
+                except RuntimeError as ex:
+                    self.log.warning("MKS loop failed (%s)", ex, exc_info=True)
+                    self.thread_running = False
+                except Exception as ex:
+                    pass
             time.sleep(0.1)
 
     def query(self, command, n=None, parameter=""):

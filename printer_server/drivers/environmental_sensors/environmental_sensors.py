@@ -79,10 +79,9 @@ class EnvironmentalSensors(USBSerial):
                 
                 time.sleep(self.rest_time/1000)  
 
-            except SerialException:
+            except SerialException as ex:
+                self.log.warning("Environmental sensor loop failed (%s)", ex, exc_info=True)
                 self.running = False
-            except KeyError:
-                pass
 
 
     ########################

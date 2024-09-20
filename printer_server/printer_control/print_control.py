@@ -289,15 +289,15 @@ class PrintControl:
         )
 
     def move_build_platform(self, position_settings, layer):
-        log.warn("Base printer_control class does not have a defined bp stage. Cannot move bp")
+        log.warning("Base printer_control class does not have a defined bp stage. Cannot move bp")
         return 0
 
     def force_squeeze(self, position_settings, layer):
-        log.warn("Missing loadcell_control. Cannot force_squeeze")
+        log.warning("Missing loadcell_control. Cannot force_squeeze")
         return 0
 
     def get_focus(self):
-        log.warn("Base printer_control class does not have a defined focus stage")
+        log.warning("Base printer_control class does not have a defined focus stage")
         return 0
 
     def convert_le_to_screen_le(self, light_engine):
@@ -779,9 +779,9 @@ class PrintControl:
                     "upload_ip": request.remote_addr,
                 }
                 home.update_printer_state("job uploaded", msg)
-            except ValueError as e:
+            except ValueError as ex:
                 log.info("Job validation failed for %s", f.filename)
-                msg = f"Job validation failed for {f.filename}:\n {str(e).strip()}"
+                msg = f"Job validation failed for {f.filename}:\n {str(ex).strip()}"
                 home.send_bootstrap_alert(msg)
                 os.remove(filename_on_disk)
 

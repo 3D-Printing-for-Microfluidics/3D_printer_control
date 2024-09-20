@@ -67,10 +67,10 @@ class KDC101(USBSerial, FocusStageDriver):
         self.move(mm, microns=False, relative=True)
 
     def startFocusJog(self, speed=None, acceleration=None):
-        self.log.warn("KDC Jogging not implemented")
+        self.log.warning("KDC Jogging not implemented")
 
     def stopFocusJog(self):
-        self.log.warn("KDC Jogging not implemented")
+        self.log.warning("KDC Jogging not implemented")
 
     ##############################################################################################
             

@@ -53,8 +53,8 @@ class Photodiode:
             self.log.info(f"Connected ThorlabsPM100")
             return True
           
-        except Exception as e:
-            self.log.error(f"Failed to connect to Photodiode: {e}")
+        except Exception as ex:
+            self.log.error("Failed to connect to Photodiode (%s)", ex)
             self.connected = False
             return False
             

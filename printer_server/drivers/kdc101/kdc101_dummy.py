@@ -87,11 +87,11 @@ class KDC101_dummy(FocusStageDriver):
 
     @dummy_log
     def startFocusJog(self, speed=None, acceleration=None):
-        self.log.warn("KDC Jogging not implemented")
+        self.log.warning("KDC Jogging not implemented")
 
     @dummy_log
     def stopFocusJog(self):
-        self.log.warn("KDC Jogging not implemented")
+        self.log.warning("KDC Jogging not implemented")
 
     @dummy_log
     def home(self):

@@ -25,27 +25,29 @@ class EthernetSerial():
             self.log.info("Connecting to %s (%s:%s), this may take up to 1 minute...", self.name, self.host, self.port)
 
             attempts=10
-            timeout=1
+            wait_between=1
             i = 0
             while i < attempts:  # try up to attempts number of times to create a connection
                 i += 1
                 try:
                     self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    self.socket.settimeout(self.timeout)
+                    # initial timeout is 10 sec
+                    self.socket.settimeout(10)
                     self.socket.connect((self.host, self.port))
+                    self.socket.settimeout(self.timeout)
                     self.connected = True
                     self.shutdown = shutdown
                     break
-                except (OSError, socket.timeout) as e:
-                    if "timed out" in str(e):
+                except (OSError, socket.timeout) as ex:
+                    if "timed out" in str(ex):
                         break
-                    self.log.info("%s. Retrying in %s second(s)", e, timeout)
+                    self.log.info("%s. Retrying in %s second(s)", ex, wait_between)
                     self.socket = None  # get rid of handle to bad socket
-                    time.sleep(timeout)  # wait to try again
+                    time.sleep(wait_between)  # wait to try again
             if not self.connected:
                 self.connected = None
                 msg = f"{self.name} not found!"
-                self.log.critical(msg)
+                self.log.error(msg)
                 return False
             
             atexit.register(self.disconnect)
@@ -98,6 +100,6 @@ class EthernetSerial():
                 self.log.critical(msg)
                 self.shutdown(is_critical = True)
                 sys.exit(msg)
-            except Exception as e:
-                self.log.error("Failed to receive packet: %s", e)
+            except Exception as ex:
+                self.log.error("Failed to receive packet: %s", ex)
             return None

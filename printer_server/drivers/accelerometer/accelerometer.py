@@ -141,13 +141,14 @@ class Accelerometer(USBSerial):
                         self.log_file,
                         f"{sys_time},{accel_time},{index},{accel}\n",
                     )
-            except SerialException:
+            except SerialException as ex:
+                self.log.warning("Accelerometer loop failed (%s)", ex, exc_info=True)
                 self.running = False
-            except ValueError:
-                self.log.warning("Unable to parse Accelerometer data - cast error")
+            except ValueError as ex:
+                self.log.warning("Unable to parse Accelerometer data - cast error (%s)", ex)
                 continue
-            except OverflowError:
-                self.log.warning("Unable to parse Accelerometer data - time overflow")
+            except OverflowError as ex:
+                self.log.warning("Unable to parse Accelerometer data - time overflow (%s)", ex)
 
     ########################
     # Teensy serial wrappers

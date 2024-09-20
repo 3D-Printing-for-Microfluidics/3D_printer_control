@@ -122,9 +122,9 @@ def validate_against_schema(print_settings, schema):
     schema = here / Path(schema)
     try:
         Draft7Validator(read_json(schema)).validate(print_settings)
-    except ValidationError as e:
-        path_string = " -> ".join(f"'{str(v)}'" for v in e.path)
-        msg = f"  {e.message}\n  Check {path_string}"
+    except ValidationError as ex:
+        path_string = " -> ".join(f"'{str(v)}'" for v in ex.path)
+        msg = f"  {ex.message}\n  Check {path_string}"
         raise ValueError(msg)
 
 
@@ -527,5 +527,5 @@ if __name__ == "__main__":
         try:
             print_settings, schema_ver = validate_schema(print_job)
             print(f"{schema_ver}: {print_job} is good")
-        except ValueError as e:
-            print(f"Error in {print_job}:\n {e}")
+        except ValueError as ex:
+            print(f"Error in {print_job}:\n {ex}")

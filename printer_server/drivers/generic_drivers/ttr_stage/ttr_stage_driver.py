@@ -12,22 +12,22 @@ class TTRStageDriver:
         self.initialized = None
 
     def connect(self, shutdown):
-        log.warn("Function not implemented. Using abstract TTRStageDriver class")
+        log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
     def initialize(self):
-        log.warn("Function not implemented. Using abstract TTRStageDriver class")
+        log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
     def home(self):
-        log.warn("Function not implemented. Using abstract TTRStageDriver class")
+        log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
     def getTTRPosition(self, axis=None, notify=True):
-        log.warn("Function not implemented. Using abstract TTRStageDriver class")
+        log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
     def absMoveTTR(self, rad=None, axis=None):
-        log.warn("Function not implemented. Using abstract TTRStageDriver class")
+        log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
     def relMoveTTR(self, rad=None, axis=None):
-        log.warn("Function not implemented. Using abstract TTRStageDriver class")
+        log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
     def initialize_and_positionTTR(self, tip, tilt, rotate):
         if self.initialized is None:

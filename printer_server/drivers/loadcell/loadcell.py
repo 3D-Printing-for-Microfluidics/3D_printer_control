@@ -219,13 +219,16 @@ class LoadCell(USBSerial):
 
                 self.currentForce = force
                 self.currentIndex = index
-            except SerialException:
+            except SerialException as ex:
+                self.currentForce = None
+                self.currentData = None
+                self.log.warning("Loadcell loop failed (%s)", ex, exc_info=True)
                 self.running = False
-            except ValueError:
-                self.log.warning("Unable to parse loadcell data - cast error")
+            except ValueError as ex:
+                self.log.warning("Unable to parse loadcell data - cast error (%s)", ex)
                 continue
-            except OverflowError:
-                self.log.warning("Unable to parse loadcell data - time overflow")
+            except OverflowError as ex:
+                self.log.warning("Unable to parse loadcell data - time overflow (%s)", ex)
 
     ########################
     # Teensy serial wrappers

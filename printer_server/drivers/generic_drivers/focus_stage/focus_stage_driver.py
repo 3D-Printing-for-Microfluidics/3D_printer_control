@@ -15,43 +15,43 @@ class FocusStageDriver:
         self.connected = None
 
     def setup_log_file(self, filename):
-        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def logging_start(self):
-        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def logging_stop(self):
-        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def connect(self, shutdown):
-        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def initialize(self):
-        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def home(self):
-        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def getDefaultFocusSpeed(self):
-        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def getDefaultFocusAcceleration(self):
-        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def getFocusPosition(self, notify=True):
-        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def startFocusJog(self, speed=None, acceleration=None):
-        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def stopFocusJog(self):
-        log.warn("Function not implemented. Using abstract FocusStageDriver class")
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def initialize_and_positionFocus(self, pos):
         if self.initialized is None:

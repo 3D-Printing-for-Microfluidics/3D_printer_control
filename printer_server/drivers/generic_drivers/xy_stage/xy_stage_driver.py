@@ -12,43 +12,43 @@ class XYStageDriver:
         self.initialized = None
 
     def setup_log_file(self, filename):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def logging_start(self):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def logging_stop(self):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def connect(self, shutdown):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def initialize(self):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def home(self):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def getDefaultXYSpeed(self, axis=None):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def getDefaultXYAcceleration(self, axis=None):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
         
     def getXYPosition(self, axis=None, notify=True):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def absMoveXY( self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def relMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def startXYJog(self, speed=None, acceleration=None, axis=None):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def stopXYJog(self, axis=None):
-        log.warn("Function not implemented. Using abstract XYStageDriver class")
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def initialize_and_positionXY(self, x, y):
         if self.initialized is None:

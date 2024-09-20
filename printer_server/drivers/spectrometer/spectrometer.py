@@ -30,7 +30,8 @@ class Spectrometer:
             else:
                 atexit.register(self.disconnect)
                 self.connected = True
-        except:
+        except Exception as ex:
+            self.log.error("Failed to connect to Spectrometer (%s)", ex)
             self.connected = False
         
 

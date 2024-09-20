@@ -182,7 +182,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         params = [x, y, z]
         for param in params:
             if param == None:
-                self.log.warn(f"parameter provided is None. No motion performed")
+                self.log.warning("parameter provided is None. No motion performed")
                 return
 
         self.controller.MOV({'X': x, 'Y': y, 'Z': z}, None) # Try this one out!
@@ -214,7 +214,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         params = [u, v, w]
         for param in params:
             if type(param) == None:
-                self.log.warn(f"parameter provided is None. No motion performed")
+                self.log.warning("parameter provided is None. No motion performed")
                 return
             
         u_deg = radians_to_degrees(u)

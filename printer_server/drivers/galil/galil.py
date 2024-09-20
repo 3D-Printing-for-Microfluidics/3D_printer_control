@@ -176,11 +176,10 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             self.thread.start()
             atexit.register(self.disconnect)
             self.log.info("Connected to Galil controller")
-            self.shutdown = shutdown
             return True
-        except self.gclib_error as e:
-            msg = f"Galil controller not found! ({self.controller_name}): {e}"
-            self.log.critical(msg)
+        except self.gclib_error as ex:
+            msg = f"Galil controller not found! ({self.controller_name}): {ex}"
+            self.log.error(msg)
             return False
 
     def disconnect(self):
@@ -197,8 +196,8 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
                 self.connected = None
                 self.g.GClose()
                 self.log.info("Disconnected from Galil controller (%s)", self.controller_name)
-            except self.gclib_error as e:
-                self.log.error("Unexpected GclibError on disconnect: %s", e)
+            except self.gclib_error as ex:
+                self.log.info("Unexpected GclibError on disconnect: %s", ex)
 
 
     def write_to_disk(self, *args):

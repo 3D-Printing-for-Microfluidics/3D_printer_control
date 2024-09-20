@@ -169,9 +169,9 @@ class Loadcell_dummy:
 
                 self.currentForce = force
                 self.currentIndex = index
-            except Exception as e:
+            except Exception as ex:
                 self.running = False
-                self.log.warning("Exception in loadcell loop: %s", str(e))
+                self.log.warning("Exception in loadcell loop: %s", str(ex))
 
     @dummy_log
     def loadcell_start(self):

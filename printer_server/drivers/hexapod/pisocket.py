@@ -51,16 +51,16 @@ class PISocket(PIGateway):
                     self.flush()
                     self.call_connection_status_changed_callback(self)
                     break
-                except (OSError, socket.timeout) as e:
-                    if "timed out" in str(e):
+                except (OSError, socket.timeout) as ex:
+                    if "timed out" in str(ex):
                         break
-                    self.log.info("%s. Retrying in %s second(s)", e, timeout)
+                    self.log.info("%s. Retrying in %s second(s)", ex, timeout)
                     self._socket = None  # get rid of handle to bad socket
                     time.sleep(timeout)  # wait to try again
             if not self._connected:
                 self._connected = False
                 msg = f"{self._name} not found!"
-                self.log.critical(msg)
+                self.log.error(msg)
                 return False
             
             atexit.register(self.disconnect)

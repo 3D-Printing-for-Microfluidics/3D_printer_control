@@ -208,9 +208,9 @@ class DLPC900_USB_Controller:
                     try:
                         self.dev.detach_kernel_driver(n)
                         self.log.info("Detached kernel driver from interface %s", n)
-                    except usb.core.USBError as e:
-                        msg = f"Couldn't detach kernel driver from interface {n}: {e}"
-                        self.log.critical(msg)
+                    except usb.core.USBError as ex:
+                        msg = f"Couldn't detach kernel driver from interface {n}: {ex}"
+                        self.log.error(msg)
 
     def _HID_io_wrapper(self, fn, *args, **kwargs):
         """Wrap HID read and write methods so they have a greater
