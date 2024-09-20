@@ -113,21 +113,21 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
             int: error code
         """
         status = 0
-        self.log.info(f"Querying hexapod error code number: {status}")
+        self.log.info("Querying hexapod error code number: %s", status)
         return status
     
     @dummy_log
     def reference_axes(self):
         """ Run routine for referencing all the axes of the hexapod
         """
-        self.log.info(f"Referencing axes completed")
+        self.log.info("Referencing axes completed")
 
     @dummy_log    
     def home_all_axes(self):
         """ Home all the axes in the hexapod
         """
         self.pose = {'X':0, 'Y':0, 'Z':0, 'U':0, 'V':0, 'W':0}
-        self.log.info(f"Homed all axes")
+        self.log.info("Homed all axes")
 
     @dummy_log
     def move_to_position_axis(self, axis, value):
@@ -137,12 +137,8 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
             axis (str): which axis is being actuated (e.g. 'X', 'Y', or 'Z')
             value (float): target position in mm for the given axis
         """
-        try:
-            self.pose[axis] = value
-        except Exception as ex:
-            self.log.error(f"Failed to move axis {axis} to {value}. {ex}")
-        else:
-            self.log.info(f"Translated axis {axis} to {value} [mm]")
+        self.pose[axis] = value
+        self.log.info("Translated axis %s to %s [mm]", axis, value)
 
     @dummy_log
     def move_to_position_compound(self, x, y, z):
@@ -156,7 +152,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         self.pose['X'] = x
         self.pose['Y'] = y
         self.pose['Z'] = z
-        self.log.info(f"Moved to position: ({x}, {y}, {z}) mm")
+        self.log.info("Moved to position: (%s, %s, %s) mm", x, y, z)
 
     @dummy_log
     def move_to_angle_axis(self, axis, value):
@@ -166,12 +162,8 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
             axis (str): which axis is being actuated(e.g. 'U', 'V', or 'W')
             value (float): target position in rad for the given axis
         """
-        try:
-            self.pose[axis] = value
-        except Exception as ex:
-            self.log.error(f"Failed to rotate axis {axis} to {value}. {ex}")
-        else:
-            self.log.info(f"Rotated axis {axis} to {value} [rad]")
+        self.pose[axis] = value
+        self.log.info("Rotated axis %s to %s [rad]", axis, value)
 
     @dummy_log
     def move_to_angle_compound(self, u, v, w):
@@ -185,7 +177,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         self.pose['U'] = u
         self.pose['V'] = v
         self.pose['W'] = w
-        self.log.info(f"Moved to angle: ({u}, {v}, {w}) rad")
+        self.log.info("Moved to angle: (%s, %s, %s) rad", u, v, w)
 
     @dummy_log    
     def set_pose(self, x, y, z, u, v, w):
@@ -207,7 +199,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         self.pose['U'] = u
         self.pose['V'] = v
         self.pose['W'] = w
-        self.log.info(f"Concurrently adjusted the pose to: 'X': {x}, 'Y': {y}, 'Z': {z}, 'U': {u}, 'V': {v}, 'W': {w}")
+        self.log.info("Concurrently adjusted the pose to: 'X': %s, 'Y': %s, 'Z': %s, 'U': %s, 'V': %s, 'W': %s", x, y, z, u, v, w)
 
     @dummy_log
     def step_axis(self, axis, step_size):
@@ -218,7 +210,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
             step_size (float): step size of the translation or rotation of the specified axis
         """
         self.pose[axis] += step_size
-        self.log.info(f"Stepped axis {axis} by {step_size}")
+        self.log.info("Stepped axis %s by %s", axis, step_size)
 
     @dummy_log
     def get_pose(self, axis=None):
@@ -275,7 +267,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
             self.pivot_point['T'] = t
             return True
         else:
-            self.log.warning(f"Not all rotational axes (U, V, W) are 0. Set them to 0 before attempting pivot point adjustment")
+            self.log.warning("Not all rotational axes (U, V, W) are 0. Set them to 0 before attempting pivot point adjustment")
             return False
 
     @dummy_log    
@@ -298,7 +290,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
             new_pivot["T"] += step_size
 
         self.set_pivot_point(new_pivot["R"], new_pivot["S"], new_pivot["T"])
-        self.log.info(f"Pivot point stepped by {step_size} on {axis} axis")
+        self.log.info("Pivot point stepped by %s on %s axis", step_size, axis)
 
     @dummy_log
     def get_simple_dynamic_range(self, target_axis:str):
@@ -330,33 +322,23 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
             OrderedDict: ordered dictionary (native PI type) describing the range for each of hte queried axes in the direction of the target pose
         """
         if (len(target_axes) != len(target_pose)):
-            self.log.error(f"The amount of axes queried is not equal to the coordinates for target pose")
+            self.log.error("The amount of axes queried is not equal to the coordinates for target pose")
             return None
         
         dynamic_range = dict()
-        try:
-            for axis in target_axes:
-                dynamic_range[axis] = self.get_simple_dynamic_range(axis)
-        except Exception as ex:
-            self.log.error(f"Failed to retrieve the dynamic range for the target_axes: {target_axes}, and target_pose: {target_pose}")
-            dynamic_range = None
-        finally:
-            return dynamic_range
+        for axis in target_axes:
+            dynamic_range[axis] = self.get_simple_dynamic_range(axis)
+        return dynamic_range
 
 
 if __name__ == "__main__":
     hexapod = Hexapod_dummy("")
     hexapod.connect()
-    try:
-        hexapod.get_status()
-        hexapod.move_to_position_compound(0, 0, 0)
-        position = hexapod.get_pose()
-        # input()
-        hexapod.move_to_angle_compound(0, 0, 10)
-        time.sleep(3)
-        hexapod.move_to_angle_compound(0, 0, 0)
-
-    except Exception as ex:
-        print(f"ERROR: {ex}")
-    finally:
-        hexapod.disconnect()
+    hexapod.get_status()
+    hexapod.move_to_position_compound(0, 0, 0)
+    position = hexapod.get_pose()
+    # input()
+    hexapod.move_to_angle_compound(0, 0, 10)
+    time.sleep(3)
+    hexapod.move_to_angle_compound(0, 0, 0)
+    hexapod.disconnect()
