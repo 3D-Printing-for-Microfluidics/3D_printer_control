@@ -28,14 +28,13 @@ class EnvironmentalSensorsControl(PrintControl):
         self.environmental_sensors.start() 
 
     def connect_hardware(self):
-        self.env_thread = Thread(log, name="env_control_connect_thread", target=self.environmental_sensors.connect, args=[self.shutdown])
+        self.env_thread = Thread(log, name="env_control_connect_thread", target=self.environmental_sensors.connect)
         self.env_thread.start()
         super().connect_hardware()
         self.env_thread.join()
-        if not self.environmental_sensors.connected:
-            log.error("Enviornmental sensors failed to connect!")
-            self.failed_hardware["Enviornmental Sensor"] = self.environmental_sensors
-            self.all_hardware_connected = False
+        if not self.environmental_sensors.connected or self.env_thread.exception is not None:
+            log.error("Environmental sensors failed to connect!")
+            self.failed_hardware["Environmental Sensor"] = self.environmental_sensors
 
     def finish_print(self):
         self.environmental_sensors.stop()

@@ -17,11 +17,11 @@ class TipTilt_dummy:
         self.initialized = None
 
     @dummy_log
-    def connect(self, shutdown):
+    def connect(self):
         self.port = "dummyPort"
         if self.port is None:
             msg = "Tip/Tilt stage not found!"
-            self.log.critical(msg)
+            self.log.error(msg)
             return False
         self.connected = True
         self.initialize()

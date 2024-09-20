@@ -21,8 +21,8 @@ class KDC101(USBSerial, FocusStageDriver):
         self.config_dict = config_dict
         self.initialized = None
 
-    def connect(self, shutdown):
-        super().connect(shutdown)
+    def connect(self):
+        super().connect()
         if self.connected is None:
             self.getHardwareInfo()
             self.enableStage(enable=True)

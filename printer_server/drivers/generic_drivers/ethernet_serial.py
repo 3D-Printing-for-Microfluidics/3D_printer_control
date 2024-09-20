@@ -18,7 +18,7 @@ class EthernetSerial():
         self.connected = None
         self.sendLock = threading.Lock()
 
-    def connect(self, shutdown):
+    def connect(self):
         """Find the device and connect to it."""
         if self.connected is None:
             self.connected = False
@@ -36,7 +36,6 @@ class EthernetSerial():
                     self.socket.connect((self.host, self.port))
                     self.socket.settimeout(self.timeout)
                     self.connected = True
-                    self.shutdown = shutdown
                     break
                 except (OSError, socket.timeout) as ex:
                     if "timed out" in str(ex):

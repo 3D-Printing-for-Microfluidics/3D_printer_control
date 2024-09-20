@@ -67,14 +67,13 @@ class FocusControl(PrintControl):
         )
 
     def connect_hardware(self):
-        self.focus_thread = Thread(log, name="focus_control_connect_thread", target=self.focus_stage.connect, args=[self.shutdown])
+        self.focus_thread = Thread(log, name="focus_control_connect_thread", target=self.focus_stage.connect)
         self.focus_thread.start()
         super().connect_hardware()
         self.focus_thread.join()
-        if not self.focus_stage.connected:
+        if not self.focus_stage.connected or self.focus_thread.exception is not None:
             log.error("Focus stage failed to connect!")
             self.failed_hardware["Focus Stage"] = self.focus_stage
-            self.all_hardware_connected = False
 
     def initialize_hardware(self):
         if self.coord_systems is not None:
@@ -85,6 +84,9 @@ class FocusControl(PrintControl):
         self.focus_thread.start()
         super().initialize_hardware()
         self.focus_thread.join()
+        if self.focus_thread.exception is not None:
+            log.error("Focus stage failed to initialize!")
+            self.failed_hardware["Focus Stage"] = self.focus_stage
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarization_step_1(self):

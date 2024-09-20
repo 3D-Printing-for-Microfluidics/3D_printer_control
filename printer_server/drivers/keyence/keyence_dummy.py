@@ -20,7 +20,7 @@ class Keyence_dummy:
         self.port = config_dict["port"]
         
     @dummy_log
-    def connect(self, shutdown):
+    def connect(self):
         self.connected = False
         self.connected = True
         atexit.register(self.disconnect)

@@ -20,7 +20,9 @@ class ScreenControl(PrintControl):
         self.screen_thread.start()
         super().connect_hardware()
         self.screen_thread.join()
-
+        if self.screen_thread.exception is not None:
+            log.error("Virtual Screen failed to connect!")
+            self.failed_hardware["Virtual Screen"] = self.screen
 
     def pre_exposure_tasks(self, settings, light_engine):
         screen_index = 0

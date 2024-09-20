@@ -28,7 +28,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         self.axes_common_names = config_dict["axes_common_names"]
 
     @dummy_log
-    def connect(self, shutdown):
+    def connect(self):
         """ Run routine for connecting to the hexapod and reference it if it hasn't been referenced yet upon powerup
         """
         self.connected = True

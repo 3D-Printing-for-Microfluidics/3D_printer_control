@@ -39,12 +39,12 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         self.axes_common_names = config_dict["axes_common_names"]
         self.gateway = PISocket("Hexapod", host=self.config_dict["address"], port=self.config_dict["port"], logger=self.log)
 
-    def connect(self, shutdown):
+    def connect(self):
         """ Run routine for connecting to the hexapod and reference it if it hasn't been referenced yet upon powerup
         """
         if self.connected is None:
             self.connected = False
-            if not self.gateway.connect(shutdown):
+            if not self.gateway.connect():
                 self.connected = None
                 return False
             messages = GCSMessages(self.gateway)

@@ -327,7 +327,17 @@ class DLPC900_USB_Controller:
         self.dev = usb.core.find(idVendor=vendor_id, idProduct=product_id)
         if self.dev is None:
             msg = "Wintech light engine not found!"
-            self.log.critical(msg)
+            self.log.error(msg)
+            return False
+        try:
+            self._free_USB_driver()
+            self.dev.set_configuration()
+            self.get_firmware_version()
+            self.get_hardware_configuration_and_firmware_tag()
+            atexit.register(self.disconnect)
+        except:
+            msg = "Wintech light engine not found!"
+            self.log.error(msg)
             return False
         self.log.info("Connected to Wintech light engine")
         return True
@@ -340,12 +350,6 @@ class DLPC900_USB_Controller:
         configuration is set. Then, a series of commands are issued
         to ready the system for normal 3D printing operation.
         """
-
-        self._free_USB_driver()
-        self.dev.set_configuration()
-        atexit.register(self.disconnect)
-        self.get_firmware_version()
-        self.get_hardware_configuration_and_firmware_tag()
         self.led_off()
         self.set_IT6535_power_mode("HDMI")
         self.set_display_mode("Video pattern mode")

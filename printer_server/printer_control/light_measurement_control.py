@@ -23,21 +23,19 @@ class LightMeasurementControl(PrintControl):
 
     def connect_hardware(self):
         # Connect spectrometer and photodiode 
-        spectrometer_thread = Thread(log, name="spectrometer_connect_thread", target=self.spectrometer.connect, args=[self.shutdown])
-        photodiode_thread = Thread(log, name="photodiode_connect_thread", target=self.photodiode.connect, args=[self.shutdown])
+        spectrometer_thread = Thread(log, name="spectrometer_connect_thread", target=self.spectrometer.connect)
+        photodiode_thread = Thread(log, name="photodiode_connect_thread", target=self.photodiode.connect)
         spectrometer_thread.start()
         photodiode_thread.start()
         super().connect_hardware()
         spectrometer_thread.join()
         photodiode_thread.join()
-        if not self.spectrometer.connected:
+        if not self.spectrometer.connected or spectrometer_thread.exception is not None:
             log.error("Spectrometer failed to connect!")
-            self.failed_hardware["Spectrometer"] = self.spectrometer
-            self.all_hardware_connected = False       
-        if not self.photodiode.connected:
+            self.failed_hardware["Spectrometer"] = self.spectrometer   
+        if not self.photodiode.connected or photodiode_thread.exception is not None:
             log.error("Photodiode failed to connect!")
             self.failed_hardware["Photodiode"] = self.photodiode
-            self.all_hardware_connected = False    
 
     def initialize_hardware(self):
         photodiode_thread = Thread(log, name="photodiode_init_thread", target=self.photodiode.initialize, args=[])
@@ -45,6 +43,9 @@ class LightMeasurementControl(PrintControl):
         super().initialize_hardware()
         if photodiode_thread is not None:
             photodiode_thread.join()
+            if photodiode_thread.exception is not None:
+                log.error("Photodiode failed to initialize!")
+                self.failed_hardware["Photodiode"] = self.photodiode
 
     def pre_print_tasks(self):
         super().pre_print_tasks()

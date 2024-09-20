@@ -25,7 +25,6 @@ from printer_server.views.calibration import (
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
-
 def run_in_thread(state, text):
     """Wrap long running printer operation methods. The wrapped methods
     push the 3D printer state changes to clients and finish their
@@ -79,6 +78,7 @@ class PrintControl:
 
     def __init__(self):
         self._state = "uninitialized"
+        self.critical_error_handle = None
 
         # folders relevant to printing
         self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
@@ -314,49 +314,41 @@ class PrintControl:
         return screen_light_engine
 
     @run_in_thread("initialized", "Initialize")
-    def initialize(self, failed_handle):
+    def initialize(self, critical_error_handle):
         """Put all hardware into starting configuration."""
         if self.state == "uninitialized":
+            self.critical_error_handle = critical_error_handle
             self.state = "busy"
             self.failed_hardware = {}
-            self.all_hardware_connected = True
             self.connect_hardware()
-            return self._initialize(failed_handle)
+            return self._initialize()
         return False
     
-    def _initialize(self, failed_handle):
-        if self.all_hardware_connected:
-            self.initialize_hardware()
-            log.info("Printer initialized, all hardware ready.")
-            return True
-        else:
-            failed_handle()
-            return False
-    
     @run_in_thread("initialized", "Reinitialize")
-    def reinitialize(self, failed_handle):
-        self.all_hardware_connected = True
-        threads = []
+    def reinitialize(self):
+        threads = {}
         for name, device in self.failed_hardware.items():
-            t = Thread(log, name=f"{name}_control_connect_thread", target=device.connect, args=[self.shutdown])
+            t = Thread(log, name=f"{name}_control_connect_thread", target=device.connect)
             t.start()
-            threads.append(t)
-
-        for t in threads:
-            t.join()
+            threads[name] = t
 
         for name in list(self.failed_hardware.keys()):
+            threads[name].join()
             device = self.failed_hardware[name]
-            if not device.connected:
+            if not device.connected or threads[name].exception is not None:
                 log.error("%s failed to connect!", name)
-                self.all_hardware_connected = False
             else:
                 del self.failed_hardware[name]
-        return self._initialize(failed_handle)
-
-    def cancel_initialize(self):
-        self.state = "uninitialized"
-        self.shutdown()
+        return self._initialize()
+    
+    def _initialize(self):
+        if len(self.failed_hardware.keys()) == 0:
+            self.initialize_hardware()
+            if len(self.failed_hardware.keys()) == 0:
+                log.info("Printer initialized, all hardware ready.")
+                return True
+        self.critical_error_handle(process = "initialization")
+        return False
             
     def connect_hardware(self):
         pass
@@ -683,7 +675,7 @@ class PrintControl:
         """boolean -- whether the printer is printing"""
         return self.print_thread.isAlive()
 
-    def shutdown(self, is_critical=False):
+    def shutdown(self, is_critical=True):
         if is_critical or self.state not in ["busy", "printing"]:
             if self.state not in ["shutting down", "shutdown completed"]:
                 self.state = "shutting down"

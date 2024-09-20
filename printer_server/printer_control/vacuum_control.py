@@ -19,27 +19,29 @@ class VacuumControl(PrintControl):
         self.degas_state = None
 
     def connect_hardware(self):
-        mks_thread = Thread(log, name="mks_connect_thread", target=self.mks.connect, args=[self.shutdown])
-        mks_teensy_thread = Thread(log, name="mks_teensy_connect_thread", target=self.mks_teensy.connect, args=[self.shutdown])
+        mks_thread = Thread(log, name="mks_connect_thread", target=self.mks.connect)
+        mks_teensy_thread = Thread(log, name="mks_teensy_connect_thread", target=self.mks_teensy.connect)
         mks_thread.start()
         mks_teensy_thread.start()
         super().connect_hardware()
         mks_thread.join()
         mks_teensy_thread.join()
-        if not self.mks.connected:
+        if not self.mks.connected or mks_thread.exception is not None:
             log.error("MKS failed to connect!")
             self.failed_hardware["MKS Controller"] = self.mks
-            self.all_hardware_connected = False
-        if not self.mks_teensy.connected:
+        if not self.mks_teensy.connected or mks_teensy_thread.exception is not None:
             log.error("MKS Teensy failed to connect!")
             self.failed_hardware["MKS Teensy"] = self.mks_teensy
-            self.all_hardware_connected = False
 
     def initialize_hardware(self):
         mks_thread = Thread(log, name="mks_init_thread", target=self.mks.initialize, args=[])
         mks_thread.start()
         super().initialize_hardware()
         mks_thread.join()
+        if mks_thread.exception is not None:
+            log.error("MKS failed to initialize!")
+            self.failed_hardware["MKS Controller"] = self.mks
+            return
         self.degas_state = "idle"
         socketio.emit(f"update_degas_state", self.degas_state, namespace="/printing")
 

@@ -29,7 +29,7 @@ class KDC101_dummy(FocusStageDriver):
         return "dummy_port"
 
     @dummy_log
-    def connect(self, shutdown):
+    def connect(self):
         if self.connected is None:
             self.connected = False
             self.port = self.find_device()

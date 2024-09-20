@@ -26,7 +26,7 @@ class BPStageDriver:
     def get_logging_results(self):
         log.warning("Function not implemented. Using abstract BPStageDriver class")
 
-    def connect(self, shutdown):
+    def connect(self):
         log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def initialize(self):

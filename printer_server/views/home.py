@@ -137,27 +137,44 @@ def disconnect():
 @socketio.on("initialize", namespace="/printing")
 # pylint: disable=unused-argument
 def initialize(message):
-    print_control.initialize(initialize_failed, run_in_thread=False, top_level=True)
+    print_control.initialize(critical_error, run_in_thread=False, top_level=True)
 
 
-@socketio.on("reinitialize", namespace="/printing")
+def critical_error(process):
+    if process == "initialization":
+        title = "Initialization Failed"
+        msg = "The following hardware was not found:\n"
+        for name in print_control.failed_hardware.keys():
+            msg += f"\t- {name}\n"
+        msg += "Click 'Confirm' to retry initialization..."
+    elif process == "printing":
+        title = "Print Failed"
+        msg = "A unrecoverable error occurred during printing in the following hardware:\n"
+        for name in print_control.failed_hardware.keys():
+            msg += f"\t- {name}\n"
+        msg += "Printer must restart. Click 'Confirm' to continue..."
+    time.sleep(1.0)
+    socketio.emit("critical_error", {"process": process, "title": title, "message": msg}, namespace="/printing")
+
+
+@socketio.on("critical_error_confirm", namespace="/printing")
 # pylint: disable=unused-argument
-def reinitialize(message):
-    print_control.reinitialize(initialize_failed, run_in_thread=False, top_level=True)
+def critical_error_confirm(message):
+    if message == "initialization":
+        print_control.reinitialize(run_in_thread=False, top_level=True)
+    elif message == "printing":
+        # print_control.state = "uninitialized"
+        # print_control.shutdown()
+        shutdown()
 
 
-def initialize_failed():
-    time.sleep(1)
-    msg = ""
-    for name in print_control.failed_hardware.keys():
-        msg += f"\t- {name}\n"
-    socketio.emit("initialize_failed", msg, namespace="/printing")
-
-
-@socketio.on("cancel_initialize", namespace="/printing")
+@socketio.on("critical_error_cancel", namespace="/printing")
 # pylint: disable=unused-argument
-def cancel_initialize():
-    print_control.cancel_initialize()
+def critical_error_reply(message):
+    if message == "initialization":
+        # print_control.state = "uninitialized"
+        # print_control.shutdown()
+        shutdown()
 
 
 @socketio.on("planarization step 1", namespace="/printing")
@@ -203,15 +220,16 @@ def degas(msg):
 
 @socketio.on("shutdown", namespace="/printing")
 # pylint: disable=unused-argument
-def shutdown(message):
-    is_critical = False
-    if message == "critical":
-        is_critical = True
+def shutdown(message="critical"):
+    is_critical = True
+    if message != "critical":
+        is_critical = False
     print_control.shutdown(is_critical)
     
 
 def shutdown_exception(exception, trace):
-    shutdown("critical")
+    # print_control.shutdown()
+    shutdown()
 signal.signal(signal.SIGINT, shutdown_exception)
 
 if "loadcell" in config_dict.keys():

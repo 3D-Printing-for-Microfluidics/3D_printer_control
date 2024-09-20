@@ -5,7 +5,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 class LightEngineDriver:
-    def connect(self, shutdown):
+    def connect(self):
         log.warning("Function not implemented. Using abstract LightEngineDriver class")
 
     def initialize(self):

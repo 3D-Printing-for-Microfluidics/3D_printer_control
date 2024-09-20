@@ -25,14 +25,13 @@ class KeyenceControl(PrintControl):
         self.default_light_engine = None
 
     def connect_hardware(self):
-        keyence_thread = Thread(log, name="keyence_control_connect_thread", target=self.keyence.connect, args=[self.shutdown])
+        keyence_thread = Thread(log, name="keyence_control_connect_thread", target=self.keyence.connect)
         keyence_thread.start()
         super().connect_hardware()
         keyence_thread.join()
-        if not self.keyence.connected:
+        if not self.keyence.connected or keyence_thread.exception is not None:
             log.error("Keyence failed to connect!")
             self.failed_hardware["Keyence Sensor"] = self.keyence
-            self.all_hardware_connected = False
 
     def update_measurement_progress(self):
         msg = {

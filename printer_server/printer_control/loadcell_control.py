@@ -171,20 +171,22 @@ class LoadcellControl(PrintControl):
             log.warning("Move_to_force overshot target value")
 
     def connect_hardware(self):
-        loadcell_t = Thread(log, name="loadcell_control_connect_thread", target=self.loadcell.connect, args=[self.shutdown])
+        loadcell_t = Thread(log, name="loadcell_control_connect_thread", target=self.loadcell.connect)
         loadcell_t.start()
         super().connect_hardware()
         loadcell_t.join()
-        if not self.loadcell.connected:
+        if not self.loadcell.connected or loadcell_t.exception is not None:
             log.error("Loadcell failed to connect!")
             self.failed_hardware["Loadcell"] = self.loadcell
-            self.all_hardware_connected = False
 
     def initialize_hardware(self):
         loadcell_t = Thread(log, name="loadcell_control_init_thread", target=self.loadcell.initialize, args=[])
         loadcell_t.start()
         super().initialize_hardware()
         loadcell_t.join()
+        if loadcell_t.exception is not None:
+            log.error("Loadcell failed to initialize!")
+            self.failed_hardware["Loadcell"] = self.loadcell
 
     def print_worker(self):
         if self.state != "printing":

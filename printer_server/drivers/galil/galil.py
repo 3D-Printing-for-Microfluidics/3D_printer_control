@@ -139,7 +139,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.absMove(mm=self.bottom_position, axis="Build Platform")
         return self.getPosition(in_mm=True)
 
-    def connect(self, shutdown):
+    def connect(self):
         """Find the first Galil controller and connect to it."""
         if self.connected is None:
             self.connected = False
@@ -152,19 +152,19 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
                         self.address = address.strip("()").strip("-d")
                         self.controller_name = available[address]
                         self.log.debug("Found %s at %s", available[address], self.address)
-                        return self._connect(shutdown)
+                        return self._connect()
                 msg = f"Galil controller not found! ({self.controller_name})"
-                self.log.critical(msg)
+                self.log.error(msg)
                 return False
             else:
                 self.address = self.config_dict["address"]
                 self.controller_name = self.config_dict["controller_name"]
-                return self._connect(shutdown)
+                return self._connect()
         else:
             while self.connected is False:
                 time.sleep(0.1)
 
-    def _connect(self, shutdown):
+    def _connect(self):
         self.log.info(
             "Connecting to %s at %s", self.controller_name, self.address
         )

@@ -23,7 +23,7 @@ class FocusStageDriver:
     def logging_stop(self):
         log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
-    def connect(self, shutdown):
+    def connect(self):
         log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def initialize(self):

@@ -31,10 +31,10 @@ class Photodiode:
 
         self.rm = pyvisa.ResourceManager("@py")
        
-    def connect(self, shutdown):
+    def connect(self):
         # connect to the photodiode 
         try:
-            self.log.info(f"Connecting ThorlabsPM100...")
+            self.log.info("Connecting ThorlabsPM100...")
             self.log.debug("Available PYVISA devices:")
             for r in self.rm.list_resources():
                 self.log.debug("\t%s", r)
@@ -50,7 +50,7 @@ class Photodiode:
             self.power_meter = ThorlabsPM100(inst=self.inst)
             atexit.register(self.disconnect)
             self.connected = True
-            self.log.info(f"Connected ThorlabsPM100")
+            self.log.info("Connected ThorlabsPM100")
             return True
           
         except Exception as ex:
@@ -60,12 +60,12 @@ class Photodiode:
             
     def initialize(self):
        # sending cmds to photodiode to set parameters that I want to set initialy
-        self.log.info(f"Initializing ThorlabsPM100...")
+        self.log.info("Initializing ThorlabsPM100...")
         self.set_wavelength(self.defaultWavelength)
         self.set_attenuation_db(self.attenuation) 
         self.set_beam_diameter(self.beamdiameter)
         self.power_meter.configure.scalar.pdensity() 
-        self.log.info(f"Initialized ThorlabsPM100")
+        self.log.info("Initialized ThorlabsPM100")
 
          
     def disconnect(self):

@@ -31,6 +31,25 @@ class BPControl(PrintControl):
         )
         self.bp_stage.setup_log_file(str(self.current_job / "logs"))
 
+    def connect_hardware(self):
+        self.bp_thread = Thread(log, name="bp_control_connect_thread", target=self.bp_stage.connect)
+        self.bp_thread.start()
+        super().connect_hardware()
+        self.bp_thread.join()
+        if not self.bp_stage.connected or self.bp_thread.exception is not None:
+            log.error("Build platform stage failed to connect!")
+            self.failed_hardware["Build Platform Stage"] = self.bp_stage
+
+    def initialize_hardware(self):
+        bp_pos = self.bp_stage.top_position
+        self.bp_thread = Thread(log, name="bp_control_init_thread", target=self.bp_stage.initialize_and_positionBP, args=[bp_pos])
+        self.bp_thread.start()
+        super().initialize_hardware()
+        self.bp_thread.join()
+        if self.bp_thread.exception is not None:
+            log.error("Build platform stage failed to initialize!")
+            self.failed_hardware["Build Platform Stage"] = self.bp_stage
+
     def move_build_platform_up(self, position_settings):
         """Moves the build platform up according to the position_settings"""
         initial_wait = position_settings["Initial wait (ms)"] / 1000
@@ -92,23 +111,6 @@ class BPControl(PrintControl):
             self.position_log,
             f"{start_position},{end_position},{thickness},{force_squeeze}\n",
         )
-
-    def connect_hardware(self):
-        self.bp_thread = Thread(log, name="bp_control_connect_thread", target=self.bp_stage.connect, args=[self.shutdown])
-        self.bp_thread.start()
-        super().connect_hardware()
-        self.bp_thread.join()
-        if not self.bp_stage.connected:
-            log.error("Build platform stage failed to connect!")
-            self.failed_hardware["Build Platform Stage"] = self.bp_stage
-            self.all_hardware_connected = False
-
-    def initialize_hardware(self):
-        bp_pos = self.bp_stage.top_position
-        self.bp_thread = Thread(log, name="bp_control_init_thread", target=self.bp_stage.initialize_and_positionBP, args=[bp_pos])
-        self.bp_thread.start()
-        super().initialize_hardware()
-        self.bp_thread.join()
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarization_step_1(self):

@@ -63,7 +63,6 @@ class MKS946(USBSerial):
         self.thread_running = False
         self.pressures = None
         self.thread = Thread(self.log, name="mks_loop_thread", target=self.loop)
-        # self.sendLock = threading.Lock()
         self.relay_requests = [0,0,0,0,0,0,0,0,0,0,0,0,0]
 
     def initialize(self):
@@ -84,8 +83,8 @@ class MKS946(USBSerial):
             self.start_thread()
             self.log.info("MKS initialized")
 
-    def connect(self, shutdown):
-        super().connect(shutdown)
+    def connect(self):
+        super().connect()
 
         # Check if actually connected
         cmd_str = f"@{self.address}MD?;FF"
@@ -93,7 +92,7 @@ class MKS946(USBSerial):
         if rsp_str != "@253ACK946;FF":
             self.connected = None
             msg = "MKS Controller not found!"
-            self.log.critical(msg)
+            self.log.error(msg)
             return False
         return True
 
@@ -149,7 +148,6 @@ class MKS946(USBSerial):
         @003ACK7.602E+2;FF
         Here, <aaa>=003; <Command>=PR1; <Response>=7.602E+2
         '''
-        # with self.sendLock:
         cmd_str = f"@{self.address}{command}"
         if n != None:
             cmd_str += f"{n}"
@@ -165,7 +163,6 @@ class MKS946(USBSerial):
             if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
                 rsp_str = rsp_str.replace(f"@{self.address}ACK","")
                 rsp_str = rsp_str.replace(f";FF","")
-                
                 return rsp_str
             
             elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
@@ -200,7 +197,6 @@ class MKS946(USBSerial):
         Here, <aaa>=001; <Command>=BR; <Parameter>=19200;
         <Response>=19200
         '''
-        # with self.sendLock:
         cmd_str = f"@{self.address}{command}"
         if n != None:
             cmd_str += f"{n}"

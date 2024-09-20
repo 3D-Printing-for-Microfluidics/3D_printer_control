@@ -11,7 +11,7 @@ class TTRStageDriver:
         super().__init__()
         self.initialized = None
 
-    def connect(self, shutdown):
+    def connect(self):
         log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
     def initialize(self):

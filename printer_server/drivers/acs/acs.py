@@ -114,9 +114,9 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         self.absMove(mm=self.bottom_position, axis="Build Platform")
         return self.getPosition()
 
-    def connect(self, shutdown):
+    def connect(self):
         """Find the first ACS controller and connect to it."""
-        ret = super().connect(shutdown)
+        ret = super().connect()
         if ret is not None and ret and not self.thread_running:
             self.thread_running = True
             self.thread.start()

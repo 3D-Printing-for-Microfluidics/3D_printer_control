@@ -133,7 +133,7 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         return self.getPosition(in_mm=True)
 
     @dummy_log
-    def connect(self, shutdown):
+    def connect(self):
         """Find the first Galil controller and connect to it."""
         if self.connected is None:
             self.connected = False
@@ -146,19 +146,19 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
                         self.address = "dummy_address"
                         self.controller_name = available[address]
                         self.log.debug("Found %s at %s", available[address], self.address)
-                        return self._connect(shutdown)
+                        return self._connect()
                 msg = f"Galil controller not found! ({self.controller_name})"
-                self.log.critical(msg)
+                self.log.error(msg)
                 return False
             else:
                 self.address = self.config_dict["address"]
                 self.controller_name = self.config_dict["controller_name"]
-                return self._connect(shutdown)
+                return self._connect()
         else:
             while self.connected is False:
                 time.sleep(0.1)
 
-    def _connect(self, shutdown):
+    def _connect(self):
         self.log.info("Connecting to %s at %s", self.controller_name, self.address)
         self.log.debug("GInfo returned: dummy_info")
         self.connected = True
@@ -166,7 +166,6 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.thread.start()
         atexit.register(self.disconnect)
         self.log.info("Connected to Galil controller")
-        self.shutdown = shutdown
         return True
 
     @dummy_log

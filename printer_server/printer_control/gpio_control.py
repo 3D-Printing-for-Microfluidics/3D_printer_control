@@ -13,10 +13,13 @@ class GPIOControl(PrintControl):
         self.gpio = driver_handles.gpio
 
     def initialize_hardware(self):
-        gpio_thread = Thread(log, name="gpio_control_init_thread", target=self.gpio.initialize, args=[])
+        gpio_thread = Thread(log, name="gpio_control_init_thread", target=self.gpio.initialize, args=[self.shutdown])
         gpio_thread.start()
         super().initialize_hardware()
         gpio_thread.join()
+        if gpio_thread.exception is not None:
+            log.error("GPIO failed to connect!")
+            self.failed_hardware["GPIO"] = self.gpio
 
 
 class FilmGPIOControl(GPIOControl):

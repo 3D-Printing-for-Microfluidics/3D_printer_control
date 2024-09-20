@@ -23,20 +23,22 @@ class AccelerometerControl(PrintControl):
         self.accelerometer.set_log_file(self.accelerometer_log)
 
     def connect_hardware(self):
-        accel = Thread(log, name="accel_control_connect_thread", target=self.accelerometer.connect, args=[self.shutdown])
+        accel = Thread(log, name="accel_control_connect_thread", target=self.accelerometer.connect)
         accel.start()
         super().connect_hardware()
         accel.join()
-        if not self.accelerometer.connected:
+        if not self.accelerometer.connected or accel.exception is not None:
             log.error("Accelerometer failed to connect!")
             self.failed_hardware["Accelerometer"] = self.accelerometer
-            self.all_hardware_connected = False
 
     def initialize_hardware(self):
         accel = Thread(log, name="accel_control_init_thread", target=self.accelerometer.initialize)
         accel.start()
         super().initialize_hardware()
         accel.join()
+        if accel.exception is not None:
+            log.error("Accelerometer failed to initialize!")
+            self.failed_hardware["Accelerometer"] = self.accelerometer
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarization_step_1(self):

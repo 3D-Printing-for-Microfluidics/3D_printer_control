@@ -30,7 +30,7 @@ class PISocket(PIGateway):
         self._socket = None
         self.sendLock = threading.Lock()
 
-    def connect(self, shutdown):
+    def connect(self):
         """Find the device and connect to it."""
         if not self._connected:
             self.log.info("Connecting to %s (%s:%s), this may take up to 1 minute...", self._name, self._host, self._port)
@@ -47,7 +47,6 @@ class PISocket(PIGateway):
                     self._socket.setblocking(0)
                     self._socket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)  # disable Nagle algorithm
                     self._connected = True
-                    self.shutdown = shutdown
                     self.flush()
                     self.call_connection_status_changed_callback(self)
                     break
