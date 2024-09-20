@@ -6,7 +6,7 @@ import logging
 import threading
 
 class EthernetSerial():
-    def __init__(self, name, host=None, port=None, line_ending='\r', timeout=10, logger=logging.getLogger(__name__)):
+    def __init__(self, name, host=None, port=None, line_ending='\r', timeout=5, logger=logging.getLogger(__name__)):
         super().__init__()
         self.log = logger
         self.name = name
