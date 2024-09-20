@@ -62,14 +62,16 @@ class EthernetSerial():
         """Disconnect form the device."""
         if self.connected is not None and self.connected and self.socket is not None:
             self.connected = None
-            try:
-                self.log.info("Disconnecting from %s...", self.name)
-                with self.sendLock:
+            self.log.info("Disconnecting from %s...", self.name)
+            with self.sendLock:
+                try:
                     self.socket.close()
-                self.socket = None
-                self.log.info("Disconnected from %s", self.name)
-            except:
-                self.log.error("Unexpected error on disconnect")
+                except:
+                    self.log.info("Unable to disconnect from %s", self.name)
+                    return
+            self.socket = None
+            self.log.info("Disconnected from %s", self.name)
+            
 
     def send(self, command, notify=True):
         """Send a command to the device.

@@ -125,17 +125,17 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
     def disconnect(self):
         """Disconnect form the ACS controller."""
         if self.connected is not None and self.connected is not False and self.socket is not None:
-            for axis in self.axes:
-                self.motorOff(axis)
-
             self.thread_running = False
             try:
                 self.thread.join()
-            except RuntimeError:
-                pass
-            self.thread = Thread(self.log, name="acs_loop_thread", target=self.loop)
-            self.thread.daemon = True
+                self.thread = Thread(self.log, name="acs_loop_thread", target=self.loop)
+                self.thread.daemon = True
 
+                for axis in self.axes:
+                    self.motorOff(axis)
+            except:
+                pass
+            
             super().disconnect()
 
     def write_to_disk(self, *args):

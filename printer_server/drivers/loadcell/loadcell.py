@@ -51,7 +51,10 @@ class LoadCell(USBSerial):
 
     def disconnect(self):
         if self.connected:
-            self.stop()
+            try:
+                self.stop()
+            except:
+                pass
         super().disconnect()
 
     def start(self):

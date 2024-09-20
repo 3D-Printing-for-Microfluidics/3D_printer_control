@@ -188,10 +188,14 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             self.thread_running = False
             try:
                 self.thread.join()
-            except RuntimeError:
+                self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
+                self.thread.daemon = True
+
+                for axis in self.axes:
+                    self.motorOff(axis)
+            except:
                 pass
-            self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
-            self.thread.daemon = True
+
             try:
                 self.connected = None
                 self.g.GClose()

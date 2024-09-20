@@ -14,6 +14,16 @@ class MKSTeensy(USBSerial):
         self.relay_requests = []
         for _ in config_dict["teensy relays"]:
             self.relay_requests.append(0)
+
+    def disconnect(self):
+        if self.connected:
+            self.log.info("Clearing relays")
+            try:
+                for i in range(len(self.config_dict["teensy relays"])):
+                    self.switch_relay(i, False, force=True)
+            except:
+                pass
+        super().disconnect()
             
     def switch_relay(self, relay_num, state, force=False):
         # self.log.info("Set relay %s to %s", relay_num, state)

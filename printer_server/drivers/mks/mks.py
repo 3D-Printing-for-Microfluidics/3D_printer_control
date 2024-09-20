@@ -101,9 +101,12 @@ class MKS946(USBSerial):
         if self.connected:
             self.stop_thread()
             self.log.info("Clearing relays")
-            for _, relay in self.config_dict["relays"].items():
-                if relay["mode"] != "auto":
-                    self.set_relay_mode(relay['relay_num'], 'CLEAR', force=True)
+            try:
+                for _, relay in self.config_dict["relays"].items():
+                    if relay["mode"] != "auto":
+                        self.set_relay_mode(relay['relay_num'], 'CLEAR', force=True)
+            except:
+                pass
         super().disconnect()
 
     def start_thread(self):

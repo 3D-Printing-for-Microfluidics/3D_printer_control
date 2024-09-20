@@ -140,4 +140,4 @@ class PISocket(PIGateway):
                 self._socket = None
                 self.log.info("Disconnected from %s", self._name)
             except:
-                self.log.error("Unexpected error on disconnect")
+                self.log.info("Unexpected error on disconnect")

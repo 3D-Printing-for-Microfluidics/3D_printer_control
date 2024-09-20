@@ -37,6 +37,7 @@ class Spectrometer:
 
     def disconnect(self):
         if self.connected:
+            self.log.info("Disconnected to Spectrometer")
             self.spectrometer = None
         
 

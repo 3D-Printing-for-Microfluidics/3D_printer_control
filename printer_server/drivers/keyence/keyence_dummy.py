@@ -31,7 +31,6 @@ class Keyence_dummy:
         if self.connected:
             self.connected = False
 
-
     # @dummy_log
     def send_command(self, message):
         pass

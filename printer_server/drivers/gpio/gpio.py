@@ -29,8 +29,12 @@ class GPIO:
 
     def disconnect(self):
         if self.connected:
-            if self.film_relay:
-                self.film_device.close()
+            if "film_pin" in self.config_dict.keys() and self.film_relay:
+                try:
+                    self.film_relay_off()
+                    self.film_device.close()
+                except:
+                    pass
             self.connected = False
 
     def film_relay_on(self):

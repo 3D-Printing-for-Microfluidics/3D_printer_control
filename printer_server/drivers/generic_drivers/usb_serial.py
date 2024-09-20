@@ -74,7 +74,10 @@ class USBSerial(serial.Serial):
     def disconnect(self):
         if self.connected is not None and self.connected:
             self.log.info("Disconnecting from %s...", self.name)
-            self.close()
+            try:
+                self.close()
+            except:
+                self.log.info("Unable to disconnect from %s", self.name)
             self.connected = None
             self.log.info("Disconnected from %s", self.name)
 

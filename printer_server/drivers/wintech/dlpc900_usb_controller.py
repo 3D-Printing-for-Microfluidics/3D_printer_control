@@ -364,8 +364,8 @@ class DLPC900_USB_Controller:
                 self. dev = None
                 self.log.info("Disconnected from Wintech light engine")
             except:
-                self. dev = None
-                self.log.info("Unable to disconnect from Wintech!")
+                self.dev = None
+                self.log.info("Unable to disconnect from Wintech")
 
     def get_long_axis_flip(self):
         "Returns whether the long axis is flipped"

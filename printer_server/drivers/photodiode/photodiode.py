@@ -72,9 +72,12 @@ class Photodiode:
         # disconnects the photodiode     
         if self.connected:
             self.power_meter = None
-            self.inst.close()
+            try:
+                self.inst.close()
+            except:
+                self.log.info("Unable to disconnect from Photodiode")
             self.connected = None
-            self.log.info(f"Disconnected to Photodiode")
+            self.log.info("Disconnected to Photodiode")
                
     def set_beam_diameter(self, diameter):
         # set the beam diameter
