@@ -18,9 +18,6 @@ class LoadcellControl(PrintControl):
 
         # log files
         self.loadcell_log = str(self.current_job / "logs" / "loadcell_data.csv")
-        
-        # loadcell graph variables
-        self.loadcell_running = False
         self.loadcell_thread = None
 
     def create_logs(self):
@@ -32,12 +29,12 @@ class LoadcellControl(PrintControl):
         self.loadcell.set_log_file(self.loadcell_log)
 
     def loadcell_graph_loop(self):
-        if not self.loadcell_running:
-            self.loadcell_running = True
-            while self.loadcell_running:
-                data = self.loadcell.get_current_data()
-                home.update_loadcell_graph({"data": data})
-                time.sleep(0.05)
+        while self.loadcell.running:
+            data = self.loadcell.get_current_data()
+            if data is None:
+                return
+            home.update_loadcell_graph({"data": data})
+            time.sleep(0.05)
 
     def force_squeeze(self, position_settings, layer):
         squeeze_count = position_settings.get("Squeeze count", 1)
