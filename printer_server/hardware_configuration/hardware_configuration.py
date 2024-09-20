@@ -241,6 +241,8 @@ class Printer3D:
             self.galil.disconnect()
         if hasattr(self, "gpio"):
             self.gpio.disconnect()
+        if hasattr(self, "hexapod"):
+            self.hexapod.disconnect()
         if hasattr(self, "kdc"):
             self.kdc101.disconnect()
         if hasattr(self, "keyence"):

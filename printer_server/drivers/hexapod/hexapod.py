@@ -51,7 +51,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             self.controller = GCSCommands(gcsmessage=messages)
             self.connected = True 
             atexit.register(self.disconnect)
-            self.log.info(f"Connected to hexapod")
+            self.log.info("Connected to hexapod")
             return True
         else:
             while self.connected is False:
@@ -60,18 +60,19 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
     
     def initialize(self):
         # check if it has been referenced, else do referencing
-        self.log.info(f"Initializing hexapod...")
+        self.log.info("Initializing hexapod...")
         referenced_axes_flags = self.controller.qFRF() # ourput: referenced_axes_flags: OrderedDict([('X', True), ('Y', True), ('Z', True), ('U', True), ('V', True), ('W', True)])
         if False in referenced_axes_flags.values():
             self.reference_axes()
-        self.log.info(f"Initialized hexapod")
+        self.log.info("Initialized hexapod")
 
     def disconnect(self):
         """ Close connection to the hexapod
         """
-        if self.connected is not None and self.connected and self.socket is not None:
+        if self.connected is not None and self.connected:
             self.connected = None
-            self.controller.CloseConnection()
+            # self.controller.CloseConnection()
+            self.gateway.disconnect()
             self.log.info("Disconnected from hexapod")
 
     def convertAxis(self, axis):
@@ -141,7 +142,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             int: error code
         """
         status = self.controller.qERR()
-        self.log.info(f"Querying hexapod error code number: {status}")
+        self.log.info("Querying hexapod error code number: %s", status)
         return status
 
     def reference_axes(self):
@@ -150,14 +151,14 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         self.log.info("Referencing axes...")
         self.controller.FRF()
         pitools.waitontarget(self.controller)
-        self.log.info(f"Referencing axes completed")
+        self.log.info("Referencing axes completed")
     
     def home_all_axes(self):
         """ Home all the axes in the hexapod
         """
-        self.log.info(f"Homing axes...")
+        self.log.info("Homing axes...")
         self.set_pose(0,0,0,0,0,0, suppress_message=True)
-        self.log.info(f"Homing axes completed")
+        self.log.info("Homing axes completed")
 
     def move_to_position_axis(self, axis, value):
         """ Perform absolute displacement of axis to target value
@@ -331,7 +332,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             self.log.info("Pivot point set to: %.3f, %.3f, %.3f mm", ret_val['R'], ret_val['S'], ret_val['T'])
             return True
         else:
-            self.log.warning(f"Not all rotational axes (U, V, W) are 0. Set them to 0 before attempting pivot point adjustment")
+            self.log.warning("Not all rotational axes (U, V, W) are 0. Set them to 0 before attempting pivot point adjustment")
             return False
     
     def step_pivot_point(self, axis, step_size):
@@ -376,11 +377,11 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
                 positive_limit = degrees_to_radians(positive_limit) 
                 negative_limit = degrees_to_radians(negative_limit) 
         except Exception as ex:
-            self.log.error(f"Failed to retrieve dynamic range for axis {target_axis}. Exception: {ex}")
+            self.log.error("Failed to retrieve dynamic range for axis %s (%s)", target_axis, ex)
             dynamic_range =  (None, None)
         else:
             dynamic_range = (negative_limit, positive_limit)
-            # self.log.info(f"Dynamic range queried for axis {target_axis}: {dynamic_range}")
+            # self.log.info("Dynamic range queried for axis %s: %s", target_axis, dynamic_range)
         finally:
             # print(f"request: {request}. range: {dynamic_range}")
             return dynamic_range
@@ -399,7 +400,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             OrderedDict: ordered dictionary (native PI type) describing the range for each of the queried axes in the direction of the target pose
         """
         if (len(target_axes) != len(target_pose)):
-            self.log.error(f"The amount of axes queried is not equal to the coordinates for target pose")
+            self.log.error("The amount of axes queried is not equal to the coordinates for target pose")
             return None
         
         try:
@@ -416,10 +417,10 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
                 dynamic_range["W"] = degrees_to_radians(dynamic_range["W"]) 
 
         except Exception as ex:
-            self.log.error(f"Failed to retrieve the dynamic range for the request: {params_dict}")
+            self.log.error("Failed to retrieve the dynamic range for the request: %s (%s)", params_dict, ex)
             dynamic_range = None
         # else:
-            # self.log.info(f"Dynamic range queried for compound pose {params_dict}: {dynamic_range}")
+            # self.log.info("Dynamic range queried for compound pose %s: %s", params_dict, dynamic_range)
         finally:
             return dynamic_range
 
@@ -438,6 +439,6 @@ if __name__ == "__main__":
         hexapod.move_to_angle_compound(0, 0, 0)
 
     except Exception as ex:
-        print(f"ERROR: {ex}")
+        print("ERROR: %s", ex)
     finally:
         hexapod.disconnect()
