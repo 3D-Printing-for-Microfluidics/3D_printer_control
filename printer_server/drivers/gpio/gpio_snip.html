@@ -1,10 +1,10 @@
+{% if 'film_state' in manual_controls_data['gpio']%}
 <div class="container gpio">
     <div class="row">
         <div class="col-6">
             <h3>GPIO Controls</h3>
         </div>
     </div>
-    {% if 'film_state' in manual_controls_data['gpio']%}
     <div class="row">
         <div class="col-6">
             <h5>Film Relay</h5>
@@ -20,7 +20,7 @@
             </div>
         </div>
     </div>
-    {% endif %}
 </div>
+{% endif %}
 
 <script src="{{ url_for('manual_controls.static', filename='gpio/gpio_snip.js') }}"></script>

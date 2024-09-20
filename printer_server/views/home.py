@@ -24,6 +24,9 @@ if "gpio" in config_dict:
     if "film_pin" in config_dict["gpio"]:
         from printer_server.printer_control.gpio_control import FilmGPIOControl
         parent_classes.append(FilmGPIOControl)   
+    else:
+        from printer_server.printer_control.gpio_control import GPIOControl
+        parent_classes.append(GPIOControl)   
 
 # Loadcell needs to be before bp
 if "loadcell" in config_dict:
