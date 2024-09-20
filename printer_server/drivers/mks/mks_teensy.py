@@ -7,7 +7,7 @@ class MKSTeensy(USBSerial):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__("MKSTeensy", vid=config_dict["teensy_vendor_id"], pid=config_dict["teensy_product_id"], sn=config_dict["teensy_serial_number"],  baudrate=config_dict["teensy_baudrate"], logger=self.log)
+        super().__init__("MKSTeensy", vid=config_dict["teensy_vendor_id"], pid=config_dict["teensy_product_id"], sn=config_dict["teensy_serial_number"], baudrate=config_dict["teensy_baudrate"], multiline=True, logger=self.log)
 
         self.config_dict = config_dict
 
@@ -41,32 +41,13 @@ class MKSTeensy(USBSerial):
             return self.send(f"L{relay_num}")
 
     def get_all_relay_status(self):
-        while True:
-            try:
-                l = list(self.send("R"))
-                if len(l) < len(self.config_dict["teensy relays"]):
-                    continue
-                return l
-            except:
-                continue
+        return list(self.send("R"))
 
     # def get_all_sensor_status(self):
-    #     while True:
-    #         try:
-    #             l = list(self.send("S"))
-    #             if len(l) < 5:
-    #                 continue
-    #             return l
-    #         except:
-    #             continue
+        # return list(self.send("S"))
     
     def get_crane_position(self):
-        while True:
-            try:
-                p = float(self.send("P"))
-                return p
-            except:
-                continue 
+        return float(self.send("P"))
     
     def move_crane(self, mm, relative=False):
         self.log.info("Move crane to %s", mm)
