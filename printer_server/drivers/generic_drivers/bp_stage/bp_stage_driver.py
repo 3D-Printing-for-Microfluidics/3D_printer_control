@@ -105,6 +105,8 @@ class BPStageDriver:
             if join:
                 if thread is not None:
                     thread.join()
+                    if thread.exception is not None:
+                        raise thread.exception
                 return None
             else:
                 return thread

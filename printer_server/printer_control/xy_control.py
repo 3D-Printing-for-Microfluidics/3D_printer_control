@@ -2,7 +2,7 @@ import logging
 
 from printer_server.threading_wrapper import Thread
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
-from printer_server.printer_control.print_control import PrintControl, run_in_thread
+from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 from printer_server.views.calibration import (
     get_last_calibration_positions_from_logs,
 )
@@ -43,9 +43,13 @@ class XYControl(PrintControl):
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarization_step_1(self):
-        """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
-            self.xy_stage.logging_start()
+            try:
+                self.xy_stage.logging_start()
+            except Exception as ex:
+                log.critical("Unable to communicate with xy stage (%s)", ex, exc_info=True)
+                self.failed_hardware["XY Stage"] = self.xy_stage
+                raise PrintingException()
             super().planarization_step_1()
 
     def pre_print_tasks(self):
@@ -80,6 +84,10 @@ class XYControl(PrintControl):
         for thread in self.xy_threads:
             if thread is not None:
                 thread.join()
+                if thread.exception is not None:
+                    log.critical("Unable to move xy stage")
+                    self.failed_hardware["XY Stage"] = self.xy_stage
+                    raise PrintingException()
         return super().pre_exposure_joins(light_engine)
 
     def post_print_tasks(self):
@@ -91,8 +99,17 @@ class XYControl(PrintControl):
         for thread in self.xy_threads:
             if thread is not None:
                 thread.join()
+                if thread.exception is not None:
+                    log.critical("Unable to move xy stage")
+                    self.failed_hardware["XY Stage"] = self.xy_stage
+                    raise PrintingException()
 
     def finish_print(self):
-        self.xy_stage.logging_stop()
-        self.xy_stage.setup_log_file(None)
+        try:
+            self.xy_stage.logging_stop()
+            self.xy_stage.setup_log_file(None)
+        except Exception as ex:
+            log.critical("Unable to communicate with xy stage (%s)", ex, exc_info=True)
+            self.failed_hardware["XY Stage"] = self.xy_stage
+            raise PrintingException()
         super().finish_print()

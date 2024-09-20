@@ -82,11 +82,8 @@ class EthernetSerial():
             encoded_message = command.encode()
             try:
                 self.socket.sendall(encoded_message)
-            except socket.timeout:
-                msg = "Message send timed out!"
-                self.log.critical(msg)
-                self.shutdown(is_critical = True)
-                sys.exit(msg)
+            except socket.timeout as ex:
+                raise ex
             except Exception as ex:
                 self.log.error("Failed to send packet: %s", ex)
                 return None
@@ -96,11 +93,8 @@ class EthernetSerial():
                 if notify:
                     self.log.debug("Reply: '%s'", rsp)
                 return rsp
-            except socket.timeout:
-                msg = "Message recieve timed out!"
-                self.log.critical(msg)
-                self.shutdown(is_critical = True)
-                sys.exit(msg)
+            except socket.timeout as ex:
+                raise ex
             except Exception as ex:
                 self.log.error("Failed to receive packet: %s", ex)
             return None

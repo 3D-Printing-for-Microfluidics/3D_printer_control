@@ -24,8 +24,11 @@ class EnvironmentalSensorsControl(PrintControl):
         async_file_hander.write(
             self.environmental_sensors_log, "time,iaq,iaqAccuracy,static,co2Equivalent,breathVocEquivalent,rawTemperature,pressure,rawHumidity,gasResistance,stabStatus,runInStatus,temperature,humidity,gasPercentage\n"
         )
-        self.environmental_sensors.set_log_file(self.environmental_sensors_log)
-        self.environmental_sensors.start() 
+        try:
+            self.environmental_sensors.set_log_file(self.environmental_sensors_log)
+            self.environmental_sensors.start() 
+        except Exception as ex:
+            log.warning("Unable to start environmental sensors (%s)", ex, exc_info=True)
 
     def connect_hardware(self):
         self.env_thread = Thread(log, name="env_control_connect_thread", target=self.environmental_sensors.connect)
@@ -37,6 +40,9 @@ class EnvironmentalSensorsControl(PrintControl):
             self.failed_hardware["Environmental Sensor"] = self.environmental_sensors
 
     def finish_print(self):
-        self.environmental_sensors.stop()
-        self.environmental_sensors.set_log_file(None)
+        try:
+            self.environmental_sensors.stop()
+            self.environmental_sensors.set_log_file(None)
+        except Exception as ex:
+            log.warning("Unable to stop environmental sensors (%s)", ex, exc_info=True)
         super().finish_print()

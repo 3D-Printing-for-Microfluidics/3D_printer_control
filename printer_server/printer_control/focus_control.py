@@ -5,7 +5,7 @@ from pathlib import Path
 
 from printer_server.threading_wrapper import Thread
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
-from printer_server.printer_control.print_control import PrintControl, run_in_thread
+from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 from printer_server.views.calibration import (
     get_last_calibration_positions_from_logs,
 )
@@ -60,12 +60,6 @@ class FocusControl(PrintControl):
         super().create_logs()
         self.focus_stage.setup_log_file(str(self.current_job / "logs"))
 
-    def get_focus(self):
-        """Return 'Focus' axis position in um"""
-        return int(
-            self.focus_stage.getFocusPosition() * 1000
-        )
-
     def connect_hardware(self):
         self.focus_thread = Thread(log, name="focus_control_connect_thread", target=self.focus_stage.connect)
         self.focus_thread.start()
@@ -88,11 +82,27 @@ class FocusControl(PrintControl):
             log.error("Focus stage failed to initialize!")
             self.failed_hardware["Focus Stage"] = self.focus_stage
 
+    def get_focus(self):
+        """Return 'Focus' axis position in um"""
+        try:
+            return int(
+                self.focus_stage.getFocusPosition() * 1000
+            )
+        except Exception as ex:
+            log.critical("Unable to communicate with focus stage (%s)", ex, exc_info=True)
+            self.failed_hardware["Focus Stage"] = self.focus_stage
+            raise PrintingException()
+
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarization_step_1(self):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
-            self.focus_stage.logging_start()
+            try:
+                self.focus_stage.logging_start()
+            except Exception as ex:
+                log.critical("Unable to communicate with focus stage (%s)", ex, exc_info=True)
+                self.failed_hardware["Focus Stage"] = self.focus_stage
+                raise PrintingException()
             super().planarization_step_1()
             
 
@@ -116,6 +126,10 @@ class FocusControl(PrintControl):
         if self.defocus_um != self.previous_defocus:
             if self.focus_thread is not None:
                 self.focus_thread.join()
+                if self.focus_thread.exception is not None:
+                    log.critical("Unable to move focus stage")
+                    self.failed_hardware["Focus Stage"] = self.focus_stage
+                    raise PrintingException()
         return super().pre_exposure_joins(light_engine)
 
     def post_print_tasks(self):
@@ -123,8 +137,17 @@ class FocusControl(PrintControl):
         self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focus, join=False)
         if self.focus_thread is not None:
             self.focus_thread.join()
+            if self.focus_thread.exception is not None:
+                log.critical("Unable to move focus stage")
+                self.failed_hardware["Focus Stage"] = self.focus_stage
+                raise PrintingException()
 
     def finish_print(self):
-        self.focus_stage.logging_stop()
-        self.focus_stage.setup_log_file(None)
+        try:
+            self.focus_stage.logging_stop()
+            self.focus_stage.setup_log_file(None)
+        except Exception as ex:
+            log.critical("Unable to communicate with focus stage (%s)", ex, exc_info=True)
+            self.failed_hardware["Focus Stage"] = self.focus_stage
+            raise PrintingException()
         super().finish_print()

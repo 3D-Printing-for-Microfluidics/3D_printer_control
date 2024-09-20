@@ -2,7 +2,7 @@ import logging
 
 from printer_server.threading_wrapper import Thread
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
-from printer_server.printer_control.print_control import PrintControl
+from printer_server.printer_control.print_control import PrintControl, run_in_thread
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -24,6 +24,13 @@ class GPIOControl(PrintControl):
 
 class FilmGPIOControl(GPIOControl):
     def move_build_platform_up(self, position_settings):
-        self.gpio.film_relay_on()
+        try:
+            self.gpio.film_relay_on()
+        except Exception as ex:
+            log.warning("Unable to activate film relay (%s)", ex, exc_info=True)
         super().move_build_platform_up(position_settings)
-        self.gpio.film_relay_off()
+        try:
+            self.gpio.film_relay_off()
+        except Exception as ex:
+            log.warning("Unable to deactivate film relay (%s)", ex, exc_info=True)
+    

@@ -170,16 +170,8 @@ class MKS946(USBSerial):
                 rsp_str = rsp_str.replace(f";FF","")
                 self.log.error(self.parse_error_code(int(rsp_str)))
                 return None
-            
-            else:
-                self.log.error("NAK: QUERY RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
 
-        # # MKS is most likely powered off
-        # msg = "MKS recieved invalid response (most likley powered off)"
-        # self.log.critical(msg)
-        # self.shutdown(is_critical = True)
-        # sys.exit(msg)
-        
+        raise RuntimeError(f"MKS not responding to query command ({cmd_str}) ({rsp_str})")
 
     def set(self, command, n=None, parameter=""):
         '''
@@ -205,45 +197,41 @@ class MKS946(USBSerial):
             cmd_str += f"{parameter}"
         cmd_str += f";FF"
 
-        rsp_str = self.send(cmd_str)
+        trys = 3
+        for _ in range(trys):
+            rsp_str = self.send(cmd_str)
 
-        if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
-            rsp_str = rsp_str.replace(f"@{self.address}ACK","")
-            rsp_str = rsp_str.replace(f";FF","")
-            
-            if type(parameter) is int:
-                if command == "SST" and rsp_str == "OFF":
-                    rsp_str = 0
-                if int(rsp_str) != parameter:
-                    self.log.error(f"Set command '{command}' failed (value '{parameter}' != response '{rsp_str}')")
-                    return False
-                return True
-
-            elif type(parameter) is str:
-                if rsp_str != parameter:
-                    if command == "PT" and parameter in rsp_str:
-                        return True
-                    else:
-                        self.log.error(f"Set command '{command}' failed (value '{parameter}' != response '{rsp_str}')")
+            if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
+                rsp_str = rsp_str.replace(f"@{self.address}ACK","")
+                rsp_str = rsp_str.replace(f";FF","")
+                
+                if type(parameter) is int:
+                    if command == "SST" and rsp_str == "OFF":
+                        rsp_str = 0
+                    if int(rsp_str) != parameter:
+                        self.log.error("Set command '%s' failed (value '%s' != response '%s')", command, parameter, rsp_str)
                         return False
-                return True
+                    return True
 
-            else:
-                return rsp_str
+                elif type(parameter) is str:
+                    if rsp_str != parameter:
+                        if command == "PT" and parameter in rsp_str:
+                            return True
+                        else:
+                            self.log.error("Set command '%s' failed (value '%s' != response '%s')", command, parameter, rsp_str)
+                            return False
+                    return True
+
+                else:
+                    return rsp_str
+            
+            elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
+                rsp_str = rsp_str.replace(f"@{self.address}NAK","")
+                rsp_str = rsp_str.replace(f";FF","")
+                self.log.error(self.parse_error_code(int(rsp_str)))
+                return False
         
-        elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
-            rsp_str = rsp_str.replace(f"@{self.address}NAK","")
-            rsp_str = rsp_str.replace(f";FF","")
-            self.log.error(self.parse_error_code(int(rsp_str)))
-            return False
-        
-        # else:
-        #     self.log.error("NAK: SET RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
-        #     # MKS is most likely powered off
-        #     msg = "MKS recieved invalid response (most likley powered off)"
-        #     self.log.critical(msg)
-        #     self.shutdown(is_critical = True)
-        #     sys.exit(msg)
+        raise RuntimeError(f"MKS not responding to set command ({cmd_str}) ({rsp_str})")
         
         
     def parse_error_code(self, code):

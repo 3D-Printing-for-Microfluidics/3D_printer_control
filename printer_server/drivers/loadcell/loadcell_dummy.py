@@ -74,10 +74,7 @@ class Loadcell_dummy:
 
     @dummy_log
     def pause(self):
-        try:
-            self.loadcell_pause()
-        except Exception:
-            pass
+        self.loadcell_pause()
 
         if self.running:
             self.running = False
@@ -89,10 +86,7 @@ class Loadcell_dummy:
 
     @dummy_log
     def stop(self):
-        try:
-            self.loadcell_stop()
-        except Exception:
-            pass
+        self.loadcell_stop()
 
         if self.running:
             self.running = False
@@ -179,17 +173,11 @@ class Loadcell_dummy:
 
     @dummy_log
     def loadcell_pause(self):
-        try:
-            self.send("p", receive=False)
-        except Exception:
-            pass
+        self.send("p", receive=False)
 
     @dummy_log
     def loadcell_stop(self):
-        try:
-            self.send("e", receive=False)
-        except Exception:
-            pass
+        self.send("e", receive=False)
 
     # @dummy_log
     def set_sample_frequency(self, freq_hz):

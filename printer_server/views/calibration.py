@@ -166,9 +166,7 @@ def goto():
     # set hexapod pivot
     if pivot_x is not None:
         # move tt to 0
-        ttr_thread = Thread(log, name="ttr_control_move_thread", target=driver_handles.ttr_stage.initialize_and_positionTTR, args=[0, 0, 0])
-        ttr_thread.start()
-        ttr_thread.join()
+        driver_handles.ttr_stage.threadedTTRMove(log, 0, 0, 0)
 
         x = pivot_x/1000
         y = pivot_y/1000
@@ -176,15 +174,18 @@ def goto():
         driver_handles.hexapod.set_pivot_point(x,y,z)
 
     # move ttr
-    ttr_thread = Thread(log, name="ttr_control_move_thread", target=driver_handles.ttr_stage.initialize_and_positionTTR, args=[tip, tilt, rotate])
-    ttr_thread.start()
+    ttr_threads = driver_handles.ttr_stage.threadedTTRMove(log, tip, tilt, rotate, join=False)
 
     # move focus (if not dynamic)
-    focus_thread = Thread(log, name="focus_control_move_thread", target=driver_handles.focus_stage.initialize_and_positionFocus, args=[focus])
-    focus_thread.start()
+    focus_thread = driver_handles.focus_stage.threadedFocusMove(log, focus, join=False)
 
-    ttr_thread.join()
+    for thread in ttr_threads:
+        thread.join()
+        if thread.exception is not None:
+            raise thread.exception
     focus_thread.join()
+    if focus_thread.exception is not None:
+        raise focus_thread.exception
 
     socketio.emit(
         "goto_done", create_calibration_data(), namespace="/calibration"

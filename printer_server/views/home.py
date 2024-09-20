@@ -15,7 +15,7 @@ blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
-from printer_server.printer_control.print_control import PrintControl
+from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 
 parent_classes = []
 
@@ -74,7 +74,65 @@ if "xy_stage" in config_dict["stages"]:
 
 
 class ParentPrintControl(*parent_classes):
-    pass
+    @run_in_thread("planarizing", "Planarization Step 1")
+    def planarization_step_1(self):
+        try:
+            super().planarization_step_1()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")     
+            return False
+
+    @run_in_thread("planarized", "Planarization Step 2")
+    def planarization_step_2(self):
+        try:
+            super().planarization_step_2()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
+
+    def start(self, job_id):
+        try:
+            super().start(job_id)
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
+
+    @run_in_thread("paused", "Pause Printing")
+    def pause(self):
+        try:
+            super().pause()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
+
+    def resume(self):
+        try:
+            super().resume()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
+
+    @run_in_thread("stopped", "Stop Printing")
+    def stop(self):
+        try:
+            super().stop()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
+
+    def print_worker(self):
+        try:
+            super().print_worker()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
 
 print_control = ParentPrintControl()
 # print(ParentPrintControl.__mro__)

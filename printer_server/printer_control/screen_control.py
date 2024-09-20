@@ -1,7 +1,7 @@
 import logging
 
 from printer_server.threading_wrapper import Thread
-from printer_server.printer_control.print_control import PrintControl
+from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 
 log = logging.getLogger(__name__)
@@ -39,9 +39,18 @@ class ScreenControl(PrintControl):
 
     def pre_exposure_joins(self, light_engine):
         self.screen_thread.join()
+        if self.screen_thread.exception is not None:
+            log.critical("Unable draw to screen")
+            self.failed_hardware["Virtual Screen"] = self.screen
+            raise PrintingException()
         return super().pre_exposure_joins(light_engine)
     
     def post_print_tasks(self):
         super().post_print_tasks()
         for i in range(len(self.screen.light_engines)):
-            self.screen.clear(screen=i)
+            try:
+                self.screen.clear(screen=i)
+            except Exception as ex:
+                log.critical("Unable draw to screen (%s)", ex, exc_info=True)
+                self.failed_hardware["Virtual Screen"] = self.screen
+                raise PrintingException()

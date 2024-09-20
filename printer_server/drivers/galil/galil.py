@@ -238,11 +238,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
                 return response
             except self.gclib_error as error:
                 if str(error) == "device timed out":
-                    msg = "Galil controller timed out!"
-                    self.log.critical(msg)
-                    # Thread(self.log, self.shutdown, kwargs={"is_critical": True}).start()
-                    self.shutdown(is_critical = True)
-                    sys.exit(msg)
+                    raise error
                 else:
                     error_code = self.g.GCommand("TC 1")
                     if error_code not in ("", "0"):
@@ -611,32 +607,37 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         return self.movement_log_times, self.movement_log_array
 
     def loop(self):
-        while self.thread_running:
-            for a in self.axes:
-                self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
-            if self.logging_running:
-                if self.movement_log is not None:
-                    tmp = ""
-                    for a in self.axes:
-                        position = self.current_position[a]
-                        tmp += f"{self.cntsToMm(position, axis=a)},"
-                        tmp += f"{self.logging_move_status[a]},"
-                    self.write_to_disk(tmp)
-                else:
-                    # tmp = []
-                    # for a in self.axes:
-                    #     position = self.current_position[a]
-                    #     tmp.append(self.cntsToMm(position, axis=a))
-                    tmp = self.cntsToMm(self.current_position[self.default_axis])
-
-                    self.movement_log_times.append(time.time())
-                    self.movement_log_array.append(tmp)
-
+        try:
+            while self.thread_running:
                 for a in self.axes:
-                    if self.logging_move_status[a] >= 2:
-                        self.logging_move_status[a] = -1
+                    self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
+                if self.logging_running:
+                    if self.movement_log is not None:
+                        tmp = ""
+                        for a in self.axes:
+                            position = self.current_position[a]
+                            tmp += f"{self.cntsToMm(position, axis=a)},"
+                            tmp += f"{self.logging_move_status[a]},"
+                        self.write_to_disk(tmp)
+                    else:
+                        # tmp = []
+                        # for a in self.axes:
+                        #     position = self.current_position[a]
+                        #     tmp.append(self.cntsToMm(position, axis=a))
+                        tmp = self.cntsToMm(self.current_position[self.default_axis])
 
-                time.sleep(0.01)
+                        self.movement_log_times.append(time.time())
+                        self.movement_log_array.append(tmp)
+
+                    for a in self.axes:
+                        if self.logging_move_status[a] >= 2:
+                            self.logging_move_status[a] = -1
+
+                    time.sleep(0.01)
+        except Exception as ex:
+            self.current_position = None
+            self.log.warning("Galil loop failed (%s)", ex, exc_info=True)
+            self.thread_running = False
 
     def downloadProgram(self, filename):
         """Download a DMC file to the Galil controller."""

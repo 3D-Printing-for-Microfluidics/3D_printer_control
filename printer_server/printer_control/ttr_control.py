@@ -2,7 +2,7 @@ import logging
 
 from printer_server.threading_wrapper import Thread
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
-from printer_server.printer_control.print_control import PrintControl
+from printer_server.printer_control.print_control import PrintControl, run_in_thread
 from printer_server.views.calibration import (
     get_last_calibration_positions_from_logs,
 )
@@ -56,11 +56,15 @@ class TTRControl(PrintControl):
                 self.tilt /= 1000
             if self.rotate is not None:
                 self.rotate /= 1000
-            self.ttr_thread = self.ttr_stage.threadedTTRMove(log, self.tip, self.tilt, self.rotate, join=False)
+            self.ttr_threads = self.ttr_stage.threadedTTRMove(log, self.tip, self.tilt, self.rotate, join=False)
         super().pre_print_tasks()
 
     def pre_print_joins(self):
         if self.ttr_stage.config_dict.get("auto_repositioning", True):
-            if self.ttr_thread is not None:
-                self.ttr_thread.join()
+            if self.ttr_threads is not None:
+                for thread in self.ttr_threads:
+                    thread.join()
+                    if thread.exception is not None:
+                        log.warning("Unable to move TTR stage")
         super().pre_print_joins()
+        

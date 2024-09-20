@@ -94,6 +94,8 @@ class TTRStageDriver:
             for thread in threads:
                 if thread is not None:
                     thread.join()
+                    if thread.exception is not None:
+                        raise thread.exception
             return None
         else:
             return threads

@@ -68,6 +68,9 @@ def run_in_thread(state, text):
 
     return decorator
 
+class PrintingException(Exception):
+    pass
+
 class PrintControl:
     """
     The PrintControl class contains all the 3D printer
@@ -543,6 +546,8 @@ class PrintControl:
     def pre_layer_joins(self):
         if not self.next_layer == 1:
             self.bp_thread.join()
+            if self.bp_thread.exception is not None:
+                raise self.bp_thread.exception
 
     def post_layer_tasks(self):
         return
