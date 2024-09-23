@@ -28,6 +28,7 @@ void setup() {
   }
   
   // Setup crane
+  analogReadAveraging(32);
   pinMode(DIR_PIN, OUTPUT);
   digitalWrite(DIR_PIN, LOW);
   analogWrite(PWM_PIN, 0);
