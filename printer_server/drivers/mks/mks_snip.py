@@ -22,7 +22,7 @@ def load_mks():
         socketio.emit("hardware_failure", "mks", namespace="/manual")
 
 
-def get_gauges(emit=False):
+def get_gauges(emit=True):
     try:
         gauges = mks.read_all_pressures()
         if emit:
@@ -35,7 +35,7 @@ def get_gauges(emit=False):
         socketio.emit("hardware_failure", "mks", namespace="/manual")
 
 
-def get_relay_status(emit=False):
+def get_relay_status(emit=True):
     try:
         relay_settings_list = mks.get_all_relay_status()
         teensy_relay_settings_list = mks_teensy.get_all_relay_status()
@@ -73,7 +73,7 @@ def switchRelay(message):
         elif message["relay"] in config_dict["mks"]["teensy relays"]:
             mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index(message["relay"]), message["state"])
         time.sleep(0.1)
-        get_relay_status(emit=True)
+        get_relay_status()
     except Exception as ex:
         log.warn("MKS manual control failed (%s)", ex)
         socketio.emit("hardware_failure", "mks", namespace="/manual")

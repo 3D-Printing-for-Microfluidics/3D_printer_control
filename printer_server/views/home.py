@@ -9,13 +9,13 @@ from flask_socketio import join_room, leave_room, emit
 from printer_server.settings import Config
 from printer_server.models import PrintQueue
 from printer_server.extensions import socketio
+from printer_server.views.manual_controls import stop_loop
 from printer_server.hardware_configuration.hardware_configuration import config_dict
+from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 
 blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static")
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
-
-from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 
 parent_classes = []
 
@@ -223,8 +223,6 @@ def critical_error_confirm(message):
     if message == "initialization":
         print_control.reinitialize(run_in_thread=False, top_level=True)
     elif message == "printing":
-        # print_control.state = "uninitialized"
-        # print_control.shutdown()
         shutdown()
 
 
@@ -232,8 +230,6 @@ def critical_error_confirm(message):
 # pylint: disable=unused-argument
 def critical_error_reply(message):
     if message == "initialization":
-        # print_control.state = "uninitialized"
-        # print_control.shutdown()
         shutdown()
 
 
@@ -284,11 +280,11 @@ def shutdown(message="critical"):
     is_critical = True
     if message != "critical":
         is_critical = False
+    stop_loop(force=True)
     print_control.shutdown(is_critical)
     
 
 def shutdown_exception(exception, trace):
-    # print_control.shutdown()
     shutdown()
 signal.signal(signal.SIGINT, shutdown_exception)
 

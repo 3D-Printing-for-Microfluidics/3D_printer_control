@@ -1,5 +1,6 @@
 """Control view."""
 import json
+import time
 import logging
 from pathlib import Path
 from datetime import datetime
@@ -9,6 +10,7 @@ from flask import request, Blueprint, render_template
 from printer_server.extensions import socketio
 from printer_server.settings import Config
 import printer_server.views.home
+from printer_server.threading_wrapper import Thread
 from printer_server.hardware_configuration.hardware_configuration import config_dict
 
 log = logging.getLogger(__name__)
@@ -33,74 +35,85 @@ for key in config_dict.keys():
         if exists(f"{Config.PRINT_SERVER_FOLDER}/drivers/{path}"):
             manual_controls_data["html_paths"][key] = path
 
-on_load_functions = []
-on_load_uninit_functions = []
+connected_clients = 0
+on_load_f_no_init = []
+on_load_f_init = []
+on_load_f_looping = []
+loop_thread = None
 
 # env, acc
 
 # Dynamically import python snippits
 if "coord_systems" in config_dict.keys():
     import printer_server.drivers.coord_systems.coord_systems_snip
-    on_load_functions.append(
+    on_load_f_init.append(
         printer_server.drivers.coord_systems.coord_systems_snip.get_coodinate_system
     )
 
 if "bp_stage" in config_dict["stages"].keys():
     import printer_server.drivers.generic_drivers.bp_stage.bp_stage_snip
-    on_load_functions.append(
+    on_load_f_init.append(
         printer_server.drivers.generic_drivers.bp_stage.bp_stage_snip.bp_get_position
     )
 
 if "focus_stage" in config_dict["stages"].keys():
     import printer_server.drivers.generic_drivers.focus_stage.focus_stage_snip
-    on_load_functions.append(
+    on_load_f_init.append(
         printer_server.drivers.generic_drivers.focus_stage.focus_stage_snip.focus_get_position
     )
 
 if "ttr_stage" in config_dict["stages"].keys():
     import printer_server.drivers.generic_drivers.ttr_stage.ttr_stage_snip
-    on_load_functions.append(
+    on_load_f_init.append(
         printer_server.drivers.generic_drivers.ttr_stage.ttr_stage_snip.ttr_get_position
     )
 
 if "xy_stage" in config_dict["stages"].keys():
     import printer_server.drivers.generic_drivers.xy_stage.xy_stage_snip
-    on_load_functions.append(
+    on_load_f_init.append(
         printer_server.drivers.generic_drivers.xy_stage.xy_stage_snip.xy_get_position
     )
 
 if "external_control" in config_dict.keys():
     import printer_server.drivers.external_control.external_control_snip
-    on_load_functions.append(
+    on_load_f_init.append(
         printer_server.drivers.external_control.external_control_snip.get_external_control_enable
     )
-    on_load_uninit_functions.append(
+    on_load_f_no_init.append(
         printer_server.drivers.external_control.external_control_snip.get_external_control_enable
     )
 
 if "gpio" in config_dict.keys():
     import printer_server.drivers.gpio.gpio_snip
     if "film_pin" in config_dict["gpio"].keys():
-        on_load_functions.append(
+        on_load_f_init.append(
             printer_server.drivers.gpio.gpio_snip.getFilmRelayState
         )
 
 if "keyence" in config_dict.keys():
     import printer_server.drivers.keyence.keyence_snip
-    on_load_functions.append(
+    on_load_f_init.append(
+        printer_server.drivers.keyence.keyence_snip.read_sensors
+    )
+    on_load_f_looping.append(
         printer_server.drivers.keyence.keyence_snip.read_sensors
     )
 
 if "loadcell" in config_dict.keys():
     import printer_server.drivers.loadcell.loadcell_snip
-    on_load_functions.append(
+    on_load_f_init.append(
         printer_server.drivers.loadcell.loadcell_snip.get_graph_mode
     )
 
 if "mks" in config_dict.keys():
     import printer_server.drivers.mks.mks_snip  
-    on_load_functions.extend([
+    on_load_f_init.extend([
         printer_server.drivers.mks.mks_snip.load_mks,
+        printer_server.drivers.mks.mks_snip.get_relay_status,
+        printer_server.drivers.mks.mks_snip.get_gauges,
+        printer_server.drivers.mks.mks_snip.cranePosition
+    ])
+    on_load_f_looping.extend([
         printer_server.drivers.mks.mks_snip.get_relay_status,
         printer_server.drivers.mks.mks_snip.get_gauges,
         printer_server.drivers.mks.mks_snip.cranePosition
@@ -108,25 +121,28 @@ if "mks" in config_dict.keys():
 
 if "photodiode" in config_dict.keys():
     import printer_server.drivers.photodiode.photodiode_snip
-    on_load_functions.append(
+    on_load_f_init.append(
+        printer_server.drivers.photodiode.photodiode_snip.get_photodiode_power
+    )
+    on_load_f_looping.append(
         printer_server.drivers.photodiode.photodiode_snip.get_photodiode_power
     )
 
 if "screen" in config_dict.keys():
     import printer_server.drivers.screen.screen_snip
-    on_load_functions.append(
+    on_load_f_init.append(
         printer_server.drivers.screen.screen_snip.fetch_previews
     )
 
 if "spectrometer" in config_dict.keys():
     import printer_server.drivers.spectrometer.spectrometer_snip
-    on_load_functions.append(
+    on_load_f_init.append(
         printer_server.drivers.spectrometer.spectrometer_snip.spectrometer_load
     )
 
 if "light_engines" in config_dict.keys():
     import printer_server.drivers.generic_drivers.light_engine.light_engine_snip
-    on_load_functions.append(
+    on_load_f_init.append(
         printer_server.drivers.generic_drivers.light_engine.light_engine_snip.getLedStatus
     )
 
@@ -178,16 +194,50 @@ def index():
 @socketio.on("connect", namespace="/manual")
 def connect():
     log.debug("MC Socket connected %s", request.sid)
+    global connected_clients
+    connected_clients += 1
     if printer_server.views.home.print_control.state != "uninitialized":
-        for f in on_load_functions:
+        for f in on_load_f_init:
             f()
+        start_loop()
     else:
-        for f in on_load_uninit_functions:
+        for f in on_load_f_no_init:
             f()
 
 @socketio.on("disconnect", namespace="/manual")
 def disconnect():
     log.debug("MC Socket disconnected %s", request.sid)
+    global connected_clients
+    connected_clients -= 1
+    start_loop()
+
+def start_loop():
+    global loop_thread, connected_clients
+    if connected_clients > 0 and loop_thread is None:
+        loop_thread = Thread(log, name="manual_control_loop_thread", target=loop)
+        loop_thread.start()
+
+def loop():
+    global loop_thread, connected_clients
+    while connected_clients > 0:
+        for f in on_load_f_looping:
+            try:
+                f()
+            except RuntimeError as ex:
+                log.warning("Manual Control loop failed (%s)", ex, exc_info=True)
+                loop_thread = None
+                return
+            except Exception as ex:
+                pass
+        time.sleep(0.5)
+
+def stop_loop(force=False):
+    global loop_thread, connected_clients
+    if force or (connected_clients <= 0 and loop_thread is not None):
+        connected_clients = 0
+        loop_thread.join()
+        loop_thread = None
+
 
 @blueprint.route("screen_image_upload", methods=["POST"])
 def upload():

@@ -15,7 +15,7 @@ def light_engine_stop(light_engine):
         socketio.emit("light_engine_update_led_state", {"light_engine":light_engine, "state":False}, namespace="/manual")
         socketio.emit("light_engine_done", namespace="/manual")
     except Exception as ex:
-        log.warn("%s manual control failed (%s)", light_engine.capitalize() ex)
+        log.warn("%s manual control failed (%s)", light_engine.capitalize(), ex)
         socketio.emit("hardware_failure", light_engine, namespace="/manual")
 
 
@@ -35,7 +35,7 @@ def light_engine_start(message):
             socketio.emit("light_engine_update_led_state", {"light_engine":light_engine, "state":False}, namespace="/manual")
         socketio.emit("light_engine_done", namespace="/manual")
     except Exception as ex:
-        log.warn("%s manual control failed (%s)", light_engine.capitalize() ex)
+        log.warn("%s manual control failed (%s)", light_engine.capitalize(), ex)
         socketio.emit("hardware_failure", light_engine, namespace="/manual")
 
 
@@ -48,7 +48,7 @@ def light_engine_get_status(light_engine):
             namespace="/manual"
         )
     except Exception as ex:
-        log.warn("%s manual control failed (%s)", light_engine.capitalize() ex)
+        log.warn("%s manual control failed (%s)", light_engine.capitalize(), ex)
         socketio.emit("hardware_failure", light_engine, namespace="/manual")
 
 def getLedStatus(emit=True):
@@ -58,5 +58,5 @@ def getLedStatus(emit=True):
             if emit:
                 socketio.emit(f"light_engine_update_led_state", {"light_engine": light_engine, "state":state}, namespace="/manual")
         except Exception as ex:
-            log.warn("%s manual control failed (%s)", light_engine.capitalize() ex)
+            log.warn("%s manual control failed (%s)", light_engine.capitalize(), ex)
             socketio.emit("hardware_failure", light_engine, namespace="/manual")

@@ -1,9 +1,5 @@
-import sys
-import time
 import logging
-import threading
 from decimal import Decimal
-from printer_server.threading_wrapper import Thread
 from printer_server.drivers.generic_drivers import USBSerial
 
 
@@ -60,9 +56,7 @@ class MKS946(USBSerial):
 
         self.config_dict = config_dict
         self.address = config_dict["mks_address"]
-        self.thread_running = False
         self.pressures = None
-        self.thread = Thread(self.log, name="mks_loop_thread", target=self.loop)
         self.relay_requests = [0,0,0,0,0,0,0,0,0,0,0,0,0]
 
     def initialize(self):
@@ -80,7 +74,6 @@ class MKS946(USBSerial):
                     self.set_relay_mode(relay_num, 'ENABLE')
                 else:
                     self.set_relay_mode(relay_num, 'CLEAR', force=True)
-            self.start_thread()
             self.log.info("MKS initialized")
 
     def connect(self):
@@ -98,7 +91,6 @@ class MKS946(USBSerial):
 
     def disconnect(self):
         if self.connected:
-            self.stop_thread()
             self.log.info("Clearing relays")
             try:
                 for _, relay in self.config_dict["relays"].items():
@@ -107,32 +99,6 @@ class MKS946(USBSerial):
             except:
                 pass
         super().disconnect()
-
-    def start_thread(self):
-        if not self.thread_running:
-            self.thread_running = True
-            self.thread.start()
-
-    def stop_thread(self):
-        if self.thread_running:
-            self.thread_running = False
-            self.thread.join()
-            self.thread = Thread(self.log, name="mks_loop_thread", target=self.loop)
-
-    def loop(self):
-        from printer_server.drivers.mks.mks_snip import get_gauges, get_relay_status, cranePosition
-        while self.thread_running:
-            if self.connected:
-                try:
-                    get_relay_status(emit=True)
-                    get_gauges(emit=True)
-                    cranePosition(emit=True)
-                except RuntimeError as ex:
-                    self.log.warning("MKS loop failed (%s)", ex, exc_info=True)
-                    self.thread_running = False
-                except Exception as ex:
-                    pass
-            time.sleep(0.1)
 
     def query(self, command, n=None, parameter=""):
         '''

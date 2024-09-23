@@ -13,7 +13,8 @@ var enable_crane_motor_buttons = function () {
 }
 
 var update_dist_position = function (message) {
-    document.getElementById('mks-crane-state').innerHTML = message;
+    document.getElementById('mks-crane-state').innerHTML = Math.round(parseFloat(message)/5)*5;
+    // document.getElementById('mks-crane-state').innerHTML = Math.round(parseFloat(message));
 }
 
 
