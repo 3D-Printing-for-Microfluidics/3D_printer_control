@@ -26,4 +26,6 @@ def set_coodinate_system(message):
 def get_coodinate_system(emit=True):
     """Return the current coordinate system."""
     coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
+    if emit:
+        socketio.emit("get_coodinate_system", coord_system_name, namespace="/manual")
     return coord_system_name, coord_system

@@ -8,7 +8,7 @@
         </div>
     </div>
 
-    {% for sensor in manual_controls_data['keyence']['sensors'] %}
+    {% for sensor in manual_controls_data['keyence'] %}
     <div class="container" aria-label="{{sensor}}">
         <div class="row">
             <div class="col-2">
@@ -18,9 +18,7 @@
                 <h5>Current Value:</h5>
             </div>
             <div class="col-3">
-                <h5 class="col text-left" id='{{ sensor }}-value'>{{
-                    manual_controls_data['keyence']['readings'][sensor] }} um
-                </h5>
+                <h5 class="col text-left" id='{{ sensor }}-value'>---</h5>
             </div>
         </div>
     </div>

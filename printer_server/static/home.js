@@ -5,8 +5,6 @@ var critical_error_process = ""
 // List of pending files to handle when the Upload button is finally clicked.
 var PENDING_FILES = [];
 
-let loadcell_exists = ((typeof graph_autoscale) === "boolean");
-
 if (loadcell_exists) {
     var loadcell_trace = {
         x: [new Date()],
@@ -40,7 +38,6 @@ if (loadcell_exists) {
             yaxis: {
                 ticksuffix: "",
                 range: [-50, 50],
-                autorange: graph_autoscale,
                 linecolor: 'white',
                 linewidth: 1,
                 mirror: true

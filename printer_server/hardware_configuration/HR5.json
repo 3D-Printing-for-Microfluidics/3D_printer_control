@@ -4,10 +4,6 @@
         "v2"
     ],
     "external_control": {},
-    "gpio": {
-        "dummy": false,
-        "power_status_pin": 17
-    },
     "coord_systems": {
         "global": {
             "X": 0,
@@ -142,6 +138,10 @@
             "valve_vent1",
             "stirring"
         ]
+    },
+    "gpio": {
+        "dummy": false,
+        "power_status_pin": 17
     },
     "loadcell": {
         "dummy": true,

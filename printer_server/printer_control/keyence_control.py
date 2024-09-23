@@ -63,7 +63,6 @@ class KeyenceControl(PrintControl):
                 "Light engine", config_dict["light_engines"][0]
             )
 
-            keyence_indexes = config_dict["keyence"]["sensors"]
             self.keyence_measurement_list = {}
 
             # List all exposure positions
@@ -127,11 +126,7 @@ class KeyenceControl(PrintControl):
                 time.sleep(5.0)
 
                 # get keyence reading
-                temp_position = float(
-                    self.keyence.read_all()[
-                        keyence_indexes[light_engine]["measurement_index"]
-                    ]
-                )
+                temp_position = self.keyence.read_sensor(light_engine)
 
                 self.update_measurement_progress()
 
@@ -139,11 +134,7 @@ class KeyenceControl(PrintControl):
                 self.focus_stage.threadedFocusMove(log, focus_pos)
                 time.sleep(1.0)
 
-                temp_position = float(
-                    self.keyence.read_all()[
-                        keyence_indexes[light_engine]["measurement_index"]
-                    ]
-                )
+                temp_position = self.keyence.read_sensor(light_engine)
                 current_position = (
                     self.focus_stage.getFocusPosition()
                 )
@@ -178,11 +169,7 @@ class KeyenceControl(PrintControl):
                     self.xy_stage.threadedXYMove(log, x_pos, y_pos)
                     time.sleep(5.0)
 
-                    keyence_position = float(
-                        self.keyence.read_all()[
-                            keyence_indexes[light_engine]["measurement_index"]
-                        ]
-                    )
+                    keyence_position = self.keyence.read_sensor(light_engine)
                     self.keyence_measurement_list[light_engine][
                         f"{x_offset}, {y_offset}"
                     ] = (start_position - keyence_position)

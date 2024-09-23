@@ -28,7 +28,6 @@ class LoadCell(USBSerial):
         self.start_time = 0
         self.running = False
         self.graph_newtons = True
-        self.graph_autoscale = False
 
         self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
         self.log_file = None
@@ -130,19 +129,8 @@ class LoadCell(USBSerial):
         """
         return self.currentIndex
 
-    def get_graph_autoscale(self):
-        return self.graph_autoscale
-
     def get_graph_mode(self):
         return self.graph_newtons
-
-    def set_graph_autoscale(self, mode):
-        if mode == "True":
-            self.graph_autoscale = True
-        elif mode == "False":
-            self.graph_autoscale = False
-        else:
-            pass
 
     def set_graph_mode(self, mode):
         if mode == "Counts":

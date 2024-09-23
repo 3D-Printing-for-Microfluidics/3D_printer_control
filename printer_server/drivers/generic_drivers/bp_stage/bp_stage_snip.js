@@ -19,6 +19,10 @@ $(document).ready(function () {
         enable_bp_buttons();
     });
 
+    socket.on("bp_return_position", function (message) {
+        update_bp_positions(message)
+    });
+
     // bp control top button click function
     $("#bp-top-btn").click(function () {
         disable_bp_buttons();

@@ -66,9 +66,30 @@
 }
 
 .container {
+    position: relative;
     padding-left: 0px;
     padding-right: 0px;
 }
+
+.container .overlay {
+    position: absolute;
+    top: -18px;
+    left: -16px;
+    bottom: -16px;
+    right: -16px;
+    background-color: rgba(0, 0, 0, 0.75); /* Dims the content */
+    color: red; /* Set the text color to red */
+    font-size: 54px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none; /* Prevents interaction */
+}
+  
+  .container.dimmed {
+    pointer-events: none; /* Prevents interaction */
+  }
 
 .form-control {
     background-color: rgb(230, 230, 230);

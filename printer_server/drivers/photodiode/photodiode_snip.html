@@ -17,18 +17,18 @@
     <div class="row">
         <h5 class="col-3 text-left">Power:</h5>
         <div class="col-3">
-            <h5 class="col text-right" id='photodiode_power'>{{ manual_controls_data['photodiode']['power'] }} mw/cm²
+            <h5 class="col text-right" id='photodiode_power'>---
             </h5>
         </div>
         <h5 class="col-3 text-left">Wavelength:</h5>
         <div class="col-3">
             <div id="wavelength_350_405" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
                 <label
-                    class="btn btn-outline-info btn-fixed-width shadow-none {% if manual_controls_data['photodiode']['wavelength'] == 365 %} active {% endif %}">365
-                    nm<input type="radio"></label>
+                    class="btn btn-outline-info btn-fixed-width shadow-none">365
+                    nm<input type="radio" id="365"></label>
                 <label
-                    class="btn btn-outline-info btn-fixed-width shadow-none {% if manual_controls_data['photodiode']['wavelength'] == 405 %} active {% endif %}">405
-                    nm<input type="radio"></label>
+                    class="btn btn-outline-info btn-fixed-width shadow-none">405
+                    nm<input type="radio" id="405"></label>
             </div>
         </div>
 

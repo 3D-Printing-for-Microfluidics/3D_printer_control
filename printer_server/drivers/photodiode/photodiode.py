@@ -108,11 +108,12 @@ class Photodiode:
                 time.sleep(0.01)
             self.log.debug("Zero point: %s", self.power_meter.sense.correction.collect.zero.magnitude)
 
-    def get_power_density(self):
+    def get_power_density(self, log=False):
         # ## also in init 
         # Returns: float, The power density in mW/cm^2.
         if self.power_meter:
             power_density = self.power_meter.read * 1000  # Convert to mW/cm^2
-            self.log.info("Irradiance is %s mW/cm^2", power_density)
+            if log:
+                self.log.info("Irradiance is %s mW/cm^2", power_density)
             return power_density
         return None

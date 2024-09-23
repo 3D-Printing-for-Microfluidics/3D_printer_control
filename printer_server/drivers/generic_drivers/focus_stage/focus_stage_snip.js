@@ -19,6 +19,10 @@ $(document).ready(function () {
         enable_focus_buttons();
     });
 
+    socket.on("focus_return_position", function (message) {
+        update_focus_positions(message)
+    });
+
     $("#focus-home-btn").click(function () {
         disable_focus_buttons();
         socket.emit("focus_home");

@@ -149,8 +149,7 @@ def index():
         "hostname":Config.HOSTNAME
     }
 
-    if "loadcell" in config_dict.keys():
-        kwargs["graph_autoscale"] = print_control.loadcell.graph_autoscale
+    kwargs["loadcell_exists"] = "loadcell" in config_dict.keys()
 
     if "mks" in config_dict.keys():
         kwargs["degas_state"] = print_control.degas_state

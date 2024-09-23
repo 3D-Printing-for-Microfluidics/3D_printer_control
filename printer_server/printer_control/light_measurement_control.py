@@ -8,7 +8,7 @@ from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
 from printer_server.printer_control.print_control import PrintControl, run_in_thread
-from printer_server.views.manual_controls import update_le_led_state
+from printer_server.views.manual_controls import update_le_led_state, update_screen_preview
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 
 log = logging.getLogger(__name__)
@@ -115,6 +115,10 @@ class LightMeasurementControl(PrintControl):
                 self.screen_thread.join()
                 if self.screen_thread.exception is not None:
                     raise self.screen_thread.exception
+                update_screen_preview(
+                    light_engine, 
+                    self.screen.fetch_preview(self.screen.getScreenNumber(light_engine))
+                )
 
                 # Turn on light engine
                 update_le_led_state(light_engine, True)
@@ -165,4 +169,4 @@ class LightMeasurementControl(PrintControl):
             log.info("Setting wavelength for irradiance")
             self.photodiode.set_wavelength(length)
             log.info("Measuring irradiance")   
-            self.irradiance = self.photodiode.get_power_density()
+            self.irradiance = self.photodiode.get_power_density(log=True)

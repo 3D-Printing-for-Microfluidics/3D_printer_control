@@ -39,7 +39,7 @@ class Photodiode_dummy:
         pass
     
     @dummy_log
-    def get_power_density(self):      
+    def get_power_density(self, log=False):      
         return 123.4
        
 

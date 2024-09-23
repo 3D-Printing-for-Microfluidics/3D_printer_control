@@ -22,7 +22,6 @@ class Loadcell_dummy:
         self.running = False
         self.freq = 1000
         self.graph_newtons = True
-        self.graph_autoscale = False
 
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
@@ -110,16 +109,8 @@ class Loadcell_dummy:
         return self.currentIndex
 
     # @dummy_log
-    def get_graph_autoscale(self):
-        return self.graph_autoscale
-
-    # @dummy_log
     def get_graph_mode(self):
         return self.graph_newtons
-
-    # @dummy_log
-    def set_graph_autoscale(self, mode):
-        self.graph_autoscale = mode == "True"
 
     # @dummy_log
     def set_graph_mode(self, mode):
