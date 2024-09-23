@@ -45,7 +45,7 @@ class USBSerial(serial.Serial):
                     return p.device, f"{p.manufacturer} {p.product}"
         return None, None
     
-    def connect(self, shutdown):
+    def connect(self):
         if self.connected is None:
             self.log.info("Connecting to %s...", self.name)
             self.connected = False
@@ -53,14 +53,13 @@ class USBSerial(serial.Serial):
             if self.port is None:
                 self.connected = None
                 msg = "Device not found!"
-                self.log.critical(msg)
+                self.log.error(msg)
                 return False
             if self.is_open:
                 self.close()
             self.open()
             self.flush_buffers()
             self.connected = True
-            self.shutdown = shutdown
             self.log.info("Connected to %s (%s)", self.name, self.type)
             atexit.register(self.disconnect)
             return True
@@ -74,20 +73,17 @@ class USBSerial(serial.Serial):
     def disconnect(self):
         if self.connected is not None and self.connected:
             self.log.info("Disconnecting from %s...", self.name)
-            self.close()
+            try:
+                self.close()
+            except:
+                self.log.info("Unable to disconnect from %s", self.name)
             self.connected = None
             self.log.info("Disconnected from %s", self.name)
 
     def send(self, cmd, recieve=True, parse_float_at_index=None):
         with self._lock:
-            try:
-                self.write(bytes(cmd + self.line_ending, encoding="ascii"))
-                self.log.debug("Sent: '%s'", cmd)
-            except serial.SerialException as e:
-                msg = "Failed to send message! (%s)", e
-                self.log.critical(msg)
-                self.shutdown(is_critical = True)
-                sys.exit(msg)
+            self.write(bytes(cmd + self.line_ending, encoding="ascii"))
+            self.log.debug("Sent: '%s'", cmd)
             if recieve:
                 response = self.receive()
                 return self.parse_message(cmd, response, parse_float_at_index)
@@ -97,13 +93,7 @@ class USBSerial(serial.Serial):
         message = ""
         while True:
             response = b""
-            try:
-                response += self.readline()
-            except serial.SerialException as e:
-                msg = "Failed to receive message! (%s)", e
-                self.log.critical(msg)
-                self.shutdown(is_critical = True)
-                sys.exit(msg)
+            response += self.readline()
             response = response.decode().rstrip()
             message += response
             message += "\n"
@@ -129,24 +119,12 @@ class USBSerial(serial.Serial):
 
     def write_bytes(self, bytes):
         with self._lock:
-            try:
-                self.write(bytes)
-                return True
-            except serial.SerialException as e:
-                msg = "Failed to write bytes! (%s)", e
-                self.log.critical(msg)
-                self.shutdown(is_critical = True)
-                sys.exit(msg)
+            self.write(bytes)
+            return True
     
     def read_bytes(self, number_of_bytes):
         with self._lock:
-            try:
-                return self.read(number_of_bytes)
-            except serial.SerialException as e:
-                msg = "Failed to read bytes! (%s)", e
-                self.log.critical(msg)
-                self.shutdown(is_critical = True)
-                sys.exit(msg)
+            return self.read(number_of_bytes)
         
     def flush_buffers(self):
         with self._lock:

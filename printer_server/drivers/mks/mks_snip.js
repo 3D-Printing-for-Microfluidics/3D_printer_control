@@ -13,32 +13,11 @@ var enable_crane_motor_buttons = function () {
 }
 
 var update_dist_position = function (message) {
-    if (!$.isEmptyObject(message)) {
-        document.getElementById('distance-state').innerHTML = message;
-    }
+    document.getElementById('mks-crane-state').innerHTML = message;
 }
 
 
 $(document).ready(function () {
-    // Initiaize to starting values
-    let settings = {
-        valve_pump1: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["valve_pump1"])),
-        valve_vent1: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["valve_vent1"])),
-        valve_pump2: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["valve_pump2"])),
-        valve_vent2: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["valve_vent2"])),
-        valve_vacuum: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["valve_vacuum"])),
-        stirring: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["stirring"])),
-        vacuum_pump: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["vacuum_pump"])),
-        crane: Boolean(Number(manual_controls_data["mks"]["relay_setting"]["crane"]))
-    };
-    let gaugeReading1 = manual_controls_data["mks"]["gauge"][0];
-    let gaugeReading2 = manual_controls_data["mks"]["gauge"][1];
-    let target1 = manual_controls_data["mks"]["target"][0];
-    let target2 = manual_controls_data["mks"]["target"][1];
-    let atm = manual_controls_data["mks"]["atm"];
-
-    updateAllButtonStatus();
-
     function updateAllButtonStatus() {
         updateButtonStatus("valve_pump1", "OPEN", "CLOSED");
         updateButtonStatus("valve_vent1", "OPEN", "CLOSED");
@@ -99,6 +78,12 @@ $(document).ready(function () {
         updateChamberStatus();
         socket.emit("mks_switch_relay", { "relay": id, "state": settings[id] });
     }
+
+    socket.on("mks_load", function (message) {
+        target1 = message["target"][0];
+        target2 = message["target"][1];
+        atm = message["atm"];
+    });
 
     socket.on("mks_update_relay_status", function (message) {
         settings = {

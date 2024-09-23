@@ -31,10 +31,10 @@ class Photodiode:
 
         self.rm = pyvisa.ResourceManager("@py")
        
-    def connect(self, shutdown):
+    def connect(self):
         # connect to the photodiode 
         try:
-            self.log.info(f"Connecting ThorlabsPM100...")
+            self.log.info("Connecting ThorlabsPM100...")
             self.log.debug("Available PYVISA devices:")
             for r in self.rm.list_resources():
                 self.log.debug("\t%s", r)
@@ -50,31 +50,34 @@ class Photodiode:
             self.power_meter = ThorlabsPM100(inst=self.inst)
             atexit.register(self.disconnect)
             self.connected = True
-            self.log.info(f"Connected ThorlabsPM100")
+            self.log.info("Connected ThorlabsPM100")
             return True
           
-        except Exception as e:
-            self.log.error(f"Failed to connect to Photodiode: {e}")
+        except Exception as ex:
+            self.log.error("Failed to connect to Photodiode (%s)", ex)
             self.connected = False
             return False
             
     def initialize(self):
        # sending cmds to photodiode to set parameters that I want to set initialy
-        self.log.info(f"Initializing ThorlabsPM100...")
+        self.log.info("Initializing ThorlabsPM100...")
         self.set_wavelength(self.defaultWavelength)
         self.set_attenuation_db(self.attenuation) 
         self.set_beam_diameter(self.beamdiameter)
         self.power_meter.configure.scalar.pdensity() 
-        self.log.info(f"Initialized ThorlabsPM100")
+        self.log.info("Initialized ThorlabsPM100")
 
          
     def disconnect(self):
         # disconnects the photodiode     
         if self.connected:
             self.power_meter = None
-            self.inst.close()
+            try:
+                self.inst.close()
+            except:
+                self.log.info("Unable to disconnect from Photodiode")
             self.connected = None
-            self.log.info(f"Disconnected to Photodiode")
+            self.log.info("Disconnected to Photodiode")
                
     def set_beam_diameter(self, diameter):
         # set the beam diameter
@@ -105,11 +108,12 @@ class Photodiode:
                 time.sleep(0.01)
             self.log.debug("Zero point: %s", self.power_meter.sense.correction.collect.zero.magnitude)
 
-    def get_power_density(self):
+    def get_power_density(self, log=False):
         # ## also in init 
         # Returns: float, The power density in mW/cm^2.
         if self.power_meter:
             power_density = self.power_meter.read * 1000  # Convert to mW/cm^2
-            self.log.info("Irradiance is %s mW/cm^2", power_density)
+            if log:
+                self.log.info("Irradiance is %s mW/cm^2", power_density)
             return power_density
         return None

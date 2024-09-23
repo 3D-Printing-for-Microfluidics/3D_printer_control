@@ -137,7 +137,7 @@
     </tbody>
 </table>
 
-{% if graph_autoscale is defined %}
+{% if loadcell_exists %}
 <div class="collapse" id="collapseLoadcell">
     <container>
         <div class="loadcell-data" id="loadcell-data"></div>
@@ -150,7 +150,7 @@
     <div class="col-auto mr-auto">
         <h5>Messages</h5>
     </div>
-    {% if graph_autoscale is defined %}
+    {% if loadcell_exists %}
     <div class="col-auto">
         <button class="btn btn-sm btn-outline-info" type="button" data-toggle="collapse" id="toggle-loadcell">Show
             loadcell data</button>
@@ -178,10 +178,7 @@
 {% block scripts %}
 {{super()}}
 <script>
-    {% if graph_autoscale is defined %}
-    var graph_autoscale = {{ graph_autoscale| lower
-    }}
-    {% endif %}
+    var loadcell_exists = {{ loadcell_exists  | lower }}
     {% if degas_state is defined %}
     var degas_state = '{{ degas_state| lower}}'
     {% endif %}

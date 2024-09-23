@@ -8,8 +8,7 @@
     <div class="row">
         <h5 class="col-6 text-left">Integration Time</h5>
         <div class="col-4 form-group">
-            <input class="form-control" type="text" id="spectrometer-integration-txt"
-                placeholder="Integration Time (ms)" value="{{ manual_controls_data['spectrometer']['default_integrations'] }}">
+            <input class="form-control" type="text" id="spectrometer-integration-txt" placeholder="Integration Time (ms)">
             <div class="invalid-feedback">
                 Please provide an integer greater than zero.
             </div>
@@ -23,8 +22,7 @@
     <div class="row">
         <h5 class="col-6 text-left">Number of Averages</h5>
         <div class="col-6 form-group">
-            <input class="form-control" type="text" id="spectrometer-averages-txt" placeholder="Number of Averages"
-                value="{{ manual_controls_data['spectrometer']['default_averages'] }}">
+            <input class="form-control" type="text" id="spectrometer-averages-txt" placeholder="Number of Averages">
             <div class="invalid-feedback">
                 Please provide an integer greater than zero.
             </div>

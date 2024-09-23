@@ -16,7 +16,7 @@ class Accelerometer(USBSerial):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__("Accelerometers", vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=config_dict["baudrate"], timeout=0.1, line_ending='\n', logger=self.log)
+        super().__init__("Accelerometers", vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=config_dict["baudrate"], timeout=0.1, line_ending='\n', multiline=True, logger=self.log)
 
         self.config_dict = config_dict
         self.start_time = 0
@@ -34,7 +34,10 @@ class Accelerometer(USBSerial):
 
     def disconnect(self):
         if self.connected:
-            self.stop()
+            try:
+                self.stop()
+            except:
+                pass
         super().disconnect()
 
     def start(self):
@@ -42,18 +45,17 @@ class Accelerometer(USBSerial):
         Starts the accelerometer collecting data
         """
         if not self.thread.is_alive():
-            self.running = True
-
             self.log.info("Accelerometer started")
-            temp = self.accel_start()
-            if self.start_time == 0:
-                accel_time = temp.split("'")
-                accel_time = float(accel_time[1])
-                self.start_time = datetime.datetime.now() - datetime.timedelta(
-                    milliseconds=accel_time
-                )
-            time.sleep(0.1)
-            self.thread.start()
+            accel_time = self.accel_start()
+
+            if accel_time is not False:
+                if self.start_time == 0:
+                    self.start_time = datetime.datetime.now() - datetime.timedelta(
+                        milliseconds=accel_time
+                    )
+                time.sleep(0.1)
+                self.running = True
+                self.thread.start()
 
     def set_log_file(self, filename):
         """
@@ -141,13 +143,14 @@ class Accelerometer(USBSerial):
                         self.log_file,
                         f"{sys_time},{accel_time},{index},{accel}\n",
                     )
-            except SerialException:
+            except SerialException as ex:
+                self.log.warning("Accelerometer loop failed (%s)", ex, exc_info=True)
                 self.running = False
-            except ValueError:
-                self.log.warning("Unable to parse Accelerometer data - cast error")
+            except ValueError as ex:
+                self.log.warning("Unable to parse Accelerometer data - cast error (%s)", ex)
                 continue
-            except OverflowError:
-                self.log.warning("Unable to parse Accelerometer data - time overflow")
+            except OverflowError as ex:
+                self.log.warning("Unable to parse Accelerometer data - time overflow (%s)", ex)
 
     ########################
     # Teensy serial wrappers

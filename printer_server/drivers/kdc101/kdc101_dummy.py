@@ -29,7 +29,7 @@ class KDC101_dummy(FocusStageDriver):
         return "dummy_port"
 
     @dummy_log
-    def connect(self, shutdown):
+    def connect(self):
         if self.connected is None:
             self.connected = False
             self.port = self.find_device()
@@ -87,11 +87,11 @@ class KDC101_dummy(FocusStageDriver):
 
     @dummy_log
     def startFocusJog(self, speed=None, acceleration=None):
-        self.log.warn("KDC Jogging not implemented")
+        self.log.warning("KDC Jogging not implemented")
 
     @dummy_log
     def stopFocusJog(self):
-        self.log.warn("KDC Jogging not implemented")
+        self.log.warning("KDC Jogging not implemented")
 
     @dummy_log
     def home(self):

@@ -119,8 +119,8 @@ def add_to_queue(job_id):
             },
             namespace="/printing"
         )
-    except ValueError as e:
-        msg = f"Job validation failed for {job.original_filename}:\n {str(e).strip()}"
+    except ValueError as ex:
+        msg = f"Job validation failed for {job.original_filename}:\n {str(ex).strip()}"
         socketio.emit(
             "flash", {"text": msg, "category": "warning"}, namespace="/print_history"
         )

@@ -7,33 +7,39 @@
     </div>
 
     {% for light_engine in manual_controls_data['light_engines'].keys() %}
-    <div class="row {{ light_engine }}" aria-label="{{ light_engine }}">
-        <h5 class="col-3 text-left">{{ light_engine|capitalize }}</h5>
-        <form class="col-4">
-            <input type="file" class="form-control-file" name="file" accept=".png" id="{{ light_engine }}-file-picker">
-            <div class="invalid-feedback">
-                Please provide an 8-bit grayscale PNG file.
+    <div class="container" aria-label="{{ light_engine }}">
+        <div class="row">
+            <h5 class="col-2 text-left">{{ light_engine|capitalize }}</h5>
+            <div class="col-2">
+                <img id="{{ light_engine }}-preview" style="display:none; opacity: 0.5;" />
             </div>
-        </form>
-        <div class="col-3">
-            <button type="button" class="btn btn-outline-info btn-block"
-                id="{{ light_engine }}-upload-btn">Upload</button>
-        </div>
-        <div class="col-2">
-            <button type="button" class="btn btn-outline-info btn-block" id="{{ light_engine }}-draw-btn">Draw</button>
-        </div>
-    </div>
-    <div class="row {{ light_engine }}" aria-label="{{ light_engine }}">
-        <div class="col-7">
-        </div>
-        <div class="col-3">
-            <button type="button" class="btn btn-outline-info btn-block" id="{{ light_engine }}-white-btn">Draw
-                White</button>
-        </div>
-
-        <div class="col-2">
-            <button type="button" class="btn btn-outline-info btn-block"
-                id="{{ light_engine }}-clear-btn">Clear</button>
+            <form class="col-3">
+                <input type="file" class="form-control-file" name="file" accept=".png" id="{{ light_engine }}-file-picker">
+                <div class="invalid-feedback">
+                    Please provide an 8-bit grayscale PNG file.
+                </div>
+            </form>
+            <div class="col-5">
+                <div class="row">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-outline-info btn-block"
+                            id="{{ light_engine }}-upload-btn">Upload</button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-outline-info btn-block" id="{{ light_engine }}-draw-btn">Draw</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-outline-info btn-block" id="{{ light_engine }}-white-btn">Draw
+                            White</button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-outline-info btn-block"
+                            id="{{ light_engine }}-clear-btn">Clear</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     {% endfor %}

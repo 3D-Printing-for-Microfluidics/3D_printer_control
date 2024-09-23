@@ -21,8 +21,8 @@ class KDC101(USBSerial, FocusStageDriver):
         self.config_dict = config_dict
         self.initialized = None
 
-    def connect(self, shutdown):
-        super().connect(shutdown)
+    def connect(self):
+        super().connect()
         if self.connected is None:
             self.getHardwareInfo()
             self.enableStage(enable=True)
@@ -67,10 +67,10 @@ class KDC101(USBSerial, FocusStageDriver):
         self.move(mm, microns=False, relative=True)
 
     def startFocusJog(self, speed=None, acceleration=None):
-        self.log.warn("KDC Jogging not implemented")
+        self.log.warning("KDC Jogging not implemented")
 
     def stopFocusJog(self):
-        self.log.warn("KDC Jogging not implemented")
+        self.log.warning("KDC Jogging not implemented")
 
     ##############################################################################################
             

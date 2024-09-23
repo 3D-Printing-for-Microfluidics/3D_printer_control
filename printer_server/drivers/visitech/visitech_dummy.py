@@ -27,7 +27,7 @@ class Visitech_dummy(LightEngineDriver):
         self.suppress_ocp_error = False
 
     @dummy_log
-    def connect(self, shutdown):
+    def connect(self):
         self.connected = True
         return True
 

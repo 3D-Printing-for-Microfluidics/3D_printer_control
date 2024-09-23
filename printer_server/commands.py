@@ -90,8 +90,8 @@ def urls(url, order):
             )
             rows.append((rule.rule, rule.endpoint, arguments))
             column_length = 3
-        except (NotFound, MethodNotAllowed) as e:
-            rows.append(("<{}>".format(e), None, None))
+        except (NotFound, MethodNotAllowed) as ex:
+            rows.append(("<{}>".format(ex), None, None))
             column_length = 1
     else:
         rules = sorted(

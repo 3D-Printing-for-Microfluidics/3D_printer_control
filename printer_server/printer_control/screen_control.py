@@ -1,7 +1,8 @@
 import logging
 
 from printer_server.threading_wrapper import Thread
-from printer_server.printer_control.print_control import PrintControl
+from printer_server.views.manual_controls import update_screen_preview
+from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 
 log = logging.getLogger(__name__)
@@ -20,7 +21,9 @@ class ScreenControl(PrintControl):
         self.screen_thread.start()
         super().connect_hardware()
         self.screen_thread.join()
-
+        if self.screen_thread.exception is not None:
+            log.error("Virtual Screen failed to connect!")
+            self.failed_hardware["Virtual Screen"] = self.screen
 
     def pre_exposure_tasks(self, settings, light_engine):
         screen_index = 0
@@ -37,9 +40,26 @@ class ScreenControl(PrintControl):
 
     def pre_exposure_joins(self, light_engine):
         self.screen_thread.join()
+        if self.screen_thread.exception is not None:
+            log.critical("Unable draw to screen")
+            self.failed_hardware["Virtual Screen"] = self.screen
+            raise PrintingException()
+        update_screen_preview(
+            light_engine, 
+            self.screen.fetch_preview(self.screen.getScreenNumber(light_engine))
+        )
         return super().pre_exposure_joins(light_engine)
     
     def post_print_tasks(self):
         super().post_print_tasks()
         for i in range(len(self.screen.light_engines)):
-            self.screen.clear(screen=i)
+            try:
+                self.screen.clear(screen=i)
+                update_screen_preview(
+                    self.screen.light_engines[i], 
+                    self.screen.fetch_preview(i)
+                )
+            except Exception as ex:
+                log.critical("Unable draw to screen (%s)", ex, exc_info=True)
+                self.failed_hardware["Virtual Screen"] = self.screen
+                raise PrintingException()

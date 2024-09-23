@@ -18,9 +18,10 @@ class Keyence_dummy:
         self.connected = False
         self.host = config_dict["address"]
         self.port = config_dict["port"]
+        self.config_dict = config_dict
         
     @dummy_log
-    def connect(self, shutdown):
+    def connect(self):
         self.connected = False
         self.connected = True
         atexit.register(self.disconnect)
@@ -31,7 +32,6 @@ class Keyence_dummy:
         if self.connected:
             self.connected = False
 
-
     # @dummy_log
     def send_command(self, message):
         pass
@@ -39,8 +39,12 @@ class Keyence_dummy:
     @dummy_log
     def read_all(self):
         return [0.0, 0.0]
+    
+    @dummy_log
+    def read_sensor_at_index(self, index):
+        return 0.0
 
     @dummy_log
-    def read_sensor(self, index):
+    def read_sensor(self, sensor):
         """Returns the readout of the given sensor in um"""
         return 0.0

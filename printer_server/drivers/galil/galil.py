@@ -139,7 +139,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.absMove(mm=self.bottom_position, axis="Build Platform")
         return self.getPosition(in_mm=True)
 
-    def connect(self, shutdown):
+    def connect(self):
         """Find the first Galil controller and connect to it."""
         if self.connected is None:
             self.connected = False
@@ -152,19 +152,19 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
                         self.address = address.strip("()").strip("-d")
                         self.controller_name = available[address]
                         self.log.debug("Found %s at %s", available[address], self.address)
-                        return self._connect(shutdown)
+                        return self._connect()
                 msg = f"Galil controller not found! ({self.controller_name})"
-                self.log.critical(msg)
+                self.log.error(msg)
                 return False
             else:
                 self.address = self.config_dict["address"]
                 self.controller_name = self.config_dict["controller_name"]
-                return self._connect(shutdown)
+                return self._connect()
         else:
             while self.connected is False:
                 time.sleep(0.1)
 
-    def _connect(self, shutdown):
+    def _connect(self):
         self.log.info(
             "Connecting to %s at %s", self.controller_name, self.address
         )
@@ -176,11 +176,10 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             self.thread.start()
             atexit.register(self.disconnect)
             self.log.info("Connected to Galil controller")
-            self.shutdown = shutdown
             return True
-        except self.gclib_error as e:
-            msg = f"Galil controller not found! ({self.controller_name}): {e}"
-            self.log.critical(msg)
+        except self.gclib_error as ex:
+            msg = f"Galil controller not found! ({self.controller_name}): {ex}"
+            self.log.error(msg)
             return False
 
     def disconnect(self):
@@ -189,16 +188,20 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             self.thread_running = False
             try:
                 self.thread.join()
-            except RuntimeError:
+                self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
+                self.thread.daemon = True
+
+                for axis in self.axes:
+                    self.motorOff(axis)
+            except:
                 pass
-            self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
-            self.thread.daemon = True
+
             try:
                 self.connected = None
                 self.g.GClose()
                 self.log.info("Disconnected from Galil controller (%s)", self.controller_name)
-            except self.gclib_error as e:
-                self.log.error("Unexpected GclibError on disconnect: %s", e)
+            except self.gclib_error as ex:
+                self.log.info("Unexpected GclibError on disconnect: %s", ex)
 
 
     def write_to_disk(self, *args):
@@ -235,11 +238,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
                 return response
             except self.gclib_error as error:
                 if str(error) == "device timed out":
-                    msg = "Galil controller timed out!"
-                    self.log.critical(msg)
-                    # Thread(self.log, self.shutdown, kwargs={"is_critical": True}).start()
-                    self.shutdown(is_critical = True)
-                    sys.exit(msg)
+                    raise error
                 else:
                     error_code = self.g.GCommand("TC 1")
                     if error_code not in ("", "0"):
@@ -608,32 +607,37 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         return self.movement_log_times, self.movement_log_array
 
     def loop(self):
-        while self.thread_running:
-            for a in self.axes:
-                self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
-            if self.logging_running:
-                if self.movement_log is not None:
-                    tmp = ""
-                    for a in self.axes:
-                        position = self.current_position[a]
-                        tmp += f"{self.cntsToMm(position, axis=a)},"
-                        tmp += f"{self.logging_move_status[a]},"
-                    self.write_to_disk(tmp)
-                else:
-                    # tmp = []
-                    # for a in self.axes:
-                    #     position = self.current_position[a]
-                    #     tmp.append(self.cntsToMm(position, axis=a))
-                    tmp = self.cntsToMm(self.current_position[self.default_axis])
-
-                    self.movement_log_times.append(time.time())
-                    self.movement_log_array.append(tmp)
-
+        try:
+            while self.thread_running:
                 for a in self.axes:
-                    if self.logging_move_status[a] >= 2:
-                        self.logging_move_status[a] = -1
+                    self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
+                if self.logging_running:
+                    if self.movement_log is not None:
+                        tmp = ""
+                        for a in self.axes:
+                            position = self.current_position[a]
+                            tmp += f"{self.cntsToMm(position, axis=a)},"
+                            tmp += f"{self.logging_move_status[a]},"
+                        self.write_to_disk(tmp)
+                    else:
+                        # tmp = []
+                        # for a in self.axes:
+                        #     position = self.current_position[a]
+                        #     tmp.append(self.cntsToMm(position, axis=a))
+                        tmp = self.cntsToMm(self.current_position[self.default_axis])
 
-                time.sleep(0.01)
+                        self.movement_log_times.append(time.time())
+                        self.movement_log_array.append(tmp)
+
+                    for a in self.axes:
+                        if self.logging_move_status[a] >= 2:
+                            self.logging_move_status[a] = -1
+
+                    time.sleep(0.01)
+        except Exception as ex:
+            self.current_position = None
+            self.log.warning("Galil loop failed (%s)", ex, exc_info=True)
+            self.thread_running = False
 
     def downloadProgram(self, filename):
         """Download a DMC file to the Galil controller."""

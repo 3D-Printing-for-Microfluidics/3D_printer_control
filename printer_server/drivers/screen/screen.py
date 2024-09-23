@@ -1,8 +1,10 @@
 """Screen module."""
 import atexit
+import base64
 import tkinter
 import logging
 import threading
+from io import BytesIO
 from printer_server.threading_wrapper import Thread
 from PIL import Image, ImageTk
 
@@ -21,6 +23,7 @@ class Screen:
         """
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
+        self.image = None
         self.tk_image = None
         self.resolution = resolution
         self.window = tkinter.Toplevel()
@@ -46,20 +49,35 @@ class Screen:
     def draw(self, img_path):
         """Draw image in the Tk canvas."""
         try:
-            pil_image = Image.open(img_path)
+            self.image = Image.open(img_path)
         except (OSError, FileNotFoundError):
             self.log.warning("Image not found, drawing white")
-            pil_image = Image.new(mode="L", size=self.resolution, color=255)
-        self.tk_image = ImageTk.PhotoImage(pil_image)
+            self.image = Image.new(mode="L", size=self.resolution, color=255)
+        self.tk_image = ImageTk.PhotoImage(self.image)
         self.canvas.itemconfig(self.canvas_image, image=self.tk_image)
         self.window.update()
 
     def clear(self):
         """Clear the Tk window by drawing a black image."""
-        pil_image = Image.new(mode="L", size=self.resolution, color=0)
-        self.tk_image = ImageTk.PhotoImage(pil_image)
+        self.image = Image.new(mode="L", size=self.resolution, color=0)
+        self.tk_image = ImageTk.PhotoImage(self.image)
         self.canvas.itemconfig(self.canvas_image, image=self.tk_image)
         self.window.update()
+
+    def fetch_preview(self, scale=1/20):
+        new_size = (int(self.resolution[0] * scale), int(self.resolution[1] * scale))
+        if self.image is not None:
+            img = self.image.resize(new_size, Image.LANCZOS)
+        else:
+            img = Image.new(mode="L", size=new_size, color=0)
+        
+
+        buffer = BytesIO()
+        img.save(buffer, format="JPEG", quality=85)  # Adjust quality if needed (1-100)
+        buffer.seek(0)
+
+        img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+        return img_base64
 
 
 class ScreenThread(Thread):
@@ -113,3 +131,15 @@ class ScreenThread(Thread):
             self.screens[screen].clear()
         except IndexError:
             self.log.error("Screen %s does not exist", screen)
+
+    def fetch_preview(self, screen=0):
+        try:
+            return self.screens[screen].fetch_preview()
+        except IndexError:
+            self.log.error("Screen %s does not exist", screen)
+
+    def getScreenNumber(self, light_engine):
+        if light_engine in self.light_engines:
+            return self.light_engines.index(light_engine)
+        else:
+            return -1

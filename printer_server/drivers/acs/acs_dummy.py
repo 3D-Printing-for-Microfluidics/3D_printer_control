@@ -131,7 +131,7 @@ class ACS_dummy(BPStageDriver, XYStageDriver):
         return self.getPosition()
 
     @dummy_log
-    def connect(self, shutdown):
+    def connect(self):
         """Find the first ACS controller and connect to it."""
         if self.connected is None:
             self.connected = False
@@ -140,7 +140,6 @@ class ACS_dummy(BPStageDriver, XYStageDriver):
             self.thread_running = True
             self.thread.start()
             atexit.register(self.disconnect)
-            self.shutdown = shutdown
             return True
         else:
             while self.connected is False:

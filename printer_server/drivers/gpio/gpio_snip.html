@@ -1,10 +1,11 @@
+
 <div class="container gpio">
+    {% if 'film_state' in manual_controls_data['gpio']%}
     <div class="row">
         <div class="col-6">
             <h3>GPIO Controls</h3>
         </div>
     </div>
-    {% if 'film_state' in manual_controls_data['gpio']%}
     <div class="row">
         <div class="col-6">
             <h5>Film Relay</h5>
@@ -12,11 +13,11 @@
         <div class="col-6">
             <div id="film-relay" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
                 <label
-                    class="btn btn-outline-info btn-fixed-width shadow-none {% if manual_controls_data['gpio']['film_state'] %} active {% endif %}">On<input
-                        type="radio"></label>
+                    class="btn btn-outline-info btn-fixed-width shadow-none">On<input
+                        type="radio" id="film-on"></label>
                 <label
-                    class="btn btn-outline-info btn-fixed-width shadow-none {% if not manual_controls_data['gpio']['film_state'] %} active {% endif %}">Off<input
-                        type="radio"></label>
+                    class="btn btn-outline-info btn-fixed-width shadow-none">Off<input
+                        type="radio" id="film-off"></label>
             </div>
         </div>
     </div>

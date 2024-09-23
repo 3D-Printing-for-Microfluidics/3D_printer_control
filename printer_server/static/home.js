@@ -1,10 +1,9 @@
 var start_job_id;
 var delete_job_id;
+var critical_error_process = ""
 
 // List of pending files to handle when the Upload button is finally clicked.
 var PENDING_FILES = [];
-
-let loadcell_exists = ((typeof graph_autoscale) === "boolean");
 
 if (loadcell_exists) {
     var loadcell_trace = {
@@ -39,7 +38,6 @@ if (loadcell_exists) {
             yaxis: {
                 ticksuffix: "",
                 range: [-50, 50],
-                autorange: graph_autoscale,
                 linecolor: 'white',
                 linewidth: 1,
                 mirror: true
@@ -474,6 +472,20 @@ $(document).ready(function () {
         write_to_message_box(message);
     });
 
+    socket.on("critical_error", function (message) {
+        console.log(message);
+        critical_error_process = message["process"]
+        if(critical_error_process == "initialization"){
+            show_print_btn("#init-btn", "#shutdown-btn");
+        }
+        else{
+            show_print_btn("#shutdown-btn");
+        }
+        $("#print-alert-title").text(message["title"]);
+        $("#print-alert-body").text(message["message"]);
+        $('#confirmModal').modal('show');
+    });
+
     $("#print-alert-confirm").click(function () {
         let operation = $("#print-alert-title").text();
         let msg;
@@ -486,40 +498,36 @@ $(document).ready(function () {
             msg = { job: start_job_id };
         } else if (operation === "Delete Job") {
             msg = { job: delete_job_id };
-        } else if (operation === "Initialization Failed") {
-            operation = "Reinitialize"
-            msg = {};
+        } else if (critical_error_process != "") {
+            operation = "critical_error_confirm"
+            msg = critical_error_process;
         } else {
             msg = {};
         }
         socket.emit(operation.toLowerCase(), msg);
         $("#print-alert-title").text("");
         $("#print-alert-body").text("");
+        critical_error_process = "";
     });
 
     $("#print-alert-cancel").click(function () {
         let operation = $("#print-alert-title").text();
         let msg;
 
-        if (operation === "Initialization Failed") {
-            socket.emit("cancel_initialize");
+        if (critical_error_process != "") {
+            operation = "critical_error_cancel"
+            msg = critical_error_process;
+            socket.emit(operation.toLowerCase(), msg);
         }
 
         $("#print-alert-title").text("");
         $("#print-alert-body").text("");
+        critical_error_process = "";
     });
 
     $("#init-btn").click(function () {
         $("#print-alert-title").text("Initialize");
         $("#print-alert-body").text("WARNING: Is the build platform taken off? Initializing with the platform on can seriously damage the printer!");
-    });
-
-    socket.on("initialize_failed", function (message) {
-        console.log(message);
-        show_print_btn();
-        $("#print-alert-title").text("Initialization Failed");
-        $("#print-alert-body").text("The following hardware was not found:\n" + message + "Click Confirm to retry initialization.");
-        $('#confirmModal').modal('show');
     });
 
     $("#plana1-btn").click(function () {

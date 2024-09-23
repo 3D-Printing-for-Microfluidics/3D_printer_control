@@ -15,55 +15,55 @@ class BPStageDriver:
         self.top_position = None
 
     def setup_log_file(self, filename):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def logging_start(self):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def logging_stop(self):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def get_logging_results(self):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
-    def connect(self, shutdown):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+    def connect(self):
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def initialize(self):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def home(self):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def getDefaultBPSpeed(self):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def getDefaultBPAcceleration(self):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def getBPPosition(self, notify=True):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def absMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def relMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def startBPJog(self, speed=None, acceleration=None):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def stopBPJog(self):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def goToBPcalibration(self):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def goToBPtop(self):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def goToBPbottom(self):
-        log.warn("Function not implemented. Using abstract BPStageDriver class")
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def initialize_and_positionBP(self, pos):
         if self.initialized is None:
@@ -105,6 +105,8 @@ class BPStageDriver:
             if join:
                 if thread is not None:
                     thread.join()
+                    if thread.exception is not None:
+                        raise thread.exception
                 return None
             else:
                 return thread

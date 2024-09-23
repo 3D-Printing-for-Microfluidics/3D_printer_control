@@ -14,6 +14,11 @@ $(document).ready(function () {
     let SpectrometerIntegrationElement = document.getElementById("spectrometer-integration-txt");
     let SpectrometerAveragesElement = document.getElementById("spectrometer-averages-txt");
 
+    socket.on("spectrometer_load", function (message) {
+        document.getElementById("spectrometer-integration-txt").value = message['integration'];
+        document.getElementById("spectrometer-averages-txt").value = message['averages'];
+    });
+
     socket.on("spectrometer_done", function (message) {
         document.getElementById("spectrometer-integration-txt").value = message['integration'];
 

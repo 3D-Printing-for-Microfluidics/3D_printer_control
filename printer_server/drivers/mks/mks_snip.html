@@ -8,7 +8,7 @@
                     id="crane_status">ENABLED</span></button>
         </div>
         <div class="col-2">
-            <h5 class="col text-right" id='distance-state'>{{ manual_controls_data['mks']['crane_pos'] }}</h5>
+            <h5 class="col text-right" id='mks-crane-state'>---</h5>
         </div>
         <div class="col-6">
             <input class="form-control crane-cntrl-txt" type="text" id="distance-txt" placeholder="Position (mm)">
@@ -37,7 +37,7 @@
         </div>
         <div class="col-5">
             <button type="button" class="btn btn-outline-info btn-block mks_button" id="stirring">Sirring:
-                <span id="stirring_status">OFF</span>
+                <span id="stirring_status">---</span>
             </button>
         </div>
     </div>
@@ -53,12 +53,12 @@
         </div>
         <div class="col-5">
             <button type="button" class="btn btn-outline-info btn-block mks_button" id="vacuum_pump">Pump:
-                <span id="vacuum_pump_status">OFF</span>
+                <span id="vacuum_pump_status">---</span>
             </button>
         </div>
         <div class="col-5">
             <button type="button" class="btn btn-outline-info btn-block mks_button" id="valve_vacuum">Pump
-                Valve: <span id="valve_vacuum_status">Closed</span></button>
+                Valve: <span id="valve_vacuum_status">---</span></button>
         </div>
     </div>
     <div class="row">
@@ -78,14 +78,14 @@
             <div class="vacuum-system">
                 <div class="card text-white bg-secondary gauge_reading">
                     <div class="card-body">
-                        <p class="card-title" id="gauge1_reading">? mTorr</p>
+                        <p class="card-title" id="gauge1_reading">---</p>
                     </div>
                 </div>
                 <button type="button" class="btn btn-outline-info btn-block mks_button" id="valve_pump1">Vacuum Valve:
-                    <span id="valve_pump1_status">Closed</span></button>
+                    <span id="valve_pump1_status">---</span></button>
                 <button type="button" class="btn btn-outline-info btn-block mks_button" id="valve_vent1">Vent
                     Valve:
-                    <span id="valve_vent1_status">Closed</span></button>
+                    <span id="valve_vent1_status">---</span></button>
             </div>
         </div>
         <div class="col-3 text-center">
@@ -99,13 +99,13 @@
             <div class="vacuum-system">
                 <div class="card text-white bg-secondary gauge_reading">
                     <div class="card-body">
-                        <p class="card-title" id="gauge2_reading">? mTorr</p>
+                        <p class="card-title" id="gauge2_reading">---</p>
                     </div>
                 </div>
                 <button type="button" class="btn btn-outline-info btn-block mks_button" id="valve_pump2">Vacuum Valve:
-                    <span id="valve_pump2_status">Closed</span></button>
+                    <span id="valve_pump2_status">---</span></button>
                 <button type="button" class="btn btn-outline-info btn-block mks_button" id="valve_vent2">Vent
-                    Valve: <span id="valve_vent2_status">Closed</span></button>
+                    Valve: <span id="valve_vent2_status">---</span></button>
             </div>
         </div>
     </div>

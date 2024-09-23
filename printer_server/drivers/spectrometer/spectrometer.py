@@ -14,8 +14,9 @@ class Spectrometer:
         self.spectrometer = None
         self.connected = None
 
-    def connect(self, shutdown):
+    def connect(self):
         self.log.debug("Available Spectrometers:")
+        # If we dont list devices using psb, sometimes it cannot find the device
         api = psb.SeaBreezeAPI()
         for s in api.list_devices():
             self.log.debug("\t%s", s)
@@ -30,12 +31,14 @@ class Spectrometer:
             else:
                 atexit.register(self.disconnect)
                 self.connected = True
-        except:
+        except Exception as ex:
+            self.log.error("Failed to connect to Spectrometer (%s)", ex)
             self.connected = False
         
 
     def disconnect(self):
         if self.connected:
+            self.log.info("Disconnected to Spectrometer")
             self.spectrometer = None
         
 

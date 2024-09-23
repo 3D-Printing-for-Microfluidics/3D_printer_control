@@ -26,7 +26,7 @@ class Wintech(LightEngineDriver):
         else:
             self.dmd_controller = DLPC900_USB_Controller(log_level=self.log_level)
 
-    def connect(self, shutdown):
+    def connect(self):
         """Connect to the DMD controller."""
         self.log.info("Connecting to Wintech...")
         self.connected = self.dmd_controller.connect(int(self.config_dict["vendor_id"], 16), int(self.config_dict["product_id"], 16))

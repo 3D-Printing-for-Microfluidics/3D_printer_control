@@ -30,7 +30,7 @@ class PISocket(PIGateway):
         self._socket = None
         self.sendLock = threading.Lock()
 
-    def connect(self, shutdown):
+    def connect(self):
         """Find the device and connect to it."""
         if not self._connected:
             self.log.info("Connecting to %s (%s:%s), this may take up to 1 minute...", self._name, self._host, self._port)
@@ -47,20 +47,19 @@ class PISocket(PIGateway):
                     self._socket.setblocking(0)
                     self._socket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)  # disable Nagle algorithm
                     self._connected = True
-                    self.shutdown = shutdown
                     self.flush()
                     self.call_connection_status_changed_callback(self)
                     break
-                except (OSError, socket.timeout) as e:
-                    if "timed out" in str(e):
+                except (OSError, socket.timeout) as ex:
+                    if "timed out" in str(ex):
                         break
-                    self.log.info("%s. Retrying in %s second(s)", e, timeout)
+                    self.log.info("%s. Retrying in %s second(s)", ex, timeout)
                     self._socket = None  # get rid of handle to bad socket
                     time.sleep(timeout)  # wait to try again
             if not self._connected:
                 self._connected = False
                 msg = f"{self._name} not found!"
-                self.log.critical(msg)
+                self.log.error(msg)
                 return False
             
             atexit.register(self.disconnect)
@@ -140,4 +139,4 @@ class PISocket(PIGateway):
                 self._socket = None
                 self.log.info("Disconnected from %s", self._name)
             except:
-                self.log.error("Unexpected error on disconnect")
+                self.log.info("Unexpected error on disconnect")

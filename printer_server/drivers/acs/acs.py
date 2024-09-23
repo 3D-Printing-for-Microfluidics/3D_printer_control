@@ -114,9 +114,9 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         self.absMove(mm=self.bottom_position, axis="Build Platform")
         return self.getPosition()
 
-    def connect(self, shutdown):
+    def connect(self):
         """Find the first ACS controller and connect to it."""
-        ret = super().connect(shutdown)
+        ret = super().connect()
         if ret is not None and ret and not self.thread_running:
             self.thread_running = True
             self.thread.start()
@@ -125,17 +125,17 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
     def disconnect(self):
         """Disconnect form the ACS controller."""
         if self.connected is not None and self.connected is not False and self.socket is not None:
-            for axis in self.axes:
-                self.motorOff(axis)
-
             self.thread_running = False
             try:
                 self.thread.join()
-            except RuntimeError:
-                pass
-            self.thread = Thread(self.log, name="acs_loop_thread", target=self.loop)
-            self.thread.daemon = True
+                self.thread = Thread(self.log, name="acs_loop_thread", target=self.loop)
+                self.thread.daemon = True
 
+                for axis in self.axes:
+                    self.motorOff(axis)
+            except:
+                pass
+            
             super().disconnect()
 
     def write_to_disk(self, *args):
@@ -474,28 +474,33 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         return self.movement_log_times, self.movement_log_array
 
     def loop(self):
-        while self.thread_running:
-            for a in self.axes:
-                self.current_position[a] = self.getPosition(notify=False, axis=a)
-            if self.logging_running:
-                if self.movement_log is not None:
-                    tmp = ""
-                    for a in self.axes:
-                        position = self.current_position[a]
-                        tmp += f"{position},"
-                        tmp += f"{self.logging_move_status[a]},"
-                    self.write_to_disk(tmp)
-                else:
-                    tmp = self.current_position[self.default_axis]
-
-                    self.movement_log_times.append(time.time())
-                    self.movement_log_array.append(tmp)
-
+        try:
+            while self.thread_running:
                 for a in self.axes:
-                    if self.logging_move_status[a] >= 2:
-                        self.logging_move_status[a] = -1
+                    self.current_position[a] = self.getPosition(notify=False, axis=a)
+                if self.logging_running:
+                    if self.movement_log is not None:
+                        tmp = ""
+                        for a in self.axes:
+                            position = self.current_position[a]
+                            tmp += f"{position},"
+                            tmp += f"{self.logging_move_status[a]},"
+                        self.write_to_disk(tmp)
+                    else:
+                        tmp = self.current_position[self.default_axis]
 
-                time.sleep(0.01)
+                        self.movement_log_times.append(time.time())
+                        self.movement_log_array.append(tmp)
+
+                    for a in self.axes:
+                        if self.logging_move_status[a] >= 2:
+                            self.logging_move_status[a] = -1
+
+                    time.sleep(0.01)
+        except Exception as ex:
+            self.current_position = None
+            self.log.warning("ACS loop failed (%s)", ex, exc_info=True)
+            self.thread_running = False
 
     def interactiveMode(self):
         """Start interactive mode.

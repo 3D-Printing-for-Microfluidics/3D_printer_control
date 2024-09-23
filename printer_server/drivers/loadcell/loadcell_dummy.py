@@ -22,7 +22,6 @@ class Loadcell_dummy:
         self.running = False
         self.freq = 1000
         self.graph_newtons = True
-        self.graph_autoscale = False
 
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
@@ -37,7 +36,7 @@ class Loadcell_dummy:
         return n
 
     @dummy_log
-    def connect(self, shutdown, frequency=1000):
+    def connect(self, frequency=1000):
         self.freq = frequency
         self.port = "dummyPort"
         self.connected = True
@@ -74,10 +73,7 @@ class Loadcell_dummy:
 
     @dummy_log
     def pause(self):
-        try:
-            self.loadcell_pause()
-        except Exception:
-            pass
+        self.loadcell_pause()
 
         if self.running:
             self.running = False
@@ -89,10 +85,7 @@ class Loadcell_dummy:
 
     @dummy_log
     def stop(self):
-        try:
-            self.loadcell_stop()
-        except Exception:
-            pass
+        self.loadcell_stop()
 
         if self.running:
             self.running = False
@@ -116,16 +109,8 @@ class Loadcell_dummy:
         return self.currentIndex
 
     # @dummy_log
-    def get_graph_autoscale(self):
-        return self.graph_autoscale
-
-    # @dummy_log
     def get_graph_mode(self):
         return self.graph_newtons
-
-    # @dummy_log
-    def set_graph_autoscale(self, mode):
-        self.graph_autoscale = mode == "True"
 
     # @dummy_log
     def set_graph_mode(self, mode):
@@ -169,9 +154,9 @@ class Loadcell_dummy:
 
                 self.currentForce = force
                 self.currentIndex = index
-            except Exception as e:
+            except Exception as ex:
                 self.running = False
-                self.log.warning("Exception in loadcell loop: %s", str(e))
+                self.log.warning("Exception in loadcell loop: %s", str(ex))
 
     @dummy_log
     def loadcell_start(self):
@@ -179,17 +164,11 @@ class Loadcell_dummy:
 
     @dummy_log
     def loadcell_pause(self):
-        try:
-            self.send("p", receive=False)
-        except Exception:
-            pass
+        self.send("p", receive=False)
 
     @dummy_log
     def loadcell_stop(self):
-        try:
-            self.send("e", receive=False)
-        except Exception:
-            pass
+        self.send("e", receive=False)
 
     # @dummy_log
     def set_sample_frequency(self, freq_hz):

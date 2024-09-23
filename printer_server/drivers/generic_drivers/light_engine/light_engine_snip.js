@@ -83,7 +83,7 @@ $(document).ready(function () {
     }
     socket.on("light_engine_update_led_state", function (message) {
         let light_engine = message["light_engine"];
-        let status = message["status"];
+        let status = message["state"];
         let statusElement = document.getElementById(`${light_engine}-status`);
         if (status == true) {
             statusElement.classList.remove("invisible")

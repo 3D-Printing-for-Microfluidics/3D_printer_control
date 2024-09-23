@@ -23,28 +23,28 @@ def parse_pressure(log, pressure):
     elif "ATM" in pressure:
         return float("inf")
     elif "RP_OFF" in pressure:
-        log.error(f"HC and CC power is turned OFF from rear panel control")
+        log.warning("HC and CC power is turned OFF from rear panel control")
         return None
     elif "CTRL_OFF" in pressure:
-        log.error("CC or HC is OFF in controlled state")
+        log.warning("CC or HC is OFF in controlled state")
         return None
     elif "PROT_OFF" in pressure:
-        log.error("CC or HC is OFF in protected state")
+        log.warning("CC or HC is OFF in protected state")
         return None
     elif "OFF" in pressure:
-        log.error("Cold cathode HV is OFF, or HC/PR/CP power is OFF.")
+        log.warning("Cold cathode HV is OFF, or HC/PR/CP power is OFF.")
         return None
     elif "WAIT" in pressure:
-        log.error("CC or HC startup delay")
+        log.warning("CC or HC startup delay")
         return None
     elif "LowEmis" in pressure:
-        log.error("HC OFF due to low emission")
+        log.warning("HC OFF due to low emission")
         return None
     elif "MISCONN" in pressure:
-        log.error("Sensor improperly connected, or broken filament (PR, CP only)")
+        log.warning("Sensor improperly connected, or broken filament (PR, CP only)")
         return None
     elif "NO_GAUGE" in pressure or "NOGAUGE" in pressure:
-        log.error("Controller unable to determine sensor connection.")
+        log.warning("Controller unable to determine sensor connection.")
         return None
     elif ">1.0E+03" in pressure:
         return float(1000)
@@ -63,7 +63,6 @@ class MKS946(USBSerial):
         self.thread_running = False
         self.pressures = None
         self.thread = Thread(self.log, name="mks_loop_thread", target=self.loop)
-        # self.sendLock = threading.Lock()
         self.relay_requests = [0,0,0,0,0,0,0,0,0,0,0,0,0]
 
     def initialize(self):
@@ -84,8 +83,8 @@ class MKS946(USBSerial):
             self.start_thread()
             self.log.info("MKS initialized")
 
-    def connect(self, shutdown):
-        super().connect(shutdown)
+    def connect(self):
+        super().connect()
 
         # Check if actually connected
         cmd_str = f"@{self.address}MD?;FF"
@@ -93,7 +92,7 @@ class MKS946(USBSerial):
         if rsp_str != "@253ACK946;FF":
             self.connected = None
             msg = "MKS Controller not found!"
-            self.log.critical(msg)
+            self.log.error(msg)
             return False
         return True
 
@@ -101,9 +100,12 @@ class MKS946(USBSerial):
         if self.connected:
             self.stop_thread()
             self.log.info("Clearing relays")
-            for _, relay in self.config_dict["relays"].items():
-                if relay["mode"] != "auto":
-                    self.set_relay_mode(relay['relay_num'], 'CLEAR', force=True)
+            try:
+                for _, relay in self.config_dict["relays"].items():
+                    if relay["mode"] != "auto":
+                        self.set_relay_mode(relay['relay_num'], 'CLEAR', force=True)
+            except:
+                pass
         super().disconnect()
 
     def start_thread(self):
@@ -121,9 +123,15 @@ class MKS946(USBSerial):
         from printer_server.drivers.mks.mks_snip import get_gauges, get_relay_status, cranePosition
         while self.thread_running:
             if self.connected:
-                get_relay_status(emit=True)
-                get_gauges(emit=True)
-                cranePosition(emit=True)
+                try:
+                    get_relay_status(emit=True)
+                    get_gauges(emit=True)
+                    cranePosition(emit=True)
+                except RuntimeError as ex:
+                    self.log.warning("MKS loop failed (%s)", ex, exc_info=True)
+                    self.thread_running = False
+                except Exception as ex:
+                    pass
             time.sleep(0.1)
 
     def query(self, command, n=None, parameter=""):
@@ -140,7 +148,6 @@ class MKS946(USBSerial):
         @003ACK7.602E+2;FF
         Here, <aaa>=003; <Command>=PR1; <Response>=7.602E+2
         '''
-        # with self.sendLock:
         cmd_str = f"@{self.address}{command}"
         if n != None:
             cmd_str += f"{n}"
@@ -156,7 +163,6 @@ class MKS946(USBSerial):
             if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
                 rsp_str = rsp_str.replace(f"@{self.address}ACK","")
                 rsp_str = rsp_str.replace(f";FF","")
-                
                 return rsp_str
             
             elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
@@ -164,16 +170,8 @@ class MKS946(USBSerial):
                 rsp_str = rsp_str.replace(f";FF","")
                 self.log.error(self.parse_error_code(int(rsp_str)))
                 return None
-            
-            else:
-                self.log.error("NAK: QUERY RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
 
-        # # MKS is most likely powered off
-        # msg = "MKS recieved invalid response (most likley powered off)"
-        # self.log.critical(msg)
-        # self.shutdown(is_critical = True)
-        # sys.exit(msg)
-        
+        raise RuntimeError(f"MKS not responding to query command ({cmd_str}) ({rsp_str})")
 
     def set(self, command, n=None, parameter=""):
         '''
@@ -191,7 +189,6 @@ class MKS946(USBSerial):
         Here, <aaa>=001; <Command>=BR; <Parameter>=19200;
         <Response>=19200
         '''
-        # with self.sendLock:
         cmd_str = f"@{self.address}{command}"
         if n != None:
             cmd_str += f"{n}"
@@ -200,45 +197,41 @@ class MKS946(USBSerial):
             cmd_str += f"{parameter}"
         cmd_str += f";FF"
 
-        rsp_str = self.send(cmd_str)
+        trys = 3
+        for _ in range(trys):
+            rsp_str = self.send(cmd_str)
 
-        if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
-            rsp_str = rsp_str.replace(f"@{self.address}ACK","")
-            rsp_str = rsp_str.replace(f";FF","")
-            
-            if type(parameter) is int:
-                if command == "SST" and rsp_str == "OFF":
-                    rsp_str = 0
-                if int(rsp_str) != parameter:
-                    self.log.error(f"Set command '{command}' failed (value '{parameter}' != response '{rsp_str}')")
-                    return False
-                return True
-
-            elif type(parameter) is str:
-                if rsp_str != parameter:
-                    if command == "PT" and parameter in rsp_str:
-                        return True
-                    else:
-                        self.log.error(f"Set command '{command}' failed (value '{parameter}' != response '{rsp_str}')")
+            if (f"@{self.address}ACK" in rsp_str) and (";FF" in rsp_str):
+                rsp_str = rsp_str.replace(f"@{self.address}ACK","")
+                rsp_str = rsp_str.replace(f";FF","")
+                
+                if type(parameter) is int:
+                    if command == "SST" and rsp_str == "OFF":
+                        rsp_str = 0
+                    if int(rsp_str) != parameter:
+                        self.log.error("Set command '%s' failed (value '%s' != response '%s')", command, parameter, rsp_str)
                         return False
-                return True
+                    return True
 
-            else:
-                return rsp_str
+                elif type(parameter) is str:
+                    if rsp_str != parameter:
+                        if command == "PT" and parameter in rsp_str:
+                            return True
+                        else:
+                            self.log.error("Set command '%s' failed (value '%s' != response '%s')", command, parameter, rsp_str)
+                            return False
+                    return True
+
+                else:
+                    return rsp_str
+            
+            elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
+                rsp_str = rsp_str.replace(f"@{self.address}NAK","")
+                rsp_str = rsp_str.replace(f";FF","")
+                self.log.error(self.parse_error_code(int(rsp_str)))
+                return False
         
-        elif (f"@{self.address}NAK" in rsp_str) and (";FF" in rsp_str):
-            rsp_str = rsp_str.replace(f"@{self.address}NAK","")
-            rsp_str = rsp_str.replace(f";FF","")
-            self.log.error(self.parse_error_code(int(rsp_str)))
-            return False
-        
-        # else:
-        #     self.log.error("NAK: SET RSP FORMAT ERROR (%s) (%s)", cmd_str, rsp_str)
-        #     # MKS is most likely powered off
-        #     msg = "MKS recieved invalid response (most likley powered off)"
-        #     self.log.critical(msg)
-        #     self.shutdown(is_critical = True)
-        #     sys.exit(msg)
+        raise RuntimeError(f"MKS not responding to set command ({cmd_str}) ({rsp_str})")
         
         
     def parse_error_code(self, code):

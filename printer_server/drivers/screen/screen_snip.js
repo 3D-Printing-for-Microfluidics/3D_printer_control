@@ -41,12 +41,33 @@ $(document).ready(function () {
         enable_upload_button(le);
     });
 
+    socket.on('screen_previews', function(message) {
+        for (let le in manual_controls_data["light_engines"]) {
+            var img = document.getElementById(`${le}-preview`);
+            if (message[le]) {
+                img.src = 'data:image/jpeg;base64,' + message[le];
+            }
+            img.style.display = 'inline';
+        }
+    });
+
+    socket.on('screen_done', function(message) {
+        for (const [le, data] of Object.entries(message)) {
+            var img = document.getElementById(`${le}-preview`);
+            if (data) {
+                img.src = 'data:image/jpeg;base64,' + data;
+            }
+            img.style.display = 'inline';
+        }
+    });
+
+
     for (let le in manual_controls_data["light_engines"]) {
 
         disable_upload_button(le);
 
         document.getElementById(`${le}-file-picker`).addEventListener('change', function (event) {
-            let projector = $(this).closest(".row").attr('aria-label');
+            let projector = $(this).closest(".container").attr('aria-label');
             filePickerElement = event.currentTarget
             const curFiles = filePickerElement.files;
             if (curFiles.length === 0) {
@@ -58,7 +79,7 @@ $(document).ready(function () {
 
         // Upload button click function
         $(`#${le}-upload-btn`).on("click", function (e) {
-            let projector = $(this).closest(".row").attr('aria-label');
+            let projector = $(this).closest(".container").attr('aria-label');
             let filePickerElement = document.getElementById(`${projector}-file-picker`);
             let selectedFile = filePickerElement.files[0];
             if (typeof selectedFile !== 'undefined') { // if there is a file selected
@@ -70,7 +91,7 @@ $(document).ready(function () {
 
         // Draw button click function
         $(`#${le}-white-btn`).on("click", function (e) {
-            let projector = $(this).closest(".row").attr('aria-label');
+            let projector = $(this).closest(".container").attr('aria-label');
             socket.emit("screen_white", { "light_engine": projector });
             highlight_draw_white_button(projector);
             unhighlight_draw_button(projector);
@@ -78,7 +99,7 @@ $(document).ready(function () {
 
         // Draw button click function
         $(`#${le}-draw-btn`).on("click", function (e) {
-            let projector = $(this).closest(".row").attr('aria-label');
+            let projector = $(this).closest(".container").attr('aria-label');
             socket.emit("screen_draw", { "light_engine": projector });
             highlight_draw_button(projector);
             unhighlight_draw_white_button(projector);
@@ -86,7 +107,7 @@ $(document).ready(function () {
 
         // Clear button click function
         $(`#${le}-clear-btn`).on("click", function (e) {
-            let projector = $(this).closest(".row").attr('aria-label');
+            let projector = $(this).closest(".container").attr('aria-label');
             socket.emit("screen_clear", { "light_engine": projector });
             unhighlight_draw_button(projector);
             unhighlight_draw_white_button(projector);

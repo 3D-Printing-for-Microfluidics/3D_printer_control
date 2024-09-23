@@ -11,10 +11,17 @@ var disable_button = function (object) {
     $(object).addClass('btn-outline-secondary');
 }
 
+var select_wavelength = function (wavelength) {
+    $('.photodiode input[type="radio"]').prop('checked', false)
+    $('.photodiode label').removeClass('active')
+    $(`#${wavelength}`).prop('checked', true).closest('label').addClass('active');
+}
+
 $(document).ready(function () {
 
     socket.on("photodiode_return_power", function (message) {
         document.getElementById(`photodiode_power`).innerHTML = message["power"] + " mW/cm²";
+        select_wavelength(message["wavelength"]);
         enable_button(`#read_photodiode_power`);
         enable_button(`#zero_photodiode`);
     });
