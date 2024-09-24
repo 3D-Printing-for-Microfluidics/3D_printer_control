@@ -4024,16 +4024,16 @@
 		(uuid "d1a3088d-d21b-460f-8f73-a065096b626c")
 	)
 	(junction
-		(at 95.25 34.29)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "d44e3f79-2dbc-46b4-89c5-c3db698cf4e3")
-	)
-	(junction
 		(at 118.11 172.72)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "d5ded3a0-2c04-4936-9961-ccf9a1188810")
+	)
+	(junction
+		(at 93.98 34.29)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "de1d81ea-333b-4fba-b239-bbda7bc9972e")
 	)
 	(junction
 		(at 134.62 26.67)
@@ -4389,6 +4389,16 @@
 	)
 	(wire
 		(pts
+			(xy 93.98 34.29) (xy 95.25 34.29)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "40926a78-3d8e-4234-88d1-04b2f0f80a35")
+	)
+	(wire
+		(pts
 			(xy 109.22 95.25) (xy 109.22 115.57)
 		)
 		(stroke
@@ -4529,6 +4539,16 @@
 	)
 	(wire
 		(pts
+			(xy 83.82 34.29) (xy 85.09 34.29)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "579ba692-727d-4252-9649-0c2f8153c551")
+	)
+	(wire
+		(pts
 			(xy 83.82 127) (xy 83.82 123.19)
 		)
 		(stroke
@@ -4576,16 +4596,6 @@
 			(type default)
 		)
 		(uuid "5f57dafc-9d14-4a36-b31f-9309951fe78a")
-	)
-	(wire
-		(pts
-			(xy 95.25 22.86) (xy 95.25 34.29)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "5fec193b-fd0f-4102-af2c-0b119999ee4a")
 	)
 	(wire
 		(pts
@@ -4859,6 +4869,16 @@
 	)
 	(wire
 		(pts
+			(xy 93.98 34.29) (xy 93.98 46.99)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "89d51600-e2ee-41f6-bc34-740e3aa58a91")
+	)
+	(wire
+		(pts
 			(xy 115.57 165.1) (xy 115.57 180.34)
 		)
 		(stroke
@@ -4909,16 +4929,6 @@
 	)
 	(wire
 		(pts
-			(xy 95.25 44.45) (xy 95.25 46.99)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "93b8236a-1706-4b9f-a985-bf1d75ef5ab8")
-	)
-	(wire
-		(pts
 			(xy 105.41 165.1) (xy 106.68 165.1)
 		)
 		(stroke
@@ -4956,6 +4966,16 @@
 			(type default)
 		)
 		(uuid "980eb5c7-5c1e-456d-8f0d-72661e4c5015")
+	)
+	(wire
+		(pts
+			(xy 83.82 22.86) (xy 83.82 34.29)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9cfa7ec9-9504-4c96-b315-06f873b5e85e")
 	)
 	(wire
 		(pts
@@ -5009,13 +5029,23 @@
 	)
 	(wire
 		(pts
-			(xy 91.44 46.99) (xy 95.25 46.99)
+			(xy 91.44 46.99) (xy 93.98 46.99)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "a805cf2f-d86f-413d-b7ca-30b0942a7150")
+	)
+	(wire
+		(pts
+			(xy 92.71 34.29) (xy 93.98 34.29)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "aa750d68-906f-413b-aa62-cb60096fe1c7")
 	)
 	(wire
 		(pts
@@ -5399,16 +5429,6 @@
 	)
 	(wire
 		(pts
-			(xy 95.25 34.29) (xy 95.25 36.83)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f2ac2a11-ee32-42f9-ae35-f24990861452")
-	)
-	(wire
-		(pts
 			(xy 256.54 143.51) (xy 257.81 143.51)
 		)
 		(stroke
@@ -5510,7 +5530,7 @@
 			(uuid "2088de72-aed3-4fb7-8cdf-1d85c1c1b1a5")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J20")
 					(unit 1)
@@ -5520,7 +5540,7 @@
 	)
 	(symbol
 		(lib_id "Sparkfun Connectors:Conn_01x03")
-		(at 95.25 17.78 90)
+		(at 83.82 17.78 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -5529,7 +5549,7 @@
 		(fields_autoplaced yes)
 		(uuid "03153a13-99e2-4e4f-9136-286b7229a80c")
 		(property "Reference" "J1"
-			(at 90.17 17.78 0)
+			(at 78.74 17.78 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5538,7 +5558,7 @@
 			)
 		)
 		(property "Value" "Conn_01x03"
-			(at 100.33 17.78 0)
+			(at 88.9 17.78 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5547,7 +5567,7 @@
 			)
 		)
 		(property "Footprint" "Sparkfun Connectors:1x03"
-			(at 102.87 17.78 0)
+			(at 91.44 17.78 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5556,7 +5576,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 104.14 17.78 0)
+			(at 92.71 17.78 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5565,7 +5585,7 @@
 			)
 		)
 		(property "Description" "Generic connector, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"
-			(at 95.25 17.78 0)
+			(at 83.82 17.78 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5583,7 +5603,7 @@
 			(uuid "f8088a59-6912-4f1b-b441-f4f1de27393d")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J1")
 					(unit 1)
@@ -5650,7 +5670,7 @@
 			(uuid "6b42447b-5426-4b8d-8956-0d5ae7b1f8be")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR024")
 					(unit 1)
@@ -5874,7 +5894,7 @@
 			(uuid "6e6be124-49d8-419b-ab16-63d4626db38f")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "U1")
 					(unit 1)
@@ -5941,7 +5961,7 @@
 			(uuid "c08118ea-ef26-4ca7-af7f-ca4d01b125b2")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R8")
 					(unit 1)
@@ -6008,7 +6028,7 @@
 			(uuid "8863190c-0e85-4a89-ba72-e17ddb0c224f")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R13")
 					(unit 1)
@@ -6079,7 +6099,7 @@
 			(uuid "eaf736e5-4ef8-4252-8d71-f012cee6ed6e")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J6")
 					(unit 1)
@@ -6146,7 +6166,7 @@
 			(uuid "064500eb-1fac-4814-ad9e-e18367d80060")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R12")
 					(unit 1)
@@ -6212,7 +6232,7 @@
 			(uuid "0c9621be-951c-4dd0-ae38-22ee2963803a")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR031")
 					(unit 1)
@@ -6278,7 +6298,7 @@
 			(uuid "edb93ae5-750e-42bf-ba64-ad37d12bad5f")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR041")
 					(unit 1)
@@ -6345,7 +6365,7 @@
 			(uuid "c89ad21a-fe75-4112-bc37-04cebfbd5dca")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR047")
 					(unit 1)
@@ -6411,7 +6431,7 @@
 			(uuid "b329f643-ec38-43f3-9f3e-11e7adb91d9b")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR036")
 					(unit 1)
@@ -6478,7 +6498,7 @@
 			(uuid "5487c453-9d26-4d70-bfa1-aa00d9e9e1c2")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR011")
 					(unit 1)
@@ -6544,7 +6564,7 @@
 			(uuid "83983bf5-d70b-412a-bc25-7ca687d249ae")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR035")
 					(unit 1)
@@ -6611,7 +6631,7 @@
 			(uuid "cd7f2485-5d31-4b94-ac76-fce426f64020")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R15")
 					(unit 1)
@@ -6682,7 +6702,7 @@
 			(uuid "b1b02a44-7cf8-4d96-b6b7-24ba664c4976")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J19")
 					(unit 1)
@@ -6749,7 +6769,7 @@
 			(uuid "841cba80-7cc7-4372-9024-6ee202d6797d")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R19")
 					(unit 1)
@@ -6820,7 +6840,7 @@
 			(uuid "95c02d12-d263-46e2-ad97-543eef1ec878")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J5")
 					(unit 1)
@@ -6887,7 +6907,7 @@
 			(uuid "b7f0d3b3-ad0d-4e98-a033-e21a369dc64d")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR021")
 					(unit 1)
@@ -6954,7 +6974,7 @@
 			(uuid "ee257baf-23e1-4193-9170-f5d2b10bfd55")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR020")
 					(unit 1)
@@ -7025,7 +7045,7 @@
 			(uuid "8074d44e-74a2-41ef-82e2-61b0c278a48d")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J18")
 					(unit 1)
@@ -7110,7 +7130,7 @@
 			(uuid "c0619a90-a109-464c-947a-70e2ad738828")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "D12")
 					(unit 1)
@@ -7176,7 +7196,7 @@
 			(uuid "48e48739-7fa1-4717-bf6b-cfd01690d9a0")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR034")
 					(unit 1)
@@ -7243,7 +7263,7 @@
 			(uuid "de7ad1cc-a1f2-46c7-a42e-67a16c53d68f")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR01")
 					(unit 1)
@@ -7322,7 +7342,7 @@
 			(uuid "bf9ab285-6416-44f1-8c38-e3f66df6daf9")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J3")
 					(unit 1)
@@ -7388,7 +7408,7 @@
 			(uuid "c04d1c69-754a-4844-9356-20bc61e6bb53")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR06")
 					(unit 1)
@@ -7473,7 +7493,7 @@
 			(uuid "5b3bd1b9-8891-4d88-9594-2e80a3e68f19")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "D13")
 					(unit 1)
@@ -7539,7 +7559,7 @@
 			(uuid "bf741c0e-d21f-4b7e-8e10-53cd8974d401")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR037")
 					(unit 1)
@@ -7610,7 +7630,7 @@
 			(uuid "f508c5f7-e4b1-4264-af48-de51deb4a573")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J9")
 					(unit 1)
@@ -7677,7 +7697,7 @@
 			(uuid "e2401290-8b7e-4ca2-b82e-90687a6e779b")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR07")
 					(unit 1)
@@ -7751,7 +7771,7 @@
 			(uuid "083140b1-ebfb-4e74-9128-ac91f88ff245")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J2")
 					(unit 1)
@@ -7818,7 +7838,7 @@
 			(uuid "78a26ecf-42e3-4e21-9a02-0b4908ec10c0")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R2")
 					(unit 1)
@@ -7885,7 +7905,7 @@
 			(uuid "d0f012f5-1b3a-41c1-a259-29ce261158f4")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R5")
 					(unit 1)
@@ -7952,7 +7972,7 @@
 			(uuid "9c94e922-cfd7-4106-a967-c5b4245ff8b9")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR048")
 					(unit 1)
@@ -8023,7 +8043,7 @@
 			(uuid "66906bcd-02d4-4536-aeca-65ed4a25d679")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J17")
 					(unit 1)
@@ -8090,7 +8110,7 @@
 			(uuid "538e61d7-0392-4d89-81e7-4a57282fda19")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR015")
 					(unit 1)
@@ -8231,7 +8251,7 @@
 			(uuid "afcbfeb3-0407-480b-b5d5-d2b2af59ed04")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J22")
 					(unit 1)
@@ -8298,7 +8318,7 @@
 			(uuid "946841fb-90a4-4722-af5b-852b82a66479")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R11")
 					(unit 1)
@@ -8373,7 +8393,7 @@
 			(uuid "fb31319c-35b5-47f8-a75b-c831c41fd93d")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "Q4")
 					(unit 1)
@@ -8458,7 +8478,7 @@
 			(uuid "335eaea8-27f6-444f-b73e-98e1d2ecb679")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "D5")
 					(unit 1)
@@ -8525,7 +8545,7 @@
 			(uuid "80749ae0-53a3-48cb-bf2b-8849d23f4716")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R7")
 					(unit 1)
@@ -8600,7 +8620,7 @@
 			(uuid "90551d6e-c802-4519-a92f-f94d68a13059")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "Q9")
 					(unit 1)
@@ -8666,7 +8686,7 @@
 			(uuid "cebff2ae-a619-4aeb-a635-8dfeaa7a8108")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR042")
 					(unit 1)
@@ -8732,7 +8752,7 @@
 			(uuid "27fff986-9447-41a8-8987-14e005659dff")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR038")
 					(unit 1)
@@ -8803,7 +8823,7 @@
 			(uuid "72ea2447-f457-4936-9731-7aa0b9086e8d")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J14")
 					(unit 1)
@@ -8878,7 +8898,7 @@
 			(uuid "3a001aaf-8c95-4657-9e9f-7e3129835205")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "Q3")
 					(unit 1)
@@ -8963,7 +8983,7 @@
 			(uuid "969d2775-eb87-48e7-bd4f-0a22ebe15b1a")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "D11")
 					(unit 1)
@@ -9034,7 +9054,7 @@
 			(uuid "0dfa6007-d9a2-4603-8b76-76fe3b767836")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J10")
 					(unit 1)
@@ -9101,7 +9121,7 @@
 			(uuid "270e15e8-39e1-46f5-82b4-d30b65a06d65")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R6")
 					(unit 1)
@@ -9167,7 +9187,7 @@
 			(uuid "2e7242d5-607e-4be5-b15e-24c54ebb38e7")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR028")
 					(unit 1)
@@ -9232,7 +9252,7 @@
 			(uuid "f104d10f-9372-4e6e-bf4e-c4a50f476733")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR012")
 					(unit 1)
@@ -9317,7 +9337,7 @@
 			(uuid "2b63a4f2-4ba3-4000-9fff-cdc34d70eacb")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "D7")
 					(unit 1)
@@ -9392,7 +9412,7 @@
 			(uuid "113fee8f-748e-4397-b627-6256d01bb079")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "Q8")
 					(unit 1)
@@ -9467,7 +9487,7 @@
 			(uuid "b5e225e5-ffa7-40c1-83f9-5292d6708ef6")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "Q2")
 					(unit 1)
@@ -9538,7 +9558,7 @@
 			(uuid "ee90a32f-5995-4817-9087-6090771f1011")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J21")
 					(unit 1)
@@ -9605,7 +9625,7 @@
 			(uuid "89100022-8a2a-4745-8609-d18b0673a771")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R1")
 					(unit 1)
@@ -9690,7 +9710,7 @@
 			(uuid "8f5eb4c0-0a11-4a86-859b-2e961fd51419")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "D1")
 					(unit 1)
@@ -9775,7 +9795,7 @@
 			(uuid "fa570351-bcf5-4558-8519-39fe1e097c9f")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "D8")
 					(unit 1)
@@ -9841,7 +9861,7 @@
 			(uuid "9848a854-c84f-438d-bbf4-bd0c713eae23")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR043")
 					(unit 1)
@@ -9908,7 +9928,7 @@
 			(uuid "d7c79a27-2680-49cd-9646-9f73506cb937")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR019")
 					(unit 1)
@@ -9975,7 +9995,7 @@
 			(uuid "905561d9-dd44-42a1-aa0b-3d3c334e9c51")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR013")
 					(unit 1)
@@ -10040,7 +10060,7 @@
 			(uuid "5d12608d-a9fd-42fd-a816-ae1dc687741a")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR016")
 					(unit 1)
@@ -10115,7 +10135,7 @@
 			(uuid "a8cd673d-ae75-4a03-93e6-c8c7cbfba7d2")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "Q6")
 					(unit 1)
@@ -10180,7 +10200,7 @@
 			(uuid "7d1129d9-2e5c-496d-92ce-57ce251c2857")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR014")
 					(unit 1)
@@ -10247,7 +10267,7 @@
 			(uuid "c7e39d09-c12a-47a7-b373-50996de92c53")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR045")
 					(unit 1)
@@ -10318,7 +10338,7 @@
 			(uuid "9d50fbf4-d7de-4b1e-8a55-09f49719f520")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J7")
 					(unit 1)
@@ -10389,7 +10409,7 @@
 			(uuid "a995cb31-45a1-4c11-85d9-547d1ffc5bb3")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J13")
 					(unit 1)
@@ -10456,7 +10476,7 @@
 			(uuid "30a667ce-5743-40a3-a183-70ab31c17c2d")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR025")
 					(unit 1)
@@ -10523,7 +10543,7 @@
 			(uuid "3fafdba5-93da-4088-a30d-357be196ac36")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R17")
 					(unit 1)
@@ -10589,7 +10609,7 @@
 			(uuid "972afc1b-584f-445b-be43-ae9048812737")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR044")
 					(unit 1)
@@ -10656,7 +10676,7 @@
 			(uuid "213f0e5f-339f-4034-971e-262baa3fc2e4")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR023")
 					(unit 1)
@@ -10723,7 +10743,7 @@
 			(uuid "98613abd-2641-46be-a78b-4283574ba9c4")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR08")
 					(unit 1)
@@ -10733,7 +10753,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 97.79 22.86 0)
+		(at 86.36 22.86 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10742,7 +10762,7 @@
 		(fields_autoplaced yes)
 		(uuid "908a5db1-43ab-4a88-a5be-139980797c02")
 		(property "Reference" "#PWR05"
-			(at 97.79 29.21 0)
+			(at 86.36 29.21 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10751,7 +10771,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 97.7899 26.67 90)
+			(at 86.3599 26.67 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10760,7 +10780,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 97.79 22.86 0)
+			(at 86.36 22.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10769,7 +10789,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 97.79 22.86 0)
+			(at 86.36 22.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10778,7 +10798,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 97.79 22.86 0)
+			(at 86.36 22.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10790,7 +10810,7 @@
 			(uuid "ec31eed5-77cc-474e-a731-d113ff3f4d6e")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR05")
 					(unit 1)
@@ -10861,7 +10881,7 @@
 			(uuid "dd0b918a-c4d9-435b-8395-dfd3c1fc16d5")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J4")
 					(unit 1)
@@ -10928,7 +10948,7 @@
 			(uuid "4cf809c7-907b-4220-8936-31a61d6194a7")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR02")
 					(unit 1)
@@ -11013,7 +11033,7 @@
 			(uuid "a9001d3a-ff07-4cb3-a20a-70eecddcf4a1")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "D3")
 					(unit 1)
@@ -11079,7 +11099,7 @@
 			(uuid "be40d8ee-ba41-464d-a264-7a4c00fb03f1")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR039")
 					(unit 1)
@@ -11146,7 +11166,7 @@
 			(uuid "3c87054c-3762-4e40-98bb-6195d5eefcca")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R20")
 					(unit 1)
@@ -11212,7 +11232,7 @@
 			(uuid "5ab232e6-e486-458e-9a70-1bc0f7cd326c")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR032")
 					(unit 1)
@@ -11279,7 +11299,7 @@
 			(uuid "2f35a1b6-f98b-4585-a7ee-676e58f6a575")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R14")
 					(unit 1)
@@ -11345,7 +11365,7 @@
 			(uuid "17c42378-821e-4e2d-9870-c842f8bbdb24")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR029")
 					(unit 1)
@@ -11411,7 +11431,7 @@
 			(uuid "2874eef4-8cd7-414c-a0ca-75e3620938c1")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR033")
 					(unit 1)
@@ -11478,7 +11498,7 @@
 			(uuid "809baef9-c6e0-4996-8043-bd1bf67ea611")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR049")
 					(unit 1)
@@ -11545,7 +11565,7 @@
 			(uuid "e9e981a2-e2f9-4450-86cf-e383f0818c38")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R4")
 					(unit 1)
@@ -11616,7 +11636,7 @@
 			(uuid "b4743da8-e856-4106-a33d-f5bc618975e5")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J16")
 					(unit 1)
@@ -11683,7 +11703,7 @@
 			(uuid "f62e9dc2-38ca-4d7b-894d-5b18b8f15435")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R9")
 					(unit 1)
@@ -11768,7 +11788,7 @@
 			(uuid "9c889c9e-f751-4246-947a-ae63e57a93ad")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "D4")
 					(unit 1)
@@ -11835,7 +11855,7 @@
 			(uuid "55eb97de-a7fc-4ab0-9ff6-3f71ee776aa0")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR046")
 					(unit 1)
@@ -11845,7 +11865,7 @@
 	)
 	(symbol
 		(lib_id "power:+24V")
-		(at 92.71 22.86 180)
+		(at 81.28 22.86 180)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -11854,7 +11874,7 @@
 		(fields_autoplaced yes)
 		(uuid "ba5dac82-da65-4dc7-88fb-0d6068dc2435")
 		(property "Reference" "#PWR04"
-			(at 92.71 19.05 0)
+			(at 81.28 19.05 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11863,7 +11883,7 @@
 			)
 		)
 		(property "Value" "+24V"
-			(at 92.7099 26.67 90)
+			(at 81.2799 26.67 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11872,7 +11892,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 92.71 22.86 0)
+			(at 81.28 22.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11881,7 +11901,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 92.71 22.86 0)
+			(at 81.28 22.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11890,7 +11910,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+24V\""
-			(at 92.71 22.86 0)
+			(at 81.28 22.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11902,7 +11922,7 @@
 			(uuid "77f53454-0e30-4094-a978-94cef18ebda8")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR04")
 					(unit 1)
@@ -11969,7 +11989,7 @@
 			(uuid "fdd97b08-db37-4559-9282-820528907394")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR022")
 					(unit 1)
@@ -12044,7 +12064,7 @@
 			(uuid "1c74327d-36d7-410b-93b4-2ce36593ba5a")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "Q1")
 					(unit 1)
@@ -12129,7 +12149,7 @@
 			(uuid "0dab367b-9035-421a-8541-d2bc5ba37fe4")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "D2")
 					(unit 1)
@@ -12196,7 +12216,7 @@
 			(uuid "cf6290fc-bd02-4d1c-95c9-53363784ee31")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR026")
 					(unit 1)
@@ -12267,7 +12287,7 @@
 			(uuid "a8039022-51a3-4fd0-a6ba-ff42b4c2546d")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J11")
 					(unit 1)
@@ -12277,7 +12297,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 95.25 40.64 180)
+		(at 88.9 34.29 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -12285,7 +12305,7 @@
 		(dnp no)
 		(uuid "d2034e99-fb3d-45a3-a118-0b4e61c8358e")
 		(property "Reference" "R21"
-			(at 97.79 40.64 90)
+			(at 88.9 36.83 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12293,7 +12313,7 @@
 			)
 		)
 		(property "Value" "1K"
-			(at 95.25 40.64 90)
+			(at 88.9 34.29 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12301,7 +12321,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal"
-			(at 97.028 40.64 90)
+			(at 88.9 36.068 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12310,7 +12330,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 95.25 40.64 0)
+			(at 88.9 34.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12319,7 +12339,7 @@
 			)
 		)
 		(property "Description" "Resistor"
-			(at 95.25 40.64 0)
+			(at 88.9 34.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12334,7 +12354,7 @@
 			(uuid "3fabc0fb-991e-4493-9efb-e90ce57faa49")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R21")
 					(unit 1)
@@ -12401,7 +12421,7 @@
 			(uuid "875248c2-71f9-433f-ac56-27bb5d2aeb35")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R18")
 					(unit 1)
@@ -12486,7 +12506,7 @@
 			(uuid "7e3b6fde-0117-4fb1-a249-f3b67768ea4b")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "D9")
 					(unit 1)
@@ -12557,7 +12577,7 @@
 			(uuid "86ff503b-1cff-45c3-aa69-9149b480875c")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J8")
 					(unit 1)
@@ -12632,7 +12652,7 @@
 			(uuid "bf97cd7c-7ce0-46cb-8ba3-bb491a53d236")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "Q7")
 					(unit 1)
@@ -12717,7 +12737,7 @@
 			(uuid "0a13cfa2-1244-45d0-ac40-b63ea63a2375")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "D6")
 					(unit 1)
@@ -12783,7 +12803,7 @@
 			(uuid "65a134f6-ec29-4a38-8c7c-25f5bd35f4f7")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR040")
 					(unit 1)
@@ -12868,7 +12888,7 @@
 			(uuid "696b3dce-86e0-4354-9fca-aaee388ae962")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "D10")
 					(unit 1)
@@ -12933,7 +12953,7 @@
 			(uuid "4813f5f4-465c-4aa6-ab6d-1f4fb51fc85c")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR018")
 					(unit 1)
@@ -13000,7 +13020,7 @@
 			(uuid "8c67dcc7-9bf1-4e6d-94e6-3b93d41dff35")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R3")
 					(unit 1)
@@ -13071,7 +13091,7 @@
 			(uuid "d1726239-61ea-4556-acb8-1437f78150f1")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J15")
 					(unit 1)
@@ -13138,7 +13158,7 @@
 			(uuid "62b65c74-e8ce-44ee-add1-c79c7087164d")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR027")
 					(unit 1)
@@ -13209,7 +13229,7 @@
 			(uuid "a9922ca6-32ca-45ea-8938-569007917e57")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "J12")
 					(unit 1)
@@ -13275,7 +13295,7 @@
 			(uuid "dc7d772d-552e-4781-89ca-34976b24432a")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR030")
 					(unit 1)
@@ -13350,7 +13370,7 @@
 			(uuid "92c83e93-b492-4553-900c-7e9cce6d42d5")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "Q5")
 					(unit 1)
@@ -13417,7 +13437,7 @@
 			(uuid "70f1cfe5-d003-4a13-b571-796b1131525e")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R10")
 					(unit 1)
@@ -13484,7 +13504,7 @@
 			(uuid "a4ece159-86a7-454c-a031-d17573be02b5")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "R16")
 					(unit 1)
@@ -13549,7 +13569,7 @@
 			(uuid "0e67d0f5-7dc8-4c84-95d2-0f53f4b275f2")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR010")
 					(unit 1)
@@ -13616,7 +13636,7 @@
 			(uuid "2a9fbfdd-cc70-46b6-882e-a0e3eb7a7178")
 		)
 		(instances
-			(project "MKS_relay_v3"
+			(project "MKS_relay_v4"
 				(path "/190214aa-ace9-4ebe-a06f-ddb9e26a3283"
 					(reference "#PWR017")
 					(unit 1)

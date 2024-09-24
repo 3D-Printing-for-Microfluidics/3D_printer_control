@@ -278,7 +278,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/4eb4249f-fb5e-4aa6-8863-9bbb405b5047")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -398,7 +398,7 @@
 		(property ki_fp_filters "TO?220*")
 		(path "/f0e7e22c-a80d-42df-a36d-3f9b8fb6b272")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 7.66 -3.27)
@@ -693,7 +693,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/02cdef62-6dc3-427f-b751-658a707816d2")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -812,7 +812,7 @@
 		(property ki_fp_filters "R_*")
 		(path "/a4705aa3-3ec6-461a-a34e-7675f43e3dfb")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 1.89 0.92)
@@ -1100,7 +1100,7 @@
 		(property ki_fp_filters "TO-???* *_Diode_* *SingleDiode* D_*")
 		(path "/9a1052b6-0d47-493a-b609-04f4352245c2")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 5.73 -0.92)
@@ -1451,7 +1451,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/469e154b-6936-41aa-aab6-2734e0ee7703")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -1571,7 +1571,7 @@
 		(property ki_fp_filters "TO?220*")
 		(path "/c6d601aa-28b0-4f8f-9688-1b6fb4632397")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 7.66 -3.27)
@@ -1866,7 +1866,7 @@
 		(property ki_fp_filters "TO?220*")
 		(path "/6aed5dbb-611b-466a-a326-5ae3888273eb")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 7.66 -3.27)
@@ -2187,7 +2187,7 @@
 		(property ki_fp_filters "TO-???* *_Diode_* *SingleDiode* D_*")
 		(path "/4e0f81d6-2ed9-4b0e-baf8-88fda1657a96")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 6.68 0)
@@ -2718,7 +2718,7 @@
 		(property ki_fp_filters "R_*")
 		(path "/d43073f6-81e1-445d-a189-19d0102f7f7e")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 1.89 0.92)
@@ -3237,7 +3237,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/ab99f276-f2ad-4c31-9bf3-9dc07d995f59")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -3357,7 +3357,7 @@
 		(property ki_fp_filters "TO?220*")
 		(path "/56d05a82-b775-4ee0-86d7-985d3218fc03")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 7.66 -3.27)
@@ -3651,7 +3651,7 @@
 		(property ki_fp_filters "R_*")
 		(path "/12286812-943d-43f6-a5db-f43f7e097c2e")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 1.89 0.92)
@@ -3939,7 +3939,7 @@
 		(property ki_fp_filters "TO-???* *_Diode_* *SingleDiode* D_*")
 		(path "/366e1bcb-90a4-4239-b475-6afe34772b5f")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 5.73 -0.92)
@@ -4214,7 +4214,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/2f9db259-b849-4b0a-bd33-a638e1563081")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -4333,7 +4333,7 @@
 		(property ki_fp_filters "R_*")
 		(path "/11baea35-8f88-40d5-a6a4-3e959780fd46")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 1.89 0.92)
@@ -4595,7 +4595,7 @@
 		(property ki_fp_filters "TO?220*")
 		(path "/4b7b2072-602a-4b51-86b9-0a20f8ac1faa")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 7.66 -3.27)
@@ -5404,7 +5404,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/57047647-4158-47eb-af59-ba8fa22d4bab")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -5781,7 +5781,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/e8b26e9c-fbfa-4248-809f-b71542bd027f")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -6274,7 +6274,7 @@
 		(property ki_fp_filters "TO?220*")
 		(path "/d829bb31-01c6-4fbb-a03a-98c8a208ed1d")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 7.66 -3.27)
@@ -6942,7 +6942,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/11d1aa97-7e85-43d0-82fb-696ef0162e58")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -7192,7 +7192,7 @@
 		(property ki_fp_filters "BarrelJack*")
 		(path "/1b11d9e8-d6cc-4cb3-bddd-fc81c7f98a7c")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_line
 			(start 4.5 -13.7)
 			(end 2.4 -13.7)
@@ -7503,7 +7503,7 @@
 		(property ki_fp_filters "R_*")
 		(path "/a2867dbe-6ce6-4570-bab0-598be899eea4")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 6.68 0)
@@ -7671,7 +7671,7 @@
 			(drill 0.7)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net 88 "Net-(J1-Pin_2)")
+			(net 91 "Net-(U1-20_A6_TX5_LRCLK1)")
 			(pintype "passive")
 			(uuid "be33707a-33ed-4859-a087-40842fc0a448")
 		)
@@ -7765,7 +7765,7 @@
 		(property ki_fp_filters "TO?220*")
 		(path "/558e7908-57d6-4fb6-ba36-89bee321fbf4")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 7.66 -3.27)
@@ -8086,7 +8086,7 @@
 		(property ki_fp_filters "TO-???* *_Diode_* *SingleDiode* D_*")
 		(path "/da604e0a-c4bc-42be-8bcc-79fe6848f05a")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 5.73 -0.92)
@@ -8360,7 +8360,7 @@
 		(property ki_fp_filters "R_*")
 		(path "/74218a97-308c-487a-8c92-628c92ed95ed")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 1.89 0.92)
@@ -8648,7 +8648,7 @@
 		(property ki_fp_filters "TO-???* *_Diode_* *SingleDiode* D_*")
 		(path "/d6a5cc20-13e7-4297-a285-35b58fc276b7")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 5.73 -0.92)
@@ -8949,7 +8949,7 @@
 		(property ki_fp_filters "TO-???* *_Diode_* *SingleDiode* D_*")
 		(path "/53cc8a1d-fbe3-4bf1-a91b-5a3bff25d4e2")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 5.73 -0.92)
@@ -9224,7 +9224,7 @@
 		(property ki_fp_filters "TO?220*")
 		(path "/3b77fdaa-61f8-4781-b2bf-bf48fd331d71")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 7.66 -3.27)
@@ -9545,7 +9545,7 @@
 		(property ki_fp_filters "TO-???* *_Diode_* *SingleDiode* D_*")
 		(path "/c7a26d8c-2a20-4626-952d-63d1f3ae86e5")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 5.73 -0.92)
@@ -9819,7 +9819,7 @@
 		(property ki_fp_filters "DSUB*Female*")
 		(path "/3010bd80-2f2a-446e-b880-1aff792faa00")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start -43.23 7.72)
@@ -10827,7 +10827,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/03153a13-99e2-4e4f-9136-286b7229a80c")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -10998,7 +10998,7 @@
 		(property ki_fp_filters "TO-???* *_Diode_* *SingleDiode* D_*")
 		(path "/5a095b16-a08b-4b5c-9598-26d9857adb7a")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 5.73 -0.92)
@@ -11273,7 +11273,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/710c734e-7976-41b6-9c93-7ab302c97d37")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -11419,7 +11419,7 @@
 		(property ki_fp_filters "TO-???* *_Diode_* *SingleDiode* D_*")
 		(path "/dda63128-9cbe-4c7c-87ef-3b4e99cfa782")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 6.68 0)
@@ -11951,7 +11951,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/29f3b22b-d095-4465-ae97-09238900f8a5")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -12071,7 +12071,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/cf965447-d8a6-49a0-8a3d-23a6a2bb22ca")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -12191,7 +12191,7 @@
 		(property ki_fp_filters "TO?220*")
 		(path "/34112472-fed5-4e50-914e-7ccab7f7ff82")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 7.66 -3.27)
@@ -12482,7 +12482,7 @@
 		)
 		(path "/04e34b7d-7ae6-4239-9e62-3b5ec7889ab6")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 17.78 8.89)
@@ -13412,7 +13412,7 @@
 		(property ki_fp_filters "TO-???* *_Diode_* *SingleDiode* D_*")
 		(path "/2714ac8a-8edc-4d04-8802-5f1aca7832fe")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 6.68 0)
@@ -13686,7 +13686,7 @@
 		(property ki_fp_filters "R_*")
 		(path "/f6255bd8-b207-4a7e-a8d3-941c6483f2a0")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 1.89 0.92)
@@ -13947,7 +13947,7 @@
 		(property ki_fp_filters "R_*")
 		(path "/d2034e99-fb3d-45a3-a118-0b4e61c8358e")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 0.94 0)
@@ -14115,7 +14115,7 @@
 			(drill 0.7)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net 91 "Net-(U1-20_A6_TX5_LRCLK1)")
+			(net 88 "Net-(J1-Pin_2)")
 			(pintype "passive")
 			(uuid "a43a31bd-de73-4408-99ad-3950085bbcfc")
 		)
@@ -14125,7 +14125,7 @@
 			(drill 0.7)
 			(layers "*.Cu" "*.Mask")
 			(remove_unused_layers no)
-			(net 88 "Net-(J1-Pin_2)")
+			(net 91 "Net-(U1-20_A6_TX5_LRCLK1)")
 			(pintype "passive")
 			(uuid "a097e477-b339-407d-9f57-7cbb8de5751e")
 		)
@@ -14209,7 +14209,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/15407821-0bb8-438d-ae97-7ffe6931e834")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -14328,7 +14328,7 @@
 		(property ki_fp_filters "R_*")
 		(path "/30d9eec5-55fc-4b1d-b585-b433d70acc39")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 1.89 0.92)
@@ -14589,7 +14589,7 @@
 		(property ki_fp_filters "R_*")
 		(path "/0a51b6f1-b68f-41b4-8619-79c3bcd4b4d9")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 1.89 0.92)
@@ -14851,7 +14851,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/e5065ba8-d44c-4d3f-8273-00960e4a6742")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy -0.254 0.254) (xy 0.254 0.254) (xy 0.254 -0.254) (xy -0.254 -0.254)
@@ -15227,7 +15227,7 @@
 		(property ki_fp_filters "Connector*:*_1x??_*")
 		(path "/2d79abd0-5a95-4afa-9ee8-49d6eb1f43a7")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(fp_poly
 			(pts
 				(xy 7.366 0.254) (xy 7.874 0.254) (xy 7.874 -0.254) (xy 7.366 -0.254)
@@ -15423,7 +15423,7 @@
 		(property ki_fp_filters "TO-???* *_Diode_* *SingleDiode* D_*")
 		(path "/18c03f81-e658-4058-a556-6cd8e5065a66")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 6.68 0)
@@ -15813,7 +15813,7 @@
 		(property ki_fp_filters "R_*")
 		(path "/07f93075-bd9c-4ea6-aa56-5dd7f6526936")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 1.89 0.92)
@@ -16101,7 +16101,7 @@
 		(property ki_fp_filters "TO-???* *_Diode_* *SingleDiode* D_*")
 		(path "/5b14baa9-c3b9-4b36-b014-36447e119bae")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 5.73 -0.92)
@@ -16402,7 +16402,7 @@
 		(property ki_fp_filters "TO-???* *_Diode_* *SingleDiode* D_*")
 		(path "/b57f876e-53ae-461a-9717-46cdec74fc30")
 		(sheetname "Root")
-		(sheetfile "MKS_relay_v3.kicad_sch")
+		(sheetfile "MKS_relay_v4.kicad_sch")
 		(attr through_hole)
 		(fp_line
 			(start 5.73 -0.92)
@@ -18940,20 +18940,20 @@
 		(uuid "e94a29e6-7d3d-4952-b001-d1d533e29edf")
 	)
 	(segment
-		(start 168.0972 108.6866)
-		(end 166.5478 107.1372)
+		(start 166.5478 99.8982)
+		(end 162.8394 96.1898)
 		(width 0.508)
 		(layer "F.Cu")
 		(net 88)
-		(uuid "15159064-9855-42dc-8306-a0c8529becb2")
+		(uuid "30f628b5-0716-4c93-bcb9-6e4fc3be4113")
 	)
 	(segment
-		(start 166.5478 103.0986)
-		(end 170.5102 99.1362)
+		(start 166.5478 107.1372)
+		(end 166.5478 99.8982)
 		(width 0.508)
 		(layer "F.Cu")
 		(net 88)
-		(uuid "30e57731-ca69-4019-a2fe-eb66ee97af1b")
+		(uuid "77e54bbd-a91c-4203-b306-ae9f53802f71")
 	)
 	(segment
 		(start 168.3766 108.6866)
@@ -18961,31 +18961,15 @@
 		(width 0.508)
 		(layer "F.Cu")
 		(net 88)
-		(uuid "3eb64adf-76cf-4017-a16f-4cb41dcbd19c")
+		(uuid "967c2646-9a9a-46e5-9a1e-d754212dd65d")
 	)
 	(segment
-		(start 166.5478 107.1372)
-		(end 166.5478 103.0986)
+		(start 168.0972 108.6866)
+		(end 166.5478 107.1372)
 		(width 0.508)
 		(layer "F.Cu")
 		(net 88)
-		(uuid "481ccf56-b29f-477f-9ecc-40951f1b1992")
-	)
-	(segment
-		(start 170.4594 99.0854)
-		(end 170.5102 99.1362)
-		(width 0.508)
-		(layer "F.Cu")
-		(net 88)
-		(uuid "56ef3458-c2a9-4796-b980-c1cc5d7154f2")
-	)
-	(segment
-		(start 170.4594 96.1898)
-		(end 170.4594 99.0854)
-		(width 0.508)
-		(layer "F.Cu")
-		(net 88)
-		(uuid "f5fbd22b-a47f-44a8-85c4-1da509f71a45")
+		(uuid "ae98b3ad-29bf-4da3-9c37-75edf7783c63")
 	)
 	(segment
 		(start 165.4302 119.6086)
@@ -19044,28 +19028,52 @@
 		(uuid "f04b5c70-7b0a-4a25-ae19-79f4689f6e60")
 	)
 	(segment
-		(start 162.8394 96.1898)
-		(end 162.1394 95.4898)
+		(start 170.5102 96.2406)
+		(end 170.4594 96.1898)
 		(width 0.508)
 		(layer "F.Cu")
 		(net 91)
-		(uuid "32de17ea-27ec-47a5-8055-dfd8adad80f4")
+		(uuid "258c2eb6-f315-4d66-85cb-b06c11ac6d95")
 	)
 	(segment
-		(start 162.1394 95.4898)
-		(end 157.9738 95.4898)
+		(start 168.2876 94.018)
+		(end 156.502 94.018)
 		(width 0.508)
 		(layer "F.Cu")
 		(net 91)
-		(uuid "728301f4-e77b-4e00-a381-fb1ff172df09")
+		(uuid "3f2068b7-ec67-409a-9f53-f05c240f0427")
 	)
 	(segment
-		(start 157.9738 95.4898)
+		(start 170.4594 99.0854)
+		(end 170.5102 99.1362)
+		(width 0.508)
+		(layer "F.Cu")
+		(net 91)
+		(uuid "56ef3458-c2a9-4796-b980-c1cc5d7154f2")
+	)
+	(segment
+		(start 170.4594 96.1898)
+		(end 168.2876 94.018)
+		(width 0.508)
+		(layer "F.Cu")
+		(net 91)
+		(uuid "83d0f066-ef7a-445a-9640-b9e012be22f0")
+	)
+	(segment
+		(start 170.5102 99.1362)
+		(end 170.5102 96.2406)
+		(width 0.508)
+		(layer "F.Cu")
+		(net 91)
+		(uuid "defa106b-b985-4469-a6e0-32f4c6c13e07")
+	)
+	(segment
+		(start 156.502 94.018)
 		(end 154.813 92.329)
 		(width 0.508)
 		(layer "F.Cu")
 		(net 91)
-		(uuid "b5a66a37-ee5a-4fea-b17c-411a5dc08562")
+		(uuid "dfb2a101-b6ee-402b-9c8c-0a6b8938c760")
 	)
 	(zone
 		(net 1)
