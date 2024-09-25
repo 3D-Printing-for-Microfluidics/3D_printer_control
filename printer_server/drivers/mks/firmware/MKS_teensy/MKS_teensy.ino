@@ -8,6 +8,7 @@ int reed_pins[5] = {13,14,15,16,17};
 
 int ADC_RANGE = 1024;
 int ENCODER_RANGE_MM = 1000;
+int ENCODER_OFFSET = 120;
 int upper_limit = 600;
 int lower_limit = 0;
 
@@ -40,7 +41,7 @@ void translate();
 
 int get_encoder_position(){
   int position = analogRead(ENCODER_PIN);
-  return map(position, 0, ADC_RANGE, 0, ENCODER_RANGE_MM);
+  return map(position, 0, ADC_RANGE, 0, ENCODER_RANGE_MM) - ENCODER_OFFSET;
 }
 
 void move(int target_position){
