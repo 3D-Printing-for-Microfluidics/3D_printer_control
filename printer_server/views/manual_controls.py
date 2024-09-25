@@ -233,10 +233,11 @@ def loop():
 
 def stop_loop(force=False):
     global loop_thread, connected_clients
-    if force or (connected_clients <= 0 and loop_thread is not None):
-        connected_clients = 0
-        loop_thread.join()
-        loop_thread = None
+    if connected_clients <= 0 or force:
+        if loop_thread is not None:
+            connected_clients = 0
+            loop_thread.join()
+            loop_thread = None
 
 
 @blueprint.route("screen_image_upload", methods=["POST"])
