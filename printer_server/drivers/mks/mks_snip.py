@@ -19,7 +19,7 @@ def load_mks():
             }, namespace="/manual"
         )
     except Exception as ex:
-        log.warn("MKS manual control failed (%s)", ex)
+        log.warn("MKS manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "mks", namespace="/manual")
 
 
@@ -32,7 +32,7 @@ def get_gauges(emit=True):
             )
         return gauges
     except Exception as ex:
-        log.warn("MKS manual control failed (%s)", ex)
+        log.warn("MKS manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "mks", namespace="/manual")
 
 
@@ -58,7 +58,7 @@ def get_relay_status(emit=True):
 
         return relay_settings_dict
     except Exception as ex:
-        log.warn("MKS manual control failed (%s)", ex)
+        log.warn("MKS manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "mks", namespace="/manual")
 
 
@@ -76,7 +76,7 @@ def switchRelay(message):
         time.sleep(0.1)
         get_relay_status()
     except Exception as ex:
-        log.warn("MKS manual control failed (%s)", ex)
+        log.warn("MKS manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "mks", namespace="/manual")
 
 
@@ -87,7 +87,7 @@ def cranePosition(emit=True):
             socketio.emit("mks_crane_done", pos, namespace="/manual")
         return pos
     except Exception as ex:
-        log.warn("MKS manual control failed (%s)", ex)
+        log.warn("MKS manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "mks", namespace="/manual")
 
 
@@ -107,7 +107,7 @@ def craneMove(message):
             pos = mks_teensy.move_crane(distance_mm, relative=mode)
         socketio.emit("mks_crane_done", pos, namespace="/manual")
     except Exception as ex:
-        log.warn("MKS manual control failed (%s)", ex)
+        log.warn("MKS manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "mks", namespace="/manual")
 
 

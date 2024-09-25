@@ -17,7 +17,7 @@ def ttr_home():
             "ttr_done", ttr_get_position(notify=False), namespace="/manual"
         )
     except Exception as ex:
-        log.warn("TTR stage manual control failed (%s)", ex)
+        log.warn("TTR stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "ttr", namespace="/manual")
 
 @socketio.on("ttr_move", namespace="/manual")
@@ -35,7 +35,7 @@ def ttr_move(message):
             "ttr_done", ttr_get_position(notify=False), namespace="/manual"
         )
     except Exception as ex:
-        log.warn("TTR stage manual control failed (%s)", ex)
+        log.warn("TTR stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "ttr", namespace="/manual")
 
 def ttr_get_stage_list():
@@ -62,6 +62,6 @@ def ttr_get_position(notify=True):
             socketio.emit("ttr_return_position", positions, namespace="/manual")
         return positions
     except Exception as ex:
-        log.warn("TTR stage manual control failed (%s)", ex)
+        log.warn("TTR stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "ttr", namespace="/manual")
         return {}

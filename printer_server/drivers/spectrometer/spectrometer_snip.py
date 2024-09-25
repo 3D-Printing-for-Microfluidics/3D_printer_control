@@ -19,7 +19,7 @@ def spectrometerCapture(message):
         spectra = spectrometer.get_spectrum(num_averages=averages)
         socketio.emit("spectrometer_done", {"spectra":spectra, "integration":integration, "averages":averages}, namespace="/manual")
     except Exception as ex:
-        log.warn("Spectrometer manual control failed (%s)", ex)
+        log.warn("Spectrometer manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "spectrometer", namespace="/manual")
 
 def spectrometer_load():
@@ -29,5 +29,5 @@ def spectrometer_load():
             "averages":spectrometer.config_dict["default_number_of_averages"]
         }, namespace="/manual")
     except Exception as ex:
-        log.warn("Spectrometer manual control failed (%s)", ex)
+        log.warn("Spectrometer manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "spectrometer", namespace="/manual")

@@ -24,7 +24,7 @@ def xy_set_coodinate_system(message):
             "xy_done", xy_get_position(notify=False), namespace="/manual"
         )
     except Exception as ex:
-        log.warn("XY stage manual control failed (%s)", ex)
+        log.warn("XY stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "xy", namespace="/manual")
 
 @socketio.on("xy_home", namespace="/manual")
@@ -36,7 +36,7 @@ def xy_home():
             "xy_done", xy_get_position(notify=False), namespace="/manual"
         )
     except Exception as ex:
-        log.warn("XY stage manual control failed (%s)", ex)
+        log.warn("XY stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "xy", namespace="/manual")
 
 @socketio.on("xy_move", namespace="/manual")
@@ -71,7 +71,7 @@ def xy_move(message):
             "xy_done", xy_get_position(notify=False), namespace="/manual"
         )
     except Exception as ex:
-        log.warn("XY stage manual control failed (%s)", ex)
+        log.warn("XY stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "xy", namespace="/manual")
 
 def xy_get_stage_list():
@@ -113,6 +113,6 @@ def xy_get_position(notify=True):
             socketio.emit("xy_return_position", positions, namespace="/manual")
         return positions
     except Exception as ex:
-        log.warn("XY stage manual control failed (%s)", ex)
+        log.warn("XY stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "xy", namespace="/manual")
         return {}

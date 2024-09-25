@@ -26,7 +26,7 @@ def bp_set_coodinate_system(message):
             "bp_done", bp_get_position(notify=False), namespace="/manual"
         )
     except Exception as ex:
-        log.warn("BP stage manual control failed (%s)", ex)
+        log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "bp", namespace="/manual")
 
 @socketio.on("bp_go_to_top", namespace="/manual")
@@ -41,7 +41,7 @@ def bp_go_to_top():
             "bp_done", bp_get_position(notify=False), namespace="/manual"
         )
     except Exception as ex:
-        log.warn("BP stage manual control failed (%s)", ex)
+        log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "bp", namespace="/manual")
 
 @socketio.on("bp_home", namespace="/manual")
@@ -56,7 +56,7 @@ def bp_home():
             "bp_done", bp_get_position(notify=False), namespace="/manual"
         )
     except Exception as ex:
-        log.warn("BP stage manual control failed (%s)", ex)
+        log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "bp", namespace="/manual")
 
 @socketio.on("bp_move", namespace="/manual")
@@ -88,7 +88,7 @@ def bp_move(message):
             "bp_done", bp_get_position(return_timing=return_timing, notify=False), namespace="/manual"
         )
     except Exception as ex:
-        log.warn("BP stage manual control failed (%s)", ex)
+        log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "bp", namespace="/manual")
 
 
@@ -101,7 +101,7 @@ def bp_start_jog(message):
         start_time = time.time()
         bp_stage.startBPJog(speed=speed, acceleration=bp_stage.getDefaultBPAcceleration())
     except Exception as ex:
-        log.warn("BP stage manual control failed (%s)", ex)
+        log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "bp", namespace="/manual")
 
 
@@ -116,7 +116,7 @@ def bp_stop_jog():
             "bp_done", bp_get_position(notify=False), namespace="/manual"
         )
     except Exception as ex:
-        log.warn("BP stage manual control failed (%s)", ex)
+        log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "bp", namespace="/manual")
 
 
@@ -143,6 +143,6 @@ def bp_get_position(return_timing=False, notify=True):
             socketio.emit("bp_return_position", ret_dict, namespace="/manual")
         return ret_dict
     except Exception as ex:
-        log.warn("BP stage manual control failed (%s)", ex)
+        log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "bp", namespace="/manual")
         return {}

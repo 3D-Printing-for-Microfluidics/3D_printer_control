@@ -12,7 +12,7 @@ def setLoadcellGraphMode(message):
     try:
         loadcell.set_graph_mode(message)
     except Exception as ex:
-        log.warn("Loadcell manual control failed (%s)", ex)
+        log.warn("Loadcell manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "loadcell", namespace="/manual")
 
 def get_graph_mode(emit=True):
@@ -25,5 +25,5 @@ def get_graph_mode(emit=True):
             )
         return loadcell.get_graph_mode()
     except Exception as ex:
-        log.warn("Loadcell manual control failed (%s)", ex)
+        log.warn("Loadcell manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "loadcell", namespace="/manual")

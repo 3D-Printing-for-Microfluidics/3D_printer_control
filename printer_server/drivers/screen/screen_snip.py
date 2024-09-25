@@ -42,7 +42,7 @@ def handleUpload(request):
         )
         return ""
     except Exception as ex:
-        log.warn("Screen manual control failed (%s)", ex)
+        log.warn("Screen manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "screen", namespace="/manual")
 
 
@@ -56,7 +56,7 @@ def fetch_previews():
             "screen_previews", previews, namespace="/manual"
         )
     except Exception as ex:
-        log.warn("Screen manual control failed (%s)", ex)
+        log.warn("Screen manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "screen", namespace="/manual")
 
 
@@ -73,7 +73,7 @@ def screenDraw(message):
             "screen_done", {light_engine: screen.fetch_preview(screen_num)}, namespace="/manual"
         )
     except Exception as ex:
-        log.warn("Screen manual control failed (%s)", ex)
+        log.warn("Screen manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "screen", namespace="/manual")
 
 
@@ -90,7 +90,7 @@ def screenWhite(message):
             "screen_done", {light_engine: screen.fetch_preview(screen_num)}, namespace="/manual"
         )
     except Exception as ex:
-        log.warn("Screen manual control failed (%s)", ex)
+        log.warn("Screen manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "screen", namespace="/manual")
 
 
@@ -104,5 +104,5 @@ def screenClear(message):
             "screen_done", {light_engine: screen.fetch_preview(screen_num)}, namespace="/manual"
         )
     except Exception as ex:
-        log.warn("Screen manual control failed (%s)", ex)
+        log.warn("Screen manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "screen", namespace="/manual")

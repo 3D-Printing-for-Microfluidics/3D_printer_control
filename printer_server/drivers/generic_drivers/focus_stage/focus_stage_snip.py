@@ -24,7 +24,7 @@ def focus_set_coodinate_system(message):
             "focus_done", focus_get_position(notify=False), namespace="/manual"
         )
     except Exception as ex:
-        log.warn("Focus stage manual control failed (%s)", ex)
+        log.warn("Focus stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "focus", namespace="/manual")
 
 @socketio.on("focus_home", namespace="/manual")
@@ -36,7 +36,7 @@ def focus_home():
             "focus_done", focus_get_position(notify=False), namespace="/manual"
         )
     except Exception as ex:
-        log.warn("Focus stage manual control failed (%s)", ex)
+        log.warn("Focus stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "focus", namespace="/manual")
 
 @socketio.on("focus_move", namespace="/manual")
@@ -60,7 +60,7 @@ def focus_move(message):
             "focus_done", focus_get_position(notify=False), namespace="/manual"
         )
     except Exception as ex:
-        log.warn("Focus stage manual control failed (%s)", ex)
+        log.warn("Focus stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "focus", namespace="/manual")
 
 @socketio.on("focus_get_position", namespace="/manual")
@@ -81,6 +81,6 @@ def focus_get_position(notify=True):
 
         return positions
     except Exception as ex:
-        log.warn("Focus stage manual control failed (%s)", ex)
+        log.warn("Focus stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "focus", namespace="/manual")
         return {}

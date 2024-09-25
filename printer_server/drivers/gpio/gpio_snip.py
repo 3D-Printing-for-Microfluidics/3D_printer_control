@@ -15,7 +15,7 @@ def setFilmRelayState(message):
         else:
             gpio.film_relay_off()
     except Exception as ex:
-        log.warn("GPIO manual control failed (%s)", ex)
+        log.warn("GPIO manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "gpio", namespace="/manual")
 
 def getFilmRelayState(emit=True):
@@ -24,6 +24,6 @@ def getFilmRelayState(emit=True):
             socketio.emit("gpio_film_relay_state", gpio.film_relay_state, namespace="/manual")
         return gpio.film_relay_state
     except Exception as ex:
-        log.warn("GPIO manual control failed (%s)", ex)
+        log.warn("GPIO manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "xy", namespace="/manual")
         return False
