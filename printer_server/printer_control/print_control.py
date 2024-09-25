@@ -41,20 +41,21 @@ def run_in_thread(state, text):
             top_level = kwargs.get("top_level", top_level)
 
             def func(self, *args, **kwargs):
+                if top_level:
+                    msg = {
+                        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                        "text": text,
+                    }
+                    log.info(msg["text"])
+                    home.update_printer_state("busy", msg)
                 ret = f(self, *args, **kwargs)
                 if top_level:
                     if ret == False:
                         self.state = "failed"
-                    self.state = state
+                    else:
+                        self.state = state
                     home.update_printer_state(self.state, dict())
-
-            if top_level:
-                msg = {
-                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-                    "text": text,
-                }
-                log.info(msg["text"])
-                home.update_printer_state("busy", msg)
+                return ret
 
             if run_in_thread:
                 _thread = Thread(

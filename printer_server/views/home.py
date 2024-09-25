@@ -178,6 +178,7 @@ def send_bootstrap_alert(msg):
         namespace="/printing",
     )
 
+critical_error_val = None
 
 @socketio.on("connect", namespace="/printing")
 def connect():
@@ -187,6 +188,8 @@ def connect():
         namespace="/printing",
         broadcast=False,
     )
+    if critical_error_val is not None:
+        critical_error(critical_error_val)
 
 
 @socketio.on("disconnect", namespace="/printing")
@@ -201,6 +204,8 @@ def initialize(message):
 
 
 def critical_error(process):
+    global critical_error_val
+    critical_error_val = process
     if process == "initialization":
         title = "Initialization Failed"
         msg = "The following hardware was not found:\n"
@@ -220,6 +225,8 @@ def critical_error(process):
 @socketio.on("critical_error_confirm", namespace="/printing")
 # pylint: disable=unused-argument
 def critical_error_confirm(message):
+    global critical_error_val
+    critical_error_val = None
     if message == "initialization":
         print_control.reinitialize(run_in_thread=False, top_level=True)
     elif message == "printing":
@@ -229,6 +236,8 @@ def critical_error_confirm(message):
 @socketio.on("critical_error_cancel", namespace="/printing")
 # pylint: disable=unused-argument
 def critical_error_reply(message):
+    global critical_error_val
+    critical_error_val = None
     if message == "initialization":
         shutdown()
 
