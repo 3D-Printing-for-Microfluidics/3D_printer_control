@@ -50,6 +50,9 @@ class XYStageDriver:
     def stopXYJog(self, axis=None):
         log.warning("Function not implemented. Using abstract XYStageDriver class")
 
+    def getXYLimits(self, axis=None):
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
+
     def initialize_and_positionXY(self, x, y):
         if self.initialized is None:
             self.initialized = False

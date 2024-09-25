@@ -53,8 +53,10 @@ def ttr_get_position(notify=True):
         for axis in ttr_stage.axes_common_names:
             if axis in ["Tip", "Tilt", "Rotate"]:
                 position = ttr_stage.getTTRPosition(axis=axis)
+                limits = ttr_stage.getTTRLimits(axis=axis)
                 positions[axis] = {
-                    "position": f"{position*1000:.1f}"
+                    "position": f"{position*1000:.1f}",
+                    "limits": f"{limits[0]*1000:.1f}, {limits[1]*1000:.1f}"
                 }
         if notify:
             socketio.emit("ttr_return_position", positions, namespace="/manual")

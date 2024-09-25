@@ -10,6 +10,7 @@ var update_ttr_positions = function (message) {
     for (let stage of manual_controls_data["ttr_stage"]) {
         if (!$.isEmptyObject(message)) {
             document.getElementById(`ttr-${stage}-state`).innerHTML = message[stage]["position"];
+            document.getElementById(`ttr-${stage}-limits`).innerHTML = "Limits: " + message[stage]["limits"];
         }
     }
 }

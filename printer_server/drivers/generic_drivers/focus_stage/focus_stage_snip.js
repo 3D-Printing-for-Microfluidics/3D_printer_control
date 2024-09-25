@@ -9,6 +9,7 @@ var enable_focus_buttons = function () {
 var update_focus_positions = function (message) {
     if (!$.isEmptyObject(message)) {
         document.getElementById(`focus-state`).innerHTML = message["position"];
+        document.getElementById(`focus-limits`).innerHTML = "Limits: " + message["limits"];
     }
 }
 

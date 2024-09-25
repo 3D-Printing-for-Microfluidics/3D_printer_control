@@ -34,6 +34,8 @@
         "axes_acceleration": {
             "A": 50
         },
+        "calibration_limit": 10.380125,
+        "bottom_limit": 47.0,
         "calibration_position": 9.380125,
         "bottom_position": 40.284,
         "top_position": -50

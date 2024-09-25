@@ -89,6 +89,7 @@ def xy_get_position(notify=True):
         for axis in xy_stage.axes_common_names:
             if axis in ["X", "Y"]:
                 position = xy_stage.getXYPosition(axis=axis)
+                limits = xy_stage.getXYLimits(axis=axis)
                 if coord_systems_control is not None:
                     coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
                     calibration_positions = get_last_calibration_positions_from_logs()
@@ -105,7 +106,8 @@ def xy_get_position(notify=True):
                         position -= coord_system[axis]
                         position *= 1000
                 positions[axis] = {
-                    "position": f"{position:.1f}"
+                    "position": f"{position:.1f}",
+                    "limits": f"{limits[0]*1000:.1f}, {limits[1]*1000:.1f}"
                 }
         if notify:
             socketio.emit("xy_return_position", positions, namespace="/manual")

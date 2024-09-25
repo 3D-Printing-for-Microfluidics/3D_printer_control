@@ -72,6 +72,9 @@ class KDC101(USBSerial, FocusStageDriver):
     def stopFocusJog(self):
         self.log.warning("KDC Jogging not implemented")
 
+    def getFocusLimits(self):
+        return (0, 25)
+
     ##############################################################################################
             
     def home(self):

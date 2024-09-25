@@ -14,7 +14,8 @@ def load_mks():
         socketio.emit(
             "mks_load", {
                 "target":config_dict["mks"]["target"], 
-                "atm":config_dict["mks"]["atm pressure"]-50
+                "atm":config_dict["mks"]["atm pressure"]-50,
+                "limits":f"{mks_teensy.get_crane_lower_limit()}, {mks_teensy.get_crane_upper_limit()}"
             }, namespace="/manual"
         )
     except Exception as ex:

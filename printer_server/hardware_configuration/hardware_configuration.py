@@ -43,6 +43,11 @@ class Printer3D:
             else:
                 self.environmental_sensors = EnvironmentalSensors(config_dict=config_dict["environmental_sensors"], log_level=default_log_level)
 
+        if "external_control" in config_dict.keys():
+            from printer_server.drivers.external_control import External_Control
+
+            self.external_control = External_Control()
+
         if "galil" in config_dict.keys():
             from printer_server.drivers.galil import Galil, Galil_dummy
 

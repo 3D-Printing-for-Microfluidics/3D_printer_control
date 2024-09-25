@@ -96,6 +96,8 @@
             "C": 50,
             "D": 50
         },
+        "calibration_limit": 46.2148438,
+        "bottom_limit": 47.875,
         "calibration_position": 45.2148438,
         "bottom_position": 46.875,
         "top_position": -50

@@ -9,6 +9,7 @@ var enable_bp_buttons = function () {
 var update_bp_positions = function (message) {
     if (!$.isEmptyObject(message)) {
         document.getElementById(`bp-state`).innerHTML = message["position"];
+        document.getElementById(`bp-limits`).innerHTML = "Limits: " + message["limits"];
     }
 }
 

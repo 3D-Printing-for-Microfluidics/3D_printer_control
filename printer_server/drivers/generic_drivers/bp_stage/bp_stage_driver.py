@@ -10,6 +10,8 @@ class BPStageDriver:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         super().__init__()
         self.initialized = None
+        self.calibration_limit = None
+        self.bottom_limit = None
         self.calibration_position = None
         self.bottom_position = None
         self.top_position = None
@@ -65,11 +67,21 @@ class BPStageDriver:
     def goToBPbottom(self):
         log.warning("Function not implemented. Using abstract BPStageDriver class")
 
-    def initialize_and_positionBP(self, pos):
+    def getBPLimits(self):
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
+
+    def setUpperLimit(self, limit):
+        log.warning("Function not implemented. Using abstract BPStageDriver class")
+
+    def initialize_and_positionBP(self, pos, external_control_enabled):
         if self.initialized is None:
             self.initialized = False
             self.initialize()
             self.home()
+            if external_control_enabled:
+                self.setUpperLimit(self.calibration_limit, axis="Build Platform")
+            else:
+                self.setUpperLimit(self.bottom_limit, axis="Build Platform")
             self.initialized = True
 
         while not self.initialized:

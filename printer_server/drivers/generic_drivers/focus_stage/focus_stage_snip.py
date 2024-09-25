@@ -68,12 +68,13 @@ def focus_get_position(notify=True):
     """Get the position the focus stage in um"""
     try:
         position = focus_stage.getFocusPosition()
+        limits = focus_stage.getFocusLimits()
         if coord_systems_control is not None:
             coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
             position -= coord_system["Focus"]
-            position *= 1000
         positions = {
-            "position": f"{position:.1f}"
+            "position": f"{position*1000:.1f}",
+            "limits": f"{limits[0]*1000:.1f}, {limits[1]*1000:.1f}"
         }
         if notify:
             socketio.emit("focus_return_position", positions, namespace="/manual")

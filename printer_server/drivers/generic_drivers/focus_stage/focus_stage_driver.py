@@ -53,6 +53,9 @@ class FocusStageDriver:
     def stopFocusJog(self):
         log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
+    def getFocusLimits(self):
+        log.warning("Function not implemented. Using abstract FocusStageDriver class")
+
     def initialize_and_positionFocus(self, pos):
         if self.initialized is None:
             self.initialized = False

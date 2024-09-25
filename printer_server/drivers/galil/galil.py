@@ -47,6 +47,9 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.ctspmm = config_dict["axes_ctspmm"]
         self.default_speed = config_dict["axes_speed"]
         self.default_acceleration = config_dict["axes_acceleration"]
+        self.upper_limit = config_dict["upper_limit"]
+        self.calibration_limit = config_dict["calibration_limit"]
+        self.bottom_limit = config_dict["bottom_limit"]
         self.calibration_position = config_dict["calibration_position"]
         self.bottom_position = config_dict["bottom_position"]
         self.top_position = config_dict["top_position"]
@@ -245,6 +248,16 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
                         error = error_code
                     self.log.error("Last command '%s' returned error '%s'", command, error)
                     return error
+                
+    def getSoftwareLimits(self, axis=None):
+        a = self.convertAxis(axis)
+        ll = self.cntsToMm(int(self.send(f"BL{a}=?")), axis=axis)
+        ul = self.cntsToMm(int(self.send(f"FL{a}=?")), axis=axis)
+        return (ll, ul)
+
+    def setUpperLimit(self, limit, axis=None):
+        a = self.convertAxis(axis)
+        self.send(f"FL{a}={limit * self.ctspmm[a]}")
 
     def checkLimits(self, axis=None):
         """Return a tuple the state of the limit switches for the
@@ -374,6 +387,9 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def stopXYJog(self, axis=None):
         self.stopJog(axis=axis)
 
+    def getXYLimits(self, axis=None):
+        return self.getSoftwareLimits(axis=axis)
+
     def getFocusPosition(self, notify=True):
         return self.getPosition(in_mm=True, axis="Focus")
 
@@ -389,6 +405,9 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def stopFocusJog(self):
         self.stopJog(axis="Focus")
 
+    def getFocusLimits(self):
+        return self.getSoftwareLimits(axis="Focus")
+
     def getBPPosition(self, notify=True):
         return self.getPosition(in_mm=True, axis="Build Platform")
 
@@ -403,6 +422,9 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
 
     def stopBPJog(self):
         self.stopJog(axis="Build Platform")
+
+    def getBPLimits(self):
+        return self.getSoftwareLimits(axis="Build Platform")
 
     ################################# End parent class functions #######################################
 

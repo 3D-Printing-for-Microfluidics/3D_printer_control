@@ -125,12 +125,13 @@ def bp_get_position(return_timing=False, notify=True):
     """Get the position the main Z stage in um"""
     try:
         position = bp_stage.getBPPosition()
+        limits = bp_stage.getBPLimits()
         if coord_systems_control is not None:
             coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
             position -= coord_system["Build Platform"]
-            position *= 1000
         ret_dict = {
-            "position":f"{position:.1f}"
+            "position":f"{position*1000:.1f}",
+            "limits": f"{limits[0]*1000:.1f}, {limits[1]*1000:.1f}"
         }
         if return_timing:
             times, positions = bp_stage.get_logging_results()

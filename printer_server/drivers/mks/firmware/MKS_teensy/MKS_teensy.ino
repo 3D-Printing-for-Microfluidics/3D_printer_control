@@ -8,6 +8,8 @@ int reed_pins[5] = {13,14,15,16,17};
 
 int ADC_RANGE = 1024;
 int ENCODER_RANGE_MM = 1000;
+int upper_limit = 600;
+int lower_limit = 0;
 
 char opcode[2];
 String data = "";
@@ -53,14 +55,35 @@ void move(int target_position){
   int distanceFromStart = abs(start_position - position);
 
   if(target_position - position > 0){
-    digitalWrite(DIR_PIN, LOW);
+    if(target_position > upper_limit){
+      analogWrite(PWM_PIN, off);
+      return;
+    }
+    else{
+      digitalWrite(DIR_PIN, LOW);
+    }
   }
   else{
-    digitalWrite(DIR_PIN, HIGH);
+    if(target_position < lower_limit){
+      analogWrite(PWM_PIN, off);
+      return;
+    }
+    else{
+      digitalWrite(DIR_PIN, HIGH);
+    }
   }
 
   while((target_position - position > 0 && target_position - start_position > 0) || (position - target_position > 0 && target_position - start_position < 0)){
     position = get_encoder_position();
+
+    if(position > upper_limit && target_position > position){
+      analogWrite(PWM_PIN, off);
+      return;
+    }
+    else if(position < lower_limit && target_position < position){
+      analogWrite(PWM_PIN, off);
+      return;
+    }
     
     distanceFromStart = abs(start_position - position);
     int startpwmValue = map(distanceFromStart, 0, threshold_dist, min_speed, max_speed);
@@ -84,7 +107,7 @@ void loop() {
   if (Serial.available() > 0) {
       //get the opcode
       opcode[0] = Serial.read();
-      if(opcode[0] == 'M'){
+      if(opcode[0] == 'M' || opcode[0] == 'P'){
         opcode[1] = Serial.read();
       }
       data = "";
@@ -127,8 +150,19 @@ void loop() {
       }
       Serial.println();
     }
-    else if(opcode[0] == 'P'){ // Get encoder position
-      Serial.println(get_encoder_position());
+    else if(opcode[0] == 'P'){ // Get encoder info
+      if(opcode[1] == 'P'){ // Get encoder position
+        Serial.println(get_encoder_position());
+      }
+      else if(opcode[1] == 'U'){ // Get upper limit
+        Serial.println(upper_limit);
+      }
+      else if(opcode[1] == 'L'){ // Get lower limit
+        Serial.println(lower_limit);
+      }
+      else{
+        Serial.println("Error: Invalid opcode");
+      }
     }
     else if(opcode[0] == 'M'){ // Movement commands
       if(opcode[1] == 'R'){ // Relative Move
@@ -146,6 +180,9 @@ void loop() {
       else if(opcode[1] == 'B'){ // Move to Bottom
         move(20);
         Serial.println(get_encoder_position());
+      }
+      else{
+        Serial.println("Error: Invalid opcode");
       }
     }
     else{

@@ -14,6 +14,7 @@ class BPControl(PrintControl):
     def __init__(self):
         super().__init__()
         self.bp_stage = driver_handles.bp_stage
+        self.external_control = driver_handles.external_control
 
         # log files
         self.position_log = str(self.current_job / "logs" / "position_data.csv")
@@ -42,7 +43,7 @@ class BPControl(PrintControl):
 
     def initialize_hardware(self):
         bp_pos = self.bp_stage.top_position
-        self.bp_thread = Thread(log, name="bp_control_init_thread", target=self.bp_stage.initialize_and_positionBP, args=[bp_pos])
+        self.bp_thread = Thread(log, name="bp_control_init_thread", target=self.bp_stage.initialize_and_positionBP, args=[bp_pos, self.external_control.get_enable()])
         self.bp_thread.start()
         super().initialize_hardware()
         self.bp_thread.join()

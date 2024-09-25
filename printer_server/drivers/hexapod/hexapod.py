@@ -103,6 +103,9 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
     def relMoveTTR(self, rad=None, axis=None):
         self.step_axis(self.convertAxis(axis), rad)
 
+    def getTTRLimits(self, axis=None):
+        return self.get_simple_dynamic_range(axis)
+
     def setup_log_file(self, filename):
         pass
 
@@ -132,6 +135,9 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
 
     def stopFocusJog(self):
         self.log.error("Hexapod Jogging not implemented")
+
+    def getFocusLimits(self):
+        return self.get_simple_dynamic_range("Focus")
 
     ################################# End parent class functions #######################################
         
@@ -368,6 +374,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             tuple: negative and positive ranges of the requested axis at the given pose
         """
         try:
+            target_axis = self.convertAxis(target_axis)
             request = {target_axis: 1}
             positive_limit = float(self.controller.qTRA(request)[target_axis])
             request = {target_axis: -1}

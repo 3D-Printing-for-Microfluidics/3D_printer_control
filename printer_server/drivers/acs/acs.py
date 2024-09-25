@@ -36,6 +36,8 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         self.max_travel_mm = config_dict["axes_travel"]
         self.default_speed = config_dict["axes_speed"]
         self.default_acceleration = config_dict["axes_acceleration"]
+        self.calibration_limit = config_dict["calibration_limit"]
+        self.bottom_limit = config_dict["bottom_limit"]
         self.calibration_position = config_dict["calibration_position"]
         self.bottom_position = config_dict["bottom_position"]
         self.top_position = config_dict["top_position"]
@@ -98,8 +100,9 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
 
     def initialize(self):
         self.log.info("Initializing ACS...")
-        for axis in self.axes:
-            self.motorOn(axis)
+        # Homing routine already takes care of this...
+        # for axis in self.axes:
+        #     self.motorOn(axis)
         self.log.info("Initialized ACS")
 
     def goToBPcalibration(self):
@@ -159,6 +162,16 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
             if response[0] == '?':
                 self.log.error("Last command '%s' returned error '%s (%s)'", command, response, self.send(f"?{response}"))
         return response
+    
+    def getSoftwareLimits(self, axis=None):
+        a = self.convertAxis(axis)
+        ll = self.send(f"?SLLIMIT({a})")
+        ul = self.send(f"?SRLIMIT({a})")
+        return (float(ll), float(ul))
+
+    def setUpperLimit(self, limit, axis=None):
+        a = self.convertAxis(axis)
+        self.send(f"SRLIMIT({a}) = {limit}")
             
     def checkLimits(self, axis=None):
         """Return a tuple the state of the limit switches for the
@@ -269,6 +282,9 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
     def stopXYJog(self, axis=None):
         self.stopJog(axis=axis)
 
+    def getXYLimits(self, axis=None):
+        return self.getSoftwareLimits(axis=axis)
+
     def getBPPosition(self, notify=True):
         return self.getPosition(axis="Build Platform", notify=notify)
 
@@ -283,6 +299,9 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
 
     def stopBPJog(self):
         self.stopJog(axis="Build Platform")
+
+    def getBPLimits(self):
+        return self.getSoftwareLimits(axis="Build Platform")
 
     ################################# End parent class functions #######################################
 

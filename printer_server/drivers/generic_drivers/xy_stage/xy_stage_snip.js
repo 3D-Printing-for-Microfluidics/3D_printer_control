@@ -10,6 +10,7 @@ var update_xy_positions = function (message) {
     for (let stage of manual_controls_data["xy_stage"]) {
         if (!$.isEmptyObject(message)) {
             document.getElementById(`xy-${stage}-state`).innerHTML = message[stage]["position"];
+            document.getElementById(`xy-${stage}-limits`).innerHTML = "Limits: " + message[stage]["limits"];
         }
     }
 }

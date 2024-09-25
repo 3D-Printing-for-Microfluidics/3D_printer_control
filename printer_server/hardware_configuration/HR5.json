@@ -77,9 +77,11 @@
             "1": 50,
             "2": 50
         },
-        "calibration_position": 50,
-        "bottom_position": 78,
-        "top_position": 0
+        "calibration_limit": 1,
+        "bottom_limit": 33,
+        "calibration_position": 0,
+        "bottom_position": 26.3,
+        "top_position": -50
     },
     "hexapod": {
         "dummy": false,

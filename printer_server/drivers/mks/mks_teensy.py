@@ -46,8 +46,17 @@ class MKSTeensy(USBSerial):
     # def get_all_sensor_status(self):
         # return list(self.send("S"))
     
+    def get_crane_lower_limit(self):
+        return float(self.send("PL"))
+    
+    def get_crane_upper_limit(self):
+        return float(self.send("PU"))
+    
     def get_crane_position(self):
-        return float(self.send("P"))
+        return float(self.send("PP"))
+    
+    def get_crane_position(self):
+        return float(self.send("PP"))
     
     def move_crane(self, mm, relative=False):
         self.log.info("Move crane to %s", mm)
