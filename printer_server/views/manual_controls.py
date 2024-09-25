@@ -220,9 +220,12 @@ def start_loop():
 def loop():
     global loop_thread, connected_clients
     while connected_clients > 0:
-        for f in on_load_f_looping:
+        for f in on_load_f_looping[:]:
             try:
-                f()
+                ret = f()
+                if ret is None:
+                    on_load_f_looping.remove(f)
+
             except RuntimeError as ex:
                 log.warning("Manual Control loop failed (%s)", ex, exc_info=True)
                 loop_thread = None

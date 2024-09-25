@@ -19,7 +19,7 @@ def get_photodiode_power(message={}, emit=True):
     except Exception as ex:
         log.warn("Photodiode manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "photodiode", namespace="/manual")
-        return 0
+        return None
 
 @socketio.on("photodiode_zero", namespace="/manual")
 def zero_photodiode():

@@ -22,3 +22,4 @@ def read_sensors(emit=True):
     except Exception as ex:
         log.warn("Keyence manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "keyence", namespace="/manual")
+        return None

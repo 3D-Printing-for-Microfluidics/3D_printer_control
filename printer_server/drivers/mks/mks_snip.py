@@ -34,6 +34,7 @@ def get_gauges(emit=True):
     except Exception as ex:
         log.warn("MKS manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "mks", namespace="/manual")
+        return None
 
 
 def get_relay_status(emit=True):
@@ -60,6 +61,7 @@ def get_relay_status(emit=True):
     except Exception as ex:
         log.warn("MKS manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "mks", namespace="/manual")
+        return None
 
 
 @socketio.on("mks_switch_relay", namespace="/manual")
@@ -89,6 +91,7 @@ def cranePosition(emit=True):
     except Exception as ex:
         log.warn("MKS manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "mks", namespace="/manual")
+        return None
 
 
 @socketio.on("mks_crane_move", namespace="/manual")

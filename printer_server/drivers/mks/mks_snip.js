@@ -84,6 +84,7 @@ $(document).ready(function () {
         target1 = message["target"][0];
         target2 = message["target"][1];
         atm = message["atm"];
+        document.getElementById(`crane-limits`).innerHTML = "Limits: " + message["limits"];
     });
 
     socket.on("mks_update_relay_status", function (message) {
