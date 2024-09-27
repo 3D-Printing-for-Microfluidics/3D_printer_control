@@ -71,6 +71,16 @@ class LightEngineControl(ScreenControl):
                 raise PrintingException()
         super().print_worker()
 
+    def pre_print_tasks(self):
+        for light_engine, light_engine_driver in self.light_engines.items():
+            try:
+                light_engine_driver.idle_off()
+            except Exception as ex:
+                log.critical("Unable communicate with light engine (%s)", ex, exc_info=True)
+                self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = light_engine_driver
+                raise PrintingException()
+        super().pre_print_tasks()
+
     def pre_exposure_tasks(self, settings, light_engine):
         _light_engine = getLightEngineFromJSON(light_engine)
         light_engine_driver = self.light_engines[_light_engine]
@@ -123,6 +133,7 @@ class LightEngineControl(ScreenControl):
             try:
                 light_engine_driver.stop_sequencer()
                 update_le_led_state(light_engine, False)
+                light_engine_driver.idle_on()
             except Exception as ex:
                 log.critical("Unable communicate with light engine (%s)", ex, exc_info=True)
                 self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = light_engine_driver

@@ -615,6 +615,29 @@ class Visitech(EthernetSerial, LightEngineDriver):
         Return type +OK
         """
         return self.send("SET MIRRORS UNPARKED")
+    
+    def idle_on(self):
+        """Enable idle mode.
+
+        See section 2.4.1.4 "DMD Idle Mode" in the programmer's guide.
+
+        "It is strongly recommended that anytime the DMD is idle and not
+        actively projecting data that the DMD Idle Mode be enabled to
+        assist in maximizing DMD lifetime. For example, whenever the
+        system is idle, between exposures if the application allows for
+        it, or when the exposure pattern sequence is stopped. To enable
+        this mode, the pattern sequences must first be stopped.
+        To restart the pattern sequence, this mode must be disabled."
+        """
+        self.log.info("DMD idle on")
+        return self.send("SET MIRROR SHAKE ON")
+
+    def idle_off(self):
+        """Disable idle mode.
+
+        See section 2.4.1.4 "DMD Idle Mode" in the programmer's guide."""
+        self.log.info("DMD idle off")
+        return self.send("SET MIRROR SHAKE OFF")
 
     def get_sticky_errors(self, warn="ALL"):
         """

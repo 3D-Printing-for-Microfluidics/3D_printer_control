@@ -52,6 +52,14 @@ class Wintech(LightEngineDriver):
         self.dmd_controller.stop_sequence()
         self.led_on = False
 
+    def idle_on(self):
+        self.log.info("DMD idle on")
+        self.dmd_controller.idle_on()
+
+    def idle_off(self):
+        self.log.info("DMD idle off")
+        self.dmd_controller.idle_off()
+
     def read_all_status(self, warn="ALL"):
         return {
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),

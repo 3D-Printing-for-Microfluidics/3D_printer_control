@@ -12,6 +12,7 @@ def light_engine_stop(light_engine):
     """Turn off the LED in the light engine."""
     try:
         light_engines[light_engine].stop_sequencer()
+        light_engines[light_engine].idle_on()
         socketio.emit("light_engine_update_led_state", {"light_engine":light_engine, "state":False}, namespace="/manual")
         socketio.emit("light_engine_done", namespace="/manual")
     except Exception as ex:
@@ -29,10 +30,12 @@ def light_engine_start(message):
         exposure = int(message["exposure"])
         led = int(message.get("led", 0))
         socketio.emit("light_engine_update_led_state", {"light_engine":light_engine, "state":True}, namespace="/manual")
+        light_engines[light_engine].idle_off()
         light_engines[light_engine].setup_exposure(exposure, led_power=ledPower, repeat=repeat, led_num=led)
         light_engines[light_engine].perform_exposure()
         if repeat != 0:
             socketio.emit("light_engine_update_led_state", {"light_engine":light_engine, "state":False}, namespace="/manual")
+            light_engines[light_engine].idle_on()
         socketio.emit("light_engine_done", namespace="/manual")
     except Exception as ex:
         log.warn("%s manual control failed (%s)", light_engine.capitalize(), ex, exc_info=True)

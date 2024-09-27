@@ -13,6 +13,12 @@ class LightEngineDriver:
 
     def stop_sequencer(self):
         log.warning("Function not implemented. Using abstract LightEngineDriver class")
+    
+    def idle_on(self):
+        log.warning("Function not implemented. Using abstract LightEngineDriver class")
+
+    def idle_off(self):
+        log.warning("Function not implemented. Using abstract LightEngineDriver class")
 
     def read_all_status(self, warn="ALL"):
         log.warning("Function not implemented. Using abstract LightEngineDriver class")
