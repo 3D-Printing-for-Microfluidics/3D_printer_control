@@ -15,10 +15,10 @@ def set_external_control_enable(message):
     try:
         if message == "Enabled":
             external_control_enable.set_enable(True)
-            bp_stage.setUpperLimit(bp_stage.calibration_limit)
+            bp_stage.setBPLimits("calibration")
         else:
             external_control_enable.set_enable(False)
-            bp_stage.setUpperLimit(bp_stage.bottom_limit)
+            bp_stage.setBPLimits()
         bp_get_position()
     except Exception as ex:
         log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
