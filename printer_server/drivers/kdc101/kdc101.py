@@ -20,6 +20,7 @@ class KDC101(USBSerial, FocusStageDriver):
         self.relativeMode = True
         self.config_dict = config_dict
         self.initialized = None
+        self.limits = config_dict["limits"]
 
     def connect(self):
         super().connect()
@@ -73,7 +74,15 @@ class KDC101(USBSerial, FocusStageDriver):
         self.log.warning("KDC Jogging not implemented")
 
     def getFocusLimits(self):
-        return (0, 25)
+        return self.getSoftwareLimits()
+    
+    def setFocusLimits(self, limits=None):
+        if limits is None:
+            limits = self.limits
+        if limits[0] is not None:
+            self.setLowerLimit(limits[0])
+        if limits[1] is not None:
+            self.setUpperLimit(limits[1])
 
     ##############################################################################################
             
@@ -203,6 +212,15 @@ class KDC101(USBSerial, FocusStageDriver):
         #  allow confirmation Rx messages
         self.write_bytes(pack("<HBBBB", 0x0005, 0x00, 0x00, 0x50, 0x01))
         self.flush_buffers()
+
+    def getSoftwareLimits(self):
+        return (0, 25)
+
+    def setLowerLimit(self, limit):
+        self.log.warn("Setting limits not implemented")
+
+    def setUpperLimit(self, limit):
+        self.log.warn("Setting limits not implemented")
 
     def enableStage(self, enable=True):
         # Enable Stage; MGMSG_MOD_SET_CHANENABLESTATE

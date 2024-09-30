@@ -77,8 +77,16 @@
             "1": 50,
             "2": 50
         },
-        "calibration_limit": 1,
-        "bottom_limit": 33,
+        "limits": {
+            "0": [null,null],
+            "1": [null,null],
+            "2": [null,33]
+        },
+        "calibration_limits": {
+            "0": [null,null],
+            "1": [null,null],
+            "2": [null,1]
+        },
         "calibration_position": 0,
         "bottom_position": 26.3,
         "top_position": -50
@@ -99,6 +107,12 @@
             "Tilt",
             "Rotate"
         ],
+        "limits": {
+            "Z": [null,10],
+            "U": [null,null],
+            "V": [null,null],
+            "W": [null,null]
+        },
         "auto_repositioning": true
     },
     "mks": {

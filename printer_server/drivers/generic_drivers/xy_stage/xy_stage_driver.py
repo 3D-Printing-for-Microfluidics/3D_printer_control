@@ -53,11 +53,15 @@ class XYStageDriver:
     def getXYLimits(self, axis=None):
         log.warning("Function not implemented. Using abstract XYStageDriver class")
 
+    def setXYLimits(self, limits, axis=None):
+        log.warning("Function not implemented. Using abstract XYStageDriver class")
+
     def initialize_and_positionXY(self, x, y):
         if self.initialized is None:
             self.initialized = False
             self.initialize()
             self.home()
+            self.setXYLimits()
             self.initialized = True
 
         while not self.initialized:

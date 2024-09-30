@@ -32,12 +32,16 @@ class TTRStageDriver:
     def getTTRLimits(self, axis=None):
         log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
+    def setTTRLimits(self, limits, axis=None):
+        log.warning("Function not implemented. Using abstract TTRStageDriver class")
+
     def initialize_and_positionTTR(self, tip, tilt, rotate):
         if self.initialized is None:
             self.initialized = False
             self.initialize()
             if self.config_dict.get("auto_repositioning", True):
                 self.home()
+            self.setTTRLimits()
             self.initialized = True
 
         while not self.initialized:
