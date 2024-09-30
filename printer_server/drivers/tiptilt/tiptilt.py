@@ -15,6 +15,7 @@ class TipTilt(USBSerial, TTRStageDriver):
         self.initialized = None
         self.axes = config_dict["axes"]
         self.axes_common_names = config_dict["axes_common_names"]
+        self.limits = config_dict["limits"]
 
     def convertAxis(self, axis):
         for i in range(len(self.axes)):
@@ -36,7 +37,16 @@ class TipTilt(USBSerial, TTRStageDriver):
         self.move_relative(self, axis, rad, fast=False)
 
     def getTTRLimits(self, axis=None):
-        return (self.get_min_position(axis), self.get_max_position(axis))
+        return self.getSoftwareLimits(axis)
+    
+    def setTTRLimits(self, limits=None, axis=None):
+        a = self.convertAxis(axis)
+        if limits is None:
+            limits = self.limits[a]
+        if limits[0] is not None:
+            self.setLowerLimit(limits[0], axis=axis)
+        if limits[1] is not None:
+            self.setUpperLimit(limits[1], axis=axis)
 
     def setup_log_file(self, filename):
         pass
@@ -78,14 +88,18 @@ class TipTilt(USBSerial, TTRStageDriver):
             return "undef"
         else:
             return position
+        
+    def getSoftwareLimits(self, axis=None):
+        a = self.convertAxis(axis)
+        ll = self.send(f"GL{a}", parse_float_at_index=0)
+        ul = self.send(f"GU{a}", parse_float_at_index=0)
+        return (ll, ul)
 
-    # returns a float
-    def get_min_position(self, axis):
-        return self.send(f"GL{self.convertAxis(axis)}", parse_float_at_index=0)
+    def setLowerLimit(self, limit, axis=None):
+        self.log.warn("Setting limits not implemented")
 
-    # returns a float
-    def get_max_position(self, axis):
-        return self.send(f"GU{self.convertAxis(axis)}", parse_float_at_index=0)
+    def setUpperLimit(self, limit, axis=None):
+        self.log.warn("Setting limits not implemented")
 
     # returns an int
     def get_acceleration(self, axis):

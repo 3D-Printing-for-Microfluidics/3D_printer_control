@@ -37,6 +37,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         self.connected = None
         self.axes = config_dict["axes"]
         self.axes_common_names = config_dict["axes_common_names"]
+        self.limits = config_dict["limits"]
         self.gateway = PISocket("Hexapod", host=self.config_dict["address"], port=self.config_dict["port"], logger=self.log)
 
     def connect(self):
@@ -104,7 +105,27 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         self.step_axis(self.convertAxis(axis), rad)
 
     def getTTRLimits(self, axis=None):
-        return self.get_simple_dynamic_range(axis)
+        a = self.convertAxis(axis)
+        sdr = self.get_simple_dynamic_range(a)
+        sl = self.getSoftwareLimits(axis=a)
+        if self.limits[a][0] is not None:
+            ll = max(sdr[0], sl[0])
+        else:
+            ll = sdr[0]
+        if self.limits[a][1] is not None:  
+            ul = min(sdr[1], sl[1])
+        else:
+            ul = sdr[1]
+        return (ll,ul)
+    
+    def setTTRLimits(self, limits=None, axis=None):
+        a = self.convertAxis(axis)
+        if limits is None:
+            limits = self.limits[a]
+        if limits[0] is not None:
+            self.setLowerLimit(limits[0], axis=a)
+        if limits[1] is not None:
+            self.setUpperLimit(limits[1], axis=a)
 
     def setup_log_file(self, filename):
         pass
@@ -137,7 +158,27 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         self.log.error("Hexapod Jogging not implemented")
 
     def getFocusLimits(self):
-        return self.get_simple_dynamic_range("Focus")
+        a = self.convertAxis("Focus")
+        sdr = self.get_simple_dynamic_range(a)
+        sl = self.getSoftwareLimits(axis=a)
+        if self.limits[a][0] is not None:
+            ll = max(sdr[0], sl[0])
+        else:
+            ll = sdr[0]
+        if self.limits[a][1] is not None:  
+            ul = min(sdr[1], sl[1])
+        else:
+            ul = sdr[1]
+        return (ll,ul)
+    
+    def setFocusLimits(self, limits=None):
+        a = self.convertAxis("Focus")
+        if limits is None:
+            limits = self.limits[a]
+        if limits[0] is not None:
+            self.setLowerLimit(limits[0], axis=a)
+        if limits[1] is not None:
+            self.setUpperLimit(limits[1], axis=a)
 
     ################################# End parent class functions #######################################
         
@@ -361,6 +402,22 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
 
         self.set_pivot_point(new_pivot["R"], new_pivot["S"], new_pivot["T"])
         self.log.info("Pivot point stepped by %.3f mm on %s axis", step_size, axis)
+        
+    def getSoftwareLimits(self, axis=None):
+        a = self.convertAxis(axis)
+        ll = self.controller.qNLM(a)
+        ul = self.controller.qPLM(a)
+        print(ll, ul)
+        print(ll[a], ul[a])
+        return (float(ll[a]), float(ul[a]))
+
+    def setLowerLimit(self, limit, axis=None):
+        a = self.convertAxis(axis)
+        self.controller.NLM({a: limit})
+
+    def setUpperLimit(self, limit, axis=None):
+        a = self.convertAxis(axis)
+        self.controller.PLM({a: limit})
 
     def get_simple_dynamic_range(self, target_axis:str):
         """ Get the range of motion of the requested axis. Due to the complexity of the hexapod joint configuration, dynamic ranges change if 

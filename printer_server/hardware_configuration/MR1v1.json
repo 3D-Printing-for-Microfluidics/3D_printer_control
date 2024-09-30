@@ -96,8 +96,18 @@
             "C": 50,
             "D": 50
         },
-        "calibration_limit": 46.2148438,
-        "bottom_limit": 47.875,
+        "limits": {
+            "A": [null,null],
+            "B": [null,null],
+            "C": [null,null],
+            "D": [null,47.875]
+        },
+        "calibration_limits": {
+            "A": [null,null],
+            "B": [null,null],
+            "C": [null,null],
+            "D": [null,46.2148438]
+        },
         "calibration_position": 45.2148438,
         "bottom_position": 46.875,
         "top_position": -50
@@ -117,6 +127,10 @@
             "Tip",
             "Tilt"
         ],
+        "limits": {
+            "1": [null,null],
+            "2": [null,null]
+        },
         "auto_repositioning": false
     },
     "loadcell": {

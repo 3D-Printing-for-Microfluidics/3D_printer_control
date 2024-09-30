@@ -34,8 +34,12 @@
         "axes_acceleration": {
             "A": 50
         },
-        "calibration_limit": 10.380125,
-        "bottom_limit": 47.0,
+        "limits": {
+            "A": [null,47.0]
+        },
+        "calibration_limits": {
+            "A": [null,10.380125]
+        },
         "calibration_position": 9.380125,
         "bottom_position": 40.284,
         "top_position": -50
@@ -45,6 +49,7 @@
         "vendor_id": 1027,
         "product_id": 64240,
         "baudrate": 115200,
+        "limits": [null,null],
         "moving_shifts_image": true
     },
     "tiptilt": {
@@ -62,6 +67,10 @@
             "Tip",
             "Tilt"
         ],
+        "limits": {
+            "1": [null,null],
+            "2": [null,null]
+        },
         "auto_repositioning": false
     },
     "loadcell": {

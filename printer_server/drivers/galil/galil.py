@@ -47,9 +47,8 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.ctspmm = config_dict["axes_ctspmm"]
         self.default_speed = config_dict["axes_speed"]
         self.default_acceleration = config_dict["axes_acceleration"]
-        self.upper_limit = config_dict["upper_limit"]
-        self.calibration_limit = config_dict["calibration_limit"]
-        self.bottom_limit = config_dict["bottom_limit"]
+        self.limits = config_dict["limits"]
+        self.calibration_limits = config_dict["calibration_limits"]
         self.calibration_position = config_dict["calibration_position"]
         self.bottom_position = config_dict["bottom_position"]
         self.top_position = config_dict["top_position"]
@@ -254,6 +253,10 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         ll = self.cntsToMm(int(self.send(f"BL{a}=?")), axis=axis)
         ul = self.cntsToMm(int(self.send(f"FL{a}=?")), axis=axis)
         return (ll, ul)
+    
+    def setLowerLimit(self, limit, axis=None):
+        a = self.convertAxis(axis)
+        self.send(f"BL{a}={limit * self.ctspmm[a]}")
 
     def setUpperLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
@@ -388,7 +391,26 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.stopJog(axis=axis)
 
     def getXYLimits(self, axis=None):
-        return self.getSoftwareLimits(axis=axis)
+        a = self.convertAxis(axis)
+        sl = self.getSoftwareLimits(axis=a)
+        if self.limits[a][0] is not None:
+            ll = sl[0]
+        else:
+            ll = -self.max_travel_mm[a]/2
+        if self.limits[a][1] is not None:  
+            ul = sl[1]
+        else:
+            ul = self.max_travel_mm[a]/2
+        return (ll,ul)
+    
+    def setXYLimits(self, limits=None, axis=None):
+        a = self.convertAxis(axis)
+        if limits is None:
+            limits = self.limits[a]
+        if limits[0] is not None:
+            self.setLowerLimit(limits[0], axis=a)
+        if limits[1] is not None:
+            self.setUpperLimit(limits[1], axis=a)
 
     def getFocusPosition(self, notify=True):
         return self.getPosition(in_mm=True, axis="Focus")
@@ -406,7 +428,26 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.stopJog(axis="Focus")
 
     def getFocusLimits(self):
-        return self.getSoftwareLimits(axis="Focus")
+        a = self.convertAxis("Focus")
+        sl = self.getSoftwareLimits(axis=a)
+        if self.limits[a][0] is not None:
+            ll = sl[0]
+        else:
+            ll = -self.max_travel_mm[a]/2
+        if self.limits[a][1] is not None:  
+            ul = sl[1]
+        else:
+            ul = self.max_travel_mm[a]/2
+        return (ll,ul)
+    
+    def setFocusLimits(self, limits=None):
+        a = self.convertAxis("Focus")
+        if limits is None:
+            limits = self.limits[a]
+        if limits[0] is not None:
+            self.setLowerLimit(limits[0], axis=a)
+        if limits[1] is not None:
+            self.setUpperLimit(limits[1], axis=a)
 
     def getBPPosition(self, notify=True):
         return self.getPosition(in_mm=True, axis="Build Platform")
@@ -424,7 +465,28 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.stopJog(axis="Build Platform")
 
     def getBPLimits(self):
-        return self.getSoftwareLimits(axis="Build Platform")
+        a = self.convertAxis("Build Platform")
+        sl = self.getSoftwareLimits(axis=a)
+        if self.limits[a][0] is not None:
+            ll = sl[0]
+        else:
+            ll = -self.max_travel_mm[a]/2
+        if self.limits[a][1] is not None:  
+            ul = sl[1]
+        else:
+            ul = self.max_travel_mm[a]/2
+        return (ll,ul)
+    
+    def setBPLimits(self, limits=None):
+        a = self.convertAxis("Build Platform")
+        if limits is None:
+            limits = self.limits[a]
+        elif limits == "calibration":
+            limits = self.calibration_limits[a]
+        if limits[0] is not None:
+            self.setLowerLimit(limits[0], axis=a)
+        if limits[1] is not None:
+            self.setUpperLimit(limits[1], axis=a)
 
     ################################# End parent class functions #######################################
 
