@@ -125,15 +125,16 @@ class Loadcell_dummy:
                 index = 0
                 milliseconds = 0
                 data = 0
-                time = datetime.datetime.now()
+                t = datetime.datetime.now()
                 force = random.randrange(-40, 40, 1)
 
                 if self.log_file is not None:
                     sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                    loadcell_time = time.strftime("%Y-%m-%d %H:%M:%S.%f")
+                    loadcell_time = t.strftime("%Y-%m-%d %H:%M:%S.%f")
                     # Simulate file writing
                     with open(self.log_file, 'a') as f:
                         f.write(f"{sys_time},{loadcell_time},{index},{data},{force}\n")
+                        time.sleep(0.1)
 
                 front_end_counter += 1
                 if self.graph_newtons:
@@ -146,7 +147,7 @@ class Loadcell_dummy:
                         self.currentData.pop(0)
                     self.currentData.append(
                         {
-                            "timestamp": time.timestamp() * 1000,
+                            "timestamp": t.timestamp() * 1000,
                             "force": sum(front_end_array) / len(front_end_array),
                         }
                     )
