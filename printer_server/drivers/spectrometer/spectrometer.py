@@ -49,7 +49,7 @@ class Spectrometer:
 
         if i_time is not None:
             self.log.info("Integration time set to %s ms", i_time)
-            i_time = float(i_time)*1000
+            i_time = float(i_time)
             limits = self.get_integration_limits()
             if i_time >= limits[0] or i_time <= limits[1]:
                 self._set_integration_time(i_time)
@@ -57,11 +57,11 @@ class Spectrometer:
             return -1
         else:
             self.log.info("Calculating integration time...")
-            i_time = self.config_dict["default_integration_time"]*1000
+            i_time = self.config_dict["default_integration_time"]
             self._set_integration_time(i_time)
             time.sleep(1)
             intensity = self.get_max_intensity()
-            self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
+            self.log.debug("Integration time: %s Max value: %s", i_time, intensity)
 
             while(intensity > 65000):
                 i_time = i_time/2
@@ -69,12 +69,12 @@ class Spectrometer:
                     self._set_integration_time(limits[0])
                     time.sleep(1)
                     intensity = self.get_max_intensity()
-                    self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
-                    return self.get_integration_limits()[0]/1000
+                    self.log.debug("Integration time: %s Max value: %s", i_time, intensity)
+                    return self.get_integration_limits()[0]
                 self._set_integration_time(i_time)
                 time.sleep(1)
                 intensity = self.get_max_intensity()
-                self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
+                self.log.debug("Integration time: %s Max value: %s", i_time, intensity)
 
             for _ in range(2):
                 i_time = i_time * 65000/intensity        
@@ -82,20 +82,23 @@ class Spectrometer:
                     self._set_integration_time(limits[1])
                     time.sleep(1)
                     intensity = self.get_max_intensity()
-                    self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
-                    return self.get_integration_limits()[1]/1000 
+                    self.log.debug("Integration time: %s Max value: %s", i_time, intensity)
+                    return self.get_integration_limits()[1] 
                 self._set_integration_time(i_time)
                 time.sleep(1)
                 intensity = self.get_max_intensity()
-                self.log.debug("Integration time: %s Max value: %s", i_time/1000, intensity)
+                self.log.debug("Integration time: %s Max value: %s", i_time, intensity)
             self.log.info("Integration time set to %s ms", i_time)
-            return i_time/1000
+            return i_time
         
     def _set_integration_time(self, i_time):
-        self.spectrometer.integration_time_micros(i_time)
+        self.spectrometer.integration_time_micros(i_time*1000)
 
     def get_integration_limits(self):
-        return self.spectrometer.integration_time_micros_limits
+        limits = self.spectrometer.integration_time_micros_limits
+        l0 = limits[0]/1000
+        l1 = limits[1]/1000
+        return (l0, l1)
     
 
     def get_max_intensity(self):
