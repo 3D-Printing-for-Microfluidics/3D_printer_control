@@ -775,7 +775,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
 
         self.set_led_amplitude(led_power, led_num=led_num)
         if repeat == 0:
-            self.set_sequencer_lut_definition(33100, 0, 0, 8, 0, 0, 0)
+            self.set_sequencer_lut_definition(33100, 0, 0, 8, 1, 0, 0)
             self.set_sequencer_lut_config(repeats=repeat)
         else:
             min_t = 4.046
@@ -853,7 +853,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
             )
             # this provides the minimum blanking of 233 us of the full 33333 us cycle
             # (at 30Hz on HDMI)
-            self.set_sequencer_lut_definition(33100, 0, 0, 8, 0, 0, 0)
+            self.set_sequencer_lut_definition(33100, 0, 0, 8, 1, 0, 0)
             self.set_sequencer_lut_config(repeats=0)
             self.start_sequencer()  # sequencer will be stopped on program exit
         else:  # normal display is desired
