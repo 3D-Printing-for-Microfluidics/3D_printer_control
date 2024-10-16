@@ -25,6 +25,7 @@ class Photodiode:
         self.beamdiameter = config_dict["beam_diameter"]
         self.defaultWavelength = config_dict["default_wavelength"]
         self.attenuation = config_dict["attenuation_db"]
+        self.defaultAverages = config_dict["default_number_of_averages"]
         self.vendor_id = config_dict["vendor_id"]
         self.product_id = config_dict["product_id"]
         self.serial_number = config_dict["serial_number"]
@@ -61,9 +62,11 @@ class Photodiode:
     def initialize(self):
        # sending cmds to photodiode to set parameters that I want to set initialy
         self.log.info("Initializing ThorlabsPM100...")
+        self.set_beam_diameter(self.beamdiameter)
         self.set_wavelength(self.defaultWavelength)
         self.set_attenuation_db(self.attenuation) 
-        self.set_beam_diameter(self.beamdiameter)
+        self.set_num_averages(self.defaultAverages)
+        self.set_lowpass_filter()
         self.power_meter.configure.scalar.pdensity() 
         self.log.info("Initialized ThorlabsPM100")
 
@@ -98,6 +101,19 @@ class Photodiode:
         if self.power_meter:
             self.power_meter.sense.correction.loss.input.magnitude = attenuation
             self.log.debug("Set attenuation: %s dB", self.power_meter.sense.correction.loss.input.magnitude)
+
+    def set_num_averages(self, averages):
+        if self.power_meter:
+            self.log.debug("Pre-set averages: %s", self.power_meter.sense.average.count)
+            self.power_meter.sense.average.count = averages
+            self.log.debug("Set averages: %s", self.power_meter.sense.average.count)
+
+    def set_lowpass_filter(self, filter=1):
+        if self.power_meter:
+            # value = Argument(0, ["OFF", "0", "ON", "1"])
+            self.log.debug("Pre-set bandwidth filter: %s", self.power_meter.input.pdiode.filter.lpass.state)
+            self.power_meter.input.pdiode.filter.lpass.state = filter
+            self.log.debug("Set bandwidth filter: %s", self.power_meter.input.pdiode.filter.lpass.state)
 
     def zero(self):
         # zeros the photodiode

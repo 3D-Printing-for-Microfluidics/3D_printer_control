@@ -35,6 +35,14 @@ class Photodiode_dummy:
         self.log.debug("Set attenuation to %s dB", attenuation)
 
     @dummy_log
+    def set_num_averages(self, averages):
+        self.log.debug("Set averages: %s", averages)
+
+    @dummy_log
+    def set_lowpass_filter(self, filter=False):
+        self.log.debug("Set bandwidth filter: %s", filter)
+
+    @dummy_log
     def zero(self):
         pass
     

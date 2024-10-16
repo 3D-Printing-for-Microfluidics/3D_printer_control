@@ -188,6 +188,7 @@
         "beam_diameter": 0.05,
         "default_wavelength": 365,
         "attenuation_db": 0,
+        "default_number_of_averages": 16,
         "vendor_id": 4883,
         "product_id": 32882,
         "serial_number": "1928351"
