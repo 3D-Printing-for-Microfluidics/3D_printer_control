@@ -41,11 +41,21 @@ class LoadCell(USBSerial):
         return n
     
     def initialize(self):
-        self.stop()
-        time.sleep(0.1)
-        us = int(self.config_dict["sample_period_us"])
-        self.log.debug("Period set to '%s'", us)
-        self.set_sample_period(us)
+        try:
+            self.stop()
+            time.sleep(0.1)
+            us = int(self.config_dict["sample_period_us"])
+            self.log.debug("Period set to '%s'", us)
+            self.set_sample_period(us)
+        # It the server crashed, the loadcell may still be running. This will trigger and reset the connection
+        except UnicodeDecodeError:
+            self.disconnect()
+            self.connect()
+            self.stop()
+            time.sleep(0.1)
+            us = int(self.config_dict["sample_period_us"])
+            self.log.debug("Period set to '%s'", us)
+            self.set_sample_period(us)
 
     def disconnect(self):
         if self.connected:
