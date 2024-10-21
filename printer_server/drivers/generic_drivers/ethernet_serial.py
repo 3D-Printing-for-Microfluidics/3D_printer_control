@@ -72,14 +72,16 @@ class EthernetSerial():
             self.log.info("Disconnected from %s", self.name)
             
 
-    def send(self, command, notify=True):
+    def send(self, command, data = None, notify=True):
         """Send a command to the device.
         """
         with self.sendLock:
             if notify:
                 self.log.debug("Sent : '%s'", command)
-            command += self.line_ending
             encoded_message = command.encode()
+            if data is not None:
+                encoded_message += data
+            encoded_message += self.line_ending.encode()
             try:
                 self.socket.sendall(encoded_message)
             except socket.timeout as ex:

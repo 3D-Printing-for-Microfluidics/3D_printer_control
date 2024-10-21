@@ -110,7 +110,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
         super().disconnect()
             
 
-    def send(self, data):
+    def send(self, msg, data=None):
         """
         Send the data through the open TCP connection and return the
         reply from the Visitech.
@@ -118,7 +118,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
         A string is always returned, with a default value of ''. A
         RuntimeError is raised if an error is detected in the response.
         """
-        reply = super().send(data)
+        reply = super().send(msg, data=data)
         reply = reply.split("\r\n")
         if "OK" not in reply[0]:
             raise RuntimeError(f"Error returned by light engine ({reply[1]}) {reply[2]}")
@@ -532,7 +532,9 @@ class Visitech(EthernetSerial, LightEngineDriver):
         """
         return self.send(f"SET LUT CONFIG {num_sequences} {repeats}")
 
-    def upload_image(self, pattern_index, bitmap_size, bitmap_data):
+    # Note: function times out with current ethernet timeout. Also pattern-on-the-fly mode
+    # not displaying image
+    def upload_image(self, filename, pattern_index):
         """
         Upload 24-bit bitmap to DMD controller. Non-compressed, with a
         standard header bitmap must be used. Keep in mind that a 24-bit
@@ -550,9 +552,35 @@ class Visitech(EthernetSerial, LightEngineDriver):
 
         Return type +OK
         """
-        return self.send(
-            f"UPLOAD IMAGE PATTERN\r\n{pattern_index}\r\n{bitmap_size}\r\n{bitmap_data}"
-        )
+        import numpy as np
+        from PIL import Image
+        from pathlib import Path
+        img = np.zeros((3, 2560, 1600)[::-1], dtype="uint8")
+        try:
+            self.log.info("\tProcessing {}".format(filename))
+            with Image.open(filename) as input_img:
+                if input_img.format == "PNG" and input_img.mode == "L":
+                    img[:, :, 0] = np.array(input_img)
+                    img[:, :, 1] = np.array(input_img)
+                    img[:, :, 2] = np.array(input_img)
+                else:
+                    self.log.warn(f"Wrong image format - format:{input_img.format} mode:{input_img.mode}")
+        except (OSError, FileNotFoundError):
+            self.log.warn(f"Error loading file")
+
+        # save bmps
+        self.log.info("\tSaving image {}.bmp".format(filename.stem))
+        file_name = filename.parents[0] / Path("/{}.bmp".format(filename.stem))
+        Image.fromarray(img, "RGB").save(file_name)
+
+        self.set_dmd_operation_mode("PATTERN_ON_THE_FLY_MODE")
+
+        with open(file_name, mode='rb') as file:
+            file_content = file.read()
+            file_size = len(file_content)
+            return self.send(
+                f"UPLOAD IMAGE PATTERN\r\n{pattern_index}\r\n{file_size}\r\n\r\n", data = file_content
+            )
 
     def set_video_source(self, source="HDMI"):
         """

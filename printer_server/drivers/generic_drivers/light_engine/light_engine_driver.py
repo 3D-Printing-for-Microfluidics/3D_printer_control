@@ -34,3 +34,6 @@ class LightEngineDriver:
 
     def get_led_status(self):
         log.warning("Function not implemented. Using abstract LightEngineDriver class")
+
+    def upload_image(self, filename, pattern_index):
+        log.warning("Function not implemented. Using abstract LightEngineDriver class")
