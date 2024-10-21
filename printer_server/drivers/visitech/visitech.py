@@ -84,6 +84,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
         self.repeats = 1
         self.exposure_time = 0
         self.led_on = False
+        self.is_idle = False
         self.dual_led = config_dict["dual_led"]
         self.leds = config_dict["leds_nm"]
         self.suppress_ocp_error = False
@@ -657,15 +658,19 @@ class Visitech(EthernetSerial, LightEngineDriver):
         this mode, the pattern sequences must first be stopped.
         To restart the pattern sequence, this mode must be disabled."
         """
-        self.log.info("DMD idle on")
-        return self.send("SET MIRROR SHAKE ON")
+        if not self.is_idle:
+            self.is_idle = True
+            self.log.info("DMD idle on")
+            return self.send("SET MIRROR SHAKE ON")
 
     def idle_off(self):
         """Disable idle mode.
 
         See section 2.4.1.4 "DMD Idle Mode" in the programmer's guide."""
-        self.log.info("DMD idle off")
-        return self.send("SET MIRROR SHAKE OFF")
+        if self.is_idle:
+            self.is_idle = False
+            self.log.info("DMD idle off")
+            return self.send("SET MIRROR SHAKE OFF")
 
     def get_sticky_errors(self, warn="ALL"):
         """
@@ -803,7 +808,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
 
         self.set_led_amplitude(led_power, led_num=led_num)
         if repeat == 0:
-            self.set_sequencer_lut_definition(33100, 0, 0, 8, 1, 0, 0)
+            self.set_sequencer_lut_definition(exposure=33100)
             self.set_sequencer_lut_config(repeats=repeat)
         else:
             min_t = 4.046
@@ -881,7 +886,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
             )
             # this provides the minimum blanking of 233 us of the full 33333 us cycle
             # (at 30Hz on HDMI)
-            self.set_sequencer_lut_definition(33100, 0, 0, 8, 1, 0, 0)
+            self.set_sequencer_lut_definition(exposure=33100)
             self.set_sequencer_lut_config(repeats=0)
             self.start_sequencer()  # sequencer will be stopped on program exit
         else:  # normal display is desired
