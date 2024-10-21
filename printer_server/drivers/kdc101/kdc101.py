@@ -137,18 +137,9 @@ class KDC101(USBSerial, FocusStageDriver):
 
         if self.relativeMode:
             # Move to absolute position in mm; MGMSG_MOT_MOVE_ABSOLUTE (long version)
-            # currPos = self.getCurrentPos()
             dUnitpos = int(self.Device_Unit_SF * position)
             code = 0x0448
 
-            # if currPos returns as 'undef' we don't know the position of the stage.
-            # So the movement may work or it might not.
-            # Best practice is to home after every initialization.
-            # Matthew - 10/4/19 - this doesn't appear to have been tested well, removing it for now
-            # if not isinstance(currPos, str):
-            #     if self.minPos > currPos + position <= self.maxPos:
-            #         self.log.debug("It's false: currPos: {} pos: {}".format(currPos, position))
-            #         return False
         elif abs(position) < 25:
             dUnitpos = int(self.Device_Unit_SF * abs(position))
             code = 0x0453
@@ -214,7 +205,7 @@ class KDC101(USBSerial, FocusStageDriver):
         self.flush_buffers()
 
     def getSoftwareLimits(self):
-        return (0, 25)
+        return (self.minPos, self.maxPos)
 
     def setLowerLimit(self, limit):
         self.log.warn("Setting limits not implemented")
