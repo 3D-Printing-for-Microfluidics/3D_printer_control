@@ -8,7 +8,7 @@ int reed_pins[5] = {13,14,15,16,17};
 
 int ADC_RANGE = 1024;
 int ENCODER_RANGE_MM = 1000;
-int ENCODER_OFFSET = 120;
+int ENCODER_OFFSET = 54;
 int upper_limit = 600;
 int lower_limit = 0;
 
