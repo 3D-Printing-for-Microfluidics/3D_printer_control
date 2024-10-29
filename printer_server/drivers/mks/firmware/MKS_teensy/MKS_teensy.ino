@@ -175,11 +175,11 @@ void loop() {
         Serial.println(get_encoder_position());
       }
       else if(opcode[1] == 'T'){  // Move to Top
-        move(500);
+        move(450);
         Serial.println(get_encoder_position());
       }
       else if(opcode[1] == 'B'){ // Move to Bottom
-        move(20);
+        move(0);
         Serial.println(get_encoder_position());
       }
       else{
