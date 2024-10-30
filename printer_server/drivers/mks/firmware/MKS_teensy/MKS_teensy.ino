@@ -44,7 +44,7 @@ int get_encoder_position(){
   return map(position, 0, ADC_RANGE, 0, ENCODER_RANGE_MM) - ENCODER_OFFSET;
 }
 
-void move(int target_position){
+void move(int target_position, bool move_extra){
   int off = 0;
   int min_speed = 48;
   int max_speed = 192;
@@ -98,7 +98,9 @@ void move(int target_position){
     analogWrite(PWM_PIN, pwm);
     delay(10);
   }
-  delay(1000);
+  if(move_extra){
+    delay(3000);
+  }
   analogWrite(PWM_PIN, off);
 }
 
@@ -167,19 +169,19 @@ void loop() {
     }
     else if(opcode[0] == 'M'){ // Movement commands
       if(opcode[1] == 'R'){ // Relative Move
-        move(get_encoder_position()+data.toInt());
+        move(get_encoder_position()+data.toInt(), false);
         Serial.println(get_encoder_position());
       }
       else if(opcode[1] == 'A'){ // Absolute Move
-        move(data.toInt());
+        move(data.toInt(), false);
         Serial.println(get_encoder_position());
       }
       else if(opcode[1] == 'T'){  // Move to Top
-        move(450);
+        move(450, false);
         Serial.println(get_encoder_position());
       }
       else if(opcode[1] == 'B'){ // Move to Bottom
-        move(0);
+        move(0, true);
         Serial.println(get_encoder_position());
       }
       else{
