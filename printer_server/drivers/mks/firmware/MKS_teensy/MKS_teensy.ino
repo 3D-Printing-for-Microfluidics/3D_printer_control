@@ -99,7 +99,7 @@ void move(int target_position, bool move_extra){
     delay(10);
   }
   if(move_extra){
-    delay(3000);
+    delay(2500);
   }
   analogWrite(PWM_PIN, off);
 }
