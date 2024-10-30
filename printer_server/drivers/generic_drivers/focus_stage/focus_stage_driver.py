@@ -64,11 +64,12 @@ class FocusStageDriver:
             self.initialized = False
             self.initialize()
             self.home()
-            self.setFocusLimits()
             self.initialized = True
 
         while not self.initialized:
             time.sleep(0.1)
+
+        self.setFocusLimits()
 
         return self.threadedFocusMove(log, pos, join=True)
 

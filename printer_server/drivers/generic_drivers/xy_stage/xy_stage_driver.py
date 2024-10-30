@@ -61,11 +61,13 @@ class XYStageDriver:
             self.initialized = False
             self.initialize()
             self.home()
-            self.setXYLimits()
             self.initialized = True
 
         while not self.initialized:
             time.sleep(0.1)
+
+        for a in ["X", "Y"]:
+            self.setXYLimits(axis=a)
 
         return self.threadedXYMove(log, x, y, join=True)
 

@@ -41,11 +41,13 @@ class TTRStageDriver:
             self.initialize()
             if self.config_dict.get("auto_repositioning", True):
                 self.home()
-            self.setTTRLimits()
             self.initialized = True
 
         while not self.initialized:
             time.sleep(0.1)
+
+        for a in ["Tip", 'Tilt', 'Rotate']:
+            self.setTTRLimits(axis=a)
 
         if self.config_dict.get("auto_repositioning", True):
             return self.threadedTTRMove(log, tip, tilt, rotate, join=True)

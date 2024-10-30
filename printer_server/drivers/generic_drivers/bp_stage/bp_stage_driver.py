@@ -79,14 +79,15 @@ class BPStageDriver:
             self.initialized = False
             self.initialize()
             self.home()
-            if external_control_enabled:
-                self.setBPLimits("calibration")
-            else:
-                self.setBPLimits()
             self.initialized = True
 
         while not self.initialized:
             time.sleep(0.1)
+
+        if external_control_enabled:
+            self.setBPLimits("calibration")
+        else:
+            self.setBPLimits()
 
         return self.threadedBPMove(log, pos, join=True)
 
