@@ -21,22 +21,23 @@ class GPIO:
             self.power_status_pin = config_dict["power_status_pin"]
 
     def initialize(self, shutdown):
-        self.log.info("Initializing GPIO...")
-        Device.pin_factory = LGPIOFactory(chip=4)
+        if not self.connected:
+            self.log.info("Initializing GPIO...")
+            Device.pin_factory = LGPIOFactory(chip=4)
 
-        if "film_pin" in self.config_dict.keys():
-            self.film_relay = True
-            self.film_device = DigitalOutputDevice(self.film_relay_pin, active_high=True, initial_value=False)
+            if "film_pin" in self.config_dict.keys():
+                self.film_relay = True
+                self.film_device = DigitalOutputDevice(self.film_relay_pin, active_high=True, initial_value=False)
 
-        if "power_status_pin" in self.config_dict.keys():
-            self.shutdown_func = shutdown
-            self.power_status = True
-            self.power_status_device = DigitalInputDevice(self.power_status_pin, pull_up=None, active_state=False)
-            self.power_status_device.when_activated = self.shutdown
+            if "power_status_pin" in self.config_dict.keys():
+                self.shutdown_func = shutdown
+                self.power_status = True
+                self.power_status_device = DigitalInputDevice(self.power_status_pin, pull_up=None, active_state=False)
+                self.power_status_device.when_activated = self.shutdown
 
-        self.connected = True
-        atexit.register(self.disconnect)
-        self.log.info("Initialized GPIO")
+            self.connected = True
+            atexit.register(self.disconnect)
+            self.log.info("Initialized GPIO")
 
     def shutdown(self):
         self.log.info("System powered off. Shutting down...")
