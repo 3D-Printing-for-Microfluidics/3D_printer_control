@@ -45,6 +45,7 @@ class Photodiode:
                 if f"{self.vendor_id}" in r and f"{self.product_id}" in r and self.serial_number in r:
                     self.resource = r
             self.inst = self.rm.open_resource(self.resource)
+            self.inst.timeout = 10000
 
             # self.inst = usbtmc.Instrument(self.vendor_id, self.product_id)
             # setattr(self.inst, 'query', self.inst.ask)
