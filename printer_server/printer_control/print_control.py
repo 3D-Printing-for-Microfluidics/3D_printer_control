@@ -477,6 +477,9 @@ class PrintControl:
 
     def post_print_tasks(self):
         return
+    
+    def post_print_joins(self):
+        return
 
     def print_worker(self):
         """Do a 3D print.

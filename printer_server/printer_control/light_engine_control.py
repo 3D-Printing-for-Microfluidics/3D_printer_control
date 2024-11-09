@@ -10,20 +10,16 @@ from printer_server.hardware_configuration.hardware_configuration import config_
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
-def getLightEngineFromJSON(light_engine):
-    for engine in config_dict["light_engines"]:
-        if engine in light_engine:
-            return engine
-
-def getLEDFromJSON(light_engine):
+def parseJSONLightEngine(json_le):
     led = 0
-    _light_engine = getLightEngineFromJSON(light_engine)
-    if len(config_dict[_light_engine]["leds_nm"]) > 1:
-        for i, wavelength in enumerate(config_dict[_light_engine]["leds_nm"]):
-            if str(wavelength) in light_engine:
-                led = i
-                break
-    return led
+    for le in config_dict["light_engines"]:
+        if le in json_le:
+            if len(config_dict[le]["leds_nm"]) > 1:
+                for i, wavelength in enumerate(config_dict[le]["leds_nm"]):
+                    if str(wavelength) in json_le:
+                        led = i
+                        break
+            return le, led
 
 class LightEngineControl(ScreenControl):
     def __init__(self):
@@ -82,15 +78,15 @@ class LightEngineControl(ScreenControl):
         super().pre_print_tasks()
 
     def pre_exposure_tasks(self, settings, light_engine):
-        _light_engine = getLightEngineFromJSON(light_engine)
-        light_engine_driver = self.light_engines[_light_engine]
+        le, led = parseJSONLightEngine(light_engine)
+        light_engine_driver = self.light_engines[le]
         
         self.light_engine_threads = Thread(
             log, 
-            name=f"{_light_engine}_control_setup_thread",
+            name=f"{le}_control_setup_thread",
             target=light_engine_driver.setup_exposure,
-            args=[self.exposure_time_ms, self.power],
-            kwargs={"led_num": getLEDFromJSON(light_engine)},
+            args=[self.exposure_time_ms],
+            kwargs={"led_power": self.power, "led_num": led},
         )
         self.light_engine_threads.start()
         super().pre_exposure_tasks(settings, light_engine)
@@ -105,11 +101,11 @@ class LightEngineControl(ScreenControl):
 
     def exposure(self, settings, light_engine):
         try:
-            _light_engine = getLightEngineFromJSON(light_engine)
-            light_engine_driver = self.light_engines[_light_engine]
-            update_le_led_state(_light_engine, True)
+            le, _ = parseJSONLightEngine(light_engine)
+            light_engine_driver = self.light_engines[le]
+            update_le_led_state(le, True)
             light_engine_driver.perform_exposure()
-            update_le_led_state(_light_engine, False)
+            update_le_led_state(le, False)
         except Exception as ex:
             log.critical("Unable communicate with light engine (%s)", ex, exc_info=True)
             self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = light_engine_driver
@@ -118,9 +114,20 @@ class LightEngineControl(ScreenControl):
 
     def get_le_status(self, settings, light_engine, warn="ALL"):
         try:
-            _light_engine = getLightEngineFromJSON(light_engine)
-            light_engine_driver = self.light_engines[_light_engine]
+            le, _ = parseJSONLightEngine(light_engine)
+            light_engine_driver = self.light_engines[le]
             return light_engine_driver.read_all_status(warn)
+        except Exception as ex:
+            log.critical("Unable communicate with light engine (%s)", ex, exc_info=True)
+            self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = light_engine_driver
+            raise PrintingException()
+        
+    def le_post_print_tasks(self, light_engine, light_engine_driver):
+        # always turn off the light engines
+        try:
+            light_engine_driver.stop_sequencer()
+            update_le_led_state(light_engine, False)
+            light_engine_driver.idle_on()
         except Exception as ex:
             log.critical("Unable communicate with light engine (%s)", ex, exc_info=True)
             self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = light_engine_driver
@@ -128,13 +135,14 @@ class LightEngineControl(ScreenControl):
     
     def post_print_tasks(self):
         super().post_print_tasks()
-        # always turn off the light engines
+        self.light_engine_threads = {}
         for light_engine, light_engine_driver in self.light_engines.items():
-            try:
-                light_engine_driver.stop_sequencer()
-                update_le_led_state(light_engine, False)
-                light_engine_driver.idle_on()
-            except Exception as ex:
-                log.critical("Unable communicate with light engine (%s)", ex, exc_info=True)
-                self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = light_engine_driver
-                raise PrintingException()
+            thread = Thread(log, name=f"{light_engine}_control_post_print_thread", target=self.le_post_print_tasks, args=[light_engine, light_engine_driver])
+            thread.start()
+            self.light_engine_threads[light_engine] = thread
+            
+    def post_print_joins(self):
+        for _, thread in self.light_engine_threads.items():
+            thread.join()
+        self.light_engine_threads = {}
+        return super().post_print_joins()

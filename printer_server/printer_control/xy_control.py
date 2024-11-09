@@ -96,6 +96,8 @@ class XYControl(PrintControl):
         x_pos = self.coord_systems["parked"]["X"]
         y_pos = self.coord_systems["parked"]["Y"]
         self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False, speed_x=None, speed_y=None, acceleration_x=None, acceleration_y=None)
+                
+    def post_print_joins(self):
         for thread in self.xy_threads:
             if thread is not None:
                 thread.join()
@@ -103,6 +105,7 @@ class XYControl(PrintControl):
                     log.critical("Unable to move xy stage")
                     self.failed_hardware["XY Stage"] = self.xy_stage
                     raise PrintingException()
+        return super().post_print_joins()
 
     def finish_print(self):
         try:

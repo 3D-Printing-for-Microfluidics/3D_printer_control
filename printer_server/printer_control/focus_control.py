@@ -135,12 +135,15 @@ class FocusControl(PrintControl):
     def post_print_tasks(self):
         super().post_print_tasks()
         self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focus, join=False)
+            
+    def post_print_joins(self):
         if self.focus_thread is not None:
             self.focus_thread.join()
             if self.focus_thread.exception is not None:
                 log.critical("Unable to move focus stage")
                 self.failed_hardware["Focus Stage"] = self.focus_stage
                 raise PrintingException()
+        return super().post_print_joins()
 
     def finish_print(self):
         try:

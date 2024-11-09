@@ -26,11 +26,9 @@ class ScreenControl(PrintControl):
             self.failed_hardware["Virtual Screen"] = self.screen
 
     def pre_exposure_tasks(self, settings, light_engine):
-        screen_index = 0
-        for i, le in enumerate(self.screen.light_engines):
-            if le in light_engine:
-                screen_index = i
-                break
+        from printer_server.printer_control.light_engine_control import parseJSONLightEngine
+        le, led = parseJSONLightEngine(light_engine)
+        screen_index = self.screen.getScreenNumber(le)
 
         self.screen_thread = Thread(
             log, name="screen_control_draw_thread", target=self.screen.draw, args=[self.image], kwargs={"screen": screen_index}
@@ -50,8 +48,7 @@ class ScreenControl(PrintControl):
         )
         return super().pre_exposure_joins(light_engine)
     
-    def post_print_tasks(self):
-        super().post_print_tasks()
+    def screen_post_print_tasks(self):
         for i in range(len(self.screen.light_engines)):
             try:
                 self.screen.clear(screen=i)
@@ -60,6 +57,16 @@ class ScreenControl(PrintControl):
                     self.screen.fetch_preview(i)
                 )
             except Exception as ex:
-                log.critical("Unable draw to screen (%s)", ex, exc_info=True)
+                log.critical("Unable clear screen (%s)", ex, exc_info=True)
                 self.failed_hardware["Virtual Screen"] = self.screen
                 raise PrintingException()
+    
+    def post_print_tasks(self):
+        super().post_print_tasks()
+        self.screen_thread = Thread(log, name="screen_control_draw_thread", target=self.screen_post_print_tasks)
+        self.screen_thread.start()
+
+    def post_print_joins(self):
+        if self.screen_thread is not None:
+            self.screen_thread.join()
+        return super().post_print_joins()

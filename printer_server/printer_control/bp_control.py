@@ -209,12 +209,15 @@ class BPControl(PrintControl):
 
         bp_pos = self.bp_stage.top_position
         self.bp_thread = self.bp_stage.threadedBPMove(log, bp_pos, join=False, speed=None, acceleration=None)
+              
+    def post_print_joins(self):
         if self.bp_thread is not None:
             self.bp_thread.join()
             if self.bp_thread.exception is not None:
                 log.critical("Unable to move build platform stage")
                 self.failed_hardware["Build Platform Stage"] = self.bp_stage
                 raise PrintingException()
+        return super().post_print_joins()
 
     def finish_print(self):
         try:
