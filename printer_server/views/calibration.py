@@ -146,32 +146,28 @@ def goto():
     from printer_server.hardware_configuration.hardware_configuration import driver_handles
     calibration_positions = get_last_calibration_positions_from_logs()
 
-    focus = calibration_positions.get("focus",None)
-    tip = calibration_positions.get("tip",None)
-    tilt = calibration_positions.get("tilt",None)
-    rotate = calibration_positions.get("rotate",None)
-    pivot_x = calibration_positions.get("pivot_x",None)
-    pivot_y = calibration_positions.get("pivot_y",None)
-    pivot_z = calibration_positions.get("pivot_z",None)
+    focus = calibration_positions.get("focus",0)
+    tip = calibration_positions.get("tip",0)
+    tilt = calibration_positions.get("tilt",0)
+    rotate = calibration_positions.get("rotate",0)
+    pivot_x = calibration_positions.get("pivot_x",0)
+    pivot_y = calibration_positions.get("pivot_y",0)
+    pivot_z = calibration_positions.get("pivot_z",0)
 
-    if focus is not None:
-        focus /= 1000
-    if tip is not None:
-        tip /= 1000
-    if tilt is not None:
-        tilt /= 1000
-    if rotate is not None:
-        rotate /= 1000
+    focus /= 1000
+    tip /= 1000
+    tilt /= 1000
+    rotate /= 1000
+
+    
+    # move tt to 0
+    driver_handles.ttr_stage.threadedTTRMove(log, 0, 0, 0)
 
     # set hexapod pivot
-    if pivot_x is not None:
-        # move tt to 0
-        driver_handles.ttr_stage.threadedTTRMove(log, 0, 0, 0)
-
-        x = pivot_x/1000
-        y = pivot_y/1000
-        z = pivot_z/1000
-        driver_handles.hexapod.set_pivot_point(x,y,z)
+    x = pivot_x/1000
+    y = pivot_y/1000
+    z = pivot_z/1000
+    driver_handles.hexapod.set_pivot_point(x,y,z)
 
     # move ttr
     ttr_threads = driver_handles.ttr_stage.threadedTTRMove(log, tip, tilt, rotate, join=False)

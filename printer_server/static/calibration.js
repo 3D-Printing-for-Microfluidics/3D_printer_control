@@ -22,6 +22,7 @@ $(document).ready(function () {
     });
 
     socket.on("goto_done", function (message) {
+        update_parameters(message)
         enable_all_buttons();
     });
 
