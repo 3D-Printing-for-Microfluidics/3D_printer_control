@@ -31,6 +31,7 @@ def light_engine_start(message):
         led = int(message.get("led", 0))
         socketio.emit("light_engine_update_led_state", {"light_engine":light_engine, "state":True}, namespace="/manual")
         light_engines[light_engine].idle_off()
+        light_engines[light_engine].stop_sequencer()
         light_engines[light_engine].setup_exposure(exposure, led_power=ledPower, repeat=repeat, led_num=led)
         light_engines[light_engine].perform_exposure()
         if repeat != 0:
