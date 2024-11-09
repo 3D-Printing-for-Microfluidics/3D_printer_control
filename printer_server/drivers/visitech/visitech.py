@@ -725,7 +725,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
         """
         return self.send("GET LOGS")
 
-    def get_normalization_factor(self):
+    def get_normalization_factor(self, led_num=0):
         """
         Return the normalization factor.
 
@@ -739,9 +739,13 @@ class Visitech(EthernetSerial, LightEngineDriver):
         Return type +OK and normalization factor value as a floating
         point number
         """
-        return float(self.send("FACTORY GET NORMALIZATION VALUE"))
+        cmd = "FACTORY GET NORMALIZATION VALUE"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return float(self.send(cmd))
 
-    def set_normalization_factor(self, normalization_factor):
+
+    def set_normalization_factor(self, normalization_factor, led_num=0):
         """
         Set the normalization factor.
 
@@ -749,7 +753,10 @@ class Visitech(EthernetSerial, LightEngineDriver):
 
         Return type +OK
         """
-        return self.send(f"FACTORY SET NORMALIZATION VALUE {normalization_factor}")
+        cmd = f"FACTORY SET NORMALIZATION VALUE {normalization_factor}"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return self.send(cmd)
 
     def split_exposure_time(self, exposure):
         """
