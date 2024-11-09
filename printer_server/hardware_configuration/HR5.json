@@ -8,31 +8,31 @@
         "global": {
             "X": 0,
             "Y": 0,
-            "Focus": 1.988,
+            "Focus": 0,
             "Build Platform": 0
         },
         "parked": {
             "X": 100,
-            "Y": 100,
-            "Focus": 1.988,
+            "Y": 85,
+            "Focus": 0,
             "Build Platform": 0
         },
         "visitech": {
-            "X": 0,
-            "Y": 0,
-            "Focus": 1.988,
+            "X": -0.4,
+            "Y": 1.06,
+            "Focus": 2.893,
             "Build Platform": 0
         },
         "keyence_visitech": {
-            "X": 0,
-            "Y": -30,
-            "Focus": 1.988,
+            "X": -1.705,
+            "Y": -36.204,
+            "Focus": 0.331,
             "Build Platform": 0
         },
         "fiber_visitech": {
-            "X": -88.67,
-            "Y": 68.14,
-            "Focus": 2.66,
+            "X": -86.265,
+            "Y": 68.750,
+            "Focus": 0.03,
             "Build Platform": 0
         }
     },
@@ -79,7 +79,7 @@
         },
         "limits": {
             "0": [null,null],
-            "1": [null,null],
+            "1": [null,85],
             "2": [null,34]
         },
         "calibration_limits": {
@@ -88,7 +88,7 @@
             "2": [null,27.8625]
         },
         "calibration_position": 0,
-        "bottom_position": 26.5,
+        "bottom_position": 27.5,
         "top_position": -50
     },
     "hexapod": {
