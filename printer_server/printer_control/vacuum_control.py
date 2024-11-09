@@ -89,6 +89,7 @@ class VacuumControl(PrintControl):
                         self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), False)
                     time.sleep(0.1)
                     t += 0.1
+            self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), True)
             self.degas_state = "finish"
             socketio.emit(f"update_degas_state", self.degas_state, namespace="/printing")
         except Exception as ex:
