@@ -14,7 +14,7 @@ __signature__ = 0x59c603b46cab28bc52a1b9e4d21ed900
 class PISocket(PIGateway):
     """Provide a socket, can be used as context manager."""
 
-    def __init__(self, name, host='localhost', port=50000, timeout=10, logger=logging.getLogger(__name__)):
+    def __init__(self, name, host='localhost', port=50000, timeout=15, logger=logging.getLogger(__name__)):
         """Provide a connected socket.
         @param host : IP address as string, defaults to "localhost".
         @param port : IP port to use as integer, defaults to 50000.
