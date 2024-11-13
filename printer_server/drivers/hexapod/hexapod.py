@@ -4,11 +4,15 @@ import math
 import atexit
 import logging
 import traceback
+from pathlib import Path
+from datetime import datetime
 
 from pipython import GCSDevice, pitools
 from pipython.pidevice.gcscommands import GCSCommands
 from pipython.pidevice.gcsmessages import GCSMessages
+from printer_server.threading_wrapper import Thread
 from printer_server.drivers.hexapod.pisocket import PISocket
+from printer_server.async_file_handler import async_file_hander
 
 from printer_server.drivers.generic_drivers import TTRStageDriver, FocusStageDriver
 from printer_server.views.calibration import (
@@ -33,7 +37,13 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
+        self.thread = Thread(self.log, name="hexapod_loop_thread", target=self.loop)
+        self.thread.daemon = True
+        self.thread_running = False
+        self.logging_running = False
+
         self.config_dict = config_dict
+        self.movement_log = None
         self.connected = None
         self.axes = config_dict["axes"]
         self.axes_common_names = config_dict["axes_common_names"]
@@ -67,10 +77,18 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             self.reference_axes()
         self.log.info("Initialized hexapod")
 
+        self.thread_running = True
+        self.thread.start()
+
     def disconnect(self):
         """ Close connection to the hexapod
         """
         if self.connected is not None and self.connected:
+            self.thread_running = False
+            self.thread.join()
+            self.thread = Thread(self.log, name="hexapod_loop_thread", target=self.loop)
+            self.thread.daemon = True
+
             self.connected = None
             # self.controller.CloseConnection()
             self.gateway.disconnect()
@@ -94,6 +112,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         y = calibration_positions.get("pivot_y",0)/1000
         z = calibration_positions.get("pivot_z",0)/1000
         self.set_pivot_point(x,y,z)
+
+        # pipython.pidevice.gcserror.GCSError
 
     def getTTRPosition(self, axis=None, notify=True):
         return self.get_pose(self.convertAxis(axis))
@@ -127,14 +147,56 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         if limits[1] is not None:
             self.setUpperLimit(limits[1], axis=a)
 
+    def write_to_disk(self, *args):
+        """Write data to disk using the async file handler class.
+
+        Log location must be set for data to be saved.
+        """
+        ts = "%Y-%m-%d %H:%M:%S.%f"
+        async_file_hander.write(self.movement_log, datetime.now().strftime(ts) + ",")
+        async_file_hander.write(self.movement_log, ",".join(map(str, args)) + "\n")
+
     def setup_log_file(self, filename):
-        pass
+        """Set the log file."""
+        if self.movement_log is None and filename is not None:
+            self.movement_log = str(Path(filename) / "hexapod_movement_data.csv")
+            async_file_hander.write(self.movement_log, "timestamp,")
+            for a in self.axes_common_names:
+                async_file_hander.write(self.movement_log, f"{a} position,")
+            async_file_hander.write(self.movement_log, "\n")
+        elif self.movement_log is not None and filename is None:
+            self.movement_log = None
 
     def logging_start(self):
-        pass
+        """
+        Starts collecting position data
+        """
+        if not self.logging_running:
+            self.logging_running = True
+            self.log.info("Hexapod logging started")
 
     def logging_stop(self):
-        pass
+        """
+        Stops collecting position data
+        """
+        if self.logging_running:
+            self.logging_running = False
+            self.log.info("Hexapod logging stopped")
+
+    def loop(self):
+        try:
+            while self.thread_running:
+                pose = self.get_pose()
+                if self.logging_running:
+                    if self.movement_log is not None:
+                        tmp = ""
+                        for a in self.axes:
+                            tmp += f"{pose[a]},"
+                        self.write_to_disk(tmp)
+                    time.sleep(0.1)
+        except Exception as ex:
+            self.log.warning("Hexapod loop failed (%s)", ex, exc_info=True)
+            self.thread_running = False
 
     def getDefaultFocusSpeed(self):
         return 0
