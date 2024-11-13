@@ -25,7 +25,7 @@ def load_mks():
 
 def get_gauges(emit=True):
     try:
-        gauges = mks.read_all_pressures()
+        gauges = mks.pressures
         if emit:
             socketio.emit(
                 "mks_update_pressure_readings", {"gauge":gauges}, namespace="/manual"
