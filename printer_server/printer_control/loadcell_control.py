@@ -1,7 +1,11 @@
+import os
 import time
+import shutil
 import logging
+from pathlib import Path
 
 import printer_server.views.home as home
+from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
@@ -17,6 +21,7 @@ class LoadcellControl(PrintControl):
         self.loadcell = driver_handles.loadcell
 
         # log files
+        self.loadcell_planarization_log = str(self.current_job / "logs" / "loadcell_planarization_data.csv")
         self.loadcell_log = str(self.current_job / "logs" / "loadcell_data.csv")
         self.loadcell_thread = None
 
@@ -106,6 +111,11 @@ class LoadcellControl(PrintControl):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             try:
+                async_file_hander.write(
+                    self.loadcell_planarization_log, "system_time,loadcell_time,index,raw_data,newtons\n"
+                )
+                self.loadcell.set_log_file(self.loadcell_planarization_log)
+
                 self.loadcell.start()   
                 time.sleep(0.5)
                 if self.loadcell_thread is None:
@@ -149,6 +159,7 @@ class LoadcellControl(PrintControl):
         if config_dict["loadcell"]["loadcell_planarization_enabled"]:
             if self.state == "planarizing":
                 self.planarization_step_3()
+        self.loadcell.set_log_file(None)
 
     def planarization_step_3(self):
         """Raise the build platform to its starting postion.
@@ -199,6 +210,17 @@ class LoadcellControl(PrintControl):
         if loadcell_t.exception is not None:
             log.error("Loadcell failed to initialize!")
             self.failed_hardware["Loadcell"] = self.loadcell
+
+    def start(self, job_id):
+        # save planarization log
+        backup_path = Path(Config.UPLOAD_FOLDER)/"planarization_log.backup"
+        if os.path.exists(self.loadcell_planarization_log):
+            shutil.move(self.loadcell_planarization_log, backup_path)
+        super().start(job_id)
+
+        # restore planarization log
+        if os.path.exists(backup_path):
+            shutil.move(backup_path, self.loadcell_planarization_log)
 
     def print_worker(self):
         if self.state != "printing":

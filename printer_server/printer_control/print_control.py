@@ -366,6 +366,9 @@ class PrintControl:
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
 
+            # Start async_file_handler
+            async_file_hander.start()
+
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
         self.print_position = self.planarized_position
@@ -391,9 +394,8 @@ class PrintControl:
 
         self.next_layer = 0
 
-        # Start async_file_handler
+        # create logs
         self.create_logs()
-        async_file_hander.start()
 
         position = get_last_calibration_positions_from_logs()
         self.write_to_event_log(f"Calibration")
