@@ -1,6 +1,11 @@
+import time
 import logging
+from pathlib import Path
 from decimal import Decimal
+from datetime import datetime
+from printer_server.threading_wrapper import Thread
 from printer_server.drivers.generic_drivers import USBSerial
+from printer_server.async_file_handler import async_file_hander
 
 
 def decimal_to_scientific(number, precision):
@@ -59,6 +64,12 @@ class MKS946(USBSerial):
         self.pressures = None
         self.relay_requests = [0,0,0,0,0,0,0,0,0,0,0,0,0]
 
+        self.pressure_log = None
+        self.thread = Thread(self.log, name="mks_loop_thread", target=self.loop)
+        self.thread.daemon = True
+        self.thread_running = False
+        self.logging_running = False
+
     def initialize(self):
         if self.connected:
             self.log.info("Setting atm pressure")
@@ -87,18 +98,76 @@ class MKS946(USBSerial):
             msg = "MKS Controller not found!"
             self.log.error(msg)
             return False
+        if not self.thread_running:
+            self.thread_running = True
+            self.thread.start()
         return True
 
     def disconnect(self):
         if self.connected:
-            self.log.info("Clearing relays")
+            self.thread_running = False
             try:
+                self.thread.join()
+                self.thread = Thread(self.log, name="acs_loop_thread", target=self.loop)
+                self.thread.daemon = True
+
+                self.log.info("Clearing relays")
                 for _, relay in self.config_dict["relays"].items():
                     if relay["mode"] != "auto":
                         self.set_relay_mode(relay['relay_num'], 'CLEAR', force=True)
             except:
                 pass
         super().disconnect()
+
+    def setup_log_file(self, filename):
+        """Set the log file."""
+        if self.pressure_log is None and filename is not None:
+            self.pressure_log = str(Path(filename) / "pressure_data.csv")
+            async_file_hander.write(
+                self.pressure_log, "timestamp,pressure1,pressure2\n"
+            )
+        elif self.pressure_log is not None and filename is None:
+            self.pressure_log = None
+
+    def logging_start(self):
+        """
+        Starts collecting position data
+        """
+        if not self.logging_running:
+            self.logging_running = True
+            self.log.info("MKS logging started")
+
+    def logging_stop(self):
+        """
+        Stops collecting position data
+        """
+        if self.logging_running:
+            self.logging_running = False
+            self.log.info("MKS logging stopped")
+
+    def write_to_disk(self, *args):
+        """Write data to disk using the async file handler class.
+
+        Log location must be set for data to be saved.
+        """
+        ts = "%Y-%m-%d %H:%M:%S.%f"
+        async_file_hander.write(self.pressure_log, datetime.now().strftime(ts) + ",")
+        async_file_hander.write(self.pressure_log, ",".join(map(str, args)) + "\n")
+
+    def loop(self):
+        try:
+            while self.thread_running:
+                self.read_all_pressures()
+                if self.logging_running:
+                    if self.pressure_log is not None:
+                        tmp = ""
+                        for p in self.pressures:
+                            tmp += f"{p},"
+                        self.write_to_disk(tmp)
+                    time.sleep(0.5)
+        except Exception as ex:
+            self.log.warning("MKS loop failed (%s)", ex, exc_info=True)
+            self.thread_running = False
 
     def query(self, command, n=None, parameter=""):
         '''

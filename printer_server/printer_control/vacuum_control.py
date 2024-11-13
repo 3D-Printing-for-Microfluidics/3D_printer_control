@@ -3,6 +3,7 @@ import logging
 
 from printer_server.extensions import socketio
 from printer_server.threading_wrapper import Thread
+from printer_server.async_file_handler import async_file_hander
 from printer_server.printer_control.print_control import PrintControl, run_in_thread
 from printer_server.hardware_configuration.hardware_configuration import driver_handles, config_dict
 
@@ -17,6 +18,13 @@ class VacuumControl(PrintControl):
         self.degas_running = False
         self.degas_thread = None
         self.degas_state = None
+
+        # log files
+        self.pressure_log = str(self.current_job / "logs" / "pressure_data.csv")
+
+    def create_logs(self):
+        super().create_logs()
+        self.mks.setup_log_file(str(self.current_job / "logs"))
 
     def connect_hardware(self):
         mks_thread = Thread(log, name="mks_connect_thread", target=self.mks.connect)
@@ -44,6 +52,24 @@ class VacuumControl(PrintControl):
             return
         self.degas_state = "idle"
         socketio.emit(f"update_degas_state", self.degas_state, namespace="/printing")
+
+    @run_in_thread("planarizing", "Planarization Step 1")
+    def planarization_step_1(self):
+        """Lower the build platform for planarization."""
+        if self.state in ["initialized", "planarized", "completed", "stopped"]:
+            try:
+                self.mks.logging_start()
+            except Exception as ex:
+                log.warning("Unable to communicate with mks controller (%s)", ex, exc_info=True)
+            super().planarization_step_1()
+
+    def finish_print(self):
+        try:
+            self.mks.logging_stop()
+            self.mks.setup_log_file(None)
+        except Exception as ex:
+            log.critical("Unable to communicate with mks controller (%s)", ex, exc_info=True)
+        super().finish_print()
 
     def degas(self, msg):
         if msg == "run":
