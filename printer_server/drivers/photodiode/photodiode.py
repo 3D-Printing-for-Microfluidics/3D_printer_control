@@ -4,6 +4,7 @@ import pyvisa
 import usbtmc
 import atexit
 import logging
+import threading
 from ThorlabsPM100 import ThorlabsPM100
 
 # first_load = True
@@ -20,6 +21,7 @@ class Photodiode:
         self.log.setLevel(log_level)
         
         self.connected = None
+        self.sendLock = threading.Lock()
        
         # Variables I may want to change or exist as defaults defined in harware_configuration.json
         self.beamdiameter = config_dict["beam_diameter"]
@@ -68,7 +70,9 @@ class Photodiode:
         self.set_attenuation_db(self.attenuation) 
         self.set_num_averages(self.defaultAverages)
         self.set_lowpass_filter()
-        self.power_meter.configure.scalar.pdensity() 
+        with self.sendLock:
+            self.power_meter.configure.scalar.pdensity() 
+        self.zero()
         self.log.info("Initialized ThorlabsPM100")
 
          
@@ -87,49 +91,56 @@ class Photodiode:
         # set the beam diameter
         # Args: diameter is float 
         if self.power_meter:
-            self.power_meter.sense.correction.beamdiameter = diameter
-            self.log.debug("Set diameter: %s um",int(self.power_meter.sense.correction.beamdiameter*1000))    
+            with self.sendLock:
+                self.power_meter.sense.correction.beamdiameter = diameter
+                self.log.debug("Set diameter: %s um",int(self.power_meter.sense.correction.beamdiameter*1000))    
         
     def set_wavelength(self, length):
         # sets the operation wavelength in nm
         # args: length is float 
         if self.power_meter:
-            self.power_meter.sense.correction.wavelength = length
-            self.log.debug("Set wavelength: %s nm", self.power_meter.sense.correction.wavelength)
+            with self.sendLock:
+                self.power_meter.sense.correction.wavelength = length
+                self.log.debug("Set wavelength: %s nm", self.power_meter.sense.correction.wavelength)
             
     def set_attenuation_db(self, attenuation):
         # sets attenuation in dB
         if self.power_meter:
-            self.power_meter.sense.correction.loss.input.magnitude = attenuation
-            self.log.debug("Set attenuation: %s dB", self.power_meter.sense.correction.loss.input.magnitude)
+            with self.sendLock:
+                self.power_meter.sense.correction.loss.input.magnitude = attenuation
+                self.log.debug("Set attenuation: %s dB", self.power_meter.sense.correction.loss.input.magnitude)
 
     def set_num_averages(self, averages):
         if self.power_meter:
-            self.log.debug("Pre-set averages: %s", self.power_meter.sense.average.count)
-            self.power_meter.sense.average.count = averages
-            self.log.debug("Set averages: %s", self.power_meter.sense.average.count)
+            with self.sendLock:
+                self.log.debug("Pre-set averages: %s", self.power_meter.sense.average.count)
+                self.power_meter.sense.average.count = averages
+                self.log.debug("Set averages: %s", self.power_meter.sense.average.count)
 
     def set_lowpass_filter(self, filter=1):
         if self.power_meter:
             # value = Argument(0, ["OFF", "0", "ON", "1"])
-            self.log.debug("Pre-set bandwidth filter: %s", self.power_meter.input.pdiode.filter.lpass.state)
-            self.power_meter.input.pdiode.filter.lpass.state = filter
-            self.log.debug("Set bandwidth filter: %s", self.power_meter.input.pdiode.filter.lpass.state)
+            with self.sendLock:
+                self.log.debug("Pre-set bandwidth filter: %s", self.power_meter.input.pdiode.filter.lpass.state)
+                self.power_meter.input.pdiode.filter.lpass.state = filter
+                self.log.debug("Set bandwidth filter: %s", self.power_meter.input.pdiode.filter.lpass.state)
 
     def zero(self):
         # zeros the photodiode
         if self.power_meter:
-            self.log.debug("Zero point: %s", self.power_meter.sense.correction.collect.zero.magnitude)
-            self.power_meter.sense.correction.collect.zero.initiate()
-            while bool(self.power_meter.sense.correction.collect.zero.state):
-                time.sleep(0.01)
-            self.log.debug("Zero point: %s", self.power_meter.sense.correction.collect.zero.magnitude)
+            with self.sendLock:
+                self.log.debug("Zero point: %s", self.power_meter.sense.correction.collect.zero.magnitude)
+                self.power_meter.sense.correction.collect.zero.initiate()
+                while bool(self.power_meter.sense.correction.collect.zero.state):
+                    time.sleep(0.01)
+                self.log.debug("Zero point: %s", self.power_meter.sense.correction.collect.zero.magnitude)
 
     def get_power_density(self, log=False):
         # ## also in init 
         # Returns: float, The power density in mW/cm^2.
         if self.power_meter:
-            power_density = self.power_meter.read * 1000  # Convert to mW/cm^2
+            with self.sendLock:
+                power_density = self.power_meter.read * 1000  # Convert to mW/cm^2
             if log:
                 self.log.info("Irradiance is %s mW/cm^2", power_density)
             return power_density
