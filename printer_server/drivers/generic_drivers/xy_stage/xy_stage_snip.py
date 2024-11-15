@@ -55,12 +55,13 @@ def xy_move(message):
                 calibration_positions = get_last_calibration_positions_from_logs()
                 if "wintech" in coord_system_name:
                     distance += coord_system[axis]
+
+                    x_distance = xy_stage.getXYPosition(axis="X") - coord_system["X"]
+                    y_distance = xy_stage.getXYPosition(axis="Y") - coord_system["Y"]
                     if axis == "X":
-                        y_distance = xy_stage.getXYPosition(axis="Y") - coord_system["Y"]
-                        distance += calibration_positions.get("x_drift",0)/1000 + calibration_positions.get("x_shift",0)*y_distance/1000
+                        distance += calibration_positions.get("x_drift",0)/1000 + calibration_positions.get("xy_shift",0)*y_distance/1000 + calibration_positions.get("xx_shift",0)*x_distance/1000
                     if axis == "Y":
-                        x_distance = xy_stage.getXYPosition(axis="X") - coord_system["X"]
-                        distance += calibration_positions.get("y_drift",0)/1000 + calibration_positions.get("y_shift",0)*x_distance/1000
+                        distance += calibration_positions.get("y_drift",0)/1000 + calibration_positions.get("yx_shift",0)*x_distance/1000 + calibration_positions.get("yy_shift",0)*y_distance/1000
                 else:
                     distance += coord_system[axis]
                 
@@ -96,12 +97,13 @@ def xy_get_position(notify=True):
                     if "wintech" in coord_system_name:
                         position -= coord_system[axis]
                         position *= 1000
+
+                        x_position = xy_stage.getXYPosition(axis="X") - coord_system["X"]
+                        y_position = xy_stage.getXYPosition(axis="Y") - coord_system["Y"]
                         if axis == "X":
-                            y_position = xy_stage.getXYPosition(axis="Y") - coord_system["Y"]
-                            position -= calibration_positions.get("x_drift",0.0) + calibration_positions.get("x_shift",0.0)*y_position
+                            position -= calibration_positions.get("x_drift",0.0) + calibration_positions.get("xy_shift",0.0)*y_position + calibration_positions.get("xx_shift",0.0)*x_position
                         if axis == "Y":
-                            x_position = xy_stage.getXYPosition(axis="X") - coord_system["X"]
-                            position -= calibration_positions.get("y_drift",0.0) + calibration_positions.get("y_shift",0.0)*x_position
+                            position -= calibration_positions.get("y_drift",0.0) + calibration_positions.get("yx_shift",0.0)*x_position + calibration_positions.get("yy_shift",0.0)*y_position
                     else:
                         position -= coord_system[axis]
                         position *= 1000

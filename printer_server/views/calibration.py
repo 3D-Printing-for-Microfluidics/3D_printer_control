@@ -27,8 +27,10 @@ conversion_dict = {
     "Pivot Z": "pivot_z",
     "Wintech X drift": "x_drift",
     "Wintech Y drift": "y_drift",
-    "Wintech X Shift per mm Y": "x_shift",
-    "Wintech Y Shift per mm X": "y_shift",
+    "Wintech X Shift per mm Y": "xy_shift",
+    "Wintech Y Shift per mm X": "yx_shift",
+    "Wintech X Shift per mm X": "xx_shift",
+    "Wintech Y Shift per mm Y": "yy_shift",
 }
 
 position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
@@ -109,7 +111,7 @@ def create_calibration_data():
     
     # Add wintech correction
     if "wintech" in config_dict.keys():
-        add_to_dict(["x_drift", "y_drift", "x_shift", "y_shift"])
+        add_to_dict(["x_drift", "y_drift", "xy_shift", "yx_shift", "xx_shift", "yy_shift"])
 
     return calibration_data
 

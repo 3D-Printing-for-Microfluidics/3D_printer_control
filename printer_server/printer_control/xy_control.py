@@ -68,8 +68,8 @@ class XYControl(PrintControl):
 
         if screen_light_engine == "wintech":
             calibration_positions = get_last_calibration_positions_from_logs()
-            x_adj = calibration_positions.get("x_drift",0.0) + calibration_positions.get("x_shift",0.0)*y_offset/1000
-            y_adj = calibration_positions.get("y_drift",0.0) + calibration_positions.get("y_shift",0.0)*x_offset/1000
+            x_adj = calibration_positions.get("x_drift",0.0) + calibration_positions.get("xy_shift",0.0)*y_offset/1000 + calibration_positions.get("xx_shift",0.0)*x_offset/1000
+            y_adj = calibration_positions.get("y_drift",0.0) + calibration_positions.get("yx_shift",0.0)*x_offset/1000 + calibration_positions.get("yy_shift",0.0)*y_offset/1000
             x_pos = x_offset/1000 + self.coord_systems[screen_light_engine]["X"] + x_adj/1000
             y_pos =  y_offset/1000 + self.coord_systems[screen_light_engine]["Y"] + y_adj/1000
         else:
