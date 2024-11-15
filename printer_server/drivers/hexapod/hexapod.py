@@ -3,6 +3,7 @@ import time
 import math
 import atexit
 import logging
+import threading
 import traceback
 from pathlib import Path
 from datetime import datetime
@@ -72,7 +73,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
     def initialize(self):
         # check if it has been referenced, else do referencing
         self.log.info("Initializing hexapod...")
-        referenced_axes_flags = self.controller.qFRF() # ourput: referenced_axes_flags: OrderedDict([('X', True), ('Y', True), ('Z', True), ('U', True), ('V', True), ('W', True)])
+        with self.gateway.sendLock:
+            referenced_axes_flags = self.controller.qFRF() # ourput: referenced_axes_flags: OrderedDict([('X', True), ('Y', True), ('Z', True), ('U', True), ('V', True), ('W', True)])
         if False in referenced_axes_flags.values():
             self.reference_axes()
         self.log.info("Initialized hexapod")
@@ -250,7 +252,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         Returns:
             int: error code
         """
-        status = self.controller.qERR()
+        with self.gateway.sendLock:
+            status = self.controller.qERR()
         self.log.info("Querying hexapod error code number: %s", status)
         return status
 
@@ -258,8 +261,9 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         """ Run routine for referencing all the axes of the hexapod
         """
         self.log.info("Referencing axes...")
-        self.controller.FRF()
-        pitools.waitontarget(self.controller)
+        with self.gateway.sendLock:
+            self.controller.FRF()
+        self.gateway.waitontarget(self.controller)
         self.log.info("Referencing axes completed")
     
     def home_all_axes(self):
@@ -278,8 +282,9 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         """
         axis = self.convertAxis(axis)
         self.log.info("Translating axis %s to %.3f [mm]", axis, value)
-        self.controller.MOV(axis, value)
-        pitools.waitontarget(self.controller)
+        with self.gateway.sendLock:
+            self.controller.MOV(axis, value)
+        self.gateway.waitontarget(self.controller)
 
     def move_to_position_compound(self, x, y, z):
         """ Perform absolute simultaneous translation of all translational axes to the specified positions in X, Y, and Z 
@@ -296,9 +301,9 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
                 return
 
         self.log.info("Moving to position: (%.3f, %.3f, %.3f) mm", x, y, z)
-        self.controller.MOV({'X': x, 'Y': y, 'Z': z}, None) # Try this one out!
-
-        pitools.waitontarget(self.controller)
+        with self.gateway.sendLock:
+            self.controller.MOV({'X': x, 'Y': y, 'Z': z}, None) # Try this one out!
+        self.gateway.waitontarget(self.controller)
 
     def move_to_angle_axis(self, axis, value):
         """ Perform absolute rotation of axes to the target value
@@ -310,8 +315,9 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         axis = self.convertAxis(axis)
         deg = radians_to_degrees(value)
         self.log.info("Rotating axis %s to %.4f [rad]", axis, value)
-        self.controller.MOV(axis, deg)
-        pitools.waitontarget(self.controller)
+        with self.gateway.sendLock:
+            self.controller.MOV(axis, deg)
+        self.gateway.waitontarget(self.controller)
 
     def move_to_angle_compound(self, u, v, w):
         """ Perform absolute simultaneous rotation of all rotational axes to the specified angles in U, V, and W
@@ -331,9 +337,9 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         v_deg = radians_to_degrees(v)
         w_deg = radians_to_degrees(w)
         self.log.info("Moving to angle: (%.4f, %.4f, %.4f) [rad]", u, v, w)
-        self.controller.MOV({'U': u_deg, 'V': v_deg, 'W': w_deg}, None) # Try this one out!
-
-        pitools.waitontarget(self.controller)
+        with self.gateway.sendLock:
+            self.controller.MOV({'U': u_deg, 'V': v_deg, 'W': w_deg}, None) # Try this one out!
+        self.gateway.waitontarget(self.controller)
     
     def set_pose(self, x, y, z, u, v, w, suppress_message=False):
         """ Perform absolute simultaneous translation and rotation of all translational and rotational axes to the specified 
@@ -353,8 +359,9 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         w_deg = radians_to_degrees(w)
         if not suppress_message:
             self.log.info("Concurrently adjusting the pose to: 'X': %.3f, 'Y': %.3f, 'Z': %.3f, [mm] 'U': %.4f, 'V': %.4f, 'W': %.4f [rad]", x, y, z, u, v, w)
-        self.controller.MOV({'X': x, 'Y': y, 'Z': z, 'U': u_deg, 'V': v_deg, 'W': w_deg})
-        pitools.waitontarget(self.controller)
+        with self.gateway.sendLock:
+            self.controller.MOV({'X': x, 'Y': y, 'Z': z, 'U': u_deg, 'V': v_deg, 'W': w_deg})
+        self.gateway.waitontarget(self.controller)
 
 
     def step_axis(self, axis, step_size):
@@ -368,12 +375,14 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         if axis == "U" or axis == "V" or axis == "W":
             deg = radians_to_degrees(step_size) 
             self.log.info("Stepping axis %s by %.4f rad", axis, step_size)
-            self.controller.MVR(axis, deg)
-            pitools.waitontarget(self.controller)
+            with self.gateway.sendLock:
+                self.controller.MVR(axis, deg)
+            self.gateway.waitontarget(self.controller)
         else:
             self.log.info("Stepping axis %s by %.4f mm", axis, step_size)
-            self.controller.MVR(axis, step_size)
-            pitools.waitontarget(self.controller)
+            with self.gateway.sendLock:
+                self.controller.MVR(axis, step_size)
+            self.gateway.waitontarget(self.controller)
 
     def get_pose(self, axis=None):
         """ Get the current pose (translation and rotation) of the coordiante system corresponding to the current pivot point of the system
@@ -382,14 +391,16 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             list: values of the translational and rotational axes of the hexapod (converted radians)
         """
         if axis is None:
-            positions_raw = self.controller.qPOS()
+            with self.gateway.sendLock:
+                positions_raw = self.controller.qPOS()
             positions_raw["U"] = degrees_to_radians(positions_raw["U"])
             positions_raw["V"] = degrees_to_radians(positions_raw["V"])
             positions_raw["W"] = degrees_to_radians(positions_raw["W"])
             return positions_raw
         else:
             axis = self.convertAxis(axis)
-            positions_raw = self.controller.qPOS(axis)
+            with self.gateway.sendLock:
+                positions_raw = self.controller.qPOS(axis)
             if axis == "U" or axis == "V" or axis == "W":
                 position = round(degrees_to_radians(positions_raw[axis]),4)
                 self.log.debug("Get %s pos: %.4f", axis, position)
@@ -401,7 +412,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
     def hard_stop(self):
         """ Stop any actuations within the hexapod currently beign executed
         """
-        self.controller.STP()
+        with self.gateway.sendLock:
+            self.controller.STP()
         self.log.info("Motion stopped")
 
     def get_pivot_point(self):
@@ -410,7 +422,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         Returns:
             OrderedDict: dictionary containing the axes and values of the pivot point
         """
-        return self.controller.qSPI()
+        with self.gateway.sendLock:
+            return self.controller.qSPI()
 
     def set_pivot_point(self, r, s, t):
         """ Set the value of the pivot point about which the rotational commands are executed
@@ -436,8 +449,9 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
                 all_rotational_axes_zero = False
         if all_rotational_axes_zero:
             self.log.info("Setting pivot point to: %.3f, %.3f, %.3f mm", r, s, t)
-            self.controller.SPI({'R': r, 'S': s, 'T': t})
-            pitools.waitontarget(self.controller)
+            with self.gateway.sendLock:
+                self.controller.SPI({'R': r, 'S': s, 'T': t})
+            self.gateway.waitontarget(self.controller)
             ret_val = self.get_pivot_point()
             return True
         else:
@@ -467,17 +481,20 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         
     def getSoftwareLimits(self, axis=None):
         a = self.convertAxis(axis)
-        ll = self.controller.qNLM(a)
-        ul = self.controller.qPLM(a)
+        with self.gateway.sendLock:
+            ll = self.controller.qNLM(a)
+            ul = self.controller.qPLM(a)
         return (float(ll[a]), float(ul[a]))
 
     def setLowerLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
-        self.controller.NLM({a: limit})
+        with self.gateway.sendLock:
+            self.controller.NLM({a: limit})
 
     def setUpperLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
-        self.controller.PLM({a: limit})
+        with self.gateway.sendLock:
+            self.controller.PLM({a: limit})
 
     def get_simple_dynamic_range(self, target_axis:str):
         """ Get the range of motion of the requested axis. Due to the complexity of the hexapod joint configuration, dynamic ranges change if 
@@ -492,10 +509,11 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         """
         try:
             target_axis = self.convertAxis(target_axis)
-            request = {target_axis: 1}
-            positive_limit = float(self.controller.qTRA(request)[target_axis])
-            request = {target_axis: -1}
-            negative_limit = float(self.controller.qTRA(request)[target_axis])
+            with self.gateway.sendLock:
+                request = {target_axis: 1}
+                positive_limit = float(self.controller.qTRA(request)[target_axis])
+                request = {target_axis: -1}
+                negative_limit = float(self.controller.qTRA(request)[target_axis])
 
             if target_axis == "U" or target_axis == "V" or target_axis == "W":
                 positive_limit = degrees_to_radians(positive_limit) 
@@ -531,7 +549,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             params_dict = dict()
             for i, axis in enumerate(target_axes):
                 params_dict[axis] = target_pose[i]
-            dynamic_range = self.controller.qTRA(params_dict)
+            with self.gateway.sendLock:
+                dynamic_range = self.controller.qTRA(params_dict)
 
             if "U" in target_axes:
                 dynamic_range["U"] = degrees_to_radians(dynamic_range["U"]) 

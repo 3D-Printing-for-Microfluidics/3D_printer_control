@@ -7,6 +7,7 @@ import socket
 
 
 from pipython import GCSError, gcserror
+from pipython import GCSDevice, pitools
 from pipython.interfaces.pigateway import PIGateway, PI_CONTROLLER_CODEPAGE
 
 __signature__ = 0x59c603b46cab28bc52a1b9e4d21ed900
@@ -14,7 +15,7 @@ __signature__ = 0x59c603b46cab28bc52a1b9e4d21ed900
 class PISocket(PIGateway):
     """Provide a socket, can be used as context manager."""
 
-    def __init__(self, name, host='localhost', port=50000, timeout=15, logger=logging.getLogger(__name__)):
+    def __init__(self, name, host='localhost', port=50000, timeout=1000, logger=logging.getLogger(__name__)):
         """Provide a connected socket.
         @param host : IP address as string, defaults to "localhost".
         @param port : IP port to use as integer, defaults to 50000.
@@ -113,6 +114,55 @@ class PISocket(PIGateway):
         except IOError:
             return u''
         return received.decode(encoding=PI_CONTROLLER_CODEPAGE, errors='ignore')
+    
+    def waitontarget(self, pidevice, axes=None, timeout=300, predelay=0, postdelay=0, polldelay=0.05):
+        """Wait until all closedloop 'axes' are on target.
+        @param axes : Axes to wait for as string or list/tuple, or None to wait for all axes.
+        @param timeout : Timeout in seconds as float.
+        @param predelay : Time in seconds as float until querying any state from controller.
+        @param postdelay : Additional delay time in seconds as float after reaching desired state.
+        @param polldelay : Delay time between polls in seconds as float.
+        """
+        with self.sendLock:
+            axes = pitools.getaxeslist(pidevice, axes)
+            if not axes:
+                return
+
+        # waitonready
+        time.sleep(predelay)
+        with self.sendLock:
+            if not pidevice.HasIsControllerReady():
+                return
+            maxtime = time.time() + timeout
+            ready = pidevice.IsControllerReady()
+        while not ready:
+            if time.time() > maxtime:
+                raise SystemError('waitonready() timed out after %.1f seconds' % timeout)
+            time.sleep(polldelay)
+            with self.sendLock:
+                ready = pidevice.IsControllerReady()
+        with self.sendLock:
+            pidevice.checkerror()
+
+
+        # waitontarget
+        with self.sendLock:
+            if not pidevice.HasqONT():
+                return
+        
+        with self.sendLock:
+            servo = pitools.getservo(pidevice, axes)
+            axes = [x for x in axes if servo[x]]
+            maxtime = time.time() + timeout
+            ontarget = pitools.ontarget(pidevice, axes)
+        while not all(list(ontarget.values())):
+        # while not all(list(pitools._get_closed_loop_on_target(axes, throwonaxiserror=True).values())):
+            if time.time() > maxtime:
+                raise SystemError('waitontarget() timed out after %.1f seconds' % timeout)
+            time.sleep(polldelay)
+            with self.sendLock:
+                ontarget = pitools.ontarget(pidevice, axes)
+        time.sleep(postdelay)
 
     def flush(self):
         """Flush input buffer."""
