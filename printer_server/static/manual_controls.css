@@ -27,6 +27,13 @@
     border-color: #3498DB;
 }
 
+pre {
+    font-family: "Lato";
+    --font-family-sans-serif: "Lato";
+    font-size: 1rem;
+    margin-bottom: 0;
+  }
+
 /* extra margin for rows with large headings */
 .top-buffer {
     margin-top: 20px;

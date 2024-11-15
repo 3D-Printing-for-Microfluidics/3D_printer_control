@@ -55,4 +55,15 @@ $(document).ready(function () {
             }
         }
     });
+
+    socket.on("bootstrap alert", function (message) {
+        console.log(message);
+        let flash_msg = `
+       <div class="alert alert-${message.category}">
+         <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
+        <pre>${message.text}</pre>
+       </div>
+        `;
+        $("#manual-controls").before(flash_msg);
+    });
 });

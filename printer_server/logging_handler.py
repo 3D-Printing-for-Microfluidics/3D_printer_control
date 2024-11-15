@@ -103,17 +103,21 @@ class SocketIOHandler(logging.Handler):
                 "msecs": record.msecs,
                 "message": record.message,
             }
+            if "_snip" in record.shortname:
+                namespace = "/manual"
+            else:
+                namespace = "/printing"
             if record.levelno > logging.INFO and record.levelno <= logging.WARNING:
                 socketio.emit(
                     "bootstrap alert",
                     {"text": msg, "category": "warning"},
-                    namespace="/printing",
+                    namespace=namespace,
                 )
             elif record.levelno > logging.WARNING:
                 socketio.emit(
                     "bootstrap alert",
                     {"text": msg, "category": "danger"},
-                    namespace="/printing",
+                    namespace=namespace,
                 )
         except AttributeError:
             pass

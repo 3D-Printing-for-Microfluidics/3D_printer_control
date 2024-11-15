@@ -12,23 +12,26 @@
 {% endblock %}
 
 {% block page_content %}
-{% if initialized %}
 
-{% for driver, path in manual_controls_data['html_paths'].items() %}
-{% include path %}
-<hr class="bg-secondary">
-{% endfor %}
+<div id="manual-controls"></div>
+    {% if initialized %}
 
-{% else %}
+    {% for driver, path in manual_controls_data['html_paths'].items() %}
+    {% include path %}
+    <hr class="bg-secondary">
+    {% endfor %}
 
-{% if 'external_control' in manual_controls_data.keys() %}
-{% include manual_controls_data['html_paths']['external_control'] %}
-<hr class="bg-secondary">
-{% endif %}
+    {% else %}
 
-<h5> Printer must be initialized to access manual controls </h5>
+    {% if 'external_control' in manual_controls_data.keys() %}
+    {% include manual_controls_data['html_paths']['external_control'] %}
+    <hr class="bg-secondary">
+    {% endif %}
 
-{% endif %}
+    <h5> Printer must be initialized to access manual controls </h5>
+
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block scripts %}
