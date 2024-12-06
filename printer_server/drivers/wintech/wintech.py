@@ -28,21 +28,15 @@ class Wintech(LightEngineDriver):
 
     def connect(self):
         """Connect to the DMD controller."""
-        self.log.info("Connecting to Wintech...")
         self.connected = self.dmd_controller.connect(int(self.config_dict["vendor_id"], 16), int(self.config_dict["product_id"], 16))
-        self.log.info("Connected to Wintech...")
         return self.connected
 
     def initialize(self):
         """Initialize the DMD controller."""
-        self.log.info("Initializing Wintech...")
         self.dmd_controller.initialize()
-        self.log.info("Initialized Wintech")
 
     def disconnect(self):
-        self.log.info("Disconnecting from Wintech...")
         self.dmd_controller.disconnect()
-        self.log.info("Disconnected from Wintech")
         
     def stop_sequencer(self):
         """
