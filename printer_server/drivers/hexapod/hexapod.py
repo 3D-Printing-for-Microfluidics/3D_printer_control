@@ -59,11 +59,14 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             if not self.gateway.connect():
                 self.connected = None
                 return False
-            messages = GCSMessages(self.gateway)
-            self.controller = GCSCommands(gcsmessage=messages)
+            try:
+                messages = GCSMessages(self.gateway)
+                self.controller = GCSCommands(gcsmessage=messages)
+            except:
+                self.connected = None
+                return False
             self.connected = True 
             atexit.register(self.disconnect)
-            self.log.info("Connected to hexapod")
             return True
         else:
             while self.connected is False:
@@ -94,7 +97,6 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             self.connected = None
             # self.controller.CloseConnection()
             self.gateway.disconnect()
-            self.log.info("Disconnected from hexapod")
 
     def convertAxis(self, axis):
         """Return converted axis name (eg. maps X,Y,Z to A,B,C)"""
@@ -281,7 +283,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             value (float): target position in mm for the given axis
         """
         axis = self.convertAxis(axis)
-        self.log.info("Translating axis %s to %.3f [mm]", axis, value)
+        self.log.info("Translating axis %s to %.4f [mm]", axis, value)
         with self.gateway.sendLock:
             self.controller.MOV(axis, value)
         self.gateway.waitontarget(self.controller)
@@ -300,7 +302,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
                 self.log.warning("parameter provided is None. No motion performed")
                 return
 
-        self.log.info("Moving to position: (%.3f, %.3f, %.3f) mm", x, y, z)
+        self.log.info("Moving to position: (%.4f, %.4f, %.4f) mm", x, y, z)
         with self.gateway.sendLock:
             self.controller.MOV({'X': x, 'Y': y, 'Z': z}, None) # Try this one out!
         self.gateway.waitontarget(self.controller)
@@ -314,7 +316,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         """
         axis = self.convertAxis(axis)
         deg = radians_to_degrees(value)
-        self.log.info("Rotating axis %s to %.4f [rad]", axis, value)
+        self.log.info("Rotating axis %s to %.5f [rad]", axis, value)
         with self.gateway.sendLock:
             self.controller.MOV(axis, deg)
         self.gateway.waitontarget(self.controller)
@@ -336,7 +338,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         u_deg = radians_to_degrees(u)
         v_deg = radians_to_degrees(v)
         w_deg = radians_to_degrees(w)
-        self.log.info("Moving to angle: (%.4f, %.4f, %.4f) [rad]", u, v, w)
+        self.log.info("Moving to angle: (%.5f, %.5f, %.5f) [rad]", u, v, w)
         with self.gateway.sendLock:
             self.controller.MOV({'U': u_deg, 'V': v_deg, 'W': w_deg}, None) # Try this one out!
         self.gateway.waitontarget(self.controller)
@@ -358,7 +360,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         v_deg = radians_to_degrees(v)
         w_deg = radians_to_degrees(w)
         if not suppress_message:
-            self.log.info("Concurrently adjusting the pose to: 'X': %.3f, 'Y': %.3f, 'Z': %.3f, [mm] 'U': %.4f, 'V': %.4f, 'W': %.4f [rad]", x, y, z, u, v, w)
+            self.log.info("Concurrently adjusting the pose to: 'X': %.4f, 'Y': %.4f, 'Z': %.4f, [mm] 'U': %.5f, 'V': %.5f, 'W': %.5f [rad]", x, y, z, u, v, w)
         with self.gateway.sendLock:
             self.controller.MOV({'X': x, 'Y': y, 'Z': z, 'U': u_deg, 'V': v_deg, 'W': w_deg})
         self.gateway.waitontarget(self.controller)
@@ -374,7 +376,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         axis = self.convertAxis(axis)
         if axis == "U" or axis == "V" or axis == "W":
             deg = radians_to_degrees(step_size) 
-            self.log.info("Stepping axis %s by %.4f rad", axis, step_size)
+            self.log.info("Stepping axis %s by %.5f rad", axis, step_size)
             with self.gateway.sendLock:
                 self.controller.MVR(axis, deg)
             self.gateway.waitontarget(self.controller)
@@ -402,11 +404,11 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             with self.gateway.sendLock:
                 positions_raw = self.controller.qPOS(axis)
             if axis == "U" or axis == "V" or axis == "W":
-                position = round(degrees_to_radians(positions_raw[axis]),4)
-                self.log.debug("Get %s pos: %.4f", axis, position)
+                position = round(degrees_to_radians(positions_raw[axis]),5)
+                self.log.debug("Get %s pos: %.5f", axis, position)
             else:
-                position = round(positions_raw[axis], 3)
-                self.log.debug("Get %s pos: %.3f", axis, position)
+                position = round(positions_raw[axis], 4)
+                self.log.debug("Get %s pos: %.4f", axis, position)
             return position
 
     def hard_stop(self):
@@ -448,7 +450,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             if axis >= 0.000001:
                 all_rotational_axes_zero = False
         if all_rotational_axes_zero:
-            self.log.info("Setting pivot point to: %.3f, %.3f, %.3f mm", r, s, t)
+            self.log.info("Setting pivot point to: %.4f, %.4f, %.4f mm", r, s, t)
             with self.gateway.sendLock:
                 self.controller.SPI({'R': r, 'S': s, 'T': t})
             self.gateway.waitontarget(self.controller)
@@ -477,7 +479,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             new_pivot["T"] += step_size
 
         self.set_pivot_point(new_pivot["R"], new_pivot["S"], new_pivot["T"])
-        self.log.info("Pivot point stepped by %.3f mm on %s axis", step_size, axis)
+        self.log.info("Pivot point stepped by %.4f mm on %s axis", step_size, axis)
         
     def getSoftwareLimits(self, axis=None):
         a = self.convertAxis(axis)
