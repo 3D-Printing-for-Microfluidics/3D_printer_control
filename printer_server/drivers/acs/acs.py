@@ -367,7 +367,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
             self.setAcceleration(acceleration, axis=a)
         if mm is not None:
             start_position = self.getPosition(axis=a)
-            self.log.info("Move axis %s to relative position %s", a, mm)
+            self.log.info("Move axis %s to relative position %.4f", a, mm)
             self.send(f"PTP/r {a}, {mm}")
             self.logging_move_status[a] = 0
             self.waitForMotionComplete(start_position + mm, wait_for_settling=wait_for_settling, axis=a)
@@ -406,7 +406,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
             old_acceleration = self.getAcceleration(axis=a)
             self.setAcceleration(acceleration, axis=a)
         if mm is not None:
-            self.log.info("Move axis %s to absolute position %s", a, mm)
+            self.log.info("Move axis %s to absolute position %.4f", a, mm)
             self.send(f"PTP {a}, {mm}")
             self.logging_move_status[a] = 0
             self.waitForMotionComplete(mm, wait_for_settling=wait_for_settling, axis=a)

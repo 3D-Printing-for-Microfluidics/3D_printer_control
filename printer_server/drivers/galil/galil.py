@@ -510,7 +510,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             cnts = self.mmToCnts(mm, axis=a)
         if cnts is not None:
             start_position = self.getPosition(in_mm=False, axis=a)
-            self.log.info("Move axis %s to relative position %s", a, cnts)
+            self.log.info("Move axis %s to relative position %.4f", a, self.cntsToMm(cnts, axis=a))
             self.send(f"PR{a}={cnts}")
             self.send(f"BG{a}")
             self.logging_move_status[a] = 0
@@ -553,7 +553,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         if mm is not None:
             cnts = self.mmToCnts(mm, axis=a)
         if cnts is not None:
-            self.log.info("Move axis %s to absolute position %s", a, cnts)
+            self.log.info("Move axis %s to absolute position %.4f", a, self.cntsToMm(cnts, axis=a))
             self.send(f"PA{a}={cnts}")
             self.send(f"BG{a}")
             self.logging_move_status[a] = 0
