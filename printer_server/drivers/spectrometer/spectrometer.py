@@ -48,7 +48,7 @@ class Spectrometer:
         # use full range of ADC
 
         if i_time is not None:
-            self.log.info("Integration time set to %s ms", i_time)
+            self.log.info("Integration time set to %.2f ms", i_time)
             i_time = float(i_time)
             limits = self.get_integration_limits()
             if i_time >= limits[0] or i_time <= limits[1]:
