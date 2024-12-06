@@ -42,14 +42,19 @@ class LoadcellControl(PrintControl):
             time.sleep(0.05)
 
     def force_squeeze(self, position_settings, layer):
-        squeeze_count = position_settings.get("Squeeze count", 1)
-        final_wait = position_settings["Final wait (ms)"] / 1000
-        for i in range(squeeze_count):
-            self.write_to_event_log("Start Force Squeeze")
-            self.squeeze_resin(position_settings, layer)
-            self.write_to_event_log("Finish Force Squeeze")
-            if i < squeeze_count-1:
-                time.sleep(final_wait)
+        try:
+            squeeze_count = position_settings.get("Squeeze count", 1)
+            final_wait = position_settings["Final wait (ms)"] / 1000
+            for i in range(squeeze_count):
+                self.write_to_event_log("Start Force Squeeze")
+                self.squeeze_resin(position_settings, layer)
+                self.write_to_event_log("Finish Force Squeeze")
+                if i < squeeze_count-1:
+                    time.sleep(final_wait)
+        except Exception as ex:
+            log.critical("Unable to read loadcell (%s)", ex, exc_info=True)
+            self.failed_hardware["Loadcell"] = self.loadcell
+            raise PrintingException()
 
     def squeeze_resin(self, position_settings, layer):
         squeeze_target = position_settings["Squeeze force (N)"]
@@ -61,8 +66,8 @@ class LoadcellControl(PrintControl):
         count = first_count + second_count + third_count
 
         log.info("Squeeze force reached %s steps", count)
-        log.info("Squeeze force: %s", self.loadcell.get_current_force())
-        log.info("Squeeze position: %s", self.bp_stage.getBPPosition())
+        log.info("Squeeze force: %.4f", self.loadcell.get_current_force())
+        log.info("Squeeze position: %.4f", self.bp_stage.getBPPosition())
 
         if self.loadcell.get_current_force() > squeeze_target * 1.10:
             log.warning("Move_to_force overshot target value.")
@@ -89,7 +94,7 @@ class LoadcellControl(PrintControl):
             ):
                 time.sleep(0.01)
                 force = self.loadcell.get_current_force()
-                log.debug("Loadcell force: %s", force)
+                log.debug("Loadcell force: %.4f", force)
                 count += 1
                 forces.append(force)
                 if len(forces) <= 33:
@@ -130,7 +135,7 @@ class LoadcellControl(PrintControl):
             super().planarization_step_1()
             try:
                 if config_dict["loadcell"]["loadcell_planarization_enabled"]:
-                    log.debug("Loadcell force (pre-step 1): %s", loadcell_start_force)
+                    log.debug("Loadcell force (pre-step 1): %.4f", loadcell_start_force)
                     target_force = config_dict["loadcell"]["loadcell_planarization_force"]
                     if (
                         self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.25)
@@ -140,9 +145,9 @@ class LoadcellControl(PrintControl):
                         return
                     time.sleep(0.5)
                     log.info(
-                        "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
+                        "Loadcell force (post-step 1): %.4f", self.loadcell.get_current_force()
                     )
-                    log.info("Loadcell position (post-step 1): %s", self.bp_stage.getBPPosition())
+                    log.info("Loadcell position (post-step 1): %.4f", self.bp_stage.getBPPosition())
                 else:
                     # estimate a 2mm movement for planarization
                     self.bp_stage.relMoveBP(mm=2.0, speed=2.5)
@@ -184,8 +189,8 @@ class LoadcellControl(PrintControl):
             self.planarized_position = self.bp_stage.getBPPosition()
             self.print_position = self.planarized_position
             log.info("Loadcell planarized %s steps", count)
-            log.info("Loadcell force (post-step 2): %s", self.loadcell.get_current_force())
-            log.info("Loadcell position (post-step 2): %s", self.planarized_position)
+            log.info("Loadcell force (post-step 2): %.4f", self.loadcell.get_current_force())
+            log.info("Loadcell position (post-step 2): %.4f", self.planarized_position)
             if self.loadcell.get_current_force() < target_force * 0.90:
                 log.warning("Move_to_force overshot target value")
         except Exception as ex:
