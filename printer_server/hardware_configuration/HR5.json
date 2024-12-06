@@ -26,13 +26,13 @@
         "keyence_visitech": {
             "X": -1.705,
             "Y": -36.204,
-            "Focus": 0.331,
+            "Focus": 2.300,
             "Build Platform": 0
         },
         "fiber_visitech": {
-            "X": -86.265,
-            "Y": 68.750,
-            "Focus": 0.03,
+            "X": -86.308,
+            "Y": 68.815,
+            "Focus": 0.02,
             "Build Platform": 0
         }
     },
@@ -160,14 +160,14 @@
         "power_status_pin": 17
     },
     "loadcell": {
-        "dummy": true,
+        "dummy": false,
         "hwid": "PID=16C0:0483 SER=5712360",
         "vendor_id": 5824,
         "product_id": 1155,
         "serial_number": "5712360",
         "baudrate": 115200,
         "sample_period_us": 1000,
-        "calibration_intercept": 32449.0,
+        "calibration_intercept": 32617.0,
         "calibration_slope": -3.308,
         "loadcell_planarization_enabled": true,
         "loadcell_planarization_force": 40.0,
@@ -184,20 +184,20 @@
         }
     },
     "photodiode": {
-        "dummy": true,
+        "dummy": false,
         "beam_diameter": 0.05,
         "default_wavelength": 365,
         "attenuation_db": 0,
-        "default_number_of_averages": 16,
+        "default_number_of_averages": 64,
         "vendor_id": 4883,
         "product_id": 32882,
         "serial_number": "1928351"
     },
     "spectrometer": {
-        "dummy": true,
+        "dummy": false,
         "serial num": "",
         "default_integration_time": 25,
-        "default_number_of_averages": 5
+        "default_number_of_averages": 100
     },
     "environmental_sensors": {
         "dummy": true,
@@ -209,7 +209,7 @@
         "measurement_period_ms": 1000
     },
     "accelerometer": {
-        "dummy": true,
+        "dummy": false,
         "hwid": "USB VID:PID=16C0:0483 SER=16038530",
         "vendor_id": 5824,
         "product_id": 1155,
