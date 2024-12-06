@@ -26,7 +26,7 @@ class USBSerial(serial.Serial):
         self.pid = pid
         self.sn = sn
         self.port = None
-        self.name = name
+        self.readable_name = name
         self.type = None
         self.connected = None
         self.line_ending = line_ending
@@ -47,20 +47,19 @@ class USBSerial(serial.Serial):
     
     def connect(self):
         if self.connected is None:
-            self.log.info("Connecting to %s...", self.name)
+            self.log.info("Connecting to %s...", self.readable_name)
             self.connected = False
             self.port, self.type = self.findUsbPort(self.vid, self.pid, self.sn)
             if self.port is None:
                 self.connected = None
-                msg = "Device not found!"
-                self.log.error(msg)
+                self.log.error("%s not found!", self.readable_name)
                 return False
             if self.is_open:
                 self.close()
             self.open()
             self.flush_buffers()
             self.connected = True
-            self.log.info("Connected to %s (%s)", self.name, self.type)
+            self.log.info("Connected to %s (%s)", self.readable_name, self.type)
             atexit.register(self.disconnect)
             return True
         else:
@@ -72,13 +71,13 @@ class USBSerial(serial.Serial):
     
     def disconnect(self):
         if self.connected is not None and self.connected:
-            self.log.info("Disconnecting from %s...", self.name)
+            self.log.info("Disconnecting from %s...", self.readable_name)
             try:
                 self.close()
             except:
-                self.log.info("Unable to disconnect from %s", self.name)
+                self.log.info("Unable to disconnect from %s", self.readable_name)
             self.connected = None
-            self.log.info("Disconnected from %s", self.name)
+            self.log.info("Disconnected from %s", self.readable_name)
 
     def send(self, cmd, recieve=True, parse_float_at_index=None):
         with self._lock:
