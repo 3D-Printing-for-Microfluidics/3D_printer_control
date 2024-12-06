@@ -40,6 +40,8 @@ class EthernetSerial():
                 except (OSError, socket.timeout) as ex:
                     if "timed out" in str(ex):
                         break
+                    if "Errno 113" in str(ex):
+                        i -= 1
                     self.log.info("%s. Retrying in %s second(s)", ex, wait_between)
                     self.socket = None  # get rid of handle to bad socket
                     time.sleep(wait_between)  # wait to try again
