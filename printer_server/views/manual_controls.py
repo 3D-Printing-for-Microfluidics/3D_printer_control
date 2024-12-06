@@ -219,8 +219,10 @@ def start_loop():
 
 def loop():
     global loop_thread, connected_clients
+    _on_load_f_looping = on_load_f_looping.copy()
     while connected_clients > 0:
-        _on_load_f_looping = on_load_f_looping.copy()
+        if not _on_load_f_looping:
+            return
         for f in _on_load_f_looping[:]:
             try:
                 ret_val = f()
