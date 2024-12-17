@@ -233,6 +233,11 @@ class LoadcellControl(PrintControl):
         if not self.loadcell.running:
             try:
                 self.loadcell.start()
+                time.sleep(0.5)
+                if self.loadcell_thread is None:
+                    home.clear_loadcell_graph()
+                    self.loadcell_thread = Thread(log, name="print_control_loadcell_graph_loop_thread", target=self.loadcell_graph_loop)
+                    self.loadcell_thread.start()
             except Exception as ex:
                 log.critical("Unable to start loadcell (%s)", ex, exc_info=True)
                 self.failed_hardware["Loadcell"] = self.loadcell
