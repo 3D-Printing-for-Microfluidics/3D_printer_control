@@ -85,8 +85,8 @@ class VacuumControl(PrintControl):
             self.finish_degas()
             self.degas_state = "idle"
         elif msg == "finish":
-            self.finish_degas()
             self.degas_state = "idle"
+            self.finish_degas()
         socketio.emit(f"update_degas_state", self.degas_state, namespace="/printing")
 
     def run_degas(self):
@@ -118,6 +118,20 @@ class VacuumControl(PrintControl):
             self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), True)
             self.degas_state = "finish"
             socketio.emit(f"update_degas_state", self.degas_state, namespace="/printing")
+
+            stirring = True
+            counter = 0
+            while self.degas_state == "finish":
+                if counter == 150 and stirring:
+                    counter = 0
+                    stirring = False
+                    self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("stirring"), stirring)
+                if counter == 150 and not stirring: 
+                    counter = 0
+                    stirring = True
+                    self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("stirring"), stirring)
+                counter += 1
+                time.sleep(0.1)
         except Exception as ex:
             log.warning("Error occured in degassing thread (%s)", ex, exc_info=True)
 
@@ -130,7 +144,7 @@ class VacuumControl(PrintControl):
             self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vent2"), True)
             self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vacuum"), False)
             self.mks.set_relay_mode(relay_num, "CLEAR")
-            for _ in range(100):
+            for _ in range(150):
                 if self.mks.pressures[1] >= config_dict["mks"]["atm pressure"]:
                     break
                 time.sleep(0.1)
