@@ -23,7 +23,6 @@ class LoadCell(USBSerial):
 
         self.config_dict = config_dict
         self.currentData = []
-        self.currentIndex = -1
         self.currentForce = 0
         self.start_time = 0
         self.running = False
@@ -133,12 +132,6 @@ class LoadCell(USBSerial):
         """
         return self.currentForce
 
-    def get_current_loadcell_index(self):
-        """
-        Get all current loadcell data
-        """
-        return self.currentIndex
-
     def get_graph_mode(self):
         return self.graph_newtons
 
@@ -156,21 +149,15 @@ class LoadCell(USBSerial):
         """
         self.log.debug("Starting loop")
         self.flush_buffers()
-        ret = self.read_bytes(1)
-        while ret != b'\n':
-            if not self.running:
-                return
-            bad_data = True
-            ret = self.read_bytes(1)
+        self.read_until(b'\r\n')
         self.log.debug("Reached first new line")
 
         front_end_counter = 0
         front_end_array = []
+        bad_data = False
         while self.running:
             try:
-                index = int.from_bytes(
-                    self.read_bytes(4), byteorder="little", signed=False
-                )
+                self.read_until(b'AA')
                 milliseconds = int.from_bytes(
                     self.read_bytes(4), byteorder="little", signed=False
                 )
@@ -180,13 +167,9 @@ class LoadCell(USBSerial):
                 time = self.start_time + datetime.timedelta(
                     milliseconds=float(milliseconds)
                 )
-                bad_data = False
-                ret = self.read_bytes(1)
-                while ret != b'\n':
-                    if not self.running:
-                        return
+                ret = self.read_until(b'\r\n')
+                if ret != b'\r\n':
                     bad_data = True
-                    ret = self.read_bytes(1)
                 if bad_data:
                     continue
                 force = self.adc_to_force(data)
@@ -196,7 +179,7 @@ class LoadCell(USBSerial):
                     loadcell_time = time.strftime("%Y-%m-%d %H:%M:%S.%f")
                     async_file_hander.write(
                         self.log_file,
-                        f"{sys_time},{loadcell_time},{index},{data},{force}\n",
+                        f"{sys_time},{loadcell_time},{data},{force}\n",
                     )
 
                 front_end_counter += 1
@@ -218,7 +201,6 @@ class LoadCell(USBSerial):
                     front_end_array = []
 
                 self.currentForce = force
-                self.currentIndex = index
             except SerialException as ex:
                 self.currentForce = None
                 self.currentData = None

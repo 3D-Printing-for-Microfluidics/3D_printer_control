@@ -125,6 +125,17 @@ class USBSerial(serial.Serial):
         with self._lock:
             return self.read(number_of_bytes)
         
+    def read_until(self, bytes):
+        with self._lock:
+            buffer = bytearray()
+            # while self.running:
+            while True:
+                data = self.read(1)
+                buffer.extend(data)
+
+                if bytes in buffer:
+                    return buffer
+        
     def flush_buffers(self):
         with self._lock:
             # self.flush()

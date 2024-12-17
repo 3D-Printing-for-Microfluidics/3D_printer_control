@@ -16,7 +16,6 @@ class Loadcell_dummy:
         self.intercept = config_dict["calibration_intercept"] if config_dict else 0
         self.slope = config_dict["calibration_slope"] if config_dict else 1
         self.currentData = []
-        self.currentIndex = -1
         self.currentForce = 0
         self.start_time = 0
         self.running = False
@@ -105,10 +104,6 @@ class Loadcell_dummy:
         return self.currentForce
 
     # @dummy_log
-    def get_current_loadcell_index(self):
-        return self.currentIndex
-
-    # @dummy_log
     def get_graph_mode(self):
         return self.graph_newtons
 
@@ -118,12 +113,8 @@ class Loadcell_dummy:
 
     # @dummy_log
     def loop(self):
-        front_end_counter = 0
-        front_end_array = []
         while self.running:
             try:
-                index = 0
-                milliseconds = 0
                 data = 0
                 t = datetime.datetime.now()
                 force = random.randrange(-40, 40, 1)
@@ -133,28 +124,27 @@ class Loadcell_dummy:
                     loadcell_time = t.strftime("%Y-%m-%d %H:%M:%S.%f")
                     # Simulate file writing
                     with open(self.log_file, 'a') as f:
-                        f.write(f"{sys_time},{loadcell_time},{index},{data},{force}\n")
+                        f.write(f"{sys_time},{loadcell_time},{data},{force}\n")
                         time.sleep(0.1)
 
-                front_end_counter += 1
                 if self.graph_newtons:
-                    front_end_array.append(force)
-                else:
-                    front_end_array.append(data)
-                if front_end_counter >= 10:
-                    front_end_counter = 0
-                    if len(self.currentData) >= 5:
-                        self.currentData.pop(0)
                     self.currentData.append(
-                        {
-                            "timestamp": t.timestamp() * 1000,
-                            "force": sum(front_end_array) / len(front_end_array),
-                        }
-                    )
-                    front_end_array = []
+                    {
+                        "timestamp": t.timestamp() * 1000,
+                        "force": force,
+                    }
+                )
+                else:
+                    self.currentData.append(
+                    {
+                        "timestamp": t.timestamp() * 1000,
+                        "force": data,
+                    }
+                )
+                if len(self.currentData) >= 5:
+                    self.currentData.pop(0)
 
                 self.currentForce = force
-                self.currentIndex = index
             except Exception as ex:
                 self.running = False
                 self.log.warning("Exception in loadcell loop: %s", str(ex))

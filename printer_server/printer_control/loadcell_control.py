@@ -29,7 +29,7 @@ class LoadcellControl(PrintControl):
         super().create_logs()
 
         async_file_hander.write(
-            self.loadcell_log, "system_time,loadcell_time,index,raw_data,newtons\n"
+            self.loadcell_log, "system_time,loadcell_time,raw_data,newtons\n"
         )
         self.loadcell.set_log_file(self.loadcell_log)
 
@@ -117,7 +117,7 @@ class LoadcellControl(PrintControl):
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             try:
                 async_file_hander.write(
-                    self.loadcell_planarization_log, "system_time,loadcell_time,index,raw_data,newtons\n"
+                    self.loadcell_planarization_log, "system_time,loadcell_time,raw_data,newtons\n"
                 )
                 self.loadcell.set_log_file(self.loadcell_planarization_log)
 
