@@ -492,9 +492,6 @@ class PrintControl:
         """
         if self.state != "printing":
             return
-        # clear old flags
-        self.printing_stopped.clear()
-        self.printing_paused.clear()
 
         # generate layer map
         self.layer_map = self.generate_layer_map()
@@ -503,6 +500,10 @@ class PrintControl:
 
         self.pre_print_tasks()
         self.pre_print_joins()
+
+        # clear old flags
+        self.printing_stopped.clear()
+        self.printing_paused.clear()
 
         # update frontend message pane and progress bar
         msg = {
