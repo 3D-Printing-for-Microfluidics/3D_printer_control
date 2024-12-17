@@ -57,12 +57,18 @@ class Screen:
         self.canvas.itemconfig(self.canvas_image, image=self.tk_image)
         self.window.update()
 
+        # It takes about 200ms to change the screen
+        time.sleep(0.25)
+
     def clear(self):
         """Clear the Tk window by drawing a black image."""
         self.image = Image.new(mode="L", size=self.resolution, color=0)
         self.tk_image = ImageTk.PhotoImage(self.image)
         self.canvas.itemconfig(self.canvas_image, image=self.tk_image)
         self.window.update()
+
+        # It takes about 200ms to change the screen
+        time.sleep(0.25)
 
     def fetch_preview(self, scale=1/20):
         new_size = (int(self.resolution[0] * scale), int(self.resolution[1] * scale))
