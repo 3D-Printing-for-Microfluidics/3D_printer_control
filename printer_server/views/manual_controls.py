@@ -208,8 +208,9 @@ def connect():
 def disconnect():
     log.debug("MC Socket disconnected %s", request.sid)
     global connected_clients
-    connected_clients -= 1
-    start_loop()
+    if connected_clients > 0:
+        connected_clients -= 1
+    stop_loop()
 
 def start_loop():
     global loop_thread, connected_clients
