@@ -55,17 +55,17 @@ class Accelerometer(USBSerial):
         Starts the accelerometer collecting data
         """
         if not self.thread.is_alive():
+            self.running = True
+
             self.log.info("Accelerometer started")
             accel_time = self.accel_start()
 
-            if accel_time is not False:
-                if self.start_time == 0:
-                    self.start_time = datetime.datetime.now() - datetime.timedelta(
-                        milliseconds=accel_time
-                    )
-                time.sleep(0.1)
-                self.running = True
-                self.thread.start()
+            if self.start_time == 0:
+                self.start_time = datetime.datetime.now() - datetime.timedelta(
+                    milliseconds=accel_time
+                )
+            time.sleep(0.1)
+            self.thread.start()
 
     def set_log_file(self, filename):
         """
@@ -113,19 +113,13 @@ class Accelerometer(USBSerial):
         """
         self.log.debug("Starting loop")
         self.flush_buffers()
-        ret = self.read_bytes(1)
-        while ret != b'\n':
-            if not self.running:
-                return
-            bad_data = True
-            ret = self.read_bytes(1)
+        self.read_until(b'\r\n')
         self.log.debug("Reached first new line")
 
+        bad_data = False
         while self.running:
             try:
-                index = int.from_bytes(
-                    self.read_bytes(4), byteorder="little", signed=False
-                )
+                self.read_until(b'AA')
                 milliseconds = int.from_bytes(
                     self.read_bytes(4), byteorder="little", signed=False
                 )
@@ -135,13 +129,9 @@ class Accelerometer(USBSerial):
                 time = self.start_time + datetime.timedelta(
                     milliseconds=float(milliseconds)
                 )
-                bad_data = False
-                ret = self.read_bytes(1)
-                while ret != b'\n':
-                    if not self.running:
-                        return
+                ret = self.read_until(b'\r\n')
+                if ret != b'\r\n':
                     bad_data = True
-                    ret = self.read_bytes(1)
                 if bad_data:
                     continue
                 accel = data/16384
@@ -151,7 +141,7 @@ class Accelerometer(USBSerial):
                     accel_time = time.strftime("%Y-%m-%d %H:%M:%S.%f")
                     async_file_hander.write(
                         self.log_file,
-                        f"{sys_time},{accel_time},{index},{accel}\n",
+                        f"{sys_time},{accel_time},{accel}\n",
                     )
             except SerialException as ex:
                 self.log.warning("Accelerometer loop failed (%s)", ex, exc_info=True)

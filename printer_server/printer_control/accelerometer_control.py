@@ -18,7 +18,7 @@ class AccelerometerControl(PrintControl):
     def create_logs(self):
         super().create_logs()
         async_file_hander.write(
-            self.accelerometer_log, "system_time,accel_time,index,data\n"
+            self.accelerometer_log, "system_time,accel_time,data\n"
         )
         self.accelerometer.set_log_file(self.accelerometer_log)
 
@@ -68,7 +68,7 @@ class AccelerometerControl(PrintControl):
     def finish_print(self):
         try:
             self.accelerometer.stop()
+            self.accelerometer.set_log_file(None)
         except Exception as ex:
             log.warning("Unable to stop accelerometer (%s)", ex, exc_info=True)
-        self.accelerometer.set_log_file(None)
         super().finish_print()
