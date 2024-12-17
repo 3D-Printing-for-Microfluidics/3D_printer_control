@@ -246,6 +246,7 @@ class LoadcellControl(PrintControl):
         if self.printing_paused.is_set():
             try:
                 self.loadcell.pause()
+                self.loadcell_thread = None
             except Exception as ex:
                 log.critical("Unable to pause loadcell (%s)", ex, exc_info=True)
                 self.failed_hardware["Loadcell"] = self.loadcell
