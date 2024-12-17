@@ -130,16 +130,16 @@
         "teensy_baudrate": 9600,
         "atm pressure": 650,
         "target": [
-            0.2,
-            0.15
+            0.15,
+            0.03
         ],
         "relays": {
             "crane": {
                 "relay_num": 1,
                 "mode": "auto",
                 "direction": "ABOVE",
-                "setpoint": 630,
-                "hysterisis": 560
+                "setpoint": 640,
+                "hysterisis": 570
             },
             "vacuum_pump": {
                 "relay_num": 2,
