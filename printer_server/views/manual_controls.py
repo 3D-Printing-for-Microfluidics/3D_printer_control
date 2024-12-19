@@ -2,6 +2,7 @@
 import json
 import time
 import logging
+from threading import Event
 from pathlib import Path
 from datetime import datetime
 from os.path import exists
@@ -40,6 +41,7 @@ on_load_f_no_init = []
 on_load_f_init = []
 on_load_f_looping = []
 loop_thread = None
+loop_stop_event = Event()
 
 # env, acc
 
@@ -219,14 +221,15 @@ def disconnect():
     stop_loop()
 
 def start_loop():
-    global loop_thread
+    global loop_thread, loop_stop_event
+    loop_stop_event.clear()
     loop_thread = Thread(log, name="manual_control_loop_thread", target=loop)
     loop_thread.start()
 
 def loop():
-    global loop_thread, connected_clients
+    global loop_thread, connected_clients, loop_stop_event
     _on_load_f_looping = on_load_f_looping.copy()
-    while connected_clients > 0:
+    while connected_clients > 0 and not loop_stop_event.is_set():
         if not _on_load_f_looping:
             return
         for f in _on_load_f_looping[:]:
@@ -243,9 +246,10 @@ def loop():
         time.sleep(0.5)
 
 def stop_loop(force=False):
-    global loop_thread, connected_clients
+    global loop_thread, connected_clients, loop_stop_event
     if connected_clients <= 0 or force:
         if loop_thread is not None:
+            loop_stop_event.set()
             loop_thread.join()
             loop_thread = None
 
