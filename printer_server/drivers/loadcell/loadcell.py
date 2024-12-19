@@ -124,7 +124,9 @@ class LoadCell(USBSerial):
         """
         Get current loadcell force
         """
-        return self.currentData
+        tmp = self.currentData
+        self.currentData = []
+        return tmp
 
     def get_current_force(self):
         """
@@ -149,7 +151,7 @@ class LoadCell(USBSerial):
         """
         self.log.debug("Starting loop")
         self.flush_buffers()
-        self.read_until(b'\r\n')
+        self.read_until(b'\r\nAA')
         self.log.debug("Reached first new line")
 
         front_end_counter = 0
@@ -157,7 +159,7 @@ class LoadCell(USBSerial):
         bad_data = False
         while self.running:
             try:
-                self.read_until(b'AA')
+                
                 milliseconds = int.from_bytes(
                     self.read_bytes(4), byteorder="little", signed=False
                 )
@@ -167,11 +169,7 @@ class LoadCell(USBSerial):
                 time = self.start_time + datetime.timedelta(
                     milliseconds=float(milliseconds)
                 )
-                ret = self.read_until(b'\r\n')
-                if ret != b'\r\n':
-                    bad_data = True
-                if bad_data:
-                    continue
+                ret = self.read_until(b'\r\nAA')
                 force = self.adc_to_force(data)
 
                 if self.log_file is not None:
