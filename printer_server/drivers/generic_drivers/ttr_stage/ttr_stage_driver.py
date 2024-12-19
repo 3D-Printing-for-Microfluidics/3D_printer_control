@@ -46,8 +46,10 @@ class TTRStageDriver:
         while not self.initialized:
             time.sleep(0.1)
 
-        for a in ["Tip", 'Tilt', 'Rotate']:
+        for a in self.axes_common_names:
             self.setTTRLimits(axis=a)
+        # for a in ["Tip", 'Tilt', 'Rotate']:
+        #     self.setTTRLimits(axis=a)
 
         if self.config_dict.get("auto_repositioning", True):
             return self.threadedTTRMove(log, tip, tilt, rotate, join=True)
@@ -66,7 +68,7 @@ class TTRStageDriver:
         If join is set to true, the movements will join before returning
         """
         threads = [None, None, None]
-        if tip is not None:
+        if tip is not None and "Tip" in self.axes_common_names:
             threads[0] = Thread(
                 logger, 
                 name="ttr_stage_driver_tip_thread",
@@ -77,7 +79,7 @@ class TTRStageDriver:
                 },
             )
             threads[0].start()
-        if tilt is not None:
+        if tilt is not None and "Tilt" in self.axes_common_names:
             threads[1] = Thread(
                 logger, 
                 name="ttr_stage_driver_tilt_thread",
@@ -88,7 +90,7 @@ class TTRStageDriver:
                 },
             )
             threads[1].start()
-        if rotate is not None:
+        if rotate is not None and "Rotate" in self.axes_common_names:
             threads[2] = Thread(
                 logger, 
                 name="ttr_stage_driver_rotate_thread",
