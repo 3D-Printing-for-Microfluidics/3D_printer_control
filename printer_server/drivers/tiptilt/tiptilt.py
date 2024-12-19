@@ -34,7 +34,7 @@ class TipTilt(USBSerial, TTRStageDriver):
                 return self.axes[i]
             if axis.capitalize() in (self.axes[i], self.axes_common_names[i]):
                 return self.axes[i]
-        raise ValueError("Invalid axis supplied")
+        raise ValueError(f"Invalid axis supplied: {axis}")
 
 
     ################################# Parent class functions #######################################
