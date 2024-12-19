@@ -37,7 +37,7 @@ class LightEngineControl(ScreenControl):
             thread.join()
             if not self.light_engines[light_engine].connected or thread.exception is not None:
                 log.error("%s failed to connect!", light_engine.capitalize())
-                self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = light_engine_driver
+                self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = self.light_engines[light_engine]
         self.light_engine_threads = {}
 
     def initialize_hardware(self):
@@ -50,7 +50,7 @@ class LightEngineControl(ScreenControl):
             thread.join()
             if thread.exception is not None:
                 log.error("%s failed to initialize!", light_engine.capitalize())
-                self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = light_engine_driver
+                self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = self.light_engines[light_engine]
         self.light_engine_threads = {}
 
     def print_worker(self):
