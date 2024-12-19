@@ -126,10 +126,11 @@ class TipTilt(USBSerial, TTRStageDriver):
         return r
     
     def disconnect(self):
-        self.thread_running = False
-        self.thread.join()
-        self.thread = Thread(self.log, name="tt_loop_thread", target=self.loop)
-        self.thread.daemon = True
+        if self.thread_running:
+            self.thread_running = False
+            self.thread.join()
+            self.thread = Thread(self.log, name="tt_loop_thread", target=self.loop)
+            self.thread.daemon = True
         super().disconnect()
 
     # returns "Done" or "Error"
