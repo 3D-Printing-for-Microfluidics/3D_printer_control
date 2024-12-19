@@ -155,6 +155,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
                         self.controller_name = available[address]
                         self.log.debug("Found %s at %s", available[address], self.address)
                         return self._connect()
+                self.connected = None
                 msg = f"Galil controller not found! ({self.controller_name})"
                 self.log.error(msg)
                 return False
@@ -180,6 +181,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             self.log.info("Connected to Galil controller")
             return True
         except self.gclib_error as ex:
+            self.connected = None
             msg = f"Galil controller not found! ({self.controller_name}): {ex}"
             self.log.error(msg)
             return False
