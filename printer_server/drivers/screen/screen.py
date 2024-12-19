@@ -1,4 +1,5 @@
 """Screen module."""
+import time
 import atexit
 import base64
 import tkinter
