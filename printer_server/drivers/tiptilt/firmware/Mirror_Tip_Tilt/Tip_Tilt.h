@@ -15,7 +15,7 @@ public:
     bool homeAxis();
     
     //connection handshake
-    void connectAxis();
+    bool connectAxis();
     
     //get pos
     float tipLocation(); //in rad
@@ -44,7 +44,7 @@ public:
     void setStepperSpeed(long s);
     
     //disconection handshake
-    void disconnectAxis();
+    bool disconnectAxis();
   
   
 private:

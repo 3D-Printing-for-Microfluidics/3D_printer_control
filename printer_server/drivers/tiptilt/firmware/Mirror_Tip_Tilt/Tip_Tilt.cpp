@@ -47,11 +47,11 @@ const int TIP_BASE = 25400;
 const int TILT_BASE = 25400;
 
 float um_to_rad(float o, float a){
-    return atan(o/a);
+    return 0.5*atan(o/a);
 }
 
 float rad_to_um(float rad, float a){
-    return tan(rad)*a;
+    return 2*tan(rad)*a;
 }
 
 //set up device on power up
@@ -151,7 +151,7 @@ bool Tip_Tilt::homeAxis(){
 }
 
 //this function is called on serial connection
-void Tip_Tilt::connectAxis(){
+bool Tip_Tilt::connectAxis(){
     //reset to defaults?
     return true;
 }
@@ -231,6 +231,6 @@ void Tip_Tilt::setStepperSpeed(long s){
 }
 
 //this is called when serial is closed
-void Tip_Tilt::disconnectAxis(){
+bool Tip_Tilt::disconnectAxis(){
     return true;
 }
