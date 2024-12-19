@@ -194,12 +194,18 @@ def index():
 @socketio.on("connect", namespace="/manual")
 def connect():
     log.debug("MC Socket connected %s", request.sid)
-    global connected_clients
-    connected_clients += 1
+    global loop_thread, connected_clients
+
+    if loop_thread is None:
+        connected_clients = 1
+    else:
+        connected_clients += 1
+
     if printer_server.views.home.print_control.state != "uninitialized":
         for f in on_load_f_init:
             f()
-        start_loop()
+        if loop_thread is None:
+            start_loop()
     else:
         for f in on_load_f_no_init:
             f()
@@ -213,10 +219,9 @@ def disconnect():
     stop_loop()
 
 def start_loop():
-    global loop_thread, connected_clients
-    if connected_clients > 0 and loop_thread is None:
-        loop_thread = Thread(log, name="manual_control_loop_thread", target=loop)
-        loop_thread.start()
+    global loop_thread
+    loop_thread = Thread(log, name="manual_control_loop_thread", target=loop)
+    loop_thread.start()
 
 def loop():
     global loop_thread, connected_clients
@@ -241,7 +246,6 @@ def stop_loop(force=False):
     global loop_thread, connected_clients
     if connected_clients <= 0 or force:
         if loop_thread is not None:
-            connected_clients = 0
             loop_thread.join()
             loop_thread = None
 
