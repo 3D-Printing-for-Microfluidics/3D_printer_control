@@ -96,7 +96,8 @@
     },
     "gpio": {
         "dummy": false,
-        "film_pin": 4
+        "film_pin": 4,
+        "power_status_pin": 17
     },
     "loadcell": {
         "dummy": false,
