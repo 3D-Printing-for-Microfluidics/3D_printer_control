@@ -81,8 +81,8 @@
         "serial_number": "9881850",
         "baudrate": 115200,
         "axes": [
-            1,
-            2
+            "1",
+            "2"
         ],
         "axes_common_names": [
             "Tip",
