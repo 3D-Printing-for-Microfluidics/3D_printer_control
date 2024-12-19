@@ -94,6 +94,10 @@
         },
         "auto_repositioning": false
     },
+    "gpio": {
+        "dummy": false,
+        "power_status_pin": 17
+    },
     "loadcell": {
         "dummy": false,
         "hwid": "PID=16C0:0483 SER=5712570",
