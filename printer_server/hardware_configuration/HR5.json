@@ -162,10 +162,10 @@
     },
     "loadcell": {
         "dummy": false,
-        "hwid": "PID=16C0:0483 SER=5712360",
+        "hwid": "PID=16C0:0483 SER=9400820",
         "vendor_id": 5824,
         "product_id": 1155,
-        "serial_number": "5712360",
+        "serial_number": "9400820",
         "baudrate": 115200,
         "sample_period_us": 1000,
         "calibration_intercept": 32617.0,
