@@ -281,7 +281,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     #     else:
     #         return self.cntsToMm(int(pos), axis=axis)
         
-    def getPosition(self, in_mm, axis=[None], notify=True):
+    def getPosition(self, in_mm, axis=None, notify=True):
         """Return the position of the specified encoder."""
         if type(axis) is not list:
             pos = self.send(f"TP{self.convertAxis(axis)}", notify=notify)
@@ -302,7 +302,8 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
                     ret_dict[a] = int(pos[i])
                 else:
                     ret_dict[a] = self.cntsToMm(int(pos[i]), axis=a)
-                    
+            return ret_dict
+
     def motorOn(self, axis=None):
         """Turn on the specified axis."""
         self.send(f"SH{self.convertAxis(axis)}")
@@ -719,9 +720,9 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             while self.thread_running:
                 # for a in self.axes:
                 #     self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
-                pos_list = self.getPosition(in_mm=False, axis=self.axes, notify=False)
+                pos_dict = self.getPosition(in_mm=False, axis=self.axes, notify=False)
                 for a in self.axes:
-                    self.current_position[a] = pos_list[a]
+                    self.current_position[a] = pos_dict[a]
                 if self.logging_running:
                     if self.movement_log is not None:
                         tmp = ""
