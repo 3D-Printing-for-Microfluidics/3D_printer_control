@@ -120,16 +120,6 @@ class PrintControl:
         self.printing_stopped = threading.Event()
         self.printing_paused = threading.Event()
 
-        # Create delete old profiles
-        profile_enabled = Config.PROFILE_CODE
-        if profile_enabled:
-            profiles_dir = Path(Config.PROFILES_FOLDER)
-            profile_file = str(Path(Config.PROJECT_ROOT) / "logs" / "profile.txt")
-            if Path(profile_file).is_file():
-                os.remove(profile_file)
-            if profiles_dir.is_dir():
-                shutil.rmtree(profiles_dir)
-
     @property
     def state(self):
         """Return the current state."""
@@ -321,6 +311,16 @@ class PrintControl:
     def initialize(self, critical_error_handle):
         """Put all hardware into starting configuration."""
         if self.state == "uninitialized":
+            # Create delete old profiles
+            profile_enabled = Config.PROFILE_CODE
+            if profile_enabled:
+                profiles_dir = Path(Config.PROFILES_FOLDER)
+                profile_file = str(Path(Config.PROJECT_ROOT) / "logs" / "profile.txt")
+                if Path(profile_file).is_file():
+                    os.remove(profile_file)
+                if profiles_dir.is_dir():
+                    shutil.rmtree(profiles_dir)
+                    
             self.critical_error_handle = critical_error_handle
             self.state = "busy"
             self.failed_hardware = {}
