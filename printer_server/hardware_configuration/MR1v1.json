@@ -145,8 +145,8 @@
         "serial_number": "5712360",
         "baudrate": 115200,
         "sample_period_us": 1000,
-        "calibration_intercept": 32635.00,
-        "calibration_slope": -1.24,
+        "calibration_intercept": 28844.00,
+        "calibration_slope": -1.078,
         "loadcell_planarization_enabled": true,
         "loadcell_planarization_force": 40.0,
         "loadcell_print_start_force": 5.0

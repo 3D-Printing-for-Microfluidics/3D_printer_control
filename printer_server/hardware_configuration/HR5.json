@@ -168,8 +168,8 @@
         "serial_number": "9400820",
         "baudrate": 115200,
         "sample_period_us": 1000,
-        "calibration_intercept": 32617.0,
-        "calibration_slope": -3.308,
+        "calibration_intercept": 36420.0,
+        "calibration_slope": -2.385,
         "loadcell_planarization_enabled": true,
         "loadcell_planarization_force": 40.0,
         "loadcell_print_start_force": 5.0
