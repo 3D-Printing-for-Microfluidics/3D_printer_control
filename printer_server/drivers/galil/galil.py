@@ -273,14 +273,36 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         lr = self.send(f"MG _LR{a}", notify=False)
         return bool(lf == "0.0000"), bool(lr == "0.0000")
 
-    def getPosition(self, in_mm, axis=None, notify=True):
+    # def getPosition(self, in_mm, axis=None, notify=True):
+    #     """Return the position of the specified encoder."""
+    #     pos = self.send(f"TP{self.convertAxis(axis)}", notify=notify)
+    #     if not in_mm:
+    #         return int(pos)
+    #     else:
+    #         return self.cntsToMm(int(pos), axis=axis)
+        
+    def getPosition(self, in_mm, axis=[None], notify=True):
         """Return the position of the specified encoder."""
-        pos = self.send(f"TP{self.convertAxis(axis)}", notify=notify)
-        if not in_mm:
-            return int(pos)
+        if type(axis) is not list:
+            pos = self.send(f"TP{self.convertAxis(axis)}", notify=notify)
+            if not in_mm:
+                return int(pos)
+            else:
+                return self.cntsToMm(int(pos), axis=axis)
         else:
-            return self.cntsToMm(int(pos), axis=axis)
-
+            parsed_axis = ""
+            for a in axis:
+                parsed_axis += self.convertAxis(a)
+            
+            pos_list = self.send(f"TP{parsed_axis}", notify=notify)
+            pos = pos_list.split(",")
+            ret_dict = {}
+            for i, a in enumerate(axis):
+                if not in_mm:
+                    ret_dict[a] = int(pos[i])
+                else:
+                    ret_dict[a] = self.cntsToMm(int(pos[i]), axis=a)
+                    
     def motorOn(self, axis=None):
         """Turn on the specified axis."""
         self.send(f"SH{self.convertAxis(axis)}")
@@ -695,8 +717,11 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def loop(self):
         try:
             while self.thread_running:
+                # for a in self.axes:
+                #     self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
+                pos_list = self.getPosition(in_mm=False, axis=self.axes, notify=False)
                 for a in self.axes:
-                    self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
+                    self.current_position[a] = pos_list[a]
                 if self.logging_running:
                     if self.movement_log is not None:
                         tmp = ""
@@ -719,7 +744,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
                         if self.logging_move_status[a] >= 2:
                             self.logging_move_status[a] = -1
 
-                    time.sleep(0.01)
+                time.sleep(0.01)
         except Exception as ex:
             self.current_position = None
             self.log.warning("Galil loop failed (%s)", ex, exc_info=True)
