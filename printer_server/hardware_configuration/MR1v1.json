@@ -100,7 +100,7 @@
             "A": [null,null],
             "B": [null,null],
             "C": [null,null],
-            "D": [null,47.875]
+            "D": [null,48.875]
         },
         "calibration_limits": {
             "A": [null,null],
@@ -109,7 +109,7 @@
             "D": [null,46.2148438]
         },
         "calibration_position": 45.2148438,
-        "bottom_position": 46.875,
+        "bottom_position": 43.875,
         "top_position": -50
     },
     "tiptilt": {
