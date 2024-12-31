@@ -15,7 +15,7 @@ class TipTilt(USBSerial, TTRStageDriver):
 
         super().__init__("Tiptilt", vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=config_dict["baudrate"], multiline=True, logger=self.log)
 
-        self.thread = Thread(self.log, name="tt_loop_thread", target=self.loop)
+        self.thread = Thread(self.log, name="tiptilt_loop_thread", target=self.loop)
         self.thread.daemon = True
         self.thread_running = False
         self.logging_running = False
@@ -71,7 +71,7 @@ class TipTilt(USBSerial, TTRStageDriver):
     def setup_log_file(self, filename):
         """Set the log file."""
         if self.movement_log is None and filename is not None:
-            self.movement_log = str(Path(filename) / "tt_movement_data.csv")
+            self.movement_log = str(Path(filename) / "tiptilt_movement_data.csv")
             async_file_hander.write(self.movement_log, "timestamp,")
             for a in self.axes_common_names:
                 async_file_hander.write(self.movement_log, f"{a} position_rad,")
@@ -129,7 +129,7 @@ class TipTilt(USBSerial, TTRStageDriver):
         if self.thread_running:
             self.thread_running = False
             self.thread.join()
-            self.thread = Thread(self.log, name="tt_loop_thread", target=self.loop)
+            self.thread = Thread(self.log, name="tiptilt_loop_thread", target=self.loop)
             self.thread.daemon = True
         super().disconnect()
 
