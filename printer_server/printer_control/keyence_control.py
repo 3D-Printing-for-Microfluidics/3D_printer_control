@@ -90,7 +90,6 @@ class KeyenceControl(PrintControl):
                                 self.measurement_count += 1
 
             self.move_build_platform_up(self.default_position_settings)
-            time.sleep(1.0)
 
             for light_engine in config_dict["light_engines"]:
                 self.update_measurement_progress()
@@ -123,7 +122,7 @@ class KeyenceControl(PrintControl):
                         log.critical("Unable to move focus stage")
                         self.failed_hardware["Focus Stage"] = self.focus_stage
                         raise PrintingException()
-                time.sleep(5.0)
+                time.sleep(1.0)
 
                 # get keyence reading
                 temp_position = self.keyence.read_sensor(light_engine)
@@ -159,6 +158,12 @@ class KeyenceControl(PrintControl):
                     x_offset = float(measurement[0])
                     y_offset = float(measurement[1])
 
+                    if x_offset == 0.0 and y_offset == 0.0:
+                        self.keyence_measurement_list[light_engine][
+                            f"{x_offset}, {y_offset}"
+                        ] = 0.0
+                        continue
+
                     self.update_measurement_progress()
 
                     x_pos = x_offset/1000 + self.coord_systems[f"keyence_{light_engine}"]["X"]
@@ -167,7 +172,7 @@ class KeyenceControl(PrintControl):
                         x_pos += (calibration_positions.get("x_drift",0.0) + calibration_positions.get("xy_shift",0.0)*y_offset/1000 + calibration_positions.get("xx_shift",0.0)*x_offset/1000)/1000
                         y_pos += (calibration_positions.get("y_drift",0.0) + calibration_positions.get("yx_shift",0.0)*x_offset/1000 + calibration_positions.get("yy_shift",0.0)*y_offset/1000)/1000
                     self.xy_stage.threadedXYMove(log, x_pos, y_pos)
-                    time.sleep(5.0)
+                    time.sleep(1.0)
 
                     keyence_position = self.keyence.read_sensor(light_engine)
                     self.keyence_measurement_list[light_engine][
