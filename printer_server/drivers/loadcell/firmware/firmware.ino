@@ -194,13 +194,11 @@ void samplingISR()
     uint32_t current_time = millis();
 
     byte buf1[4];
-    // buf1[0] = samples_counter & 255;
-    // buf1[1] = (samples_counter >> 8) & 255;
-    // buf1[2] = (samples_counter >> 16) & 255;
-    // buf1[3] = (samples_counter >> 24) & 255;
-    // Serial.write(buf1, sizeof(buf1));
-
-    Serial.print("AA");
+    buf1[0] = samples_counter & 255;
+    buf1[1] = (samples_counter >> 8) & 255;
+    buf1[2] = (samples_counter >> 16) & 255;
+    buf1[3] = (samples_counter >> 24) & 255;
+    Serial.write(buf1, sizeof(buf1));
 
     buf1[0] = current_time & 255;
     buf1[1] = (current_time >> 8) & 255;
@@ -212,7 +210,7 @@ void samplingISR()
     buf2[0] = adc_value & 255;
     buf2[1] = (adc_value >> 8) & 255;
     Serial.write(buf2, sizeof(buf2));
-    Serial.print("\r\n");
+    Serial.print("\n");
 
     //    Serial.printf("%d,%d,%d\r\n", (uint32_t) samples_counter, (uint32_t) millis(), (uint16_t) adc_value);
 
