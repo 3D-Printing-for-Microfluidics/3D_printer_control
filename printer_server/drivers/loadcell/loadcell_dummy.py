@@ -97,7 +97,9 @@ class Loadcell_dummy:
 
     # @dummy_log
     def get_current_data(self):
-        return self.currentData
+        tmp = self.currentData
+        self.currentData = []
+        return tmp
 
     # @dummy_log
     def get_current_force(self):

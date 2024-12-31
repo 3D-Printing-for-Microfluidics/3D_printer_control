@@ -156,7 +156,6 @@ class LoadCell(USBSerial):
 
         front_end_counter = 0
         front_end_array = []
-        bad_data = False
         while self.running:
             try:
                 
@@ -170,6 +169,9 @@ class LoadCell(USBSerial):
                     milliseconds=float(milliseconds)
                 )
                 ret = self.read_until(b'\r\nAA')
+                if len(ret) > 4:
+                    self.log.debug("len(ret): %s", len(ret))
+                    continue
                 force = self.adc_to_force(data)
 
                 if self.log_file is not None:
