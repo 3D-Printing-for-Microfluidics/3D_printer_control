@@ -187,7 +187,7 @@ class LoadCell(USBSerial):
                     front_end_array.append(force)
                 else:
                     front_end_array.append(data)
-                if front_end_counter >= 10:
+                if front_end_counter >= 5:
                     front_end_counter = 0
 
                     if len(self.currentData) >= 5:

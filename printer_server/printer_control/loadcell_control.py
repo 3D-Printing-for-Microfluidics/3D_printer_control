@@ -39,7 +39,7 @@ class LoadcellControl(PrintControl):
             if data is None:
                 return
             home.update_loadcell_graph({"data": data})
-            time.sleep(0.05)
+            time.sleep(0.025)
 
     def force_squeeze(self, position_settings, layer):
         try:
