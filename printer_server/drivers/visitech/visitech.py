@@ -866,7 +866,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
                     self.led_power
                 )
                 self.start_sequencer()
-                time.sleep(self.exposure_time * 1e-3 + 0.1)
+                time.sleep(self.exposure_time * 1e-3)
             self.led_on = False
 
     def project(self, exposure, power, repeats=1, led_num=0):
@@ -908,7 +908,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
                 self.set_sequencer_lut_definition(exposure=int(t * 1000))
                 self.set_sequencer_lut_config(repeats=repeats)
                 self.start_sequencer()
-                time.sleep(t * 1e-3 + 0.1)
+                time.sleep(t * 1e-3)
                 self.led_on = False
 
     def get_led_status(self):

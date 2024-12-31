@@ -122,7 +122,7 @@ class Wintech(LightEngineDriver):
                     self.led_power
                 )
                 self.dmd_controller.start_sequence()
-                time.sleep(self.exposure_time * 0.001 + 0.1)
+                time.sleep(self.exposure_time * 1e-3)
             self.led_on = False
 
     def project(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
@@ -166,7 +166,7 @@ class Wintech(LightEngineDriver):
             self.dmd_controller.define_pattern(exposure_time_ms)
             self.dmd_controller.configure_pattern_LUT(repeat=repeat)
             self.dmd_controller.start_sequence()
-            time.sleep(exposure_time_ms * 0.001 + 0.1)
+            time.sleep(exposure_time_ms * 1e-3)
             self.led_on = False
             
     def get_led_status(self):
