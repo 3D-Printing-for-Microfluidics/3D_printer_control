@@ -559,7 +559,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
                         if self.logging_move_status[a] >= 2:
                             self.logging_move_status[a] = -1
 
-                    time.sleep(0.01)
+                time.sleep(0.01)
         except Exception as ex:
             self.current_position = None
             self.log.warning("ACS loop failed (%s)", ex, exc_info=True)

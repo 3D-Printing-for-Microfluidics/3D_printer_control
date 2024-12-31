@@ -164,7 +164,7 @@ class MKS946(USBSerial):
                         for p in self.pressures:
                             tmp += f"{p},"
                         self.write_to_disk(tmp)
-                    time.sleep(0.5)
+                time.sleep(0.5)
         except Exception as ex:
             self.log.warning("MKS loop failed (%s)", ex, exc_info=True)
             self.thread_running = False

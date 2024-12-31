@@ -197,7 +197,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
                         for a in self.axes:
                             tmp += f"{pose[a]},"
                         self.write_to_disk(tmp)
-                    time.sleep(0.1)
+                time.sleep(0.1)
         except Exception as ex:
             self.log.warning("Hexapod loop failed (%s)", ex, exc_info=True)
             self.thread_running = False

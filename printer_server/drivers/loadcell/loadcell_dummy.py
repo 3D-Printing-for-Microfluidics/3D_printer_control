@@ -122,10 +122,8 @@ class Loadcell_dummy:
                 if self.log_file is not None:
                     sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
                     loadcell_time = t.strftime("%Y-%m-%d %H:%M:%S.%f")
-                    # Simulate file writing
                     with open(self.log_file, 'a') as f:
                         f.write(f"{sys_time},{loadcell_time},{data},{force}\n")
-                        time.sleep(0.1)
 
                 if self.graph_newtons:
                     self.currentData.append(
@@ -145,6 +143,8 @@ class Loadcell_dummy:
                     self.currentData.pop(0)
 
                 self.currentForce = force
+                time.sleep(0.01)
+
             except Exception as ex:
                 self.running = False
                 self.log.warning("Exception in loadcell loop: %s", str(ex))
