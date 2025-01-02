@@ -107,10 +107,10 @@ void translate() {
         if (opcode[1] == 'P') {
             if (opcode[2] == '1') {
                 Serial.println("Info: Getting Tip Position");
-                Serial.println(tt->tipLocation(),3);
+                Serial.println(tt->tipLocation(),4);
             } else if (opcode[2] == '2') {
                 Serial.println("Info: Getting Tilt Position");
-                Serial.println(tt->tiltLocation(),3);
+                Serial.println(tt->tiltLocation(),4);
             } else {
             }
             Serial.println("Done");
@@ -119,10 +119,10 @@ void translate() {
         else if (opcode[1] == 'U') {
             if (opcode[2] == '1') {
                 Serial.println("Info: Getting Max Tip");
-                Serial.println(tt->getMaxTip(),3);
+                Serial.println(tt->getMaxTip(),4);
             } else if (opcode[2] == '2') {
                 Serial.println("Info: Getting Max Tilt");
-                Serial.println(tt->getMaxTilt(),3);
+                Serial.println(tt->getMaxTilt(),4);
             } else {
             }
             Serial.println("Done");
@@ -131,10 +131,10 @@ void translate() {
         else if (opcode[1] == 'L') {
             if (opcode[2] == '1') {
                 Serial.println("Info: Getting Min Tip");
-                Serial.println(tt->getMinTip(),3);
+                Serial.println(tt->getMinTip(),4);
             } else if (opcode[2] == '2') {
                 Serial.println("Info: Getting Min Tilt");
-                Serial.println(tt->getMinTilt(),3);
+                Serial.println(tt->getMinTilt(),4);
             } else {
             }
             Serial.println("Done");
