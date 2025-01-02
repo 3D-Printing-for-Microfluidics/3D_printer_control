@@ -360,7 +360,7 @@ class KDC101(USBSerial, FocusStageDriver): # TTRStageDriver
     def getPosition(self, axis=None, notify=True):
         """Return the position of the specified encoder."""
         a = self.convertAxis(axis)
-        return int(self.current_position[a])
+        return float(self.current_position[a])
 
     def motorOn(self, axis=None):
         """Turn on the specified axis."""
