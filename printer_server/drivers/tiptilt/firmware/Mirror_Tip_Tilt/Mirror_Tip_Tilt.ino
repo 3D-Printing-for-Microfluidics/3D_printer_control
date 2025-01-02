@@ -71,13 +71,13 @@ void translate(){
       if(opcode[1] == 'R'){
           if(opcode[2] == '1'){
               Serial.print("Info: Moving tip axis by ");
-              Serial.println(data.toFloat());
+              Serial.println(data.toFloat(),3);
               tt->moveTipAxisByDistance(data.toFloat(), false);
               Serial.println("Info: Move finished");
           }
           else if(opcode[2] == '2'){
               Serial.print("Info: Moving tilt axis by ");
-              Serial.println(data.toFloat());
+              Serial.println(data.toFloat(),3);
               tt->moveTiltAxisByDistance(data.toFloat(), false);
               Serial.println("Info: Move finished");
           }
@@ -89,13 +89,13 @@ void translate(){
       else if(opcode[1] == 'r'){
           if(opcode[2] == '1'){
               Serial.print("Info: Moving (quick) tip axis by ");
-              Serial.println(data.toFloat());
+              Serial.println(data.toFloat(),3);
               tt->moveTipAxisByDistance(data.toFloat(), true);
               Serial.println("Info: Move finished");
           }
           else if(opcode[2] == '2'){
               Serial.print("Info: Moving (quick) tilt axis by ");
-              Serial.println(data.toFloat());
+              Serial.println(data.toFloat(),3);
               tt->moveTiltAxisByDistance(data.toFloat(), true);
               Serial.println("Info: Move finished");
           }
@@ -107,13 +107,13 @@ void translate(){
       else if(opcode[1] == 'A'){
           if(opcode[2] == '1'){
               Serial.print("Info: Moving tip axis to ");
-              Serial.println(data.toFloat());
+              Serial.println(data.toFloat(),3);
               tt->moveTipAxisToLocation(data.toFloat(), false);
               Serial.println("Info: Move finished");
           }
           else if(opcode[2] == '2'){
               Serial.print("Info: Moving tilt axis to ");
-              Serial.println(data.toFloat());
+              Serial.println(data.toFloat(),3);
               tt->moveTiltAxisToLocation(data.toFloat(), false);
               Serial.println("Info: Move finished");
           }
@@ -125,13 +125,13 @@ void translate(){
       else if(opcode[1] == 'a'){
           if(opcode[2] == '1'){
               Serial.print("Info: Moving (quick) tip axis to ");
-              Serial.println(data.toFloat());
+              Serial.println(data.toFloat(),3);
               tt->moveTipAxisToLocation(data.toFloat(), true);
               Serial.println("Info: Move finished");
           }
           else if(opcode[2] == '2'){
               Serial.print("Info: Moving (quick) tilt axis to ");
-              Serial.println(data.toFloat());
+              Serial.println(data.toFloat(),3);
               tt->moveTiltAxisToLocation(data.toFloat(), true);
               Serial.println("Info: Move finished");
           }
@@ -149,11 +149,11 @@ void translate(){
       if(opcode[1] == 'P'){
           if(opcode[2] == '1'){
               Serial.println("Info: Getting Tip Position");
-              Serial.println(tt->tipLocation());
+              Serial.println(tt->tipLocation(),3);
           }
           else if(opcode[2] == '2'){
               Serial.println("Info: Getting Tilt Position");
-              Serial.println(tt->tiltLocation());
+              Serial.println(tt->tiltLocation(),3);
           }
           else{
             valid_op = false;
@@ -163,11 +163,11 @@ void translate(){
       else if(opcode[1] == 'U'){
           if(opcode[2] == '1'){
               Serial.println("Info: Getting Max Tip");
-              Serial.println(tt->getMaxTip());
+              Serial.println(tt->getMaxTip(),3);
           }
           else if(opcode[2] == '2'){
               Serial.println("Info: Getting Max Tilt");
-              Serial.println(tt->getMaxTilt());
+              Serial.println(tt->getMaxTilt(),3);
           }
           else{
             valid_op = false;
@@ -177,11 +177,11 @@ void translate(){
       else if(opcode[1] == 'L'){
           if(opcode[2] == '1'){
               Serial.println("Info: Getting Min Tip");
-              Serial.println(tt->getMinTip());
+              Serial.println(tt->getMinTip(),3);
           }
           else if(opcode[2] == '2'){
               Serial.println("Info: Getting Min Tilt");
-              Serial.println(tt->getMinTilt());
+              Serial.println(tt->getMinTilt(),3);
           }
           else{
             valid_op = false;

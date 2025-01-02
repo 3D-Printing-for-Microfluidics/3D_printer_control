@@ -176,7 +176,7 @@ bool Tip_Tilt::moveTiltAxisToLocation(float location, bool coarseMove) {
     }
 
     Serial.print("Info: Moving Tilt Axis to ");
-    Serial.println(location);
+    Serial.println(location,3);
     return tiltAxis->moveAxis(location, coarseMove);
 }
 
@@ -192,7 +192,7 @@ bool Tip_Tilt::moveTipAxisToLocation(float location, bool coarseMove) {
     }
 
     Serial.print("Info: Moving Tip Axis to ");
-    Serial.println(location);
+    Serial.println(location,3);
     return tipAxis->moveAxis(location, coarseMove);
     
 }
@@ -201,9 +201,9 @@ bool Tip_Tilt::moveTipAxisToLocation(float location, bool coarseMove) {
 bool Tip_Tilt::moveTiltAxisByDistance(float distance, bool coarseMove) {
 
     Serial.print("Info: Moving Tilt Axis by ");
-    Serial.println(distance);
+    Serial.println(distance,3);
     Serial.print("Info: Moving Tilt Axis to ");
-    Serial.println(tiltAxis->getLocation() + distance);
+    Serial.println(tiltAxis->getLocation() + distance,3);
     return moveTiltAxisToLocation(tiltAxis->getLocation() + distance, coarseMove);
 
 }
@@ -211,9 +211,9 @@ bool Tip_Tilt::moveTiltAxisByDistance(float distance, bool coarseMove) {
 // move tip axis by number of microns (relative positioning (uses absolute internally))
 bool Tip_Tilt::moveTipAxisByDistance(float distance, bool coarseMove) {
     Serial.print("Info: Moving Tip Axis by ");
-    Serial.println(distance);
+    Serial.println(distance,3);
     Serial.print("Info: Moving Tip Axis to ");
-    Serial.println(tipAxis->getLocation() + distance);
+    Serial.println(tipAxis->getLocation() + distance,3);
     return moveTipAxisToLocation(tipAxis->getLocation() + distance, coarseMove);
 }
 
