@@ -74,7 +74,7 @@ void translate(){
               Serial.println(data.toFloat(),4);
               tt->moveTipAxisByDistance(data.toFloat(), false);
               Serial.println("Info: Move finished");
-          },3
+          }
           else if(opcode[2] == '2'){
               Serial.print("Info: Moving tilt axis by ");
               Serial.println(data.toFloat(),4);
