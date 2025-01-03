@@ -47,11 +47,11 @@ const int TIP_BASE = 25400;
 const int TILT_BASE = 25400;
 
 float um_to_rad(float o, float a){
-    return 0.5*atan(o/a);
+    return 2*atan(o/a);
 }
 
 float rad_to_um(float rad, float a){
-    return 2*tan(rad)*a;
+    return tan(rad/2)*a;
 }
 
 //set up device on power up
