@@ -161,15 +161,16 @@ def goto():
     tilt /= 1000
     rotate /= 1000
 
-    
-    # move tt to 0
-    driver_handles.ttr_stage.threadedTTRMove(log, 0, 0, 0)
 
     # set hexapod pivot
-    x = pivot_x/1000
-    y = pivot_y/1000
-    z = pivot_z/1000
-    driver_handles.hexapod.set_pivot_point(x,y,z)
+    if "hexapod" in config_dict.keys():
+        # move tt to 0
+        driver_handles.ttr_stage.threadedTTRMove(log, 0, 0, 0)
+
+        x = pivot_x/1000
+        y = pivot_y/1000
+        z = pivot_z/1000
+        driver_handles.hexapod.set_pivot_point(x,y,z)
 
     # move ttr
     ttr_threads = driver_handles.ttr_stage.threadedTTRMove(log, tip, tilt, rotate, join=False)
