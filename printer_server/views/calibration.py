@@ -179,9 +179,10 @@ def goto():
     focus_thread = driver_handles.focus_stage.threadedFocusMove(log, focus, join=False)
 
     for thread in ttr_threads:
-        thread.join()
-        if thread.exception is not None:
-            raise thread.exception
+        if thread is not None:
+            thread.join()
+            if thread.exception is not None:
+                raise thread.exception
     focus_thread.join()
     if focus_thread.exception is not None:
         raise focus_thread.exception
