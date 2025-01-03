@@ -158,11 +158,17 @@ bool Tip_Tilt::connectAxis(){
 
 //query location for tip using encoder location (converted to microns)
 float Tip_Tilt::tipLocation(){
+    if (tipAxis->getLocation() == 12345){
+        return 12345;
+    }
     return um_to_rad(tipAxis->getLocation(), TIP_BASE);
 }
 
 //query location for tilt using encoder location (converted to rad)
 float Tip_Tilt::tiltLocation(){
+    if (tiltAxis->getLocation() == 12345){
+        return 12345;
+    }
     return um_to_rad(tiltAxis->getLocation(), TILT_BASE);
 }
 

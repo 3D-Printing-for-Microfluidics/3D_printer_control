@@ -39,13 +39,17 @@ class TipTilt(USBSerial, TTRStageDriver):
 
     ################################# Parent class functions #######################################
     def getTTRPosition(self, axis=None, notify=True):
-        return self.get_position(axis)
+        pos = self.get_position(axis)
+        if pos == 12345:
+            return "undef"
+        else:
+            return pos
 
     def absMoveTTR(self, rad=None, axis=None):
-        self.move_absolute(axis, rad, fast=False)
+        self.move_absolute(axis, rad, fast=True)
 
     def relMoveTTR(self, rad=None, axis=None):
-        self.move_relative(axis, rad, fast=False)
+        self.move_relative(axis, rad, fast=True)
 
     def getTTRLimits(self, axis=None):
         return self.getSoftwareLimits(axis)
