@@ -7,7 +7,7 @@ class MKSTeensy(USBSerial):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__("MKSTeensy", vid=config_dict["teensy_vendor_id"], pid=config_dict["teensy_product_id"], sn=config_dict["teensy_serial_number"], baudrate=config_dict["teensy_baudrate"], multiline=True, logger=self.log)
+        super().__init__("MKSTeensy", vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=config_dict["baudrate"], multiline=True, logger=self.log)
 
         self.config_dict = config_dict
 

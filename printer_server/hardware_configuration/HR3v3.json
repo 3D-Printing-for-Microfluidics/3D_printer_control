@@ -75,10 +75,11 @@
     },
     "tiptilt": {
         "dummy": false,
-        "hwid": "PID=16C0:0483 SER=5800580",
         "vendor_id": 5824,
         "product_id": 1155,
         "serial_number": "5800580",
+        "firmware_path": "Mirror_Tip_Tilt/Mirror_Tip_Tilt.ino",
+        "microcontroller": "Teensy3.2",
         "baudrate": 115200,
         "axes": [
             "1",
@@ -101,10 +102,11 @@
     },
     "loadcell": {
         "dummy": false,
-        "hwid": "PID=16C0:0483 SER=9881500",
         "vendor_id": 5824,
         "product_id": 1155,
         "serial_number": "9881500",
+        "firmware_path": "loadcell/loadcell.ino",
+        "microcontroller": "Teensy3.2",
         "baudrate": 115200,
         "sample_period_us": 1000,
         "calibration_intercept": 33218.0,

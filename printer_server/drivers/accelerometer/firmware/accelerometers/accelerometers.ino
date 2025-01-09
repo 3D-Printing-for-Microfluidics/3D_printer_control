@@ -30,7 +30,7 @@ float y_offset = 0.0;
 float z_offset = 0.0;
 
 // #include <Wire.h> // library for I2C communication on Arduino platform
-#include <Time.h>
+#include <TimeLib.h>
 
 // objects
 IntervalTimer timer0; // timer

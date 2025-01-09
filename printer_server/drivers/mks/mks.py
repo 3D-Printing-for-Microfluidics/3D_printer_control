@@ -1153,17 +1153,15 @@ class MKS946(USBSerial):
 if __name__ == '__main__':
     config_dict = {
         "dummy": False,
-        "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
         "mks_vendor_id": "1027",
         "mks_product_id": "24577",
         "mks_serial_number": "A9AOVRT7",
         "mks_baudrate": 115200,
         "mks_address": "253",
-        "teensy_hwid": "PID=16C0:0483 SER=16035730",
-        "teensy_vendor_id": "5824",
-        "teensy_product_id": "1155",
-        "teensy_serial_number": "16035730",
-        "teensy_baudrate": 9600,
+        "vendor_id": "5824",
+        "product_id": "1155",
+        "serial_number": "16035730",
+        "baudrate": 9600,
         "atm pressure": 650,
         "target": [
             0.2,
