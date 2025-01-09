@@ -118,17 +118,11 @@
     },
     "mks": {
         "dummy": false,
-        "mks_vendor_id": 1027,
-        "mks_product_id": 24577,
-        "mks_serial_number": "A9AOVRT7",
-        "mks_baudrate": 115200,
-        "mks_address": "253",
-        "vendor_id": 5824,
-        "product_id": 1155,
-        "serial_number": "16035730",
-        "firmware_path": "MKS_teensy/MKS_teensy.ino",
-        "microcontroller": "Teensy3.2",
-        "baudrate": 9600,
+        "vendor_id": 1027,
+        "product_id": 24577,
+        "serial_number": "A9AOVRT7",
+        "baudrate": 115200,
+        "address": "253",
         "atm pressure": 650,
         "target": [
             0.15,
@@ -146,8 +140,17 @@
                 "relay_num": 2,
                 "mode": "manual"
             }
+        }
         },
-        "teensy relays": [
+    "mks_teensy": {
+        "dummy": false,
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "16035730",
+        "firmware_path": "MKS_teensy/MKS_teensy.ino",
+        "microcontroller": "Teensy4.0",
+        "baudrate": 9600,
+        "relays": [
             "valve_vent2",
             "valve_pump2",
             "valve_vacuum",
@@ -214,8 +217,8 @@
         "vendor_id": 5824,
         "product_id": 1155,
         "serial_number": "16038530",
-        "firmware_path": "accelerometer/accelerometer.ino",
-        "microcontroller": "Teensy3.2",
+        "firmware_path": "accelerometers/accelerometers.ino",
+        "microcontroller": "Teensy4.0",
         "baudrate": 115200,
         "measurement_period_us": 5000
     },

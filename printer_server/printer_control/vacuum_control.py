@@ -97,9 +97,9 @@ class VacuumControl(PrintControl):
             relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
 
             self.mks.set_relay_mode(relay_num, "SET")
-            self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vacuum"), True)
-            self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("stirring"), True)
-            self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vent2"), False, force=True)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), True)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("stirring"), True)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent2"), False, force=True)
             pumping = False
             for p, w, h in zip(set_pressures, waits, hysteresis):
                 log.info("Degassing to %s Torr and holding for %s seconds", p, w)
@@ -107,15 +107,15 @@ class VacuumControl(PrintControl):
                 while t < w and self.degas_running:
                     if self.mks.pressures[1] >= h:
                         pumping = True
-                        self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), True)
+                        self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump2"), True)
                     while (pumping and self.mks.pressures[1] >= p and self.degas_running):
                         time.sleep(0.1)
                     if pumping:
                         pumping = False
-                        self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), False)
+                        self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump2"), False)
                     time.sleep(0.1)
                     t += 0.1
-            self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), True)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump2"), True)
             self.degas_state = "finish"
             socketio.emit(f"update_degas_state", self.degas_state, namespace="/printing")
 
@@ -125,11 +125,11 @@ class VacuumControl(PrintControl):
                 if counter == 150 and stirring:
                     counter = 0
                     stirring = False
-                    self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("stirring"), stirring)
+                    self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("stirring"), stirring)
                 if counter == 150 and not stirring: 
                     counter = 0
                     stirring = True
-                    self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("stirring"), stirring)
+                    self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("stirring"), stirring)
                 counter += 1
                 time.sleep(0.1)
         except Exception as ex:
@@ -139,15 +139,15 @@ class VacuumControl(PrintControl):
     def finish_degas(self):
         try:
             relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
-            self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("stirring"), False)
-            self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_pump2"), False)
-            self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vent2"), True)
-            self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vacuum"), False)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("stirring"), False)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump2"), False)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent2"), True)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), False)
             self.mks.set_relay_mode(relay_num, "CLEAR")
             for _ in range(150):
                 if self.mks.pressures[1] >= config_dict["mks"]["atm pressure"]:
                     break
                 time.sleep(0.1)
-            self.mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index("valve_vent2"), False)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent2"), False)
         except Exception as ex:
             log.warning("Error occured in degassing thread (%s)", ex, exc_info=True)

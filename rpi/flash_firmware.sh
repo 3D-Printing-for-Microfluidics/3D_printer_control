@@ -160,8 +160,9 @@ for index in "${SELECTED_KEYS[@]}"; do
 
         # Compile the firmware
         echo "Compiling ${FIRMWARE_PATH}..."
-        LIBRARIES_DIR="${FIRMWARE_DIR}/libraries"
+        LIBRARIES_DIR="${FIRMWARE_DIR}/../libraries"
         OUTPUT_DIR="${FIRMWARE_DIR}/build"
+        echo $LIBRARIES_DIR
         arduino-cli compile --fqbn ${FQBN} --libraries ${LIBRARIES_DIR} --output-dir "${OUTPUT_DIR}" ${FIRMWARE_DIR}
         if [[ $? -ne 0 ]]; then
             echo "Compilation failed for ${FIRMWARE_PATH}."
@@ -189,7 +190,7 @@ for port in ports:
     # print(port.product)
     # print(port.device)
     if port.vid == ${VENDOR_ID} and port.pid == ${PRODUCT_ID}:
-        if "${SERIAL_NUMBER}" is None or "${SERIAL_NUMBER}".upper() in port.serial_number:
+        if "${SERIAL_NUMBER}" == None or "${SERIAL_NUMBER}".upper() in port.serial_number:
             print(port.device)
             break
 EOF

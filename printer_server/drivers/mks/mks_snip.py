@@ -45,7 +45,7 @@ def get_relay_status(emit=True):
         for k, v in config_dict["mks"]["relays"].items():
             relay_settings_dict[k] = relay_settings_list[v["relay_num"]-1]
 
-        for i, k in enumerate(config_dict["mks"]["teensy relays"]):
+        for i, k in enumerate(config_dict["mks_teensy"]["relays"]):
             relay_settings_dict[k] = teensy_relay_settings_list[i]
             
         if emit:
@@ -73,8 +73,8 @@ def switchRelay(message):
                 mks.set_relay_mode(relay_num, "SET")
             else:
                 mks.set_relay_mode(relay_num, "CLEAR")
-        elif message["relay"] in config_dict["mks"]["teensy relays"]:
-            mks_teensy.switch_relay(config_dict["mks"]["teensy relays"].index(message["relay"]), message["state"])
+        elif message["relay"] in config_dict["mks_teensy"]["relays"]:
+            mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index(message["relay"]), message["state"])
         time.sleep(0.1)
         get_relay_status()
     except Exception as ex:

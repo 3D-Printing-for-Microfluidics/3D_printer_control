@@ -111,19 +111,23 @@ class Printer3D:
                     log_level=default_log_level,
                 )
         
-        if "mks" in config_dict.keys():
-            from printer_server.drivers.mks import MKS946, MKS946_dummy, MKSTeensy, MKSTeensy_dummy
+        if "mks" in config_dict.keys() and "mks_teensy" in config_dict.keys():
+            from printer_server.drivers.mks import MKS946, MKS946_dummy
+            from printer_server.drivers.mks_teensy import MKSTeensy, MKSTeensy_dummy
 
             if config_dict["mks"]["dummy"]:
                 self.mks = MKS946_dummy()
-                self.mks_teensy = MKSTeensy_dummy()
             else:
                 self.mks = MKS946(
                     config_dict=config_dict["mks"],
                     log_level=default_log_level
                 )
+                
+            if config_dict["mks_teensy"]["dummy"]:
+                self.mks_teensy = MKSTeensy_dummy()
+            else:
                 self.mks_teensy = MKSTeensy(
-                    config_dict=config_dict["mks"],
+                    config_dict=config_dict["mks_teensy"],
                     log_level=default_log_level
                 )
 
@@ -254,7 +258,7 @@ class Printer3D:
             self.keyence.disconnect()
         if hasattr(self, "loadcell"):
             self.loadcell.disconnect()
-        if hasattr(self, "mks"):
+        if hasattr(self, "mks") and hasattr(self, "mks_teensy"):
             self.mks.disconnect()
             self.mks_teensy.disconnect()
         if hasattr(self, "photodiode"):
