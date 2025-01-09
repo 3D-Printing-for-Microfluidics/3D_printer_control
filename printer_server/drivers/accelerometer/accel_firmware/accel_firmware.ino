@@ -208,7 +208,6 @@ void samplingISR()
     // buf1[2] = (samples_counter >> 16) & 255;
     // buf1[3] = (samples_counter >> 24) & 255;
     // Serial.write(buf1, sizeof(buf1));
-
     Serial.print("AA");
 
     buf1[0] = current_time & 255;
