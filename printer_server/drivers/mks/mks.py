@@ -57,10 +57,10 @@ class MKS946(USBSerial):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        super().__init__("MKS", vid=config_dict["mks_vendor_id"], pid=config_dict["mks_product_id"], sn=config_dict["mks_serial_number"], baudrate=config_dict["mks_baudrate"], timeout=0.1, logger=self.log)
+        super().__init__("MKS", vid=config_dict["vendor_id"], pid=config_dict["product_id"], sn=config_dict["serial_number"], baudrate=config_dict["baudrate"], timeout=0.1, logger=self.log)
 
         self.config_dict = config_dict
-        self.address = config_dict["mks_address"]
+        self.address = config_dict["address"]
         self.pressures = None
         self.relay_requests = [0,0,0,0,0,0,0,0,0,0,0,0,0]
 
@@ -1153,17 +1153,11 @@ class MKS946(USBSerial):
 if __name__ == '__main__':
     config_dict = {
         "dummy": False,
-        "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
-        "mks_vendor_id": "1027",
-        "mks_product_id": "24577",
-        "mks_serial_number": "A9AOVRT7",
-        "mks_baudrate": 115200,
-        "mks_address": "253",
-        "teensy_hwid": "PID=16C0:0483 SER=16035730",
-        "teensy_vendor_id": "5824",
-        "teensy_product_id": "1155",
-        "teensy_serial_number": "16035730",
-        "teensy_baudrate": 9600,
+        "vendor_id": "1027",
+        "product_id": "24577",
+        "serial_number": "A9AOVRT7",
+        "baudrate": 115200,
+        "address": "253",
         "atm pressure": 650,
         "target": [
             0.2,
@@ -1181,15 +1175,7 @@ if __name__ == '__main__':
                 "relay_num": 2,
                 "mode": "manual"
             }
-        },
-        "teensy relays": [
-            "valve_vent2",
-            "valve_pump2",
-            "valve_vacuum",
-            "valve_pump1",
-            "valve_vent1",
-            "stirring"
-        ]
+        }
     }
 
     mks = MKS946(config_dict=config_dict)

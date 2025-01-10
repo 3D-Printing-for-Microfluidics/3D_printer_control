@@ -67,7 +67,7 @@ if "ttr_stage" in config_dict["stages"]:
     from printer_server.printer_control.ttr_control import TTRControl
     parent_classes.append(TTRControl)
 
-if "mks" in config_dict:
+if "mks" in config_dict.keys() and "mks_teensy" in config_dict.keys():
     from printer_server.printer_control.vacuum_control import VacuumControl
     parent_classes.append(VacuumControl)
 
@@ -151,7 +151,7 @@ def index():
 
     kwargs["loadcell_exists"] = "loadcell" in config_dict.keys()
 
-    if "mks" in config_dict.keys():
+    if "mks" in config_dict.keys() and "mks_teensy" in config_dict.keys():
         kwargs["degas_state"] = print_control.degas_state
 
     return render_template(

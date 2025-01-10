@@ -7,13 +7,12 @@
  */
 
 #include "Arduino.h"
-#include "SparkFunLSM6DSO.h"
-#include "Wire.h"
-
-LSM6DSO myIMU;
 
 // DEFINES AND ENUMS
-#define DEFAULT_PERIOD 5000 // set default sampling period to 5 millisecond
+#define ADC_WORD_WIDTH 16   // constant used for ADC configuration
+#define ADC_NUM_AVGS 32     // constnat used for ADC configuration
+#define DEFAULT_PERIOD 1000 // set default sampling period to 1 millisecond
+#define CHANNEL0 A0         // channel 0 adc pin
 
 // variables
 char opcode;
@@ -25,12 +24,11 @@ uint32_t ellapsed_millis = 0;          // sampling ellapsed time counter
 volatile bool timer_running = false;
 volatile bool is_paused = false;
 
-float x_offset = 0.0;
-float y_offset = 0.0;
-float z_offset = 0.0;
-
 // #include <Wire.h> // library for I2C communication on Arduino platform
-#include <Time.h>
+#include <ADC.h>
+#include <ADC_util.h>
+#include <TimeLib.h>
+ADC *adc = new ADC(); // adc object;
 
 // objects
 IntervalTimer timer0; // timer
@@ -42,27 +40,15 @@ void translate();
 void setup()
 {
     Serial.begin(115200);
-    delay(500);
+    while (!Serial)
+        ;
 
-    Wire.begin();
-    delay(10);
-    myIMU.begin();
-    myIMU.initialize(BASIC_SETTINGS);
+    adc->adc0->setReference(ADC_REFERENCE::REF_3V3);
+    adc->adc0->setAveraging(ADC_NUM_AVGS);    // set number of averages
+    adc->adc0->setResolution(ADC_WORD_WIDTH); // set bits of resolution
 
-    myIMU.setAccelRange(2);
-    myIMU.setGyroRange(125);
-
-    delay(1000);
-    for (int i = 0; i < 10; i++)
-    {
-        x_offset += myIMU.readFloatAccelX();
-        y_offset += myIMU.readFloatAccelY();
-        z_offset += myIMU.readFloatAccelZ();
-        delay(100);
-    }
-    x_offset = x_offset / 10;
-    y_offset = y_offset / 10;
-    z_offset = z_offset / 10;
+    adc->adc0->setConversionSpeed(ADC_CONVERSION_SPEED::MED_SPEED); // change the conversion speed
+    adc->adc0->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED);     // change the sampling speed
 }
 
 void loop()
@@ -124,7 +110,7 @@ void translate()
     else if (opcode == 'P' || opcode == 'p')
     {
         timerPause();
-        Serial.println("Info: Pausing Sampling");
+        Serial.println("Info: Paused Sampling");
     }
     // ends sampling
     else if (opcode == 'E' || opcode == 'e')
@@ -192,13 +178,18 @@ void timerStop()
 void samplingISR()
 {
     in_isr = true;
-    float x = myIMU.readFloatAccelX() - x_offset;
-    float y = myIMU.readFloatAccelY() - y_offset;
-    float z = myIMU.readFloatAccelZ() - z_offset;
+    // check if it's first time sampling for sampling set
+    //    if(samples_counter == 0) { // is first
+    //        start_millis = millis();
+    //    }
+    // calculate and save current time differentally to initial time
+    //    ellapsed_millis = millis() - start_millis;
 
-    float accel = sqrt(sq(x) + sq(y) + sq(z));
-    int scale = 16384;
-    accel = accel * scale;
+    uint16_t adc_value = adc->adc0->analogRead(CHANNEL0);
+    //    uint16_t adc_value = analogRead(A0) >> 6;
+
+    // relay sample data and time through Serial port
+    //    Serial.printf("%d,%d,%d\r\n", samples_counter, ellapsed_millis, adc_value);
 
     uint32_t current_time = millis();
 
@@ -217,11 +208,12 @@ void samplingISR()
     Serial.write(buf1, sizeof(buf1));
 
     byte buf2[2];
-    buf2[0] = (uint16_t)accel & 255;
-    buf2[1] = ((uint16_t)accel >> 8) & 255;
+    buf2[0] = adc_value & 255;
+    buf2[1] = (adc_value >> 8) & 255;
     Serial.write(buf2, sizeof(buf2));
-
     Serial.print("\r\n");
+
+    //    Serial.printf("%d,%d,%d\r\n", (uint32_t) samples_counter, (uint32_t) millis(), (uint16_t) adc_value);
 
     // increment samples counter
     samples_counter++;

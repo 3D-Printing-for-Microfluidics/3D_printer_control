@@ -118,17 +118,11 @@
     },
     "mks": {
         "dummy": false,
-        "mks_hwid": "USB VID:PID=0403:6001 SER=A9AOVRT7",
-        "mks_vendor_id": 1027,
-        "mks_product_id": 24577,
-        "mks_serial_number": "A9AOVRT7",
-        "mks_baudrate": 115200,
-        "mks_address": "253",
-        "teensy_hwid": "PID=16C0:0483 SER=16035730",
-        "teensy_vendor_id": 5824,
-        "teensy_product_id": 1155,
-        "teensy_serial_number": "16035730",
-        "teensy_baudrate": 9600,
+        "vendor_id": 1027,
+        "product_id": 24577,
+        "serial_number": "A9AOVRT7",
+        "baudrate": 115200,
+        "address": "253",
         "atm pressure": 650,
         "target": [
             0.15,
@@ -146,8 +140,17 @@
                 "relay_num": 2,
                 "mode": "manual"
             }
+        }
         },
-        "teensy relays": [
+    "mks_teensy": {
+        "dummy": false,
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "16035730",
+        "firmware_path": "MKS_teensy/MKS_teensy.ino",
+        "microcontroller": "Teensy4.0",
+        "baudrate": 9600,
+        "relays": [
             "valve_vent2",
             "valve_pump2",
             "valve_vacuum",
@@ -162,10 +165,11 @@
     },
     "loadcell": {
         "dummy": false,
-        "hwid": "PID=16C0:0483 SER=9400820",
         "vendor_id": 5824,
         "product_id": 1155,
         "serial_number": "9400820",
+        "firmware_path": "loadcell/loadcell.ino",
+        "microcontroller": "Teensy3.2",
         "baudrate": 115200,
         "sample_period_us": 1000,
         "calibration_intercept": 36420.0,
@@ -202,7 +206,6 @@
     },
     "environmental_sensors": {
         "dummy": true,
-        "hwid": "PID=10C4:EA60 SER=0001",
         "vendor_id": 4292,
         "product_id": 60000,
         "serial_number": "0001",
@@ -211,10 +214,11 @@
     },
     "accelerometer": {
         "dummy": false,
-        "hwid": "USB VID:PID=16C0:0483 SER=16038530",
         "vendor_id": 5824,
         "product_id": 1155,
         "serial_number": "16038530",
+        "firmware_path": "accelerometers/accelerometers.ino",
+        "microcontroller": "Teensy4.0",
         "baudrate": 115200,
         "measurement_period_us": 5000
     },
