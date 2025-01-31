@@ -89,7 +89,7 @@ if (loadcell_exists) {
                             y: [[force]],
                             x: [[time]]
                         },
-                        [0], 2000)
+                        [0], 750)
                 }
             )
         }
