@@ -420,7 +420,7 @@ class KDC101(USBSerial, FocusStageDriver): # TTRStageDriver
 
                 if self.homed[a] != True:
                     self.log.error("Homing Failed!")
-                    return
+                    raise RuntimeError("Homing Failed!")
 
         self.log.info("Homing complete.")
 
