@@ -1,4 +1,5 @@
 import logging
+import time
 
 from printer_server.threading_wrapper import Thread
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
@@ -86,6 +87,7 @@ class TTRControl(PrintControl):
     def finish_print(self):
         try:
             self.ttr_stage.logging_stop()
+            time.sleep(0.1)
             self.ttr_stage.setup_log_file(None)
         except Exception as ex:
             log.critical("Unable to communicate with ttr stage (%s)", ex, exc_info=True)
