@@ -1,0 +1,43 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "id": "v999.0.0",
+    "description": "A schema that run a hardcoded test in the printer.",
+    "type": "object",
+    "properties": {
+        "Header": {
+            "type": "object",
+            "properties": {
+                "Schema version": {
+                    "type": "string",
+                    "default": "999.0.0",
+                    "pattern": "^999\\.\\d\\.\\d$",
+                    "description": "What version of the json schema to use to parse the file"
+                },
+                "Image directory": {
+                    "type": "string",
+                    "default": "slices",
+                    "description": "Directory relative to the json print job file where the images are saved."
+                },
+                "Comment": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Layer comments"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "Schema version"
+            ]
+        },
+        "Functions": {
+            "type": "array",
+            "additionalProperties": true
+        },
+        "additionalProperties": false
+    },
+    "additionalProperties": true,
+    "required": [
+        "Header",
+        "Functions"
+    ]
+}

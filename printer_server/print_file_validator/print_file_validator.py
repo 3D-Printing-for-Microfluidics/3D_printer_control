@@ -28,6 +28,9 @@ def validate_schema(print_file):
             version = check_version(print_settings)
             validate_against_schema(print_settings, f"schema_{version}.json")
 
+            if version == "v999":
+                return print_settings, version
+
             # check named settings and templates
             check_referenced_templates_exist(print_settings)
             check_referenced_named_position_settings_exist(print_settings)
@@ -108,7 +111,7 @@ def check_version(print_settings):
         msg = "File is version 0.1. Use converter to convert to version 0.2"
         msg += "  Check 'Header' -> 'Schema Version'"
         raise ValueError(msg)
-    elif int(ver[0]) > 4:
+    elif int(ver[0]) > 4 and not int(ver[0]) == 999:
         msg = "Invalid major version number."
         msg += "  Check 'Header' -> 'Schema Version'"
         raise ValueError(msg)
@@ -511,6 +514,9 @@ def replace_named_image_settings_in_layer(print_settings, layer):
 
 def expand_json(print_settings):
     """Expands the JSON to remove all named image/position settings and templates"""
+    if check_version(print_settings) == "v999":
+        return
+    
     expand_named_position_settings(print_settings)
     expand_named_image_settings(print_settings)
     expand_templates(print_settings)

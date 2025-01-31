@@ -54,9 +54,13 @@ class KeyenceControl(PrintControl):
                 time.sleep(1.0)
 
             """Move keyence sensor to all exposure positions and get focus offsets"""
-            defaults_layer_settings = self.print_settings.get("Default layer settings")
-            default_image_settings = defaults_layer_settings.get("Image settings")
-            self.default_position_settings = defaults_layer_settings.get("Position settings")
+            try:
+                defaults_layer_settings = self.print_settings.get("Default layer settings")
+                default_image_settings = defaults_layer_settings.get("Image settings")
+                self.default_position_settings = defaults_layer_settings.get("Position settings")
+            except:
+                # needed for json 999
+                return
             self.default_x_offset = default_image_settings.get("Image x offset (um)", 0)
             self.default_y_offset = default_image_settings.get("Image y offset (um)", 0)
             self.default_light_engine = default_image_settings.get(

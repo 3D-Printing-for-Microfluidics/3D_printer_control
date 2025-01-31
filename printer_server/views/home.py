@@ -19,6 +19,9 @@ log.setLevel(logging.INFO)
 
 parent_classes = []
 
+from printer_server.printer_control.test_control import TestControl
+parent_classes.append(TestControl)   
+
 # film gpio needs to be before bp
 if "gpio" in config_dict:
     if "film_pin" in config_dict["gpio"]:
