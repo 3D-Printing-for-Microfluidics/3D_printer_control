@@ -175,7 +175,7 @@
         "calibration_intercept": 36420.0,
         "calibration_slope": -2.385,
         "loadcell_planarization_enabled": true,
-        "loadcell_planarization_force": 40.0,
+        "loadcell_planarization_force": 35.0,
         "loadcell_print_start_force": 5.0
     },
     "keyence": {
