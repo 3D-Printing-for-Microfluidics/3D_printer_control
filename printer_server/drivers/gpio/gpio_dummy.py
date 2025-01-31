@@ -1,24 +1,24 @@
+import logging
 from printer_server.logging_handler import dummy_log
 
 
 class GPIO_dummy:
     @dummy_log
-    def __init__(self):
-        self.fan_relay_state = None
+    def __init__(self, log_level=logging.DEBUG, **kwargs):
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
         self.film_relay_state = None
+        self.connected = False
 
     @dummy_log
     def initialize(self):
-        self.fan_relay_state = False
         self.film_relay_state = False
+        self.connected = True
 
     @dummy_log
-    def fan_relay_on(self):
-        self.fan_relay_state = True
-
-    @dummy_log
-    def fan_relay_off(self):
-        self.fan_relay_state = False
+    def disconnect(self):
+        if self.connected:
+            self.connected = False
 
     @dummy_log
     def film_relay_on(self):

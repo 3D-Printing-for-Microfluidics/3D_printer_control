@@ -11,7 +11,7 @@ from printer_server.models import ServerLog
 from printer_server.settings import Config
 
 host = Config.HOSTNAME
-fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(shortname)-24s  %(message)s  "
+fmt = "%(asctime)s.%(msecs)03d [%(levelname)-5.5s]  %(shortname)-30s  %(message)s  "
 
 
 def dummy_log(f):
@@ -19,14 +19,14 @@ def dummy_log(f):
     values, and f's return value. Used for debugging and dummy hardware
     modules.
     """
-    logger = logging.getLogger(f.__qualname__.split(".")[0])
-    logger.setLevel(logging.DEBUG)
+    logger = logging.getLogger(f.__module__.split(".")[-1])
+    # logger.setLevel(logging.DEBUG)
 
     @wraps(f)
     def wrapper(*args, **kwargs):
         logger.debug(
             "%s %s",
-            f.__qualname__,
+            f.__module__.split(".")[-1],
             {
                 **dict(
                     (k, v) for k, v in zip(f.__code__.co_varnames, args) if k != "self"
@@ -87,9 +87,7 @@ class SocketIOHandler(logging.Handler):
         try:
             if record.shortname == "engineio" or record.shortname == "werkzeug":
                 return  # skip alert flashing for anything from engineio
-        except:
-            pass
-        try:
+            
             msg = fmt % {
                 "asctime": record.asctime.split(" ")[1],
                 "msecs": record.msecs,
@@ -98,24 +96,28 @@ class SocketIOHandler(logging.Handler):
                 "message": record.message,
             }
             socketio.emit(
-                "update_message_box", msg, namespace="/printing", broadcast=True
+                "update_message_box", msg, namespace="/printing"
             )
             msg = "%(asctime)s.%(msecs)03d   %(message)s  " % {
                 "asctime": record.asctime.split(" ")[1],
                 "msecs": record.msecs,
                 "message": record.message,
             }
+            if "_snip" in record.shortname:
+                namespace = "/manual"
+            else:
+                namespace = "/printing"
             if record.levelno > logging.INFO and record.levelno <= logging.WARNING:
                 socketio.emit(
                     "bootstrap alert",
                     {"text": msg, "category": "warning"},
-                    namespace="/printing",
+                    namespace=namespace,
                 )
             elif record.levelno > logging.WARNING:
                 socketio.emit(
                     "bootstrap alert",
                     {"text": msg, "category": "danger"},
-                    namespace="/printing",
+                    namespace=namespace,
                 )
         except AttributeError:
             pass
@@ -134,6 +136,8 @@ def configure_loggers(app):
 
     app.logger.removeHandler(default_handler)
     root_logger = logging.getLogger()
+    log = logging.getLogger('werkzeug').setLevel(logging.WARN)
+
     # root_logger.setLevel(logging.NOTSET)  # uncomment to see all mesasges everywhere
 
     console_handler = logging.StreamHandler(sys.stdout)

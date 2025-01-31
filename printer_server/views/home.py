@@ -1,67 +1,141 @@
+import time
 import json
 from pathlib import Path
 import logging
 import signal
 from flask import Blueprint, request, render_template
-from flask_socketio import join_room, leave_room
+from flask_socketio import join_room, leave_room, emit
 
 from printer_server.settings import Config
 from printer_server.models import PrintQueue
 from printer_server.extensions import socketio
-
-# Dynamically get hardware components
-configuration_path = Path(Config.PRINT_SERVER_FOLDER).rglob("hardware_configuration.json")
-with open(next(configuration_path), "r") as file_handle:
-    config_dict = json.load(file_handle)
-config_dict = config_dict[Config.HOSTNAME]
+from printer_server.views.manual_controls import stop_loop
+from printer_server.hardware_configuration.hardware_configuration import config_dict
+from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 
 blueprint = Blueprint("home", __name__, url_prefix="/", static_folder="../static")
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
-shutdown_handle = None
-
-from printer_server.printer_control.print_control import PrintControl
-from printer_server.printer_control.bp_control import BPControl
-from printer_server.printer_control.focus_control import FocusControl
-from printer_server.printer_control.gpio_control import FilmGPIOControl
-from printer_server.printer_control.keyence_control import KeyenceControl
-from printer_server.printer_control.light_engine_control import LightEngineControl
-from printer_server.printer_control.loadcell_control import LoadcellControl
-from printer_server.printer_control.screen_control import ScreenControl
-from printer_server.printer_control.ttr_control import TTRControl
-from printer_server.printer_control.xy_control import XYControl
-from printer_server.printer_control.kdc_control import KDCControl
-
 parent_classes = []
 
-if "light_engines" in config_dict:
-    parent_classes.append(LightEngineControl)
-
-if "keyence" in config_dict:
-    parent_classes.append(KeyenceControl)
-
-if "loadcell" in config_dict:
-    parent_classes.append(LoadcellControl)
-
+# film gpio needs to be before bp
 if "gpio" in config_dict:
     if "film_pin" in config_dict["gpio"]:
-        parent_classes.append(FilmGPIOControl)
+        from printer_server.printer_control.gpio_control import FilmGPIOControl
+        parent_classes.append(FilmGPIOControl)   
+    else:
+        from printer_server.printer_control.gpio_control import GPIOControl
+        parent_classes.append(GPIOControl)   
 
-if "bp" in config_dict["stages"]:
+# Loadcell needs to be before bp
+if "loadcell" in config_dict:
+    from printer_server.printer_control.loadcell_control import LoadcellControl
+    parent_classes.append(LoadcellControl)
+
+if "bp_stage" in config_dict["stages"]:
+    from printer_server.printer_control.bp_control import BPControl
     parent_classes.append(BPControl)
 
-if "focus" in config_dict["stages"]:
+if "environmental_sensors" in config_dict:
+    from printer_server.printer_control.environmental_sensors_control import EnvironmentalSensorsControl
+    parent_classes.append(EnvironmentalSensorsControl)
+
+if "accelerometer" in config_dict:
+    from printer_server.printer_control.accelerometer_control import AccelerometerControl
+    parent_classes.append(AccelerometerControl)
+
+# keyence needs to be before focus
+if "keyence" in config_dict:
+    from printer_server.printer_control.keyence_control import KeyenceControl
+    parent_classes.append(KeyenceControl)
+
+if "focus_stage" in config_dict["stages"]:
+    from printer_server.printer_control.focus_control import FocusControl
     parent_classes.append(FocusControl)
 
-if "x_y" in config_dict["stages"]:
-    parent_classes.append(XYControl)
+if "light_engines" in config_dict:
+    from printer_server.printer_control.screen_control import ScreenControl
+    from printer_server.printer_control.light_engine_control import LightEngineControl
+    parent_classes.append(LightEngineControl)
 
-if "t_t_r" in config_dict["stages"]:
+if "spectrometer" in config_dict and "photodiode" in config_dict:
+    from printer_server.printer_control.light_measurement_control import LightMeasurementControl
+    parent_classes.append(LightMeasurementControl)
+
+if "ttr_stage" in config_dict["stages"]:
+    from printer_server.printer_control.ttr_control import TTRControl
     parent_classes.append(TTRControl)
 
+if "mks" in config_dict.keys() and "mks_teensy" in config_dict.keys():
+    from printer_server.printer_control.vacuum_control import VacuumControl
+    parent_classes.append(VacuumControl)
+
+if "xy_stage" in config_dict["stages"]:
+    from printer_server.printer_control.xy_control import XYControl
+    parent_classes.append(XYControl)
+
+
 class ParentPrintControl(*parent_classes):
-    pass
+    @run_in_thread("planarizing", "Planarization Step 1")
+    def planarization_step_1(self):
+        try:
+            super().planarization_step_1()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")     
+            return False
+
+    @run_in_thread("planarized", "Planarization Step 2")
+    def planarization_step_2(self):
+        try:
+            super().planarization_step_2()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
+
+    def start(self, job_id):
+        try:
+            super().start(job_id)
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
+
+    @run_in_thread("paused", "Pause Printing")
+    def pause(self):
+        try:
+            super().pause()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
+
+    def resume(self):
+        try:
+            super().resume()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
+
+    @run_in_thread("stopped", "Stop Printing")
+    def stop(self):
+        try:
+            super().stop()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
+
+    def print_worker(self):
+        try:
+            super().print_worker()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
 
 print_control = ParentPrintControl()
 # print(ParentPrintControl.__mro__)
@@ -70,27 +144,23 @@ print_control = ParentPrintControl()
 def index():
     allJobs = PrintQueue.query.all()
 
-    global shutdown_handle
-    shutdown_handle = request.environ.get("werkzeug.server.shutdown")
-    if shutdown_handle is None:
-        raise RuntimeError("Not running with the Werkzeug Server")
+    kwargs = {
+        "allJobs":allJobs,
+        "hostname":Config.HOSTNAME
+    }
 
-    if "loadcell" in config_dict.keys():
-        return render_template(
-            "home.html",
-            allJobs=allJobs,
-            hostname=Config.HOSTNAME,
-            graph_autoscale=print_control.loadcell.graph_autoscale,
-        )
-    else:
-        return render_template(
-            "home.html",
-            allJobs=allJobs,
-            hostname=Config.HOSTNAME
-        )
+    kwargs["loadcell_exists"] = "loadcell" in config_dict.keys()
+
+    if "mks" in config_dict.keys() and "mks_teensy" in config_dict.keys():
+        kwargs["degas_state"] = print_control.degas_state
+
+    return render_template(
+        "home.html",
+        **kwargs
+    )
 
 def update_printer_state(state, msg):
-    socketio.emit(state, msg, namespace="/printing", broadcast=True)
+    socketio.emit(state, msg, namespace="/printing")
 
 if "loadcell" in config_dict.keys():
     def clear_loadcell_graph():
@@ -98,7 +168,7 @@ if "loadcell" in config_dict.keys():
 
 
     def update_loadcell_graph(msg):
-        socketio.emit("loadcell_graph_data", msg, namespace="/printing", room="loadcell")
+        socketio.emit("loadcell_graph_data", msg, namespace="/printing", to="loadcell")
 
 
 def send_bootstrap_alert(msg):
@@ -108,16 +178,18 @@ def send_bootstrap_alert(msg):
         namespace="/printing",
     )
 
+critical_error_val = None
 
 @socketio.on("connect", namespace="/printing")
 def connect():
-    socketio.emit(
+    emit(
         print_control.state,
         dict(),
         namespace="/printing",
         broadcast=False,
-        room=request.sid,
     )
+    if critical_error_val is not None:
+        critical_error(critical_error_val)
 
 
 @socketio.on("disconnect", namespace="/printing")
@@ -128,7 +200,46 @@ def disconnect():
 @socketio.on("initialize", namespace="/printing")
 # pylint: disable=unused-argument
 def initialize(message):
-    print_control.initialize(run_in_thread=True, top_level=True)
+    print_control.initialize(critical_error, run_in_thread=False, top_level=True)
+
+
+def critical_error(process):
+    global critical_error_val
+    critical_error_val = process
+    if process == "initialization":
+        title = "Initialization Failed"
+        msg = "The following hardware was not found:\n"
+        for name in print_control.failed_hardware.keys():
+            msg += f"\t- {name}\n"
+        msg += "Click 'Confirm' to retry initialization..."
+    elif process == "printing":
+        title = "Print Failed"
+        msg = "A unrecoverable error occurred during printing in the following hardware:\n"
+        for name in print_control.failed_hardware.keys():
+            msg += f"\t- {name}\n"
+        msg += "Printer must restart. Click 'Confirm' to continue..."
+    time.sleep(1.0)
+    socketio.emit("critical_error", {"process": process, "title": title, "message": msg}, namespace="/printing")
+
+
+@socketio.on("critical_error_confirm", namespace="/printing")
+# pylint: disable=unused-argument
+def critical_error_confirm(message):
+    global critical_error_val
+    critical_error_val = None
+    if message == "initialization":
+        print_control.reinitialize(run_in_thread=False, top_level=True)
+    elif message == "printing":
+        shutdown()
+
+
+@socketio.on("critical_error_cancel", namespace="/printing")
+# pylint: disable=unused-argument
+def critical_error_reply(message):
+    global critical_error_val
+    critical_error_val = None
+    if message == "initialization":
+        shutdown()
 
 
 @socketio.on("planarization step 1", namespace="/printing")
@@ -167,17 +278,23 @@ def stop(message):
     print_control.stop(run_in_thread=True, top_level=True)
 
 
+@socketio.on("degas", namespace="/printing")
+def degas(msg):
+    print_control.degas(msg)
+
+
 @socketio.on("shutdown", namespace="/printing")
 # pylint: disable=unused-argument
-def shutdown(message):
-    is_critical = False
-    if message == "critical":
-        is_critical = True
+def shutdown(message="critical"):
+    is_critical = True
+    if message != "critical":
+        is_critical = False
+    stop_loop(force=True)
     print_control.shutdown(is_critical)
     
 
 def shutdown_exception(exception, trace):
-    shutdown("critical")
+    shutdown()
 signal.signal(signal.SIGINT, shutdown_exception)
 
 if "loadcell" in config_dict.keys():

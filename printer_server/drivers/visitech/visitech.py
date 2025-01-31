@@ -10,10 +10,10 @@ import socket
 import logging
 from datetime import datetime
 
-from printer_server.drivers.generic_drivers import LightEngineDriver
+from printer_server.drivers.generic_drivers import EthernetSerial, LightEngineDriver
 
 # pylint:disable=too-many-public-methods
-class Visitech(LightEngineDriver):
+class Visitech(EthernetSerial, LightEngineDriver):
     """
     This driver is based on the Visitech Ethernet interface and API.
     Commands are sent over a TCP connection.
@@ -74,57 +74,24 @@ class Visitech(LightEngineDriver):
     SET LBREG
     """
 
-    def __init__(self, leds, log_level=logging.DEBUG, dual_led=False):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG):
         self.max_exp_time = 10000  # max single projection time in ms
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        # setup TCP connection
-        self.host = "192.168.0.10"
-        self.port = 5000
-        self.socket = (
-            None  # start as None so we can tell if a connection has been attempted
-        )
+        super().__init__("Visitech", host=config_dict["address"], port=config_dict["port"], line_ending="\r\n\r\n", logger=self.log)
 
-        self.connected = False
+        self.repeats = 1
         self.exposure_time = 0
         self.led_on = False
-        self.dual_led = dual_led
-        self.leds = leds
+        self.is_idle = False
+        self.dual_led = config_dict["dual_led"]
+        self.leds = config_dict["leds_nm"]
         self.suppress_ocp_error = False
 
-    def connect(self, shutdown):
-        attempts=10
-        timeout=1
-        self.log.info("Connecting to light engine, this may take up to 1 minute...")
-
-        # start TCP connection
-        i = 0
-        self.connected = False
-        while i < attempts:  # try up to attempts number of times to create a connection
-            i += 1
-            try:  # attempt a new connection
-                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.socket.settimeout(10)
-                self.socket.connect((self.host, self.port))
-                self.connected = True
-                self.shutdown = shutdown
-            except (OSError, socket.timeout) as e:
-                self.log.info("%s. Retrying in %s second(s)", e, timeout)
-                self.socket = None  # get rid of handle to bad socket
-                time.sleep(timeout)  # wait to try again
-        if not self.connected:  # connection failed every time, notify user
-            msg = "Visitech light engine not found!"
-            self.log.critical(msg)
-            return False
-
-        # register exit handlers
-        atexit.register(self.disconnect)
-        self.log.info("Connected to Visitech light engine")
-        return True
-
-    def initalize(self):
+    def initialize(self):
         # set default state for light engine and clear previous errors
+        self.log.info("Initializing Visitech...")
         self.get_sticky_errors(warn="NONE")
         self.set_video_source("HDMI")
         if self.dual_led:
@@ -133,23 +100,18 @@ class Visitech(LightEngineDriver):
         else:
             self.set_led_driver_regulation_mode("LIGHT")
         self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
-        self.log.info("Visitech light engine initialized")
+        self.log.info("Initialized Visitech")
 
     def disconnect(self):
-        if self.connected and self.socket is not None:
+        if self.connected is not None and self.connected and self.socket is not None:
             try:
                 self.stop_sequencer()  # make sure DMD is stopped on exit
-                self.socket.close() # close the TCP conenction on exit
-                self.connected = False
-                self.socket = None
-                self.log.info("Disconnected from Visitech light engine")
             except:
-                self.connected = False
-                self.socket = None
-                self.log.info("Unable to disconnect from Visitech!")
+                pass
+        super().disconnect()
             
 
-    def send(self, data):
+    def send(self, msg, data=None):
         """
         Send the data through the open TCP connection and return the
         reply from the Visitech.
@@ -157,22 +119,10 @@ class Visitech(LightEngineDriver):
         A string is always returned, with a default value of ''. A
         RuntimeError is raised if an error is detected in the response.
         """
-        reply = None
-        data += "\r\n\r\n"
-        data = data.encode()
-        self.log.debug("Sent:  '%s'", data.decode().rstrip())
-        self.socket.sendall(data)
-        try:
-            reply = self.socket.recv(1024)
-        except (OSError, socket.timeout):
-            msg = "Visitech timed out!"
-            self.log.critical(msg)
-            self.shutdown(is_critical=True)
-            sys.exit(msg)
-        reply = reply.decode().split("\r\n")
+        reply = super().send(msg, data=data)
+        reply = reply.split("\r\n")
         if "OK" not in reply[0]:
             raise RuntimeError(f"Error returned by light engine ({reply[1]}) {reply[2]}")
-        self.log.debug("Reply: '%s'", reply[1])
         return reply[1]
 
     def load_defaults(self):
@@ -459,6 +409,7 @@ class Visitech(LightEngineDriver):
         Return type +OK
         """
         if self.socket is not None:
+            self.log.info("Stopping exposure")
             self.led_on = False
             return self.send("SET SEQ OFF")
         return ""
@@ -582,7 +533,9 @@ class Visitech(LightEngineDriver):
         """
         return self.send(f"SET LUT CONFIG {num_sequences} {repeats}")
 
-    def upload_image(self, pattern_index, bitmap_size, bitmap_data):
+    # Note: function times out with current ethernet timeout. Also pattern-on-the-fly mode
+    # not displaying image
+    def upload_image(self, filename, pattern_index):
         """
         Upload 24-bit bitmap to DMD controller. Non-compressed, with a
         standard header bitmap must be used. Keep in mind that a 24-bit
@@ -600,9 +553,35 @@ class Visitech(LightEngineDriver):
 
         Return type +OK
         """
-        return self.send(
-            f"UPLOAD IMAGE PATTERN\r\n{pattern_index}\r\n{bitmap_size}\r\n{bitmap_data}"
-        )
+        import numpy as np
+        from PIL import Image
+        from pathlib import Path
+        img = np.zeros((3, 2560, 1600)[::-1], dtype="uint8")
+        try:
+            self.log.info("\tProcessing {}".format(filename))
+            with Image.open(filename) as input_img:
+                if input_img.format == "PNG" and input_img.mode == "L":
+                    img[:, :, 0] = np.array(input_img)
+                    img[:, :, 1] = np.array(input_img)
+                    img[:, :, 2] = np.array(input_img)
+                else:
+                    self.log.warn(f"Wrong image format - format:{input_img.format} mode:{input_img.mode}")
+        except (OSError, FileNotFoundError):
+            self.log.warn(f"Error loading file")
+
+        # save bmps
+        self.log.info("\tSaving image {}.bmp".format(filename.stem))
+        file_name = filename.parents[0] / Path("/{}.bmp".format(filename.stem))
+        Image.fromarray(img, "RGB").save(file_name)
+
+        self.set_dmd_operation_mode("PATTERN_ON_THE_FLY_MODE")
+
+        with open(file_name, mode='rb') as file:
+            file_content = file.read()
+            file_size = len(file_content)
+            return self.send(
+                f"UPLOAD IMAGE PATTERN\r\n{pattern_index}\r\n{file_size}\r\n\r\n", data = file_content
+            )
 
     def set_video_source(self, source="HDMI"):
         """
@@ -665,6 +644,33 @@ class Visitech(LightEngineDriver):
         Return type +OK
         """
         return self.send("SET MIRRORS UNPARKED")
+    
+    def idle_on(self):
+        """Enable idle mode.
+
+        See section 2.4.1.4 "DMD Idle Mode" in the programmer's guide.
+
+        "It is strongly recommended that anytime the DMD is idle and not
+        actively projecting data that the DMD Idle Mode be enabled to
+        assist in maximizing DMD lifetime. For example, whenever the
+        system is idle, between exposures if the application allows for
+        it, or when the exposure pattern sequence is stopped. To enable
+        this mode, the pattern sequences must first be stopped.
+        To restart the pattern sequence, this mode must be disabled."
+        """
+        if not self.is_idle:
+            self.is_idle = True
+            self.log.info("DMD idle on")
+            return self.send("SET MIRROR SHAKE ON")
+
+    def idle_off(self):
+        """Disable idle mode.
+
+        See section 2.4.1.4 "DMD Idle Mode" in the programmer's guide."""
+        if self.is_idle:
+            self.is_idle = False
+            self.log.info("DMD idle off")
+            return self.send("SET MIRROR SHAKE OFF")
 
     def get_sticky_errors(self, warn="ALL"):
         """
@@ -693,19 +699,19 @@ class Visitech(LightEngineDriver):
         if errors:
             for error in errors:
                 if error:
-                    if warn is "ALL":
+                    if warn == "ALL":
                         if error.lower() == "led over current protection triggered":
                             if self.suppress_ocp_error:
                                 self.suppress_ocp_error = False  # only do this once per print
                         else:
                             self.log.warning("Visitech Error: %s", error)  # report other errors
-                    elif warn is "TEMP":
+                    elif warn == "TEMP":
                         # Suppress the first Visitech OCP error. This appears to always be
                         # triggered on the first exposure of each print job. It would be better
                         # to figure out why this happens in the hardware and fix it there.
                         if error.lower() != "led over current protection triggered" and error.lower() != "door switch open circuit":
                             self.log.warning("Visitech Error: %s", error)  # report other errors
-                    elif warn is "NONE":
+                    elif warn == "NONE":
                         self.log.info(error.capitalize())
         return errors
 
@@ -719,7 +725,7 @@ class Visitech(LightEngineDriver):
         """
         return self.send("GET LOGS")
 
-    def get_normalization_factor(self):
+    def get_normalization_factor(self, led_num=0):
         """
         Return the normalization factor.
 
@@ -733,9 +739,13 @@ class Visitech(LightEngineDriver):
         Return type +OK and normalization factor value as a floating
         point number
         """
-        return float(self.send("FACTORY GET NORMALIZATION VALUE"))
+        cmd = "FACTORY GET NORMALIZATION VALUE"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return float(self.send(cmd))
 
-    def set_normalization_factor(self, normalization_factor):
+
+    def set_normalization_factor(self, normalization_factor, led_num=0):
         """
         Set the normalization factor.
 
@@ -743,7 +753,10 @@ class Visitech(LightEngineDriver):
 
         Return type +OK
         """
-        return self.send(f"FACTORY SET NORMALIZATION VALUE {normalization_factor}")
+        cmd = f"FACTORY SET NORMALIZATION VALUE {normalization_factor}"
+        if self.dual_led:
+            cmd += f" {led_num}"
+        return self.send(cmd)
 
     def split_exposure_time(self, exposure):
         """
@@ -788,6 +801,9 @@ class Visitech(LightEngineDriver):
             repeat - number of repeats
         """
         self.exposure_time = exposure_time_ms
+        self.led_power = led_power
+        self.repeats = repeat
+        self.led = self.leds[led_num]
 
         if self.dual_led:
             if led_num == 0:
@@ -797,57 +813,67 @@ class Visitech(LightEngineDriver):
                 self.led_driver_enable(led_num=1)
                 self.led_driver_disable(led_num=0)
 
-        min_t = 4.046
-        max_t = 10000
-        self.log.info(
-            "Setting up exposure at %s for %s ms at power setting %s. Repeat %s",
-            self.leds[led_num],
-            exposure_time_ms,
-            led_power,
-            repeat,
-        )
-        if exposure_time_ms == 0:
-            return
-        elif exposure_time_ms > max_t:
-            msg = f"Exposure time {exposure_time_ms} ms is greater than maximum possible exposure time "
-            msg += f"of {max_t} ms. Using exposure time of {max_t} ms instead."
-            self.log.warning(msg)
-            exposure_time_ms = max_t
-            self.exposure_time = max_t
-        elif exposure_time_ms < min_t:
-            msg = f"Exposure time {exposure_time_ms} ms is less than minimum possible exposure time "
-            msg += f"of {min_t} ms. Using exposure time of {min_t} ms instead."
-            self.log.warning(msg)
-            exposure_time_ms = min_t
-            self.exposure_time = min_t
         self.set_led_amplitude(led_power, led_num=led_num)
-        self.set_sequencer_lut_definition(exposure=int(exposure_time_ms * 1000))
-        self.set_sequencer_lut_config(repeats=repeat)
+        if repeat == 0:
+            self.set_sequencer_lut_definition(exposure=33100)
+            self.set_sequencer_lut_config(repeats=repeat)
+        else:
+            min_t = 4.046
+            max_t = 10000
+            self.log.debug(
+                "Setting up exposure at %s for %s ms at power setting %s. Repeat %s",
+                self.leds[led_num],
+                exposure_time_ms,
+                led_power,
+                repeat,
+            )
+            if exposure_time_ms == 0:
+                return
+            elif exposure_time_ms > max_t:
+                msg = f"Exposure time {exposure_time_ms} ms is greater than maximum possible exposure time "
+                msg += f"of {max_t} ms. Using exposure time of {max_t} ms instead."
+                self.log.warning(msg)
+                exposure_time_ms = max_t
+                self.exposure_time = max_t
+            elif exposure_time_ms < min_t:
+                msg = f"Exposure time {exposure_time_ms} ms is less than minimum possible exposure time "
+                msg += f"of {min_t} ms. Using exposure time of {min_t} ms instead."
+                self.log.warning(msg)
+                exposure_time_ms = min_t
+                self.exposure_time = min_t
+            
+            self.set_sequencer_lut_definition(exposure=int(exposure_time_ms * 1000))
+            self.set_sequencer_lut_config(repeats=repeat)
 
     def perform_exposure(self):
         """
         Start an exposure.
         """
         self.led_on = True
-        if self.exposure_time != 0:
-            self.log.info("Exposing for %s ms", self.exposure_time)
+        if self.repeats == 0:
+            self.log.info(
+                "Exposing %s at a power of %s indefinatly",
+                self.led,
+                self.led_power
+            )
             self.start_sequencer()
-            time.sleep(self.exposure_time * 1e-3)
-        self.led_on = False
+        else:
+            if self.exposure_time != 0:
+                self.log.info(
+                    "Exposing %s for %s ms at a power of %s",
+                    self.led,
+                    self.exposure_time,
+                    self.led_power
+                )
+                self.start_sequencer()
+                time.sleep(self.exposure_time * 1e-3)
+            self.led_on = False
 
     def project(self, exposure, power, repeats=1, led_num=0):
         """
         Call all of the necessary methods to project an image, and block
         until projection is complete.
         """
-
-        self.log.info(
-            "Exposing %s for %s ms at power setting %s. Repeat %s",
-            self.leds[led_num],
-            exposure,
-            power,
-            repeats,
-        )
 
         if self.dual_led:
             if led_num == 0:
@@ -860,12 +886,23 @@ class Visitech(LightEngineDriver):
         self.set_led_amplitude(power, led_num=led_num)
         self.led_on = True
         if repeats == 0:  # if continuous display is desired
+            self.log.info(
+                "Exposing %s at a power of %s indefinatly",
+                self.leds[led_num],
+                power
+            )
             # this provides the minimum blanking of 233 us of the full 33333 us cycle
             # (at 30Hz on HDMI)
-            self.set_sequencer_lut_definition(33100, 0, 0, 8, 0, 0, 0)
+            self.set_sequencer_lut_definition(exposure=33100)
             self.set_sequencer_lut_config(repeats=0)
             self.start_sequencer()  # sequencer will be stopped on program exit
         else:  # normal display is desired
+            self.log.info(
+                "Exposing %s for %s ms at a power of %s",
+                self.leds[led_num],
+                exposure,
+                power
+            )
             for t in self.split_exposure_time(exposure):
                 # the TI board expects exposure in microseconds
                 self.set_sequencer_lut_definition(exposure=int(t * 1000))
@@ -873,3 +910,6 @@ class Visitech(LightEngineDriver):
                 self.start_sequencer()
                 time.sleep(t * 1e-3)
                 self.led_on = False
+
+    def get_led_status(self):
+        return self.led_on

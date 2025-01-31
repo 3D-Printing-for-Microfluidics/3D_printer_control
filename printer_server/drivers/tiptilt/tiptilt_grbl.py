@@ -8,7 +8,7 @@ def findUsbPort(hwid):
     ports = list(serial.tools.list_ports.comports())
     for p in ports:
         if hwid in p.hwid:
-            print("Found '{}' at '{}'".format(p.hwid, p.device))
+            print(f"Found '{p.hwid}' at '{p.device}'")
             return p.device
     return None  # not found
 
@@ -37,7 +37,7 @@ class TipTilt(serial.Serial):
         self.open()
         self.reset_input_buffer()
         self.reset_output_buffer()
-        print("Connected to", self.port)
+        print(f"Connected to {self.port}")
         self.send(
             "G4 P0"
         )  # send a G4 P0 command so you get a response, even if the startup message doesn't appear
@@ -64,10 +64,10 @@ class TipTilt(serial.Serial):
     def send(self, cmd):
         # send the command to grbl
         if self.verbose:
-            print("Sent: " + cmd)
+            print(f"Sent: {cmd}")
         response = self.transmit(cmd)
         if self.verbose:
-            print("Response: ", response)
+            print(f"Response: {response}")
         self.transmit(
             "G4 P0"
         )  # send a G4 P0 command to block on completion of previous command

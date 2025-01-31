@@ -1,0 +1,135 @@
+{
+    "valid_schema_versions": [
+        "v2"
+    ],
+    "external_control": {},
+    "stages": {
+        "bp_stage": "galil",
+        "focus_stage": "kdc101",
+        "ttr_stage": "tiptilt"
+    },
+    "galil": {
+        "dummy": false,
+        "controller_name": "DMC31010",
+        "address": "192.168.0.9",
+        "default_axis": "A",
+        "axes": [
+            "A"
+        ],
+        "axes_common_names": [
+            "Build Platform"
+        ],
+        "axes_travel": {
+            "A": 100
+        },
+        "axes_ctspmm": {
+            "A": 8000
+        },
+        "axes_tolerance_um": {
+            "A": 0.125
+        },
+        "axes_speed": {
+            "A": 25
+        },
+        "axes_acceleration": {
+            "A": 50
+        },
+        "limits": {
+            "A": [null,49.0]
+        },
+        "calibration_limits": {
+            "A": [null,3.9]
+        },
+        "calibration_position": 2.9,
+        "bottom_position": 40.489125,
+        "top_position": -50
+    },
+    "kdc101": {
+        "dummy": false,
+        "vendor_id": 1027,
+        "product_id": 64240,
+        "baudrate": 115200,
+        "default_axis": "0x50",
+        "axes": [
+            "0x50"
+        ],
+        "axes_common_names": [
+            "Focus"
+        ],
+        "axes_travel": {
+            "0x50": 25.0
+        },
+        "axes_ctspmm": {
+            "0x50": 34554.96 
+        },
+        "axes_speed": {
+            "0x50": 2.777
+        },
+        "axes_acceleration": {
+            "0x50": 1.486
+        },
+        "limits": {
+            "0x50": [null,null]
+        },
+        "moving_shifts_image": true
+    },
+    "tiptilt": {
+        "dummy": false,
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "5800580",
+        "firmware_path": "Mirror_Tip_Tilt/Mirror_Tip_Tilt.ino",
+        "microcontroller": "Teensy3.2",
+        "baudrate": 115200,
+        "axes": [
+            "1",
+            "2"
+        ],
+        "axes_common_names": [
+            "Tip",
+            "Tilt"
+        ],
+        "limits": {
+            "1": [null,null],
+            "2": [null,null]
+        },
+        "auto_repositioning": false
+    },
+    "gpio": {
+        "dummy": false,
+        "film_pin": 4,
+        "power_status_pin": 17
+    },
+    "loadcell": {
+        "dummy": false,
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "9881500",
+        "firmware_path": "loadcell/loadcell.ino",
+        "microcontroller": "Teensy3.2",
+        "baudrate": 115200,
+        "sample_period_us": 1000,
+        "calibration_intercept": 33218.0,
+        "calibration_slope": -3.75,
+        "loadcell_planarization_enabled": true,
+        "loadcell_planarization_force": 35.0,
+        "loadcell_print_start_force": 5.0
+    },
+    "screen": {},
+    "light_engines": [
+        "visitech"
+    ],
+    "visitech": {
+        "dummy": false,
+        "address": "192.168.0.10",
+        "port": 5000,
+        "dual_led": false,
+        "leds_nm": [
+            365
+        ],
+        "resolution": [
+            2560,
+            1600
+        ]
+    }
+}

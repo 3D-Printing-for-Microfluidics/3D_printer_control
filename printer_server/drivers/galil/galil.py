@@ -11,6 +11,13 @@ from printer_server.async_file_handler import async_file_hander
 from printer_server.threading_wrapper import Thread
 from printer_server.drivers.generic_drivers import BPStageDriver, FocusStageDriver, XYStageDriver
 
+# first_load = True
+# if first_load:
+#     first_load = False
+#     print(f"Galil:")
+#     print(f"\t{gclib.py().GAddresses()}")
+#     print(f"\t")
+
 class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def __init__(
         self,
@@ -21,6 +28,8 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.log.setLevel(log_level)
         self.movement_log = None
         self.config_dict = config_dict
+
+        super().__init__()
 
         self.gclib_error = gclib.GclibError
         self.sendLock = threading.Lock()
@@ -38,10 +47,12 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.ctspmm = config_dict["axes_ctspmm"]
         self.default_speed = config_dict["axes_speed"]
         self.default_acceleration = config_dict["axes_acceleration"]
+        self.limits = config_dict["limits"]
+        self.calibration_limits = config_dict["calibration_limits"]
         self.calibration_position = config_dict["calibration_position"]
         self.bottom_position = config_dict["bottom_position"]
         self.top_position = config_dict["top_position"]
-        self.tolerence = config_dict["axes_tolerance"]
+        self.tolerence = config_dict["axes_tolerance_um"]
 
         self.movement_log_times = []
         self.movement_log_array = []
@@ -70,7 +81,6 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             self.current_position[a] = 0
 
         self.connected = None
-        self.initialized = None
 
         self.g = gclib.py()
 
@@ -123,44 +133,58 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.absMove(mm=self.calibration_position, axis="Build Platform")
         return self.getPosition(in_mm=True)
 
-    def goToBPmax(self):
+    def goToBPtop(self):
         self.absMove(mm=self.top_position, axis="Build Platform")
         return self.getPosition(in_mm=True)
 
-    def goToBPmin(self):
+    def goToBPbottom(self):
         self.absMove(mm=self.bottom_position, axis="Build Platform")
         return self.getPosition(in_mm=True)
 
-    def connect(self, shutdown):
+    def connect(self):
         """Find the first Galil controller and connect to it."""
         if self.connected is None:
             self.connected = False
-            self.log.info("Searching for %s controller...", self.controller_name)
-            available = self.g.GAddresses()
-            self.address = None
-            for address in sorted(available.keys()):
-                if self.controller_name in available[address]:
-                    self.address = address.strip("()").strip("-d")
-                    self.controller_name = available[address]
-                    self.log.debug("Found %s at %s", available[address], self.address)
-                    self.log.info(
-                        "Connecting to %s at %s", self.controller_name, self.address
-                    )
-                    self.g.GOpen(f"{self.address} --direct")
-                    self.log.debug("GInfo returned: %s", self.g.GInfo())
-                    self.connected = True
-                    self.thread_running = True
-                    self.thread.start()
-                    atexit.register(self.disconnect)
-                    self.log.info("Connected to Galil controller")
-                    self.shutdown = shutdown
-                    return True
-            msg = f"Galil controller not found! ({self.controller_name})"
-            self.log.critical(msg)
-            return False
+            if self.config_dict["address"] == "auto":
+                self.log.info("Searching for %s controller...", self.controller_name)
+                available = self.g.GAddresses()
+                self.address = None
+                for address in sorted(available.keys()):
+                    if self.controller_name in available[address]:
+                        self.address = address.strip("()").strip("-d")
+                        self.controller_name = available[address]
+                        self.log.debug("Found %s at %s", available[address], self.address)
+                        return self._connect()
+                self.connected = None
+                msg = f"Galil controller not found! ({self.controller_name})"
+                self.log.error(msg)
+                return False
+            else:
+                self.address = self.config_dict["address"]
+                self.controller_name = self.config_dict["controller_name"]
+                return self._connect()
         else:
             while self.connected is False:
                 time.sleep(0.1)
+
+    def _connect(self):
+        self.log.info(
+            "Connecting to %s at %s", self.controller_name, self.address
+        )
+        try:
+            self.g.GOpen(f"{self.address} --direct")
+            self.log.debug("GInfo returned: %s", self.g.GInfo())
+            self.connected = True
+            self.thread_running = True
+            self.thread.start()
+            atexit.register(self.disconnect)
+            self.log.info("Connected to Galil controller")
+            return True
+        except self.gclib_error as ex:
+            self.connected = None
+            msg = f"Galil controller not found! ({self.controller_name}): {ex}"
+            self.log.error(msg)
+            return False
 
     def disconnect(self):
         """Disconnect form the Galil controller."""
@@ -168,17 +192,20 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             self.thread_running = False
             try:
                 self.thread.join()
-            except RuntimeError:
+                self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
+                self.thread.daemon = True
+
+                for axis in self.axes:
+                    self.motorOff(axis)
+            except:
                 pass
-            self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
-            self.thread.daemon = True
+
             try:
                 self.connected = None
-                self.initialized = None
                 self.g.GClose()
                 self.log.info("Disconnected from Galil controller (%s)", self.controller_name)
-            except self.gclib_error as e:
-                self.log.error("Unexpected GclibError on disconnect: %s", e)
+            except self.gclib_error as ex:
+                self.log.info("Unexpected GclibError on disconnect: %s", ex)
 
 
     def write_to_disk(self, *args):
@@ -215,17 +242,27 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
                 return response
             except self.gclib_error as error:
                 if str(error) == "device timed out":
-                    msg = "Galil controller timed out!"
-                    self.log.critical(msg)
-                    # Thread(self.log, self.shutdown, kwargs={"is_critical": True}).start()
-                    self.shutdown(is_critical = True)
-                    sys.exit(msg)
+                    raise error
                 else:
                     error_code = self.g.GCommand("TC 1")
                     if error_code not in ("", "0"):
                         error = error_code
                     self.log.error("Last command '%s' returned error '%s'", command, error)
                     return error
+                
+    def getSoftwareLimits(self, axis=None):
+        a = self.convertAxis(axis)
+        ll = self.cntsToMm(int(self.send(f"BL{a}=?")), axis=axis)
+        ul = self.cntsToMm(int(self.send(f"FL{a}=?")), axis=axis)
+        return (ll, ul)
+    
+    def setLowerLimit(self, limit, axis=None):
+        a = self.convertAxis(axis)
+        self.send(f"BL{a}={limit * self.ctspmm[a]}")
+
+    def setUpperLimit(self, limit, axis=None):
+        a = self.convertAxis(axis)
+        self.send(f"FL{a}={limit * self.ctspmm[a]}")
 
     def checkLimits(self, axis=None):
         """Return a tuple the state of the limit switches for the
@@ -236,13 +273,36 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         lr = self.send(f"MG _LR{a}", notify=False)
         return bool(lf == "0.0000"), bool(lr == "0.0000")
 
+    # def getPosition(self, in_mm, axis=None, notify=True):
+    #     """Return the position of the specified encoder."""
+    #     pos = self.send(f"TP{self.convertAxis(axis)}", notify=notify)
+    #     if not in_mm:
+    #         return int(pos)
+    #     else:
+    #         return self.cntsToMm(int(pos), axis=axis)
+        
     def getPosition(self, in_mm, axis=None, notify=True):
         """Return the position of the specified encoder."""
-        pos = self.send(f"TP{self.convertAxis(axis)}", notify=notify)
-        if not in_mm:
-            return int(pos)
+        if type(axis) is not list:
+            pos = self.send(f"TP{self.convertAxis(axis)}", notify=notify)
+            if not in_mm:
+                return int(pos)
+            else:
+                return self.cntsToMm(int(pos), axis=axis)
         else:
-            return self.cntsToMm(int(pos), axis=axis)
+            parsed_axis = ""
+            for a in axis:
+                parsed_axis += self.convertAxis(a)
+            
+            pos_list = self.send(f"TP{parsed_axis}", notify=notify)
+            pos = pos_list.split(",")
+            ret_dict = {}
+            for i, a in enumerate(axis):
+                if not in_mm:
+                    ret_dict[a] = int(pos[i])
+                else:
+                    ret_dict[a] = self.cntsToMm(int(pos[i]), axis=a)
+            return ret_dict
 
     def motorOn(self, axis=None):
         """Turn on the specified axis."""
@@ -321,6 +381,24 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             self.setAcceleration(self.getDefaultAcceleration(a), axis=a)
 
     ################################# Parent class functions #######################################
+            
+    def getDefaultBPSpeed(self):
+        return self.getDefaultSpeed("Build Platform")
+
+    def getDefaultBPAcceleration(self):
+        return self.getDefaultAcceleration("Build Platform")
+
+    def getDefaultFocusSpeed(self):
+        return self.getDefaultSpeed("Focus")
+
+    def getDefaultFocusAcceleration(self):
+        return self.getDefaultAcceleration("Focus")
+
+    def getDefaultXYSpeed(self, axis=None):
+        return self.getDefaultSpeed(axis)
+
+    def getDefaultXYAcceleration(self, axis=None):
+        return self.getDefaultAcceleration(axis)
 
     def getXYPosition(self, axis=None, notify=True):
         return self.getPosition(in_mm=True, axis=axis)
@@ -337,6 +415,28 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def stopXYJog(self, axis=None):
         self.stopJog(axis=axis)
 
+    def getXYLimits(self, axis=None):
+        a = self.convertAxis(axis)
+        sl = self.getSoftwareLimits(axis=a)
+        if self.limits[a][0] is not None:
+            ll = sl[0]
+        else:
+            ll = -self.max_travel_mm[a]/2
+        if self.limits[a][1] is not None:  
+            ul = sl[1]
+        else:
+            ul = self.max_travel_mm[a]/2
+        return (ll,ul)
+    
+    def setXYLimits(self, limits=None, axis=None):
+        a = self.convertAxis(axis)
+        if limits is None:
+            limits = self.limits[a]
+        if limits[0] is not None:
+            self.setLowerLimit(limits[0], axis=a)
+        if limits[1] is not None:
+            self.setUpperLimit(limits[1], axis=a)
+
     def getFocusPosition(self, notify=True):
         return self.getPosition(in_mm=True, axis="Focus")
 
@@ -352,6 +452,28 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def stopFocusJog(self):
         self.stopJog(axis="Focus")
 
+    def getFocusLimits(self):
+        a = self.convertAxis("Focus")
+        sl = self.getSoftwareLimits(axis=a)
+        if self.limits[a][0] is not None:
+            ll = sl[0]
+        else:
+            ll = -self.max_travel_mm[a]/2
+        if self.limits[a][1] is not None:  
+            ul = sl[1]
+        else:
+            ul = self.max_travel_mm[a]/2
+        return (ll,ul)
+    
+    def setFocusLimits(self, limits=None):
+        a = self.convertAxis("Focus")
+        if limits is None:
+            limits = self.limits[a]
+        if limits[0] is not None:
+            self.setLowerLimit(limits[0], axis=a)
+        if limits[1] is not None:
+            self.setUpperLimit(limits[1], axis=a)
+
     def getBPPosition(self, notify=True):
         return self.getPosition(in_mm=True, axis="Build Platform")
 
@@ -366,6 +488,30 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
 
     def stopBPJog(self):
         self.stopJog(axis="Build Platform")
+
+    def getBPLimits(self):
+        a = self.convertAxis("Build Platform")
+        sl = self.getSoftwareLimits(axis=a)
+        if self.limits[a][0] is not None:
+            ll = sl[0]
+        else:
+            ll = -self.max_travel_mm[a]/2
+        if self.limits[a][1] is not None:  
+            ul = sl[1]
+        else:
+            ul = self.max_travel_mm[a]/2
+        return (ll,ul)
+    
+    def setBPLimits(self, limits=None):
+        a = self.convertAxis("Build Platform")
+        if limits is None:
+            limits = self.limits[a]
+        elif limits == "calibration":
+            limits = self.calibration_limits[a]
+        if limits[0] is not None:
+            self.setLowerLimit(limits[0], axis=a)
+        if limits[1] is not None:
+            self.setUpperLimit(limits[1], axis=a)
 
     ################################# End parent class functions #######################################
 
@@ -389,7 +535,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             cnts = self.mmToCnts(mm, axis=a)
         if cnts is not None:
             start_position = self.getPosition(in_mm=False, axis=a)
-            self.log.info("Move axis %s to relative position %s", a, cnts)
+            self.log.info("Move axis %s to relative position %.4f", a, self.cntsToMm(cnts, axis=a))
             self.send(f"PR{a}={cnts}")
             self.send(f"BG{a}")
             self.logging_move_status[a] = 0
@@ -432,7 +578,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         if mm is not None:
             cnts = self.mmToCnts(mm, axis=a)
         if cnts is not None:
-            self.log.info("Move axis %s to absolute position %s", a, cnts)
+            self.log.info("Move axis %s to absolute position %.4f", a, self.cntsToMm(cnts, axis=a))
             self.send(f"PA{a}={cnts}")
             self.send(f"BG{a}")
             self.logging_move_status[a] = 0
@@ -566,33 +712,44 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             self.logging_running = False
             self.log.info("Galil logging stopped")
 
+    def get_logging_results(self):
+        return self.movement_log_times, self.movement_log_array
+
     def loop(self):
-        while self.thread_running:
-            for a in self.axes:
-                self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
-            if self.logging_running:
-                if self.movement_log is not None:
-                    tmp = ""
-                    for a in self.axes:
-                        position = self.current_position[a]
-                        tmp += f"{self.cntsToMm(position, axis=a)},"
-                        tmp += f"{self.logging_move_status[a]},"
-                    self.write_to_disk(tmp)
-                else:
-                    # tmp = []
-                    # for a in self.axes:
-                    #     position = self.current_position[a]
-                    #     tmp.append(self.cntsToMm(position, axis=a))
-                    tmp = self.cntsToMm(self.current_position[self.default_axis])
-
-                    self.movement_log_times.append(time.time())
-                    self.movement_log_array.append(tmp)
-
+        try:
+            while self.thread_running:
+                # for a in self.axes:
+                #     self.current_position[a] = self.getPosition(in_mm=False, notify=False, axis=a)
+                pos_dict = self.getPosition(in_mm=False, axis=self.axes, notify=False)
                 for a in self.axes:
-                    if self.logging_move_status[a] >= 2:
-                        self.logging_move_status[a] = -1
+                    self.current_position[a] = pos_dict[a]
+                if self.logging_running:
+                    if self.movement_log is not None:
+                        tmp = ""
+                        for a in self.axes:
+                            position = self.current_position[a]
+                            tmp += f"{self.cntsToMm(position, axis=a)},"
+                            tmp += f"{self.logging_move_status[a]},"
+                        self.write_to_disk(tmp)
+                    else:
+                        # tmp = []
+                        # for a in self.axes:
+                        #     position = self.current_position[a]
+                        #     tmp.append(self.cntsToMm(position, axis=a))
+                        tmp = self.cntsToMm(self.current_position[self.default_axis])
+
+                        self.movement_log_times.append(time.time())
+                        self.movement_log_array.append(tmp)
+
+                    for a in self.axes:
+                        if self.logging_move_status[a] >= 2:
+                            self.logging_move_status[a] = -1
 
                 time.sleep(0.01)
+        except Exception as ex:
+            self.current_position = None
+            self.log.warning("Galil loop failed (%s)", ex, exc_info=True)
+            self.thread_running = False
 
     def downloadProgram(self, filename):
         """Download a DMC file to the Galil controller."""
@@ -613,12 +770,12 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             while True:
                 cmd = input("Give Galil a command>> ")
                 cmd.strip()
-                print(self.send(cmd.upper()))
+                print(f"{self.send(cmd.upper())}")
         except KeyboardInterrupt:
-            print("\nExited by KeyboardInterrupt")
+            print(f"\nExited by KeyboardInterrupt")
 
 
 if __name__ == "__main__":
     g = Galil(log_level=logging.DEBUG)
-    g.connect()
+    g.connect(exit)
     g.interactiveMode()

@@ -27,7 +27,7 @@ class Visitech:
             self.logger.log(lvl, msg)
         except AttributeError:
             if lvl >= self.verbosity:
-                print(msg)
+                print(f"{msg}")
 
     def get_status(self, lvl=logging.INFO):
         self.log(lvl, self.dmd_driver.get_all_status())

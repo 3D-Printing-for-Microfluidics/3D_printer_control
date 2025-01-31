@@ -28,26 +28,46 @@ var unhighlight_draw_white_button = function (le) {
 
 $(document).ready(function () {
     // Once once upload is complete, re-enable upload controls
-    socket.on("calibration_image_uploaded", function (le) {
-        var filePickerElement = document.getElementById(`${le}-file-picker`);
+    socket.on("screen_image_uploaded", function (le) {
+        let filePickerElement = document.getElementById(`${le}-file-picker`);
         filePickerElement.classList.remove("is-invalid")
         // enable_upload_button(le);
     });
 
     // If a bad file was uploaded, disable upload options
-    socket.on("calibration_image_bad", function (le) {
-        var filePickerElement = document.getElementById(`${le}-file-picker`);
+    socket.on("screen_image_bad", function (le) {
+        let filePickerElement = document.getElementById(`${le}-file-picker`);
         filePickerElement.classList.add("is-invalid")
         enable_upload_button(le);
     });
 
+    socket.on('screen_previews', function(message) {
+        for (let le in manual_controls_data["light_engines"]) {
+            var img = document.getElementById(`${le}-preview`);
+            if (message[le]) {
+                img.src = 'data:image/jpeg;base64,' + message[le];
+            }
+            img.style.display = 'inline';
+        }
+    });
 
-    for (var le of hardware["light_engines"]) {
+    socket.on('screen_done', function(message) {
+        for (const [le, data] of Object.entries(message)) {
+            var img = document.getElementById(`${le}-preview`);
+            if (data) {
+                img.src = 'data:image/jpeg;base64,' + data;
+            }
+            img.style.display = 'inline';
+        }
+    });
+
+
+    for (let le in manual_controls_data["light_engines"]) {
 
         disable_upload_button(le);
 
         document.getElementById(`${le}-file-picker`).addEventListener('change', function (event) {
-            var projector = $(this).closest(".row").attr('aria-label');
+            let projector = $(this).closest(".container").attr('aria-label');
             filePickerElement = event.currentTarget
             const curFiles = filePickerElement.files;
             if (curFiles.length === 0) {
@@ -59,9 +79,9 @@ $(document).ready(function () {
 
         // Upload button click function
         $(`#${le}-upload-btn`).on("click", function (e) {
-            var projector = $(this).closest(".row").attr('aria-label');
-            var filePickerElement = document.getElementById(`${projector}-file-picker`);
-            var selectedFile = filePickerElement.files[0];
+            let projector = $(this).closest(".container").attr('aria-label');
+            let filePickerElement = document.getElementById(`${projector}-file-picker`);
+            let selectedFile = filePickerElement.files[0];
             if (typeof selectedFile !== 'undefined') { // if there is a file selected
                 uploadFile(selectedFile, projector);
                 disable_upload_button(projector);
@@ -71,7 +91,7 @@ $(document).ready(function () {
 
         // Draw button click function
         $(`#${le}-white-btn`).on("click", function (e) {
-            var projector = $(this).closest(".row").attr('aria-label');
+            let projector = $(this).closest(".container").attr('aria-label');
             socket.emit("screen_white", { "light_engine": projector });
             highlight_draw_white_button(projector);
             unhighlight_draw_button(projector);
@@ -79,7 +99,7 @@ $(document).ready(function () {
 
         // Draw button click function
         $(`#${le}-draw-btn`).on("click", function (e) {
-            var projector = $(this).closest(".row").attr('aria-label');
+            let projector = $(this).closest(".container").attr('aria-label');
             socket.emit("screen_draw", { "light_engine": projector });
             highlight_draw_button(projector);
             unhighlight_draw_white_button(projector);
@@ -87,7 +107,7 @@ $(document).ready(function () {
 
         // Clear button click function
         $(`#${le}-clear-btn`).on("click", function (e) {
-            var projector = $(this).closest(".row").attr('aria-label');
+            let projector = $(this).closest(".container").attr('aria-label');
             socket.emit("screen_clear", { "light_engine": projector });
             unhighlight_draw_button(projector);
             unhighlight_draw_white_button(projector);
@@ -96,12 +116,12 @@ $(document).ready(function () {
 });
 
 function uploadFile(image, le) {
-    var fd = new FormData(); // Create form data
+    let fd = new FormData(); // Create form data
     fd.append("file", image); // Attach the image file
     fd.append("light_engine", le);
     console.log(le)
     $.ajax({ // Use ajax to compose and send the request
-        url: "/handle-calibration-upload",
+        url: "/screen_image_upload",
         method: "POST",
         contentType: false,
         processData: false,

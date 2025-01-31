@@ -1,3 +1,3 @@
-"""The Galil module"""
+"""The Coord system module"""
 
-from .coord_systems import Coord_Systems
+from .coord_systems_snip import Coord_Systems

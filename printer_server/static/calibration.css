@@ -1,0 +1,45 @@
+.row {
+    margin-top: 10px;
+}
+
+.jumbotron {
+    margin-top: -10px;
+}
+
+.btn {
+    cursor: pointer;
+}
+
+/* fixed width toggle buttons */
+.btn-fixed-width {
+    width: 70px;
+    padding: 5px;
+}
+
+.btn-fixed-width:not(:disabled):not(.disabled).active {
+    background-color: #3498DB;
+    border-color: #3498DB;
+}
+
+/* extra margin for rows with large headings */
+.top-buffer {
+    margin-top: 20px;
+}
+
+.container {
+    padding-left: 0px;
+    padding-right: 0px;
+}
+
+.form-control {
+    background-color: rgb(230, 230, 230);
+}
+
+.form-control:disabled {
+    background-color: #999
+}
+
+h5,
+.h5 {
+    margin-top: 6px;
+}

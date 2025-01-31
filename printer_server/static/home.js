@@ -1,10 +1,9 @@
 var start_job_id;
 var delete_job_id;
+var critical_error_process = ""
 
 // List of pending files to handle when the Upload button is finally clicked.
 var PENDING_FILES = [];
-
-let loadcell_exists = ((typeof graph_autoscale) === "boolean");
 
 if (loadcell_exists) {
     var loadcell_trace = {
@@ -19,16 +18,17 @@ if (loadcell_exists) {
         }
     };
     var loadcell_traces = [loadcell_trace];
+    var initial_point_removed = false;
 
     function draw_loadcell_graph() {
-        var defaultPlotlyConfiguration = {
+        let defaultPlotlyConfiguration = {
             displayModeBar: false,
             displaylogo: false,
             scrollZoom: true,
             showTips: false
         };
 
-        var layout = {
+        let layout = {
             xaxis: {
                 linecolor: 'white',
                 linewidth: 1,
@@ -38,7 +38,6 @@ if (loadcell_exists) {
             yaxis: {
                 ticksuffix: "",
                 range: [-50, 50],
-                autorange: graph_autoscale,
                 linecolor: 'white',
                 linewidth: 1,
                 mirror: true
@@ -73,6 +72,13 @@ if (loadcell_exists) {
     function update_loop(message) {
         let data = message.data;
         if (data != 0) {
+            if (!initial_point_removed) {
+                // Remove the initial point
+                loadcell_traces[0].x.splice(0, 1);
+                loadcell_traces[0].y.splice(0, 1);
+                initial_point_removed = true;
+            }
+
             data.forEach(
                 element => {
                     let time = new Date(element.timestamp);
@@ -83,15 +89,20 @@ if (loadcell_exists) {
                             y: [[force]],
                             x: [[time]]
                         },
-                        [0], 800)
+                        [0], 750)
                 }
             )
         }
     }
 }
 
-var show_btn = function (btn) {
+var show_print_btn = function (btn) {
     $(".printer-btn").prop("disabled", true).addClass("d-none");
+    $(btn).prop("disabled", false).removeClass("d-none");
+};
+
+var show_degas_btn = function (btn) {
+    $(".degas-btn").prop("disabled", true).addClass("d-none");
     $(btn).prop("disabled", false).removeClass("d-none");
 };
 
@@ -101,7 +112,7 @@ var write_to_message_box = function (message) {
     const isScrolledToBottom = message_box.scrollHeight - message_box.clientHeight <= message_box.scrollTop + 1
 
     if (!$.isEmptyObject(message)) {
-        var new_text = `<div class='log-message'>${message}</div>`;
+        let new_text = `<div class='log-message'>${message}</div>`;
         $("#print-message").append(new_text);
     }
 
@@ -113,7 +124,7 @@ var write_to_message_box = function (message) {
 
 
 function initDropbox() {
-    var $dropbox = $("#dropbox");
+    let $dropbox = $("#dropbox");
 
     // On drag enter...
     $dropbox.on("dragenter", function (e) {
@@ -140,7 +151,7 @@ function initDropbox() {
         $(this).removeClass("active");
 
         // Get the files.
-        var files = e.originalEvent.dataTransfer.files;
+        let files = e.originalEvent.dataTransfer.files;
         addFiles(files);
     });
 
@@ -160,23 +171,23 @@ var get_file_str = function () {
     if (PENDING_FILES.length <= 0) {
         return "No files selected."
     }
-    var file_str = PENDING_FILES.length > 1 ? " files" : " file";
+    let file_str = PENDING_FILES.length > 1 ? " files" : " file";
     return PENDING_FILES.length + file_str + " selected"
 }
 
 function addFiles(files) {
-    var $selected = $("#selected-files");
+    let $selected = $("#selected-files");
 
     // Add them to the pending files list.
-    for (var i = 0; i < files.length; i++) {
+    for (let i = 0; i < files.length; i++) {
         PENDING_FILES.push(files[i]);
 
         // Append files to show on page
-        var li_file = $("<li/>", {
+        let li_file = $("<li/>", {
             class: "list-group-item d-flex justify-content-between align-items-center",
             text: files[i].name
         }).appendTo($selected);
-        var del_file = $("<button/>", {
+        let del_file = $("<button/>", {
             type: "button",
             class: "ml-auto btn btn-sm btn-danger",
             html: "&times;"
@@ -203,22 +214,22 @@ function doUpload() {
 
     // Collect the form data.
     // fd = collectFormData();
-    var fd = new FormData();
+    let fd = new FormData();
 
     // Attach the files.
-    for (var i = 0; i < PENDING_FILES.length; i++) {
+    for (let i = 0; i < PENDING_FILES.length; i++) {
         // Collect the other form data.
         fd.append("file", PENDING_FILES[i]);
     }
 
-    var xhr = $.ajax({
+    let xhr = $.ajax({
         xhr: function () {
             var xhrobj = $.ajaxSettings.xhr();
             if (xhrobj.upload) {
                 xhrobj.upload.addEventListener("progress", function (event) {
-                    var percent = 0;
-                    var position = event.loaded || event.position;
-                    var total = event.total;
+                    let percent = 0;
+                    let position = event.loaded || event.position;
+                    let total = event.total;
                     if (event.lengthComputable) {
                         percent = Math.ceil(position / total * 100);
                     }
@@ -250,11 +261,28 @@ function doUpload() {
 
 $(document).ready(function () {
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/printing");
-    socket.emit("connect");
+    socket.emit("connecting");
 
     if (loadcell_exists) {
         // Set up Loadcell graph
         draw_loadcell_graph();
+    }
+
+    try {
+        if (degas_state == "idle") {
+            show_degas_btn("#start-degas-btn");
+        }
+        else if (degas_state == "running") {
+            show_degas_btn("#stop-degas-btn");
+        }
+        else if (degas_state == "finish") {
+            show_degas_btn("#finish-degas-btn");
+        }
+        else if (degas_state == "none") {
+            show_degas_btn();
+        }
+    } catch (error) {
+        console.error(error);
     }
 
     // Set up the drag/drop zone.
@@ -352,40 +380,44 @@ $(document).ready(function () {
 
     socket.on("busy", function (message) {
         $("#printer-state").text("Printer is busy");
-        show_btn();
+        show_print_btn();
         start_job_id = "";
         $(".clickable-row").removeClass("table-success");
     });
 
     socket.on("uninitialized", function (message) {
         $("#printer-state").text("Uninitialized");
-        show_btn("#init-btn, #shutdown-btn");
-        var content = '3D printer has been shutdown';
+        show_print_btn("#init-btn, #shutdown-btn");
+        let content = '3D printer has been shutdown';
         if (document.getElementById('base-body').innerHTML == content) {
             location.reload()
         }
-
     });
 
     socket.on("initialized", function (message) {
         $("#printer-state").text("Initialized");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
+        show_print_btn("#plana1-btn, #shutdown-btn, #admin-btn");
+    });
+
+    socket.on("failed", function (message) {
+        $("#printer-state").text("Error");
+        show_print_btn("#shutdown-btn, #admin-btn");
     });
 
     socket.on("planarizing", function (message) {
         $("#printer-state").text("Planarizing");
-        show_btn("#plana2-btn, #admin-btn");
+        show_print_btn("#plana2-btn, #admin-btn, #shutdown-btn");
     });
 
     socket.on("planarized", function (message) {
         $("#printer-state").text("Planarized");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
+        show_print_btn("#plana1-btn, #shutdown-btn, #admin-btn");
         $("#start-btn").removeClass("d-none");
     });
 
     socket.on("printing", function (message) {
         $("#printer-state").text("Printing");
-        show_btn("#pause-btn, #stop-btn, #admin-btn");
+        show_print_btn("#pause-btn, #stop-btn, #admin-btn");
         $("#print-progress-bar").css({ "width": message.percent + "%" })
             .attr({ "aria-valuenow": message.percent })
             .text(message.percent + "%");
@@ -400,12 +432,12 @@ $(document).ready(function () {
 
     socket.on("paused", function (message) {
         $("#printer-state").text("Paused");
-        show_btn("#resume-btn, #stop-btn, #admin-btn");
+        show_print_btn("#resume-btn, #stop-btn, #admin-btn");
     });
 
     socket.on("stopped", function (message) {
         $("#printer-state").text("Stopped");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
+        show_print_btn("#plana1-btn, #shutdown-btn, #admin-btn");
         if (loadcell_exists) {
             hide_loadcell();
         }
@@ -414,7 +446,7 @@ $(document).ready(function () {
 
     socket.on("completed", function (message) {
         $("#printer-state").text("Completed");
-        show_btn("#plana1-btn, #shutdown-btn, #admin-btn");
+        show_print_btn("#plana1-btn, #shutdown-btn, #admin-btn");
         if (loadcell_exists) {
             hide_loadcell();
         }
@@ -427,7 +459,7 @@ $(document).ready(function () {
 
     socket.on("shutdown completed", function (message) {
         $(".navbar").prop("disabled", true).addClass("d-none");
-        var content = '3D printer has been shutdown';
+        let content = '3D printer has been shutdown';
         document.getElementById('base-body').innerHTML = content;
 
     });
@@ -440,9 +472,23 @@ $(document).ready(function () {
         write_to_message_box(message);
     });
 
+    socket.on("critical_error", function (message) {
+        console.log(message);
+        critical_error_process = message["process"]
+        if(critical_error_process == "initialization"){
+            show_print_btn("#init-btn", "#shutdown-btn");
+        }
+        else{
+            show_print_btn("#shutdown-btn");
+        }
+        $("#print-alert-title").text(message["title"]);
+        $("#print-alert-body").text(message["message"]);
+        $('#confirmModal').modal('show');
+    });
+
     $("#print-alert-confirm").click(function () {
-        var operation = $("#print-alert-title").text();
-        var msg;
+        let operation = $("#print-alert-title").text();
+        let msg;
 
         if (loadcell_exists && (operation === "Start" || operation === "Planarization Step 1" || operation === "Planarization Step 2" || operation === "Resume")) {
             show_loadcell();
@@ -452,17 +498,31 @@ $(document).ready(function () {
             msg = { job: start_job_id };
         } else if (operation === "Delete Job") {
             msg = { job: delete_job_id };
+        } else if (critical_error_process != "") {
+            operation = "critical_error_confirm"
+            msg = critical_error_process;
         } else {
             msg = {};
         }
         socket.emit(operation.toLowerCase(), msg);
         $("#print-alert-title").text("");
         $("#print-alert-body").text("");
+        critical_error_process = "";
     });
 
     $("#print-alert-cancel").click(function () {
+        let operation = $("#print-alert-title").text();
+        let msg;
+
+        if (critical_error_process != "") {
+            operation = "critical_error_cancel"
+            msg = critical_error_process;
+            socket.emit(operation.toLowerCase(), msg);
+        }
+
         $("#print-alert-title").text("");
         $("#print-alert-body").text("");
+        critical_error_process = "";
     });
 
     $("#init-btn").click(function () {
@@ -500,6 +560,34 @@ $(document).ready(function () {
         $("#print-alert-body").text("Are you sure you want to stop printing?");
     });
 
+    try {
+        $("#start-degas-btn").click(function () {
+            socket.emit("degas", "run");
+        });
+        $("#stop-degas-btn").click(function () {
+            socket.emit("degas", "stop");
+        });
+        $("#finish-degas-btn").click(function () {
+            socket.emit("degas", "finish");
+        });
+        socket.on("update_degas_state", function (message) {
+            if (message == "idle") {
+                show_degas_btn("#start-degas-btn");
+            }
+            else if (message == "running") {
+                show_degas_btn("#stop-degas-btn");
+            }
+            else if (message == "finish") {
+                show_degas_btn("#finish-degas-btn");
+            }
+            else if (message == "none") {
+                show_degas_btn();
+            }
+        });
+    } catch (error) {
+        console.error(error);
+    }
+
     $("#shutdown-btn").click(function () {
         $("#print-alert-title").text("Shutdown");
         $("#print-alert-body").text("Make sure 3D printer is not in operation.");
@@ -507,7 +595,7 @@ $(document).ready(function () {
 
     // Database interaction
     socket.on("job uploaded", function (message) {
-        var new_row = `
+        let new_row = `
     <tr id="row-${message.id}" class="clickable-row">
       <th scope="row">${$("#job-table > tbody > tr").length + 1}</th>
       <td>${message.name}</td>
@@ -517,7 +605,7 @@ $(document).ready(function () {
     </tr>
         `;
         $("#job-table > tbody").append(new_row);
-        var new_msg = { time: message.upload_time, text: "Print Job (" + message.name + ") Uploaded" };
+        let new_msg = { time: message.upload_time, text: "Print Job (" + message.name + ") Uploaded" };
         $("#create-job").text("Upload a job");
         $("#collapseUpload").removeClass('show');
 
@@ -534,7 +622,7 @@ $(document).ready(function () {
     });
 
     socket.on("bootstrap alert", function (message) {
-        var flash_msg = `
+        let flash_msg = `
        <div class="alert alert-${message.category}">
          <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
         <pre>${message.text}</pre>

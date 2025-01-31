@@ -1,4 +1,4 @@
-"""Wintech USB driver"""
+"""DLPC9000 USB driver"""
 
 import sys
 import time
@@ -176,7 +176,7 @@ def parse_error_code(code):
 
 
 class DLPC900_USB_Controller:
-    """USB interface for Wintech optical engine utilizing the TI DLPC900
+    """USB interface for optical engine utilizing the TI DLPC900
     controller.
     """
 
@@ -194,22 +194,23 @@ class DLPC900_USB_Controller:
         self.transaction_counter = 0
         self.usb_io_counter = 0
         self.is_idle = False
+        self.video_lock = False
 
     def _free_USB_driver(self):
         """Free the USB driver if it is already in use and set its
         configuration.
         """
-        self.log.info("Freeing device driver")
+        self.log.debug("Freeing device driver")
         for cfg in self.dev:
             for intf in cfg:
                 n = intf.bInterfaceNumber
                 if self.dev.is_kernel_driver_active(n):
                     try:
                         self.dev.detach_kernel_driver(n)
-                        self.log.info("Detached kernel driver from interface %s", n)
-                    except usb.core.USBError as e:
-                        msg = f"Couldn't detach kernel driver from interface {n}: {e}"
-                        self.log.critical(msg)
+                        self.log.debug("Detached kernel driver from interface %s", n)
+                    except usb.core.USBError as ex:
+                        msg = f"Couldn't detach kernel driver from interface {n}: {ex}"
+                        self.log.error(msg)
 
     def _HID_io_wrapper(self, fn, *args, **kwargs):
         """Wrap HID read and write methods so they have a greater
@@ -316,52 +317,59 @@ class DLPC900_USB_Controller:
             self.get_error_description()
         return data[4 : 4 + payload_length]
 
-    def connect(self):
+    def connect(self, vendor_id, product_id):
         """Find the DLPC900.
 
         The VID and PID combination representing the DLPC900
         controller is found.
         """
-        self.log.info("Connecting to DLPC900 via USB")
-        self.dev = usb.core.find(idVendor=0x0451, idProduct=0xC900)
+        self.log.info("Connecting to DLPC900 via USB...")
+        self.dev = usb.core.find(idVendor=vendor_id, idProduct=product_id)
         if self.dev is None:
-            msg = "Wintech light engine not found!"
-            self.log.critical(msg)
+            msg = "DLPC900 light engine not found!"
+            self.log.error(msg)
             return False
-        self.log.info("Connected to Wintech light engine")
+        try:
+            self._free_USB_driver()
+            self.dev.set_configuration()
+            self.get_firmware_version()
+            self.get_hardware_configuration_and_firmware_tag()
+            atexit.register(self.disconnect)
+        except:
+            msg = "DLPC900 light engine not found!"
+            self.log.error(msg)
+            return False
+        self.log.info("Connected to DLPC900 light engine")
         return True
 
-    def initalize(self):
+    def initialize(self):
+        self.log.debug("Initializing DLPC900 light engine")
         """Connect to the DLPC900 and perform associated setup.
 
         The driver is freed and the USB
         configuration is set. Then, a series of commands are issued
         to ready the system for normal 3D printing operation.
         """
-
-        self._free_USB_driver()
-        self.dev.set_configuration()
-        atexit.register(self.disconnect)
-        self.get_firmware_version()
-        self.get_hardware_configuration_and_firmware_tag()
         self.led_off()
         self.set_IT6535_power_mode("HDMI")
         self.set_display_mode("Video pattern mode")
         self.led_from_sequencer()
         self.set_long_axis_flip(False)
         self.set_short_axis_flip(True)
-        self.log.info("Wintech light engine initialized")
+        self.log.info("DLPC900 light engine initialized")
 
     def disconnect(self):
+        self.log.debug("Disconnecting from DLPC900 light engine")
+        self.video_lock = False
         if self.dev is not None:
             try:
                 self.stop_sequence()
                 self.led_off()
                 self. dev = None
-                self.log.info("Disconnected from Wintech light engine")
+                self.log.info("Disconnected from DLPC900 light engine")
             except:
-                self. dev = None
-                self.log.info("Unable to disconnect from Wintech!")
+                self.dev = None
+                self.log.info("Unable to disconnect from DLPC900 light engine")
 
     def get_long_axis_flip(self):
         "Returns whether the long axis is flipped"
@@ -372,7 +380,7 @@ class DLPC900_USB_Controller:
 
     def set_long_axis_flip(self, flip):
         """Set the long axis mirroring in the DLPC900"""
-        self.log.info("Set long axis mirroring to %s", flip)
+        self.log.debug("Set long axis mirroring to %s", flip)
 
         cur_flip = self.get_long_axis_flip()
         if flip == cur_flip:
@@ -389,7 +397,7 @@ class DLPC900_USB_Controller:
 
     def set_short_axis_flip(self, flip):
         """Set the long axis mirroring in the DLPC900"""
-        self.log.info("Set short axis mirroring to %s", flip)
+        self.log.debug("Set short axis mirroring to %s", flip)
 
         cur_flip = self.get_short_axis_flip()
         if flip == cur_flip:
@@ -419,7 +427,7 @@ class DLPC900_USB_Controller:
         only use up to 24 bits. If a 30 bit video stream is input, the
         last two bits of data for each color are not used.
         """
-        self.log.info("Set input source configuration to %s", source)
+        self.log.debug("Set input source configuration to %s", source)
         curr_source = self.get_input_source_configuration()
         if source == curr_source:
             return
@@ -469,6 +477,7 @@ class DLPC900_USB_Controller:
             self.set_IT6535_power_mode("HDMI", log_level=logging.DEBUG)
             self.set_display_mode("Video mode", log_level=logging.DEBUG)
             self.wait_for_video_lock()
+            self.video_lock = True
         self._DLPC900_command("w", 0x1A1B, [data])
         time.sleep(1)
         self.get_display_mode()
@@ -480,7 +489,7 @@ class DLPC900_USB_Controller:
         """
         self.log.debug("Wait for video lock")
         start_time = time.time()
-        while not is_set(self.get_main_status(suppress_errors=True), 3):
+        while not is_set(self.get_main_status(), 3):
             time.sleep(0.5)
             if time.time() - start_time >= timeout:
                 self.log.warning("Wait for video lock timed out.")
@@ -545,7 +554,7 @@ class DLPC900_USB_Controller:
             self.log.warning(status)
         return response
 
-    def get_main_status(self, suppress_errors=False):
+    def get_main_status(self):
         """Return the main status.
 
         See 2.1.3 "Main Status" in the programmer's guide.
@@ -554,7 +563,7 @@ class DLPC900_USB_Controller:
         response = self._DLPC900_command("r", 0x1A0C)[0]
         self.log.debug("Main status: %s", hex(response))
         status = parse_main_status(response)
-        if status and not suppress_errors:
+        if status and self.video_lock:
             self.log.warning(status)
         return response
 
@@ -621,7 +630,7 @@ class DLPC900_USB_Controller:
 
         See 2.3.5.1 "LED Enable Outputs" in the programmer's guide.
         """
-        self.log.info("LED turned on")
+        self.log.debug("LED turned on")
         self._DLPC900_command("w", 0x1A07, [0x4])
         self.check_all_status()
 
@@ -630,7 +639,7 @@ class DLPC900_USB_Controller:
 
         See 2.3.5.1 "LED Enable Outputs" in the programmer's guide.
         """
-        self.log.info("LED turned off")
+        self.log.debug("LED turned off")
         self._DLPC900_command("w", 0x1A07, [0x0])
         self.check_all_status()
 
@@ -639,7 +648,7 @@ class DLPC900_USB_Controller:
 
         See 2.3.5.1 "LED Enable Outputs" in the programmer's guide.
         """
-        self.log.info("LED set to run from sequencer")
+        self.log.debug("LED set to run from sequencer")
         self._DLPC900_command("w", 0x1A07, [0xC])
         self.check_all_status()
 
@@ -657,7 +666,7 @@ class DLPC900_USB_Controller:
         To restart the pattern sequence, this mode must be disabled."
         """
         if not self.is_idle:
-            self.log.info("Idle mode enabled")
+            self.log.debug("Idle mode enabled")
             self.is_idle = True
             self._DLPC900_command("w", 0x0201, [0x1])
             self.check_all_status()
@@ -667,7 +676,7 @@ class DLPC900_USB_Controller:
 
         See section 2.4.1.4 "DMD Idle Mode" in the programmer's guide."""
         if self.is_idle:
-            self.log.info("Idle mode disabled")
+            self.log.debug("Idle mode disabled")
             self.is_idle = False
             self._DLPC900_command("w", 0x0201, [0x0])
             self.check_all_status()
@@ -685,6 +694,7 @@ class DLPC900_USB_Controller:
         Standby mode must be disabled prior to sending any new data."
         Status commands still work in idle mode.
         """
+        self.log.debug("Standby mode enabled")
         self._DLPC900_command("w", 0x0200, [0x1])
         self.check_all_status()
 
@@ -693,6 +703,7 @@ class DLPC900_USB_Controller:
 
         See 2.3.1.1 "Power Mode" in the programmer's guide.
         """
+        self.log.debug("Standby mode disabled")
         self._DLPC900_command("w", 0x0200, [0x0])
         self.check_all_status()
 
@@ -701,6 +712,7 @@ class DLPC900_USB_Controller:
 
         A full reset takes about 7 seconds.
         """
+        self.log.debug("Software reset")
         self._DLPC900_command("w", 0x0200, [0x2])
         time.sleep(7)
         self.check_all_status()
@@ -725,7 +737,7 @@ class DLPC900_USB_Controller:
         will start the pattern sequence by re-displaying the current
         pattern in the sequence from the beginning.
         """
-        self.log.info("Pausing sequence")
+        self.log.debug("Pausing sequence")
         self._DLPC900_command("w", 0x1A24, [0x1])
         self.check_all_status()
 
@@ -740,12 +752,13 @@ class DLPC900_USB_Controller:
         pattern in the sequence from the beginning.
         """
         if self.sequencer_is_running():
-            self.log.info("Stopping sequence")
+            self.log.debug("Stopping sequence")
             self._DLPC900_command("w", 0x1A24, [0x0])
             self.check_all_status()
 
     def sequencer_is_running(self):
         """Return True if the sequencer is running, else return False."""
+        self.log.debug("Check sequencer running")
         main_status = self.get_main_status()
         if is_set(main_status, 1):
             return True
@@ -866,7 +879,7 @@ class DLPC900_USB_Controller:
             "Software configuration": f"{v[11]}.{v[10]}{_DLPC900_string(v[8:9])}",
             "Sequencer configuration": f"{v[15]}.{v[14]}{_DLPC900_string(v[12:13])}",
         }
-        self.log.info(_dict_to_string(version_info))
+        self.log.debug(_dict_to_string(version_info))
         return version_info
 
     def get_hardware_configuration_and_firmware_tag(self):
@@ -881,7 +894,7 @@ class DLPC900_USB_Controller:
         hw_config = HW_CONFIGURATION.get(response[0], "Hardware not defined")
         firmware_tag = _DLPC900_string(response[1:25])
         msg = {"Hardware config": f"{hw_config}", "Firmware tag": f"{firmware_tag}"}
-        self.log.info(_dict_to_string(msg))
+        self.log.debug(_dict_to_string(msg))
         return msg
 
     def get_error_description(self):

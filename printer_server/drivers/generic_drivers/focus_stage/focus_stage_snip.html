@@ -1,0 +1,47 @@
+<!-- Focus Control -->
+<div class="container focus">
+    <div class="row top-buffer">
+        <div class="col-9">
+            <h3>Focus Stage Controls</h3>
+        </div>
+        <div class="col-3">
+            <button type="button" class="btn btn-outline-info btn-block" id="focus-home-btn">Home</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-3">
+                <h5>Focus</h5>
+            </div>
+            <div class="col-2">
+                <h5 class="col text-right" id='focus-state'>---</h5>
+            </div>
+            <div class="col-7">
+                <input class="form-control focus-cntrl-txt" type="text" id="focus-txt"
+                    placeholder="Position (um)">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3" id='focus-limits' style="color:gray;">
+                Limits: ---, ---
+            </div>
+            <div class="col-9 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-info focus-cntrl-btn">-10000</button>
+                    <button type="button" class="btn btn-outline-info focus-cntrl-btn">-1000</button>
+                    <button type="button" class="btn btn-outline-info focus-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-outline-info focus-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-outline-info focus-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-outline-info focus-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-outline-info focus-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-outline-info focus-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-outline-info focus-cntrl-btn">1000</button>
+                    <button type="button" class="btn btn-outline-info focus-cntrl-btn">10000</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='generic_drivers/focus_stage/focus_stage_snip.js') }}"></script>

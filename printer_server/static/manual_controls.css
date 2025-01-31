@@ -3,17 +3,17 @@
     max-width: 640px;
   } */
 
-  /* extra margin for all rows */
+/* extra margin for all rows */
 .row {
-    margin-top:10px;
+    margin-top: 10px;
 }
 
 .jumbotron {
-    margin-top:-10px;
+    margin-top: -10px;
 }
 
 .btn {
-	cursor: pointer;
+    cursor: pointer;
 }
 
 /* fixed width toggle buttons */
@@ -27,10 +27,17 @@
     border-color: #3498DB;
 }
 
+pre {
+    font-family: "Lato";
+    --font-family-sans-serif: "Lato";
+    font-size: 1rem;
+    margin-bottom: 0;
+  }
+
 /* extra margin for rows with large headings */
 .top-buffer {
-     margin-top:20px;
-    }
+    margin-top: 20px;
+}
 
 /* settings for exposure time slider */
 .slider {
@@ -44,8 +51,9 @@
     transition: opacity .2s;
     padding-right: 0px;
     padding-left: 0px;
-    margin-top:10px;
+    margin-top: 10px;
 }
+
 .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -55,6 +63,7 @@
     background: #3498DB;
     cursor: pointer;
 }
+
 .slider::-moz-range-thumb {
     width: 20px;
     height: 20px;
@@ -64,19 +73,60 @@
 }
 
 .container {
+    position: relative;
     padding-left: 0px;
     padding-right: 0px;
 }
 
-.form-control{
+.container .overlay {
+    position: absolute;
+    top: -18px;
+    left: -16px;
+    bottom: -16px;
+    right: -16px;
+    background-color: rgba(0, 0, 0, 0.75); /* Dims the content */
+    color: red; /* Set the text color to red */
+    font-size: 54px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none; /* Prevents interaction */
+}
+  
+  .container.dimmed {
+    pointer-events: none; /* Prevents interaction */
+  }
+
+.form-control {
     background-color: rgb(230, 230, 230);
 }
 
-.form-control:disabled{
+.form-control:disabled {
     background-color: #999
 }
 
 
-h5, .h5{
+h5,
+.h5 {
     margin-top: 6px;
+}
+
+.mks_button {
+    margin-top: 10px;
+}
+
+.gauge_reading {
+    height: 63px;
+}
+
+.chamber_display {
+    height: 163px;
+}
+
+.chamber_display .card-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 163px;
 }

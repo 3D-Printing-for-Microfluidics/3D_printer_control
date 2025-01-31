@@ -13,34 +13,33 @@
 
 {% block page_content %}
 
-{% if initalized %}
+<div id="manual-controls"></div>
+    {% if initialized %}
 
-{% for driver, dict in hardware.items() %}
-{% if 'path' in dict %}
-{% include dict['path'] %}
-<hr class="bg-secondary">
-{% endif %}
-{% endfor %}
+    {% for driver, path in manual_controls_data['html_paths'].items() %}
+    {% include path %}
+    <hr class="bg-secondary">
+    {% endfor %}
 
-{% else %}
+    {% else %}
 
-{% if "external_control" in hardware.keys() %}
-{% include hardware['external_control']['path'] %}
-<hr class="bg-secondary">
-{% endif %}
+    {% if 'external_control' in manual_controls_data.keys() %}
+    {% include manual_controls_data['html_paths']['external_control'] %}
+    <hr class="bg-secondary">
+    {% endif %}
 
-<h5> Printer must be initalized to access manual controls </h5>
+    <h5> Printer must be initialized to access manual controls </h5>
 
-{% endif %}
-
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block scripts %}
 {{super()}}
-<script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/ajax-socket.io-4.7.5.min.js') }}"></script>
 <script>
     var socket;
-    var hardware = {{ hardware| tojson }};
+    var manual_controls_data = {{ manual_controls_data| tojson }};
 </script>
 <script src="{{ url_for('static', filename='manual_controls.js') }}"></script>
 {% endblock %}

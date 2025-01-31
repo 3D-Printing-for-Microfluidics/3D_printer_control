@@ -1,54 +1,60 @@
+import os
 import time
+import shutil
 import logging
+from pathlib import Path
 
 import printer_server.views.home as home
+from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
-from printer_server.hardware_configuration import config_dict, driver_handles
-from printer_server.printer_control.print_control import PrintControl, run_in_thread
+from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
+from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 # from printer_server.printer_control.print_control_subclasses import BPControl
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
-# class LoadcellControl(BPControl):
 class LoadcellControl(PrintControl):
     def __init__(self):
         super().__init__()
         self.loadcell = driver_handles.loadcell
 
         # log files
-        self.loadcell_log = str(self.current_job / "loadcell_data.csv")
-        
-        # loadcell graph variables
-        self.loadcell_running = False
+        self.loadcell_planarization_log = str(self.current_job / "logs" / "loadcell_planarization_data.csv")
+        self.loadcell_log = str(self.current_job / "logs" / "loadcell_data.csv")
         self.loadcell_thread = None
 
     def create_logs(self):
         super().create_logs()
 
         async_file_hander.write(
-            self.loadcell_log, "system_time,loadcell_time,index,raw_data,newtons\n"
+            self.loadcell_log, "system_time,loadcell_time,raw_data,newtons\n"
         )
         self.loadcell.set_log_file(self.loadcell_log)
 
     def loadcell_graph_loop(self):
-        if not self.loadcell_running:
-            self.loadcell_running = True
-            while self.loadcell_running:
-                data = self.loadcell.get_current_data()
-                home.update_loadcell_graph({"data": data})
-                time.sleep(0.05)
+        while self.loadcell.running:
+            data = self.loadcell.get_current_data()
+            if data is None:
+                return
+            home.update_loadcell_graph({"data": data})
+            time.sleep(0.05)
 
     def force_squeeze(self, position_settings, layer):
-        squeeze_count = position_settings.get("Squeeze count", 1)
-        final_wait = position_settings["Final wait (ms)"] / 1000
-        for i in range(squeeze_count):
-            self.write_to_event_log("Start Force Squeeze")
-            self.squeeze_resin(position_settings, layer)
-            self.write_to_event_log("Finish Force Squeeze")
-            if i < squeeze_count-1:
-                time.sleep(final_wait)
+        try:
+            squeeze_count = position_settings.get("Squeeze count", 1)
+            final_wait = position_settings["Final wait (ms)"] / 1000
+            for i in range(squeeze_count):
+                self.write_to_event_log("Start Force Squeeze")
+                self.squeeze_resin(position_settings, layer)
+                self.write_to_event_log("Finish Force Squeeze")
+                if i < squeeze_count-1:
+                    time.sleep(final_wait)
+        except Exception as ex:
+            log.critical("Unable to read loadcell (%s)", ex, exc_info=True)
+            self.failed_hardware["Loadcell"] = self.loadcell
+            raise PrintingException()
 
     def squeeze_resin(self, position_settings, layer):
         squeeze_target = position_settings["Squeeze force (N)"]
@@ -60,8 +66,8 @@ class LoadcellControl(PrintControl):
         count = first_count + second_count + third_count
 
         log.info("Squeeze force reached %s steps", count)
-        log.info("Squeeze force: %s", self.loadcell.get_current_force())
-        log.info("Squeeze position: %s", self.bp_stage.getBPPosition())
+        log.info("Squeeze force: %.4f", self.loadcell.get_current_force())
+        log.info("Squeeze position: %.4f", self.bp_stage.getBPPosition())
 
         if self.loadcell.get_current_force() > squeeze_target * 1.10:
             log.warning("Move_to_force overshot target value.")
@@ -88,7 +94,7 @@ class LoadcellControl(PrintControl):
             ):
                 time.sleep(0.01)
                 force = self.loadcell.get_current_force()
-                log.debug("Loadcell force: %s", force)
+                log.debug("Loadcell force: %.4f", force)
                 count += 1
                 forces.append(force)
                 if len(forces) <= 33:
@@ -109,30 +115,47 @@ class LoadcellControl(PrintControl):
     def planarization_step_1(self):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
-            self.loadcell.start()   
-            time.sleep(0.5)
-            if self.loadcell_thread is None:
-                home.clear_loadcell_graph()
-                self.loadcell_thread = Thread(log, name="print_control_loadcell_graph_thread", target=self.loadcell_graph_loop)
-                self.loadcell_thread.start()
-            loadcell_start_force = self.loadcell.get_current_force()
-            super().planarization_step_1()
-            if config_dict["loadcell"]["loadcell_planarization_enabled"]:
-                log.debug("Loadcell force (pre-step 1): %s", loadcell_start_force)
-                target_force = config_dict["loadcell"]["loadcell_planarization_force"]
-                if (
-                    self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.25)
-                    is None
-                ):
-                    log.error("Did not reach target planarization force.")
-                    return
-                time.sleep(0.5)
-                log.info(
-                    "Loadcell force (post-step 1): %s", self.loadcell.get_current_force()
+            try:
+                async_file_hander.write(
+                    self.loadcell_planarization_log, "system_time,loadcell_time,raw_data,newtons\n"
                 )
-            else:
-                # estimate a 2mm movement for planarization
-                self.bp_stage.relMoveBP(mm=2.0, speed=2.5)
+                self.loadcell.set_log_file(self.loadcell_planarization_log)
+
+                self.loadcell.start()   
+                time.sleep(0.5)
+                if self.loadcell_thread is None:
+                    home.clear_loadcell_graph()
+                    self.loadcell_thread = Thread(log, name="print_control_loadcell_graph_loop_thread", target=self.loadcell_graph_loop)
+                    self.loadcell_thread.start()
+                loadcell_start_force = self.loadcell.get_current_force()
+            except Exception as ex:
+                log.critical("Unable to start loadcell (%s)", ex, exc_info=True)
+                self.failed_hardware["Loadcell"] = self.loadcell
+                raise PrintingException()
+            super().planarization_step_1()
+            try:
+                if config_dict["loadcell"]["loadcell_planarization_enabled"]:
+                    log.debug("Loadcell force (pre-step 1): %.4f", loadcell_start_force)
+                    target_force = config_dict["loadcell"]["loadcell_planarization_force"]
+                    if (
+                        self.move_bp_to_force(target_force, speed=2.5, error_threshold=0.25)
+                        is None
+                    ):
+                        log.error("Did not reach target planarization force.")
+                        return
+                    time.sleep(0.5)
+                    log.info(
+                        "Loadcell force (post-step 1): %.4f", self.loadcell.get_current_force()
+                    )
+                    log.info("Loadcell position (post-step 1): %.4f", self.bp_stage.getBPPosition())
+                else:
+                    # estimate a 2mm movement for planarization
+                    self.bp_stage.relMoveBP(mm=2.0, speed=2.5)
+            except Exception as ex:
+                log.critical("Critical error occured during planarization (%s)", ex, exc_info=True)
+                self.failed_hardware["Loadcell or Build Platform"] = None
+                raise PrintingException()
+
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
@@ -141,6 +164,7 @@ class LoadcellControl(PrintControl):
         if config_dict["loadcell"]["loadcell_planarization_enabled"]:
             if self.state == "planarizing":
                 self.planarization_step_3()
+        self.loadcell.set_log_file(None)
 
     def planarization_step_3(self):
         """Raise the build platform to its starting postion.
@@ -150,53 +174,92 @@ class LoadcellControl(PrintControl):
         moving up more slowly until the measured force reaches the
         target force.
         """
-        target_force = config_dict["loadcell"]["loadcell_print_start_force"]
-        first_count = self.move_bp_to_force(
-            target_force + 5, speed=-0.5, error_threshold=2.5
-        )
-        if first_count is None:
-            log.error("Loadcell planarization failed. Check build platform screw.")
-            return
-        second_count = self.move_bp_to_force(target_force + 0.5, speed=-0.05)
-        third_count = self.move_bp_to_force(target_force, speed=-0.005)
-        count = first_count + second_count + third_count
+        try:
+            target_force = config_dict["loadcell"]["loadcell_print_start_force"]
+            first_count = self.move_bp_to_force(
+                target_force + 5, speed=-0.5, error_threshold=2.5
+            )
+            if first_count is None:
+                log.error("Loadcell planarization failed. Check build platform screw.")
+                return
+            second_count = self.move_bp_to_force(target_force + 0.5, speed=-0.05)
+            third_count = self.move_bp_to_force(target_force, speed=-0.005)
+            count = first_count + second_count + third_count
 
-        log.info(
-            "Loadcell force post planarization: %s", self.loadcell.get_current_force()
-        )
-        log.debug("Loadcell position: %s", self.planarized_position)
-        self.planarized_position = self.bp_stage.getBPPosition()
-        self.print_position = self.planarized_position
-        log.info("Loadcell planarized %s steps", count)
-        log.info("Loadcell force (post-step 2): %s", self.loadcell.get_current_force())
-        log.info("Loadcell position (post-step 2): %s", self.planarized_position)
-        if self.loadcell.get_current_force() < target_force * 0.90:
-            log.warning("Move_to_force overshot target value")
+            self.planarized_position = self.bp_stage.getBPPosition()
+            self.print_position = self.planarized_position
+            log.info("Loadcell planarized %s steps", count)
+            log.info("Loadcell force (post-step 2): %.4f", self.loadcell.get_current_force())
+            log.info("Loadcell position (post-step 2): %.4f", self.planarized_position)
+            if self.loadcell.get_current_force() < target_force * 0.90:
+                log.warning("Move_to_force overshot target value")
+        except Exception as ex:
+            log.critical("Critical error occured during planarization (%s)", ex, exc_info=True)
+            self.failed_hardware["Loadcell or Build Platform"] = self.loadcell
+            raise PrintingException()
 
     def connect_hardware(self):
-        loadcell_ret = self.loadcell.connect()
+        loadcell_t = Thread(log, name="loadcell_control_connect_thread", target=self.loadcell.connect)
+        loadcell_t.start()
         super().connect_hardware()
-        if not loadcell_ret:
+        loadcell_t.join()
+        if not self.loadcell.connected or loadcell_t.exception is not None:
             log.error("Loadcell failed to connect!")
-            self.all_hardware_connected = False
+            self.failed_hardware["Loadcell"] = self.loadcell
 
-    def resume(self):
-        if self.state != "paused":
-            return
-        self.loadcell.start()
-        super().resume()
+    def initialize_hardware(self):
+        loadcell_t = Thread(log, name="loadcell_control_init_thread", target=self.loadcell.initialize, args=[])
+        loadcell_t.start()
+        super().initialize_hardware()
+        loadcell_t.join()
+        if loadcell_t.exception is not None:
+            log.error("Loadcell failed to initialize!")
+            self.failed_hardware["Loadcell"] = self.loadcell
+
+    def start(self, job_id):
+        # save planarization log
+        backup_path = Path(Config.UPLOAD_FOLDER)/"planarization_log.backup"
+        if os.path.exists(self.loadcell_planarization_log):
+            shutil.move(self.loadcell_planarization_log, backup_path)
+        super().start(job_id)
+
+        # restore planarization log
+        if os.path.exists(backup_path):
+            shutil.move(backup_path, self.loadcell_planarization_log)
 
     def print_worker(self):
         if self.state != "printing":
             return
+        if not self.loadcell.running:
+            try:
+                self.loadcell.start()
+                time.sleep(0.5)
+                if self.loadcell_thread is None:
+                    home.clear_loadcell_graph()
+                    self.loadcell_thread = Thread(log, name="print_control_loadcell_graph_loop_thread", target=self.loadcell_graph_loop)
+                    self.loadcell_thread.start()
+            except Exception as ex:
+                log.critical("Unable to start loadcell (%s)", ex, exc_info=True)
+                self.failed_hardware["Loadcell"] = self.loadcell
+                raise PrintingException()
         super().print_worker()
         if self.printing_paused.is_set():
-            self.loadcell.pause()
+            try:
+                self.loadcell.pause()
+                self.loadcell_thread = None
+            except Exception as ex:
+                log.critical("Unable to pause loadcell (%s)", ex, exc_info=True)
+                self.failed_hardware["Loadcell"] = self.loadcell
+                raise PrintingException()
 
     def finish_print(self):
-        self.loadcell.stop()
-        self.loadcell_running = False
-        self.loadcell_thread = None
-        home.clear_loadcell_graph()
-        self.loadcell.set_log_file(None)
+        try:
+            self.loadcell.stop()
+            self.loadcell_thread = None
+            home.clear_loadcell_graph()
+            self.loadcell.set_log_file(None)
+        except Exception as ex:
+            log.critical("Unable to stop loadcell (%s)", ex, exc_info=True)
+            self.failed_hardware["Loadcell"] = self.loadcell
+            raise PrintingException()
         super().finish_print()

@@ -87,9 +87,9 @@ class TI_DLPC900_I2C:
                 result = self.i2c_bus.read_byte_data(self.address, int(register))
                 time.sleep(self.I2C_IO_DELAY)
                 return result
-            except Exception as e:
-                self.log(logging.INFO, "I2C read error {}".format(e))
-                caught_exception = e
+            except Exception as ex:
+                self.log(logging.INFO, "I2C read error {}".format(ex))
+                caught_exception = ex
                 time.sleep(1)  # wait 1 second to retry
         self.log(
             logging.ERROR,
@@ -107,9 +107,9 @@ class TI_DLPC900_I2C:
                 time.sleep(self.I2C_IO_DELAY)
                 success = True
                 return
-            except Exception as e:
-                self.log(logging.INFO, "I2C write error {}".format(e))
-                caught_exception = e
+            except Exception as ex:
+                self.log(logging.INFO, "I2C write error {}".format(ex))
+                caught_exception = ex
                 time.sleep(1)  # wait 1 second to retry
         self.log(
             logging.ERROR,
@@ -126,7 +126,7 @@ class TI_DLPC900_I2C:
             self.logger.log(lvl, msg)
         except AttributeError:
             if lvl >= self.verbosity:
-                print(msg)
+                print(f"{msg}")
 
     def load_default_configuration(self):
         """Load the default hardware configuration."""
@@ -403,4 +403,4 @@ class TI_DLPC900_I2C:
 
 if __name__ == "__main__":
     dmd = TI_DLPC900_I2C(verbosity=logging.DEBUG)
-    print(dmd.get_all_status())
+    print(f"{dmd.get_all_status()}")

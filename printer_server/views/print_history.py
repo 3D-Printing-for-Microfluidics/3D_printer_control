@@ -7,7 +7,7 @@ from flask import Blueprint, request, render_template, flash, send_file
 from printer_server.models import PrintRecord, PrintQueue
 from printer_server.settings import Config
 from printer_server.extensions import socketio
-from printer_server.hardware_configuration import config_dict
+from printer_server.hardware_configuration.hardware_configuration import config_dict
 from printer_server.print_file_validator import validate_schema
 
 blueprint = Blueprint(
@@ -57,7 +57,7 @@ def index():
     except ValueError:
         flash("Bad end date", category="danger")
 
-    print_records = query.order_by(PrintRecord.id.desc()).paginate(current_page, 20)
+    print_records = query.order_by(PrintRecord.id.desc()).paginate(page=current_page, per_page=20)
     start, end, boundaries = calculate_page_range(current_page, print_records.pages)
 
     return render_template(
@@ -80,7 +80,7 @@ def download(job_id):
     return send_file(
         os.path.join(file_location, job.zip_filename),
         as_attachment=True,
-        attachment_filename=job.original_filename,
+        download_name=job.original_filename,
     )
 
 
@@ -117,11 +117,10 @@ def add_to_queue(job_id):
                 "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
                 "upload_ip": request.remote_addr,
             },
-            namespace="/printing",
-            broadcast=True,
+            namespace="/printing"
         )
-    except ValueError as e:
-        msg = f"Job validation failed for {job.original_filename}:\n {str(e).strip()}"
+    except ValueError as ex:
+        msg = f"Job validation failed for {job.original_filename}:\n {str(ex).strip()}"
         socketio.emit(
             "flash", {"text": msg, "category": "warning"}, namespace="/print_history"
         )

@@ -65,27 +65,27 @@ s.draw(screen=0, img_path="printer_server/drivers/visitech/images/visitech_1.png
 
 # Some test code to run a number of projections and report some class data
 num_tests = 10
-print("Exposures using project:", num_tests)
+print(f"Exposures using project: {num_tests}")
 for _ in range(num_tests):
     p.project(random.randint(5, 1000), led_power=30)
-print("Exposures using setup/perform_exposure:", num_tests)
+print(f"Exposures using setup/perform_exposure: {num_tests}")
 for _ in range(num_tests):
     p.setup_exposure(random.randint(5, 1000), led_power=30)
     p.perform_exposure()
-print("Exposures using project (repeating):", num_tests)
+print(f"Exposures using project (repeating): {num_tests}")
 for _ in range(num_tests):
     p.project(1000, led_power=30, repeat=0)
     time.sleep(random.randint(500, 3000) / 1000)
     p.stop_sequencer()
-print("Exposures using setup/perform_exposure (repeating):", num_tests)
+print(f"Exposures using setup/perform_exposure (repeating): {num_tests}")
 for _ in range(num_tests):
     p.setup_exposure(1000, led_power=30, repeat=0)
     p.perform_exposure()
     time.sleep(random.randint(500, 3000) / 1000)
     p.stop_sequencer()
-print("Number of images projected:", num_tests)
-print("Number of DLPC900 transactions:", p.dmd_controller.transaction_counter)
-print("Number of HID writes:", p.dmd_controller.usb_io_counter)
+print(f"Number of images projected: {num_tests}")
+print(f"Number of DLPC900 transactions: {p.dmd_controller.transaction_counter}")
+print(f"Number of HID writes: {p.dmd_controller.usb_io_counter}")
 
 # An example of how to trigger an error with an invalid command (This
 # accesses a protected member and is bad practice, it is used here only

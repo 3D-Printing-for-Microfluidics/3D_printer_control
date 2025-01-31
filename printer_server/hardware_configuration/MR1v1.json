@@ -1,0 +1,201 @@
+{
+    "valid_schema_versions": [
+        "v4",
+        "v3",
+        "v2"
+    ],
+    "external_control": {},
+    "coord_systems": {
+        "global": {
+            "X": 0,
+            "Y": 0,
+            "Focus": 0,
+            "Build Platform": 0
+        },
+        "parked": {
+            "X": -130.388,
+            "Y": -31.800,
+            "Focus": 49.065,
+            "Build Platform": 0
+        },
+        "visitech": {
+            "X": -130.388,
+            "Y": -31.800,
+            "Focus": 49.065,
+            "Build Platform": 0
+        },
+        "wintech": {
+            "X": 129.100,
+            "Y": -20.840,
+            "Focus": 49.656,
+            "Build Platform": 0
+        },
+        "keyence_visitech": {
+            "X": -79.128,
+            "Y": -19.986,
+            "Focus": 47.737,
+            "Build Platform": 0
+        },
+        "keyence_wintech": {
+            "X": 92.640,
+            "Y": -17.110,
+            "Focus": 48.870,
+            "Build Platform": 0
+        }
+    },
+    "stages": {
+        "bp_stage": "galil",
+        "focus_stage": "galil",
+        "xy_stage": "galil",
+        "ttr_stage": "tiptilt"
+    },
+    "galil": {
+        "dummy": false,
+        "controller_name": "DMC4040",
+        "address": "192.168.0.9",
+        "default_axis": "D",
+        "axes": [
+            "A",
+            "B",
+            "C",
+            "D"
+        ],
+        "axes_common_names": [
+            "X",
+            "Y",
+            "Focus",
+            "Build Platform"
+        ],
+        "axes_travel": {
+            "A": 300,
+            "B": 100,
+            "C": 100,
+            "D": 100
+        },
+        "axes_ctspmm": {
+            "A": 51200,
+            "B": 51200,
+            "C": 51200,
+            "D": 51200
+        },
+        "axes_tolerance_um": {
+            "A": 0.125,
+            "B": 0.125,
+            "C": 0.125,
+            "D": 0.125
+        },
+        "axes_speed": {
+            "A": 200,
+            "B": 25,
+            "C": 25,
+            "D": 25
+        },
+        "axes_acceleration": {
+            "A": 100,
+            "B": 50,
+            "C": 50,
+            "D": 50
+        },
+        "limits": {
+            "A": [null,null],
+            "B": [null,null],
+            "C": [null,null],
+            "D": [null,50.000]
+        },
+        "calibration_limits": {
+            "A": [null,null],
+            "B": [null,null],
+            "C": [null,null],
+            "D": [null,46.2148438]
+        },
+        "calibration_position": 45.2148438,
+        "bottom_position": 43.875,
+        "top_position": -50
+    },
+    "tiptilt": {
+        "dummy": false,
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "3794660",
+        "firmware_path": "MR_Tip_Tilt_v2/MR_Tip_Tilt_v2.ino",
+        "microcontroller": "Teensy3.2",
+        "baudrate": 115200,
+        "axes": [
+            "1",
+            "2"
+        ],
+        "axes_common_names": [
+            "Tip",
+            "Tilt"
+        ],
+        "limits": {
+            "1": [null,null],
+            "2": [null,null]
+        },
+        "auto_repositioning": false
+    },
+    "gpio": {
+        "dummy": false,
+        "power_status_pin": 17
+    },
+    "loadcell": {
+        "dummy": false,
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "5712360",
+        "firmware_path": "loadcell/loadcell.ino",
+        "microcontroller": "Teensy3.2",
+        "baudrate": 115200,
+        "sample_period_us": 1000,
+        "calibration_intercept": 28844.00,
+        "calibration_slope": -1.078,
+        "loadcell_planarization_enabled": true,
+        "loadcell_planarization_force": 35.0,
+        "loadcell_print_start_force": 5.0
+    },
+    "keyence": {
+        "dummy": false,
+        "address": "192.168.0.15",
+        "port": 24685,
+        "sensors": {
+            "visitech": {
+                "measurement_index": 1
+            },
+            "wintech": {
+                "measurement_index": 0
+            }
+        }
+    },
+    "screen": {},
+    "light_engines": [
+        "visitech",
+        "wintech"
+    ],
+    "visitech": {
+        "dummy": false,
+        "address": "192.168.0.10",
+        "port": 5000,
+        "dual_led": true,
+        "leds_nm": [
+            405,
+            365
+        ],
+        "resolution": [
+            2560,
+            1600
+        ]
+    },
+    "wintech": {
+        "dummy": false,
+        "vendor_id": "0x0451",
+        "product_id": "0xC900",
+        "dual_led": false,
+        "leds_nm": [
+            365
+        ],
+        "resolution": [
+            1920,
+            1080
+        ]
+    }
+}

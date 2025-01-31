@@ -1,175 +1,208 @@
+"""
+Dummy Visitech Module
+=====================
+"""
 import time
-
+import logging
+from datetime import datetime
 from printer_server.logging_handler import dummy_log
+from printer_server.drivers.generic_drivers import LightEngineDriver
 
-# pylint:disable=too-many-public-methods
-class Visitech_dummy:
-    @dummy_log
-    def __init__(self):
-        self.max_exp_time = 10000  # max single projection time in ms
+class Visitech_dummy(LightEngineDriver):
+    """
+    Dummy Visitech class for testing and development.
+    """
+    def __init__(self, leds, log_level=logging.DEBUG, dual_led=False):
+        self.max_exp_time = 10000
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+        self.host = "192.168.0.10"
+        self.port = 5000
+        self.socket = None
+        self.connected = False
+        self.exposure_time = 0
         self.led_on = False
+        self.dual_led = dual_led
+        self.leds = leds
+        self.suppress_ocp_error = False
 
     @dummy_log
     def connect(self):
+        self.connected = True
+        return True
+
+    @dummy_log
+    def initialize(self):
         pass
 
     @dummy_log
     def disconnect(self):
-        pass
+        self.connected = False
 
-    @dummy_log
+    # @dummy_log
     def send(self, data):
-        return f"sent {data}"
+        self.log.debug("Sent:  '%s'", data)
+        return "+OK"
 
+    # @dummy_log
     def load_defaults(self):
         return self.send("LOAD DEFAULTS")
 
+    # @dummy_log
     def set_static_ip(self, address):
-        return self.send("SET STATIC IP ADDR {}".format(address))
+        return self.send(f"SET STATIC IP ADDR {address}")
 
+    # @dummy_log
     def get_version(self):
         return self.send("GET VERSION")
 
-    def led_driver_enable(self):
-        return self.send("SET LIGHT ON")
+    # @dummy_log
+    def led_driver_enable(self, led_num=0):
+        return self.send(f"SET LIGHT ON {led_num}")
 
-    def led_driver_disable(self):
-        return self.send("SET LIGHT OFF")
+    # @dummy_log
+    def led_driver_disable(self, led_num=0):
+        return self.send(f"SET LIGHT OFF {led_num}")
 
-    def get_led_driver_status(self):
-        return self.send("GET LIGHT STATUS")
+    # @dummy_log
+    def get_led_driver_status(self, led_num=0):
+        return self.send(f"GET LIGHT STATUS {led_num}")
 
-    def get_led_state(self):
-        return self.send("GET LIGHT OUTPUT STATUS")
+    # @dummy_log
+    def get_led_state(self, led_num=0):
+        return self.send(f"GET LIGHT OUTPUT STATUS {led_num}")
 
-    def set_led_amplitude(self, amplitude):
-        return self.send("SET AMPLITUDE {}".format(amplitude))
+    # @dummy_log
+    def set_led_amplitude(self, amplitude, led_num=0):
+        return self.send(f"SET AMPLITUDE {led_num} {amplitude}")
 
-    def get_led_amplitude(self):
-        return self.send("GET AMPLITUDE")
+    # @dummy_log
+    def get_led_amplitude(self, led_num=0):
+        return self.send(f"GET AMPLITUDE {led_num}")
 
-    def set_led_driver_ocp(self, value):
-        return self.send("SET OCP {}".format(value))
+    # @dummy_log
+    def set_led_driver_ocp(self, value, led_num=0):
+        return self.send(f"SET OCP {led_num} {value}")
 
-    def get_led_driver_ocp(self):
-        return self.send("GET OCP")
+    # @dummy_log
+    def get_led_driver_ocp(self, led_num=0):
+        return self.send(f"GET OCP {led_num}")
 
-    def set_led_driver_regulation_mode(self, mode):
-        return self.send("SET REG MODE {}".format(mode))
+    # @dummy_log
+    def set_led_driver_regulation_mode(self, mode, led_num=0):
+        return self.send(f"SET REG MODE {led_num} {mode}")
 
-    def get_led_driver_regulation_mode(self):
-        return self.send("GET REG MODE")
+    # @dummy_log
+    def get_led_driver_regulation_mode(self, led_num=0):
+        return self.send(f"GET REG MODE {led_num}")
 
-    def get_led_driver_current(self):
-        return self.send("GET CURRENT FEEDBACK")
+    # @dummy_log
+    def get_led_driver_current(self, led_num=0):
+        return self.send(f"GET CURRENT FEEDBACK {led_num}")
 
-    def get_led_intensity(self):
-        return self.send("GET LIGHT FEEDBACK")
+    # @dummy_log
+    def get_led_intensity(self, led_num=0):
+        return self.send(f"GET LIGHT FEEDBACK {led_num}")
 
-    def get_led_temp(self):
-        return self.send("GET LED TEMP")
+    # @dummy_log
+    def get_led_temp(self, led_num=0):
+        return self.send(f"GET LED TEMP {led_num}")
 
-    def get_led_driver_board_temp(self):
-        return self.send("GET BOARD TEMP")
+    # @dummy_log
+    def get_led_driver_board_temp(self, led_num=0):
+        return self.send(f"GET BOARD TEMP {led_num}")
 
-    def set_led_driver_board_temp_limit(self, temperature):
-        return self.send("SET BOARD TEMP LIMIT {}".format(temperature))
+    # @dummy_log
+    def set_led_driver_board_temp_limit(self, temperature, led_num=0):
+        return self.send(f"SET BOARD TEMP LIMIT {led_num} {temperature}")
 
-    def get_led_driver_board_temp_limit(self):
-        return self.send("GET BOARD TEMP LIMIT")
+    # @dummy_log
+    def get_led_driver_board_temp_limit(self, led_num=0):
+        return self.send(f"GET BOARD TEMP LIMIT {led_num}")
 
-    def set_led_temp_limit(self, temperature):
-        return self.send("SET LED TEMP LIMIT {}".format(temperature))
+    # @dummy_log
+    def set_led_temp_limit(self, temperature, led_num=0):
+        return self.send(f"SET LED TEMP LIMIT {led_num} {temperature}")
 
-    def get_led_temp_limit(self):
-        return self.send("GET LED TEMP LIMIT")
+    # @dummy_log
+    def get_led_temp_limit(self, led_num=0):
+        return self.send(f"GET LED TEMP LIMIT {led_num}")
 
+    # @dummy_log
     def start_sequencer(self):
         return self.send("SET SEQ ON")
 
+    @dummy_log
     def stop_sequencer(self):
         self.led_on = False
         return self.send("SET SEQ OFF")
 
+    # @dummy_log
     def pause_sequencer(self):
         return self.send("SET SEQ PAUSE")
 
+    # @dummy_log
     def get_dmd_status(self):
         return self.send("GET DMD STATUS")
 
+    # @dummy_log
     def set_dmd_operation_mode(self, mode):
-        return self.send("SET OPERATION MODE {}".format(mode))
+        return self.send(f"SET OPERATION MODE {mode}")
 
+    # @dummy_log
     def get_dmd_operation_mode(self):
         return self.send("GET OPERATION MODE")
 
-    # pylint: disable=too-many-arguments
-    def set_sequencer_lut_definition(
-        self,
-        exposure,
-        darktime=0,
-        clear=1,
-        bitdepth=8,
-        wait_for_trigger=1,
-        pattern_index=0,
-        bit_index=0,
-    ):
-        return self.send(
-            "SET LUT DEFINITION\r\n{},{},{},{},{},{},{}".format(
-                exposure,
-                darktime,
-                clear,
-                bitdepth,
-                wait_for_trigger,
-                pattern_index,
-                bit_index,
-            )
-        )
+    # @dummy_log
+    def set_sequencer_lut_definition(self, exposure, darktime=0, clear=1, bitdepth=8, wait_for_trigger=1, pattern_index=0, bit_index=0):
+        return self.send(f"SET LUT DEFINITION\r\n{exposure},{darktime},{clear},{bitdepth},{wait_for_trigger},{pattern_index},{bit_index}")
 
+    # @dummy_log
     def set_sequencer_lut_config(self, num_sequences=1, repeats=1):
-        return self.send("SET LUT CONFIG {} {}".format(num_sequences, repeats))
+        return self.send(f"SET LUT CONFIG {num_sequences} {repeats}")
 
+    # @dummy_log
     def upload_image(self, pattern_index, bitmap_size, bitmap_data):
-        return self.send(
-            "UPLOAD IMAGE PATTERN\r\n{}\r\n{}\r\n{}".format(
-                pattern_index, bitmap_size, bitmap_data
-            )
-        )
+        return self.send(f"UPLOAD IMAGE PATTERN\r\n{pattern_index}\r\n{bitmap_size}\r\n{bitmap_data}")
 
+    # @dummy_log
     def set_video_source(self, source="HDMI"):
-        if source == "DISPLAYPORT":
-            return self.send("INIT DISPLAYPORT")
-        return self.send("INIT HDMI")
+        return self.send(f"INIT {source}")
 
+    # @dummy_log
     def get_video_source(self):
         return self.send("GET INPUT SOURCE")
 
+    # @dummy_log
     def set_pixel_mode(self, mode):
-        return self.send("SET PIXEL MODE {}".format(mode))
+        return self.send(f"SET PIXEL MODE {mode}")
 
+    # @dummy_log
     def park_dmd_mirrors(self):
         return self.send("SET MIRRORS PARKED")
 
+    # @dummy_log
     def unpark_dmd_mirrors(self):
         return self.send("SET MIRRORS UNPARKED")
 
+    # @dummy_log
     def get_sticky_errors(self, warn="ALL"):
-        self.send("GET STICKY ERRORS")
-        return ""
+        return self.send("GET STICKY ERRORS")
 
+    # @dummy_log
     def get_logs(self):
         return self.send("GET LOGS")
 
+    # @dummy_log
     def get_normalization_factor(self):
         return float(self.send("FACTORY GET NORMALIZATION VALUE"))
 
+    # @dummy_log
     def set_normalization_factor(self, normalization_factor):
         return self.send(f"FACTORY SET NORMALIZATION VALUE {normalization_factor}")
 
+    # @dummy_log
     def split_exposure_time(self, exposure):
-        """
-        Split a long exposure time into an array of smaller exposure times.
-        """
         n = int(exposure // self.max_exp_time)
         if exposure % self.max_exp_time != 0:
             exposure = [self.max_exp_time] * n + [exposure % self.max_exp_time]
@@ -177,66 +210,121 @@ class Visitech_dummy:
             exposure = [self.max_exp_time] * n
         return exposure
 
+    # @dummy_log
     def read_all_status(self, warn="ALL"):
-        return {
-            "dmd_status": self.get_dmd_status(),
+        status = {
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
             "led_feedback": self.get_led_intensity(),
             "led_temp": self.get_led_temp(),
             "led_driver_temp": self.get_led_driver_board_temp(),
             "led_sticky_errors": self.get_sticky_errors(warn),
             "led_driver_status": self.get_led_driver_status(),
+            "led_feedback2": "",
+            "led_temp2": "",
+            "led_driver_temp2": "",
+            "led_driver_status2": "",
         }
+        if self.dual_led:
+            status["led_feedback2"] = self.get_led_intensity(led_num=1)
+            status["led_temp2"] = self.get_led_temp(led_num=1)
+            status["led_driver_temp2"] = self.get_led_driver_board_temp(led_num=1)
+            status["led_driver_status2"] = self.get_led_driver_status(led_num=1)
+        return status
 
     @dummy_log
-    def setup_exposure(self, t, p, r=1):
-        """
-        Setup an exposure.
-            t - exposure time in milliseconds
-            p - power setting
-            r - number of repeats
-        """
-        self.exposure_time = t
+    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
+        self.exposure_time = exposure_time_ms
+
+        if self.dual_led:
+            if led_num == 0:
+                self.led_driver_enable(led_num=0)
+                self.led_driver_disable(led_num=1)
+            else:
+                self.led_driver_enable(led_num=1)
+                self.led_driver_disable(led_num=0)
+
         min_t = 4.046
         max_t = 10000
-        if t > max_t:
-            t = max_t
+        self.log.debug(
+            "Setting up exposure at %s for %s ms at power setting %s. Repeat %s",
+            self.leds[led_num],
+            exposure_time_ms,
+            led_power,
+            repeat,
+        )
+        if exposure_time_ms == 0:
+            return
+        elif exposure_time_ms > max_t:
+            msg = f"Exposure time {exposure_time_ms} ms is greater than maximum possible exposure time "
+            msg += f"of {max_t} ms. Using exposure time of {max_t} ms instead."
+            self.log.warning(msg)
+            exposure_time_ms = max_t
             self.exposure_time = max_t
-        elif t < min_t:
-            t = min_t
+        elif exposure_time_ms < min_t:
+            msg = f"Exposure time {exposure_time_ms} ms is less than minimum possible exposure time "
+            msg += f"of {min_t} ms. Using exposure time of {min_t} ms instead."
+            self.log.warning(msg)
+            exposure_time_ms = min_t
             self.exposure_time = min_t
-        self.set_led_amplitude(p)
-        self.set_sequencer_lut_definition(exposure=t * 1000)
-        self.set_sequencer_lut_config(repeats=r)
+        self.set_led_amplitude(led_power, led_num=led_num)
+        self.set_sequencer_lut_definition(exposure=int(exposure_time_ms * 1000))
+        self.set_sequencer_lut_config(repeats=repeat)
 
     @dummy_log
     def perform_exposure(self):
-        """
-        Start an exposure.
-        """
         self.led_on = True
-        if self.exposure_time != 0:
+        if self.repeats == 0:
+            self.log.info(
+                "Exposing %s at a power of %s indefinatly",
+                self.led,
+                self.led_power
+            )
             self.start_sequencer()
-            time.sleep(self.exposure_time * 1e-3)
-        self.led_on = False
+        else:
+            if self.exposure_time != 0:
+                self.log.info(
+                    "Exposing %s for %s ms at a power of %s",
+                    self.led,
+                    self.exposure_time,
+                    self.led_power
+                )
+                self.start_sequencer()
+                time.sleep(self.exposure_time * 1e-3)
+            self.led_on = False
 
     @dummy_log
-    def project(self, exposure, power, repeats=1):
-        """
-        Call all of the necessary methods to project an image, and block
-        until projection is complete.
-        """
-        self.set_led_amplitude(power)
+    def project(self, exposure, power, repeats=1, led_num=0):
+        if self.dual_led:
+            if led_num == 0:
+                self.led_driver_enable(led_num=0)
+                self.led_driver_disable(led_num=1)
+            else:
+                self.led_driver_enable(led_num=1)
+                self.led_driver_disable(led_num=0)
+
+        self.set_led_amplitude(power, led_num=led_num)
         self.led_on = True
         if repeats == 0:  # if continuous display is desired
+            self.log.info(
+                "Exposing %s at a power of %s indefinatly",
+                self.leds[led_num],
+                power
+            )
             # this provides the minimum blanking of 233 us of the full 33333 us cycle
             # (at 30Hz on HDMI)
             self.set_sequencer_lut_definition(33100, 0, 0, 8, 0, 0, 0)
             self.set_sequencer_lut_config(repeats=0)
             self.start_sequencer()  # sequencer will be stopped on program exit
         else:  # normal display is desired
+            self.log.info(
+                "Exposing %s for %s ms at a power of %s",
+                self.leds[led_num],
+                exposure,
+                power
+            )
             for t in self.split_exposure_time(exposure):
                 # the TI board expects exposure in microseconds
-                self.set_sequencer_lut_definition(exposure=t * 1000)
+                self.set_sequencer_lut_definition(exposure=int(t * 1000))
                 self.set_sequencer_lut_config(repeats=repeats)
                 self.start_sequencer()
                 time.sleep(t * 1e-3)

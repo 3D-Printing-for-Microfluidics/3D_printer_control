@@ -2,6 +2,7 @@ import os
 import time
 import json
 import shutil
+import signal
 import logging
 import threading
 from pathlib import Path
@@ -11,20 +12,18 @@ from datetime import datetime
 from zipfile import ZipFile, BadZipFile
 
 import printer_server.views.home as home
-from printer_server.extensions import db
 from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 from printer_server.models import PrintQueue, PrintRecord
 from printer_server.async_file_handler import async_file_hander
-from printer_server.hardware_configuration import config_dict, driver_handles
+from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 from printer_server.print_file_validator import validate_schema, read_json, expand_json
-from printer_server.views.manual_controls import (
+from printer_server.views.calibration import (
     get_last_calibration_positions_from_logs,
 )
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
-
 
 def run_in_thread(state, text):
     """Wrap long running printer operation methods. The wrapped methods
@@ -42,18 +41,21 @@ def run_in_thread(state, text):
             top_level = kwargs.get("top_level", top_level)
 
             def func(self, *args, **kwargs):
-                f(self, *args, **kwargs)
                 if top_level:
-                    self.state = state
+                    msg = {
+                        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                        "text": text,
+                    }
+                    log.info(msg["text"])
+                    home.update_printer_state("busy", msg)
+                ret = f(self, *args, **kwargs)
+                if top_level:
+                    if ret == False:
+                        self.state = "failed"
+                    else:
+                        self.state = state
                     home.update_printer_state(self.state, dict())
-
-            if top_level:
-                msg = {
-                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-                    "text": text,
-                }
-                log.info(msg["text"])
-                home.update_printer_state("busy", msg)
+                return ret
 
             if run_in_thread:
                 _thread = Thread(
@@ -67,6 +69,9 @@ def run_in_thread(state, text):
 
     return decorator
 
+class PrintingException(Exception):
+    pass
+
 class PrintControl:
     """
     The PrintControl class contains all the 3D printer
@@ -77,6 +82,7 @@ class PrintControl:
 
     def __init__(self):
         self._state = "uninitialized"
+        self.critical_error_handle = None
 
         # folders relevant to printing
         self.queue = Path(Config.UPLOAD_FOLDER) / Path("queue")
@@ -84,8 +90,8 @@ class PrintControl:
         self.print_history = Path(Config.UPLOAD_FOLDER) / Path("print_history")
 
         # log files
-        self.exposure_log = str(self.current_job / "exposure_data.csv")
-        self.event_log = str(self.current_job / "event_log.csv")
+        self.exposure_log = str(self.current_job / "logs" / "exposure_data.csv")
+        self.event_log = str(self.current_job / "logs" / "event_log.csv")
 
         # threads
         self.bp_thread = None
@@ -93,17 +99,14 @@ class PrintControl:
         self.xy_threads = None
 
         try:
-            self.coord_systems_control = driver_handles.coord_systems_control
             self.coord_systems = config_dict["coord_systems"]
-            
         except:
-            self.coord_systems_control = None
             self.coord_systems = None
 
         # values used during printing
         self.image = None
         self.planarized_position = None
-        self.focused_position = None
+        self.focus = None
         self.print_position = None
         self.print_settings = None
         self.exposure_time_ms = None
@@ -117,16 +120,6 @@ class PrintControl:
         self.printing_stopped = threading.Event()
         self.printing_paused = threading.Event()
 
-        # Create delete old profiles
-        profile_enabled = Config.PROFILE_CODE
-        if profile_enabled:
-            profiles_dir = Path(Config.PROFILES_FOLDER)
-            profile_file = str(Path(Config.PROJECT_ROOT) / "logs" / "profile.txt")
-            if Path(profile_file).is_file():
-                os.remove(profile_file)
-            if profiles_dir.is_dir():
-                shutil.rmtree(profiles_dir)
-
     @property
     def state(self):
         """Return the current state."""
@@ -138,6 +131,7 @@ class PrintControl:
         if state in [
             "uninitialized",
             "initialized",
+            "failed",
             "planarizing",
             "planarized",
             "printing",
@@ -210,6 +204,11 @@ class PrintControl:
 
     def create_logs(self):
         # create logs and overwrite any pre-existing data
+        try:
+            os.mkdir(str(self.current_job / "logs"))
+        except FileExistsError:
+            pass
+        
         async_file_hander.set_enabled(True)
         async_file_hander.write(self.exposure_log, "")
         async_file_hander.write(self.event_log, "timestamp,event\n")
@@ -284,15 +283,15 @@ class PrintControl:
         )
 
     def move_build_platform(self, position_settings, layer):
-        log.warn("Base printer_control class does not have a defined bp stage. Cannot move bp")
+        log.warning("Base printer_control class does not have a defined bp stage. Cannot move bp")
         return 0
 
     def force_squeeze(self, position_settings, layer):
-        log.warn("Missing loadcell_control. Cannot force_squeeze")
+        log.warning("Missing loadcell_control. Cannot force_squeeze")
         return 0
 
     def get_focus(self):
-        log.warn("Base printer_control class does not have a defined focus stage")
+        log.warning("Base printer_control class does not have a defined focus stage")
         return 0
 
     def convert_le_to_screen_le(self, light_engine):
@@ -309,24 +308,56 @@ class PrintControl:
         return screen_light_engine
 
     @run_in_thread("initialized", "Initialize")
-    def initialize(self):
+    def initialize(self, critical_error_handle):
         """Put all hardware into starting configuration."""
         if self.state == "uninitialized":
+            # Create delete old profiles
+            profile_enabled = Config.PROFILE_CODE
+            if profile_enabled:
+                profiles_dir = Path(Config.PROFILES_FOLDER)
+                profile_file = str(Path(Config.PROJECT_ROOT) / "logs" / "profile.txt")
+                if Path(profile_file).is_file():
+                    os.remove(profile_file)
+                if profiles_dir.is_dir():
+                    shutil.rmtree(profiles_dir)
+                    
+            self.critical_error_handle = critical_error_handle
             self.state = "busy"
-            self.all_hardware_connected = True
+            self.failed_hardware = {}
             self.connect_hardware()
-            if not self.all_hardware_connected:
-                self.shutdown(is_critical=True)
-                return False
-            self.initalize_hardware()
-            log.info("Printer initialized, all hardware ready.")
-            return True
+            return self._initialize()
+        return False
+    
+    @run_in_thread("initialized", "Reinitialize")
+    def reinitialize(self):
+        threads = {}
+        for name, device in self.failed_hardware.items():
+            t = Thread(log, name=f"{name}_control_connect_thread", target=device.connect)
+            t.start()
+            threads[name] = t
+
+        for name in list(self.failed_hardware.keys()):
+            threads[name].join()
+            device = self.failed_hardware[name]
+            if not device.connected or threads[name].exception is not None:
+                log.error("%s failed to connect!", name)
+            else:
+                del self.failed_hardware[name]
+        return self._initialize()
+    
+    def _initialize(self):
+        if len(self.failed_hardware.keys()) == 0:
+            self.initialize_hardware()
+            if len(self.failed_hardware.keys()) == 0:
+                log.info("Printer initialized, all hardware ready.")
+                return True
+        self.critical_error_handle(process = "initialization")
         return False
             
     def connect_hardware(self):
         pass
 
-    def initalize_hardware(self):
+    def initialize_hardware(self):
         pass
 
     @run_in_thread("planarizing", "Planarization Step 1")
@@ -334,6 +365,9 @@ class PrintControl:
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
+
+            # Start async_file_handler
+            async_file_hander.start()
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
@@ -360,15 +394,17 @@ class PrintControl:
 
         self.next_layer = 0
 
-        # Start async_file_handler
+        # create logs
         self.create_logs()
-        async_file_hander.start()
 
         position = get_last_calibration_positions_from_logs()
         self.write_to_event_log(f"Calibration")
         for k, v in position.items():
             self.write_to_event_log(f"{k}: {v}")
-        self.focused_position = float(position.get("distance",0)) / 1000
+        self.focus = float(position.get("focus",0)) / 1000
+        self.tip = float(position.get("tip",0)) / 1000
+        self.tilt = float(position.get("tilt",0)) / 1000
+        self.rotate = float(position.get("rotate",0)) / 1000
 
         # update frontend progress bar
         self.state = "printing"
@@ -383,7 +419,6 @@ class PrintControl:
         self.print_start_time = datetime.now()
 
         # start printing process in a new thread
-        self.app = db.get_app()
         self.print_thread = Thread(log, name="print_control_print_worker_thread", target=self.print_worker)
         self.print_thread.start()
 
@@ -418,7 +453,6 @@ class PrintControl:
         log.info(msg["text"])
         home.update_printer_state(self.state, msg)
         # resume printing in a new thread
-        self.app = db.get_app()
         self.print_thread = Thread(log, name="print_control_print_worker_thread", target=self.print_worker)
         self.print_thread.start()
 
@@ -445,6 +479,9 @@ class PrintControl:
 
     def post_print_tasks(self):
         return
+    
+    def post_print_joins(self):
+        return
 
     def print_worker(self):
         """Do a 3D print.
@@ -455,9 +492,6 @@ class PrintControl:
         """
         if self.state != "printing":
             return
-        # clear old flags
-        self.printing_stopped.clear()
-        self.printing_paused.clear()
 
         # generate layer map
         self.layer_map = self.generate_layer_map()
@@ -466,6 +500,10 @@ class PrintControl:
 
         self.pre_print_tasks()
         self.pre_print_joins()
+
+        # clear old flags
+        self.printing_stopped.clear()
+        self.printing_paused.clear()
 
         # update frontend message pane and progress bar
         msg = {
@@ -515,6 +553,8 @@ class PrintControl:
     def pre_layer_joins(self):
         if not self.next_layer == 1:
             self.bp_thread.join()
+            if self.bp_thread.exception is not None:
+                raise self.bp_thread.exception
 
     def post_layer_tasks(self):
         return
@@ -618,7 +658,8 @@ class PrintControl:
     def finish_print(self):
         # update fontend, zip logs into archive in print_history, and update db entrty
         self.print_duration = datetime.now() - self.print_start_time
-        with self.app.app_context():
+        from autoapp import app
+        with app.app_context():
             latest_record = PrintRecord.query.order_by(PrintRecord.id.desc()).first()
             latest_record.end_time = datetime.now()
             if not self.printing_stopped.is_set():
@@ -646,7 +687,7 @@ class PrintControl:
         """boolean -- whether the printer is printing"""
         return self.print_thread.isAlive()
 
-    def shutdown(self, is_critical=False):
+    def shutdown(self, is_critical=True):
         if is_critical or self.state not in ["busy", "printing"]:
             if self.state not in ["shutting down", "shutdown completed"]:
                 self.state = "shutting down"
@@ -669,7 +710,10 @@ class PrintControl:
                 home.update_printer_state("shutdown completed", msg)
                 
                 time.sleep(0.5)
-                home.shutdown_handle()
+                os.kill(os.getpid(), signal.SIGKILL) 
+                #SIGTERM hanging
+                #SIGINT hanging
+                #SIGKILL kills ssh as well?
 
         else:
             msg = {
@@ -739,9 +783,9 @@ class PrintControl:
                     "upload_ip": request.remote_addr,
                 }
                 home.update_printer_state("job uploaded", msg)
-            except ValueError as e:
+            except ValueError as ex:
                 log.info("Job validation failed for %s", f.filename)
-                msg = f"Job validation failed for {f.filename}:\n {str(e).strip()}"
+                msg = f"Job validation failed for {f.filename}:\n {str(ex).strip()}"
                 home.send_bootstrap_alert(msg)
                 os.remove(filename_on_disk)
 

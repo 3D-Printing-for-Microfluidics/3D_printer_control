@@ -10,12 +10,15 @@ class Thread(threading.Thread):
         super().__init__(group=group, target=target, name=name, args=args, kwargs=kwargs, daemon=daemon)
         self.log = log
         self.name = name
+        self.exception = None
         
     def run(self):
         # Variable that stores the exception, if raised by someFunction
         # self.exc = None        
         try:
             if self._target is not None:
+                if Config.LOG_THREADING:
+                    self.log.info("Starting Thread: %s", self.name)
                 if Config.PROFILE_CODE:
                     # Create profiles directory if it doesn't exist
                     profiles_dir = Path(Config.PROFILES_FOLDER)
@@ -37,12 +40,14 @@ class Thread(threading.Thread):
                     cProfile.runctx("self._target(*self._args, **self._kwargs)", globals_dict, locals_dict, filename=str(profile_filename))
                 else:
                     self._target(*self._args, **self._kwargs)
-        except BaseException as e:
-            self.log.error("Error thrown in thread: %s", self.name)
-            self.log.exception(e)
-            # self.exc = e
-            raise e
+        except BaseException as ex:
+            self.log.exception("Error thrown in thread: %s (%s)", self.name, ex)
+            self.exception = ex
+            # self.exc = ex
+            raise ex
         finally:
             # Avoid a refcycle if the thread is running a function with
             # an argument that has a member that points to the thread.
+            if Config.LOG_THREADING:
+                self.log.info("Stopping Thread: %s", self.name)
             del self._target, self._args, self._kwargs

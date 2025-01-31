@@ -1,0 +1,48 @@
+<!-- XY Control -->
+<div class="container xy">
+    <div class="row top-buffer">
+        <div class="col-9">
+            <h3>XY Stage Controls</h3>
+        </div>
+        <div class="col-3">
+            <button type="button" class="btn btn-outline-info btn-block" id="xy-home-btn">Home</button>
+        </div>
+    </div>
+    {% for axis in manual_controls_data['xy_stage'] %}
+    <div class="container" aria-label="{{ axis }}">
+        <div class="row">
+            <div class="col-3">
+                <h5>{{ axis|capitalize }}</h5>
+            </div>
+            <div class="col-2">
+                <h5 class="col text-right" id='xy-{{ axis }}-state'>---</h5>
+            </div>
+            <div class="col-7">
+                <input class="form-control xy-cntrl-txt" type="text" placeholder="Position (um)">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3" id='xy-{{ axis }}-limits' style="color:gray;">
+                Limits: ---, ---
+            </div>
+            <div class="col-9 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-info xy-cntrl-btn">-10000</button>
+                    <button type="button" class="btn btn-outline-info xy-cntrl-btn">-1000</button>
+                    <button type="button" class="btn btn-outline-info xy-cntrl-btn">-100</button>
+                    <button type="button" class="btn btn-outline-info xy-cntrl-btn">-10</button>
+                    <button type="button" class="btn btn-outline-info xy-cntrl-btn">-1</button>
+                    <button type="button" class="btn btn-outline-info xy-cntrl-btn">1</button>
+                    <button type="button" class="btn btn-outline-info xy-cntrl-btn">10</button>
+                    <button type="button" class="btn btn-outline-info xy-cntrl-btn">100</button>
+                    <button type="button" class="btn btn-outline-info xy-cntrl-btn">1000</button>
+                    <button type="button" class="btn btn-outline-info xy-cntrl-btn">10000</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {% endfor %}
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='generic_drivers/xy_stage/xy_stage_snip.js') }}"></script>

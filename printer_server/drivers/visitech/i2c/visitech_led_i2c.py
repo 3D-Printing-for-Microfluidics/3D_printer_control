@@ -369,18 +369,18 @@ class Visitech_LED_I2C:
             self.logger.log(lvl, msg)
         except AttributeError:
             if lvl >= self.verbosity:
-                print(msg)
+                print(f"{msg}")
 
 
 if __name__ == "__main__":
     led = Visitech_LED_I2C(verbosity=logging.DEBUG)
-    print(led.get_all_status())
+    print(f"{led.get_all_status()}")
     led.load_defaults()
     led.set_amplitude(100)
-    print(led.get_amplitude())
+    print(f"{led.get_amplitude()}")
     led.set_amplitude(50)
-    print(led.get_amplitude())
+    print(f"{led.get_amplitude()}")
     led.set_amplitude(77)
-    print(led.get_amplitude())
-    print(led.get_all_status())
+    print(f"{led.get_amplitude()}")
+    print(f"{led.get_all_status()}")
     led.stress_test_i2c(10)

@@ -12,7 +12,7 @@ import usb.util
 # Generate specified number of random RGB bmp images (blue channel random only)
 def generateRandomRBGImages(number, resolution=(1920, 1080)):
     for imgNum in range(number):
-        print("Generating image", imgNum)
+        print(f"Generating image {imgNum}")
 
         img = Image.new("RGB", resolution, "black")  # create a new black image
         pixels = img.load()  # create the pixel map
@@ -24,13 +24,13 @@ def generateRandomRBGImages(number, resolution=(1920, 1080)):
 
         filename = "random%s_rgb.bmp" % imgNum
         img.save(filename)
-        print("Saved", filename)
+        print(f"Saved {filename}")
 
 
 # Generate specified number of random greyscale bmp images (L instead of RGB)
 def generateRandomBWImages(number, resolution=(1920, 1080)):
     for imgNum in range(number):
-        print("Generating image", imgNum)
+        print(f"Generating image {imgNum}")
 
         img = Image.new("L", resolution, 0)  # create a new black image
         pixels = img.load()  # create the pixel map
@@ -42,7 +42,7 @@ def generateRandomBWImages(number, resolution=(1920, 1080)):
 
         filename = "random%s_bw.bmp" % imgNum
         img.save(filename)
-        print("Saved", filename)
+        print(f"Saved {filename}")
 
 
 # Convert a number into a bit string of given length
@@ -71,7 +71,7 @@ def bitsToBytes(bitString):
 def encode(image):
     #  header creation
 
-    # print("encode...")
+    # print(f"encode...")
     bytecount = 48
     bitstring = []
 
@@ -118,7 +118,7 @@ def encode(image):
 
     while i < 1080:
         while j < 1920:
-            # print("             encoding column", j)
+            # print(f"             encoding column {j}")
             if i > 0 and numpy.all(image[i, j, :] == image[i - 1, j, :]):
                 while j < 1920 and numpy.all(image[i, j, :] == image[i - 1, j, :]):
                     n = n + 1
@@ -230,7 +230,7 @@ def encode(image):
 
     size = bytecount
 
-    # print(size)
+    # print(f"{size}")
 
     # update size that was previously set to 0
     total = numToBits(size, 32)
@@ -253,7 +253,7 @@ def test():
     for i in range(10):
         # filename = "random%s.bmp" % i
         filename = "projector/images/new1.bmp"
-        print("encoding %s..." % filename)
+        print(f"encoding {filename}...")
         images.append(filename)
 
         with open(filename, "rb") as imageFile:
@@ -271,23 +271,23 @@ def test():
         newSizes.append(size)
         compressionRatios.append(oldSizes[i] / size)
 
-        print(" Old size:", oldSizes[i])
-        print(" New size:", newSizes[i])
-        print(" Compression ratio", compressionRatios[i])
-        print(" Time to compress:", durations[i])
+        print(f" Old size: {oldSizes[i]}")
+        print(f" New size: {newSizes[i]}")
+        print(f" Compression ratio {compressionRatios[i]}")
+        print(f" Time to compress: {durations[i]}")
 
     for i in range(10):
-        print(images[i])
-        print(" Old size:", oldSizes[i])
-        print(" New size:", newSizes[i])
-        print(" Compression ratio", compressionRatios[i])
-        print(" Time to compress:", durations[i])
+        print(f"{images[i]}")
+        print(f" Old size: {oldSizes[i]}")
+        print(f" New size: {newSizes[i]}")
+        print(f" Compression ratio {compressionRatios[i]}")
+        print(f" Time to compress: {durations[i]}")
 
-    print("Averages:")
-    print(" Average old size:", sum(oldSizes) / len(oldSizes))
-    print(" Average new size:", sum(newSizes) / len(newSizes))
-    print(" Average compression ratio:", sum(compressionRatios) / len(compressionRatios))
-    print(" Average time to compress:", sum(durations) / len(durations))
+    print(f"Averages:")
+    print(f" Average old size: {sum(oldSizes) / len(oldSizes)}")
+    print(f" Average new size: {sum(newSizes) / len(newSizes)}")
+    print(f" Average compression ratio: {sum(compressionRatios) / len(compressionRatios)}")
+    print(f" Average time to compress: {sum(durations) / len(durations)}")
 
 
 """
@@ -295,7 +295,7 @@ def test():
 
     # see 2.4.4.4.1 "Initialize Pattern BMP Load" in programmer's guide
     def setBmp(self,index,size):
-        print("set bmp...")
+        print(f"set bmp...")
         payload=[]
 
         index=numToBits(index,5)
@@ -318,7 +318,7 @@ def test():
         #   max  hid package size=64, flag bytes=4, usb command bytes=2
         #   size of package description bytes=2. 64-4-2-2=56
 
-        print("Load bmp...")
+        print(f"Load bmp...")
         t=time.clock()
 
         packnum=size//504+1
@@ -327,7 +327,7 @@ def test():
 
         for i in range(packnum):
             if i %100==0:
-                print(i,packnum)
+                print(f"{i},{packnum}")
             payload=[]
             if i<packnum-1:
                 leng=numToBits(504,16)
@@ -344,14 +344,14 @@ def test():
             self.send('w', 0x1a2b, payload, sequenceByte=0x11)
 
 
-        print(time.clock()-t)
+        print(f"{time.clock()-t}")
         self.checkAllStatus()
 
     def sendBmp(self,image,exp,rep=1):
 
             self.stopSequence()
 
-            print("Send bmp...")
+            print(f"Send bmp...")
 
             oldLen = 0
 
@@ -368,7 +368,7 @@ def test():
 
             elapsedTime = time.clock() - t
 
-            print("%s seconds, %s bytes before, %s bytes after, compression ratio of %s" % (str(elapsedTime), str(oldLen), str(size), str(oldLen/size)))
+            print(f"{str(elapsedTime)} seconds, {str(oldLen)} bytes before, {str(size)} bytes after, compression ratio of {str(oldLen/size)}")
 
             self.define_pattern(exp)
             self.configure_pattern_LUT(rep)
@@ -376,7 +376,7 @@ def test():
             # size = len(barray)
 
             self.setBmp(0,size)
-            print('uploading...')
+            print(f"uploading...")
             self.loadBmp(barray,size)
 
 """

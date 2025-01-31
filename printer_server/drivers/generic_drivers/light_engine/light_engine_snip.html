@@ -1,0 +1,75 @@
+<!-- Light Engine Control -->
+{% for light_engine in manual_controls_data['light_engines'].keys() %}
+<div class="container top-buffer {{ light_engine }}">
+    <div class="row">
+        <div class="col-10">
+            <h3>{{ light_engine|capitalize }}</h3>
+        </div>
+    </div>
+
+    {% if manual_controls_data["light_engines"][light_engine]['dual_led'] %}
+    <!-- LED section (dual led) -->
+    <div class="row">
+        <div class="col-4">
+            <h5>LED</h5>
+        </div>
+        <div class="col-7">
+            <div class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                <label class="btn btn-outline-info btn-fixed-width shadow-none active"><input type="radio">{{
+                    manual_controls_data["light_engines"][light_engine]['leds_nm'][0] }}</label>
+                <label class="btn btn-outline-info btn-fixed-width shadow-none" id="led_1"><input type="radio">{{
+                    manual_controls_data["light_engines"][light_engine]['leds_nm'][1] }}</label>
+            </div>
+        </div>
+        <div class="col-1">
+            <h5>nm</h5>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- LED Power -->
+    <div class="row">
+        <h5 class="col-3 text-left">LED Power</h5>
+        <h5 class="col-1 text-left" id="{{ light_engine }}-led-power-label"></h5>
+        <div class="slidecontainer col-8"><input type="range" min="1" max="200" value="100" class="slider"
+                id="{{ light_engine }}-led-power-slider"></div>
+    </div>
+
+    <!-- Repeat and Exposure Time -->
+    <div class="row">
+        <h5 class="col-4 text-left">Exposure</h5>
+        <div class="col-2 form-group text-center">
+            <input class="form-check-input" type="checkbox" value="" id="{{ light_engine }}-repeat-chkbx">
+            <label class="form-check-label" for="{{ light_engine }}-repeat-chkbx">Repeat</label>
+        </div>
+        <div class="col-6 form-group">
+            <input class="form-control" type="text" id="{{ light_engine }}-exposure-txt" placeholder="Exposure Time (ms)">
+            <div class="invalid-feedback">
+                Please provide an integer greater than zero.
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Stop -->
+    <div class="row">
+        <h5 class="col-4">Project</h5>
+        <div class="col-2"><button type="button"
+                class="btn btn-outline-warning invisible disabled"
+                id="{{ light_engine }}-status">LED ON</button></div>
+        <div class="col-3"><button type="button" class="btn btn-outline-info btn-block"
+                id="{{ light_engine }}-start-btn">Start</button>
+        </div>
+        <div class="col-3"><button type="button" class="btn btn-outline-info btn-block"
+                id="{{ light_engine }}-stop-btn">Stop</button>
+        </div>
+    </div>
+
+</div>
+
+{% if not loop.last %}
+    <hr class="bg-secondary">
+{% endif %}
+
+{% endfor %}
+
+<script src="{{ url_for('manual_controls.static', filename='generic_drivers/light_engine/light_engine_snip.js') }}"></script>

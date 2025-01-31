@@ -25,7 +25,7 @@ class User(SurrogatePK, Model):
     __tablename__ = "Users"
     username = Column(db.String(80), unique=True, nullable=False)
     email = Column(db.String(80), unique=True, nullable=False)
-    password = Column(db.Binary(128), nullable=True)  #: The hashed password
+    password = Column(db.LargeBinary(128), nullable=True)  #: The hashed password
     created_at = Column(db.DateTime, nullable=False, default=datetime.now)
     first_name = Column(db.String(30), nullable=True)
     last_name = Column(db.String(30), nullable=True)
@@ -115,7 +115,7 @@ class PrintQueue(SurrogatePK, Model):
                 log.info("Removing orphaned queue zip: {}".format(entry))
                 os.remove(entry)
             except FileNotFoundError:
-                log.warn("Error: Failed to remove zip")
+                log.warning("Error: Failed to remove zip")
 
 
 class PrintRecord(SurrogatePK, Model):
@@ -199,7 +199,7 @@ class PrintRecord(SurrogatePK, Model):
                 log.info("Removing orphaned print_history zip: {}".format(entry))
                 os.remove(entry)
             except FileNotFoundError:
-                log.warn("Error: Failed to remove zip")
+                log.warning("Error: Failed to remove zip")
 
     def remove_old_jobs(self):
         MAX_ENTRIES = 500

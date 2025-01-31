@@ -151,7 +151,7 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='lib/ajax-socket.io-2.1.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/ajax-socket.io-4.7.5.min.js') }}"></script>
 <script> var print_history_url = "{{ url_for('print_history.index') }}" </script>
 <script src="{{ url_for('static', filename='print_history.js') }}"></script>
 {% endblock %}

@@ -4,9 +4,9 @@ from PIL import Image
 from pathlib import Path
 
 from printer_server.threading_wrapper import Thread
-from printer_server.hardware_configuration import driver_handles
-from printer_server.printer_control.print_control import PrintControl, run_in_thread
-from printer_server.views.manual_controls import (
+from printer_server.hardware_configuration.hardware_configuration import driver_handles
+from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
+from printer_server.views.calibration import (
     get_last_calibration_positions_from_logs,
 )
 
@@ -54,51 +54,60 @@ class FocusControl(PrintControl):
         super().__init__()
         self.focus_stage = driver_handles.focus_stage
         self.defocus_um = None
+        self.previous_defocus = None
 
     def create_logs(self):
         super().create_logs()
-        self.focus_stage.setup_log_file(str(self.current_job))
-
-    def get_focus(self):
-        """Return 'Focus' axis position in um"""
-        return int(
-            self.focus_stage.getFocusPosition() * 1000
-        )
+        self.focus_stage.setup_log_file(str(self.current_job / "logs"))
 
     def connect_hardware(self):
-        self.focus_thread = Thread(log, name="focus_control_setup_thread", target=self.focus_stage.connect, args=[self.shutdown])
+        self.focus_thread = Thread(log, name="focus_control_connect_thread", target=self.focus_stage.connect)
         self.focus_thread.start()
         super().connect_hardware()
         self.focus_thread.join()
-        if not self.focus_stage.connected:
+        if not self.focus_stage.connected or self.focus_thread.exception is not None:
             log.error("Focus stage failed to connect!")
-            self.all_hardware_connected = False
+            self.failed_hardware["Focus Stage"] = self.focus_stage
 
-    def initalize_hardware(self):
+    def initialize_hardware(self):
         if self.coord_systems is not None:
-            self.focused_position = self.coord_systems["visitech"]["Focus"]
+            self.focus = self.coord_systems["parked"]["Focus"]
         else:
-            self.focused_position = get_last_calibration_positions_from_logs().get("distance",0) / 1000
-        self.focus_thread = self.focus_stage.initialize_and_positionFocus(self.focused_position)
-        super().initalize_hardware()
-        if self.focus_thread is not None:
-            self.focus_thread.join()
-        self.focus_stage.initialized = True
+            self.focus = get_last_calibration_positions_from_logs().get("focus",0) / 1000
+        self.focus_thread = Thread(log, name="focus_control_init_thread", target=self.focus_stage.initialize_and_positionFocus, args=[self.focus])
+        self.focus_thread.start()
+        super().initialize_hardware()
+        self.focus_thread.join()
+        if self.focus_thread.exception is not None:
+            log.error("Focus stage failed to initialize!")
+            self.failed_hardware["Focus Stage"] = self.focus_stage
+
+    def get_focus(self):
+        """Return 'Focus' axis position in um"""
+        try:
+            return int(
+                self.focus_stage.getFocusPosition() * 1000
+            )
+        except Exception as ex:
+            log.critical("Unable to communicate with focus stage (%s)", ex, exc_info=True)
+            self.failed_hardware["Focus Stage"] = self.focus_stage
+            raise PrintingException()
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarization_step_1(self):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
+            try:
+                self.focus_stage.logging_start()
+            except Exception as ex:
+                log.critical("Unable to communicate with focus stage (%s)", ex, exc_info=True)
+                self.failed_hardware["Focus Stage"] = self.focus_stage
+                raise PrintingException()
             super().planarization_step_1()
-            self.focus_stage.logging_start()
-
-    def post_print_tasks(self):
-        super().post_print_tasks()
-        self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position, join=False)
-        if self.focus_thread is not None:
-            self.focus_thread.join()
+            
 
     def get_exposure_defocus(self, settings, light_engine):
+        self.previous_defocus = self.defocus_um
         self.defocus_um = settings["Relative focus position (um)"]
 
     def pre_exposure_tasks(self, settings, light_engine):
@@ -108,25 +117,40 @@ class FocusControl(PrintControl):
         if need_to_shift_image:
             self.image = shift_image(self.image, x=um_to_px(self.defocus_um))
         
-        if self.defocus_um != 0:
-            self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focused_position + self.defocus_um/1000, join=False)
+        if self.defocus_um != self.previous_defocus:
+            self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focus + self.defocus_um/1000, join=False)
         return super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, light_engine):
         """Join Focus threads"""
-        if self.defocus_um != 0:
+        if self.defocus_um != self.previous_defocus:
             if self.focus_thread is not None:
                 self.focus_thread.join()
+                if self.focus_thread.exception is not None:
+                    log.critical("Unable to move focus stage")
+                    self.failed_hardware["Focus Stage"] = self.focus_stage
+                    raise PrintingException()
         return super().pre_exposure_joins(light_engine)
 
-    def post_exposure_tasks(self, light_engine, msg):
-        """If layer is defocused, return KDC to focus position"""
-        # fix focus if this exposure was defocused
-        if self.defocus_um != 0:
-            self.focus_stage.threadedFocusMove(log, self.focused_position, join=True)
-        super().post_exposure_tasks(light_engine, msg)
+    def post_print_tasks(self):
+        super().post_print_tasks()
+        self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focus, join=False)
+            
+    def post_print_joins(self):
+        if self.focus_thread is not None:
+            self.focus_thread.join()
+            if self.focus_thread.exception is not None:
+                log.critical("Unable to move focus stage")
+                self.failed_hardware["Focus Stage"] = self.focus_stage
+                raise PrintingException()
+        return super().post_print_joins()
 
     def finish_print(self):
-        self.focus_stage.logging_stop()
-        self.focus_stage.setup_log_file(None)
+        try:
+            self.focus_stage.logging_stop()
+            self.focus_stage.setup_log_file(None)
+        except Exception as ex:
+            log.critical("Unable to communicate with focus stage (%s)", ex, exc_info=True)
+            self.failed_hardware["Focus Stage"] = self.focus_stage
+            raise PrintingException()
         super().finish_print()
