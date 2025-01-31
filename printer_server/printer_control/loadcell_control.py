@@ -221,6 +221,9 @@ class LoadcellControl(PrintControl):
         backup_path = Path(Config.UPLOAD_FOLDER)/"planarization_log.backup"
         if os.path.exists(self.loadcell_planarization_log):
             shutil.move(self.loadcell_planarization_log, backup_path)
+        
+        # for HR5 vacuum we need to redo step 3
+        self.planarization_step_3()
         super().start(job_id)
 
         # restore planarization log
