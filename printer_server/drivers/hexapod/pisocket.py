@@ -133,10 +133,10 @@ class PISocket(PIGateway):
         with self.sendLock:
             if not pidevice.HasIsControllerReady():
                 return
-            maxtime = time.time() + timeout
+            maxtime = time.monotonic() + timeout
             ready = pidevice.IsControllerReady()
         while not ready:
-            if time.time() > maxtime:
+            if time.monotonic() > maxtime:
                 raise SystemError('waitonready() timed out after %.1f seconds' % timeout)
             time.sleep(polldelay)
             with self.sendLock:
@@ -153,11 +153,11 @@ class PISocket(PIGateway):
         with self.sendLock:
             servo = pitools.getservo(pidevice, axes)
             axes = [x for x in axes if servo[x]]
-            maxtime = time.time() + timeout
+            maxtime = time.monotonic() + timeout
             ontarget = pitools.ontarget(pidevice, axes)
         while not all(list(ontarget.values())):
         # while not all(list(pitools._get_closed_loop_on_target(axes, throwonaxiserror=True).values())):
-            if time.time() > maxtime:
+            if time.monotonic() > maxtime:
                 raise SystemError('waitontarget() timed out after %.1f seconds' % timeout)
             time.sleep(polldelay)
             with self.sendLock:

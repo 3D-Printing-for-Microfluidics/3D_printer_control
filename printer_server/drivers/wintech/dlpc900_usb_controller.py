@@ -488,10 +488,10 @@ class DLPC900_USB_Controller:
         in seconds.
         """
         self.log.debug("Wait for video lock")
-        start_time = time.time()
+        start_time = time.monotonic()
         while not is_set(self.get_main_status(), 3):
             time.sleep(0.5)
-            if time.time() - start_time >= timeout:
+            if time.monotonic() - start_time >= timeout:
                 self.log.warning("Wait for video lock timed out.")
                 self.get_main_status()
                 return

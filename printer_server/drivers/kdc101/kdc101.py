@@ -414,8 +414,8 @@ class KDC101(USBSerial, FocusStageDriver): # TTRStageDriver
         for axis in self.axes:
             a = self.convertAxis(axis)
             if not self.homed[a]:
-                start = time.time()
-                while (self.homed[a] != True) and (time.time()-start < 60): # 60 second timeout
+                start = time.monotonic()
+                while (self.homed[a] != True) and (time.monotonic()-start < 60): # 60 second timeout
                     time.sleep(0.1)
 
                 if self.homed[a] != True:
@@ -508,8 +508,8 @@ class KDC101(USBSerial, FocusStageDriver): # TTRStageDriver
         return self.getPosition(axis=a)
     
     def confirmMoveFinished(self, timeout=30, axis=None):
-        start = time.time()
-        while (self.moving[axis] == True) and (time.time()-start < timeout):
+        start = time.monotonic()
+        while (self.moving[axis] == True) and (time.monotonic()-start < timeout):
             time.sleep(0.1)
 
         if self.moving[axis] == True:
