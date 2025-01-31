@@ -20,6 +20,7 @@ class Wintech(LightEngineDriver):
         self.repeats = 1
         self.exposure_time = 0
         self.led_on = False
+        self.led = 0
 
         if dummy:
             self.dmd_controller = DLPC900_USB_Controller_dummy(log_level=self.log_level)
@@ -68,7 +69,7 @@ class Wintech(LightEngineDriver):
             "led_driver_status2": "",
         }
 
-    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
+    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, is_grayscale_corrected=False, led_num=0):
         """
         Setup an exposure.
             exposure_time_ms - exposure time in milliseconds

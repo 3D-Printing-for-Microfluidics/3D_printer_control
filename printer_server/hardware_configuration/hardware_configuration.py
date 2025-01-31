@@ -143,15 +143,10 @@ class Printer3D:
             from printer_server.drivers.screen import ScreenThread
 
             config_dict["screen"]["light_engines"] = config_dict["light_engines"]
-
-            resolutions = []
-            for light_engine in config_dict["light_engines"]:
-                resolution = config_dict[light_engine]["resolution"]
-                resolutions.append(tuple(resolution))
-            resolutions.append(None)
+            for le in config_dict["light_engines"]:
+                config_dict["screen"][le] = config_dict[le]
 
             self.screen = ScreenThread(
-                resolutions=tuple(resolutions),
                 config_dict=config_dict["screen"],
                 log_level=default_log_level,
             )

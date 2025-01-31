@@ -218,6 +218,16 @@
                             "default": "png",
                             "description": "Default image file"
                         },
+                        "Do light grayscale correction": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Should the printer apply a grayscale irradiance correction to the white values of this image?"
+                        },
+                        "Do dark grayscale correction": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Should the printer apply a grayscale irradiance correction to the dark values of this image?"
+                        },
                         "Layer exposure time (ms)": {
                             "type": "number",
                             "minimum": 0,
@@ -469,6 +479,16 @@
                     "type": "string",
                     "default": "png",
                     "description": "Default image file"
+                },
+                "Do light grayscale correction": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should the printer apply a grayscale irradiance correction to the white values of this image?"
+                },
+                "Do dark grayscale correction": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should the printer apply a grayscale irradiance correction to the dark values of this image?"
                 },
                 "Layer exposure time (ms)": {
                     "type": "number",

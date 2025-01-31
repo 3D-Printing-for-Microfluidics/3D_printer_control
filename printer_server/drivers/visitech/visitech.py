@@ -84,7 +84,9 @@ class Visitech(EthernetSerial, LightEngineDriver):
         self.repeats = 1
         self.exposure_time = 0
         self.led_on = False
+        self.led = 0
         self.is_idle = False
+        self.config_dict = config_dict
         self.dual_led = config_dict["dual_led"]
         self.leds = config_dict["leds_nm"]
         self.suppress_ocp_error = False
@@ -792,8 +794,11 @@ class Visitech(EthernetSerial, LightEngineDriver):
             dict["led_driver_temp2"] = self.get_led_driver_board_temp(led_num=1)
             dict["led_driver_status2"] = self.get_led_driver_status(led_num=1)
         return dict
+    
+    def getCurrentLed(self):
+        return self.led
 
-    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
+    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, is_grayscale_corrected=False, led_num=0):
         """
         Setup an exposure.
             exposure_time_ms - exposure time in milliseconds
@@ -803,7 +808,13 @@ class Visitech(EthernetSerial, LightEngineDriver):
         self.exposure_time = exposure_time_ms
         self.led_power = led_power
         self.repeats = repeat
-        self.led = self.leds[led_num]
+        self.led = led_num
+
+        if is_grayscale_corrected:
+            self.normalization_factor = self.config_dict["grayscale_normalization_factor"][led_num]
+        else:
+            self.normalization_factor = self.config_dict["normalization_factor"][led_num]
+        self.set_normalization_factor(self.normalization_factor, led_num=led_num)
 
         if self.dual_led:
             if led_num == 0:
@@ -852,28 +863,37 @@ class Visitech(EthernetSerial, LightEngineDriver):
         self.led_on = True
         if self.repeats == 0:
             self.log.info(
-                "Exposing %s at a power of %s indefinatly",
-                self.led,
-                self.led_power
+                "Exposing %s nm at a power of %s and normalization of %s indefinatly",
+                self.leds[self.led],
+                self.led_power,
+                self.normalization_factor
             )
             self.start_sequencer()
         else:
             if self.exposure_time != 0:
                 self.log.info(
-                    "Exposing %s for %s ms at a power of %s",
-                    self.led,
+                    "Exposing %s nm for %s ms at a power of %s and normalization of %s",
+                    self.leds[self.led],
                     self.exposure_time,
-                    self.led_power
+                    self.led_power,
+                    self.normalization_factor
                 )
                 self.start_sequencer()
                 time.sleep(self.exposure_time * 1e-3)
             self.led_on = False
 
-    def project(self, exposure, power, repeats=1, led_num=0):
+    def project(self, exposure, power, is_grayscale_corrected=False, repeats=1, led_num=0):
         """
         Call all of the necessary methods to project an image, and block
         until projection is complete.
         """
+
+        if is_grayscale_corrected:
+            normalization_factor = self.config_dict["grayscale_normalization_factor"][led_num]
+        else:
+            normalization_factor = self.config_dict["normalization_factor"][led_num]
+        self.set_normalization_factor(normalization_factor, led_num=led_num)
+
 
         if self.dual_led:
             if led_num == 0:
@@ -887,9 +907,10 @@ class Visitech(EthernetSerial, LightEngineDriver):
         self.led_on = True
         if repeats == 0:  # if continuous display is desired
             self.log.info(
-                "Exposing %s at a power of %s indefinatly",
+                "Exposing %s at a power of %s and normalization of %s indefinatly",
                 self.leds[led_num],
-                power
+                power,
+                normalization_factor
             )
             # this provides the minimum blanking of 233 us of the full 33333 us cycle
             # (at 30Hz on HDMI)
@@ -898,10 +919,11 @@ class Visitech(EthernetSerial, LightEngineDriver):
             self.start_sequencer()  # sequencer will be stopped on program exit
         else:  # normal display is desired
             self.log.info(
-                "Exposing %s for %s ms at a power of %s",
+                "Exposing %s for %s ms at a power of %s and normalization of %s",
                 self.leds[led_num],
                 exposure,
-                power
+                power,
+                normalization_factor
             )
             for t in self.split_exposure_time(exposure):
                 # the TI board expects exposure in microseconds

@@ -23,7 +23,10 @@ class LightEngineDriver:
     def read_all_status(self, warn="ALL"):
         log.warning("Function not implemented. Using abstract LightEngineDriver class")
 
-    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
+    def getCurrentLed(self):
+        return 0
+
+    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, is_grayscale_corrected=False, led_num=0):
         log.warning("Function not implemented. Using abstract LightEngineDriver class")
 
     def perform_exposure(self):

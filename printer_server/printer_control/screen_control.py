@@ -28,15 +28,20 @@ class ScreenControl(PrintControl):
     def pre_exposure_tasks(self, settings, light_engine):
         from printer_server.printer_control.light_engine_control import parseJSONLightEngine
         le, led = parseJSONLightEngine(light_engine)
-        screen_index = self.screen.getScreenNumber(le)
+
+        light_corrected = settings.get("Do light grayscale correction", False)
+        dark_corrected = settings.get("Do dark grayscale correction", False)
+        self.screen.setCorrectionEnable(light_corrected, dark_corrected, light_engine=le)
 
         self.screen_thread = Thread(
-            log, name="screen_control_draw_thread", target=self.screen.draw, args=[self.image], kwargs={"screen": screen_index}
+            log, name="screen_control_draw_thread", target=self.screen.draw, args=[self.image], kwargs={"light_engine": light_engine, "led_num": led}
         )
         self.screen_thread.start()
         super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, light_engine):
+        from printer_server.printer_control.light_engine_control import parseJSONLightEngine
+        le, led = parseJSONLightEngine(light_engine)
         self.screen_thread.join()
         if self.screen_thread.exception is not None:
             log.critical("Unable draw to screen")
@@ -44,17 +49,18 @@ class ScreenControl(PrintControl):
             raise PrintingException()
         update_screen_preview(
             light_engine, 
-            self.screen.fetch_preview(self.screen.getScreenNumber(light_engine))
+            self.screen.fetch_preview(le)
         )
         return super().pre_exposure_joins(light_engine)
     
     def screen_post_print_tasks(self):
-        for i in range(len(self.screen.light_engines)):
+        for le in self.screen.light_engines:
             try:
-                self.screen.clear(screen=i)
+                self.screen.clear(le)
+                self.screen.setCorrectionEnable(False, False, light_engine=le)
                 update_screen_preview(
-                    self.screen.light_engines[i], 
-                    self.screen.fetch_preview(i)
+                    le, 
+                    self.screen.fetch_preview(le)
                 )
             except Exception as ex:
                 log.critical("Unable clear screen (%s)", ex, exc_info=True)

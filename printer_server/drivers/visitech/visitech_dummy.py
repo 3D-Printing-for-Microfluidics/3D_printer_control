@@ -232,8 +232,13 @@ class Visitech_dummy(LightEngineDriver):
         return status
 
     @dummy_log
-    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
+    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, is_grayscale_corrected=False, led_num=0):
         self.exposure_time = exposure_time_ms
+
+        # if is_grayscale_corrected:
+        #     self.set_normalization_factor(self.config_dict["grayscale_normalization_factor"][led_num])
+        # else:
+        #     self.set_normalization_factor(self.config_dict["normalization_factor"][led_num])
 
         if self.dual_led:
             if led_num == 0:

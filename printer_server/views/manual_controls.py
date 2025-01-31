@@ -133,7 +133,10 @@ if "photodiode" in config_dict.keys():
 if "screen" in config_dict.keys():
     import printer_server.drivers.screen.screen_snip
     on_load_f_init.append(
-        printer_server.drivers.screen.screen_snip.fetch_previews
+        printer_server.drivers.screen.screen_snip.screenLoad
+    )
+    on_load_f_init.append(
+        printer_server.drivers.screen.screen_snip.screenFetchPreviews
     )
 
 if "spectrometer" in config_dict.keys():
