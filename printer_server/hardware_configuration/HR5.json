@@ -64,9 +64,9 @@
             "2": 100
         },
         "axes_tolerance_um": {
-            "0": 0.1,
-            "1": 0.1,
-            "2": 0.1
+            "0": 0.25,
+            "1": 0.25,
+            "2": 0.25
         },
         "axes_speed": {
             "0": 50,
@@ -86,7 +86,7 @@
         "calibration_limits": {
             "0": [null,null],
             "1": [null,null],
-            "2": [null,27.8625]
+            "2": [null,26.000]
         },
         "calibration_position": 0,
         "bottom_position": 27.5,
@@ -141,7 +141,7 @@
                 "mode": "manual"
             }
         }
-        },
+    },
     "mks_teensy": {
         "dummy": false,
         "vendor_id": 5824,
@@ -245,10 +245,10 @@
             "20241202-XU19030146-dark.png"
         ],
         "normalization_factor": [
-            0.593
+            0.70
         ],
         "grayscale_normalization_factor": [
-            0.663
+            0.79
         ]
     }
 }
