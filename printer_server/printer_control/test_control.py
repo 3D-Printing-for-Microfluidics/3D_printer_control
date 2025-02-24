@@ -765,7 +765,7 @@ class TestControl(PrintControl):
             async_file_hander.write(self.test_log, f"{t},")
 
             # Get Photodiode power
-            async_file_hander.write(self.test_log, f"{self.keyence.read_sensor("visitech")},")
+            async_file_hander.write(self.test_log, f"{self.keyence.read_sensor('visitech')},")
             async_file_hander.write(self.test_log, f"{x_position:.3f},{y_position:.3f},")
             async_file_hander.write(self.test_log, f"\n")
 
