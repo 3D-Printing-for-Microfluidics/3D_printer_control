@@ -716,7 +716,7 @@ class TestControl(PrintControl):
             self.light_engines[self.light_engine].stop_sequencer()
 
 
-    def measure_keyence_line(self, step_size=0.15, sample_rate_hz=80, scan_length_mm=25):
+    def measure_keyence_line(self, step_size=0.15, sample_rate_hz=80, scan_length_mm=25, number_of_scans=3, scan_spacing_mm=2.0):
         if self.printing_stopped.is_set():
             return
         ################ Step ################
@@ -729,57 +729,61 @@ class TestControl(PrintControl):
         x_size = scan_length_mm
         x_keyence_offset = self.coord_systems["keyence_visitech"]["X"]
         y_keyence_offset = self.coord_systems["keyence_visitech"]["Y"]
-        x_pos_sweep = self.coord_systems["keyence_visitech"]["X"] - x_size/2 - step_size
+        x_pos_sweep = x_keyence_offset - x_size/2 - step_size
         x_range = round((x_size+2*step_size)/step_size) + 1
         x_set = []
+        y_set = []
         for x in range(x_range):
             x_set.append(x_pos_sweep+x*step_size)
+        for y in range(number_of_scans):
+            y_set.append(y_keyence_offset - number_of_scans*scan_spacing_mm/2 + y*scan_spacing_mm)
 
         # Move to x start
-        self.xy_stage.threadedXYMove(log, x_pos_sweep, y_keyence_offset, join=True)
+        self.xy_stage.threadedXYMove(log, x_set[0], y_set[0], join=True)
                     
-        for x_index, x in enumerate(x_set):
-            self.xy_stage.threadedXYMove(
-                log, 
-                x,
-                y_keyence_offset,
-                speed_x=50,
-                speed_y=50,
-                acceleration_x=100,
-                acceleration_y=100, 
-                join=True
-            )
+        for y_index, y in enumerate(y_set):
+            for x_index, x in enumerate(x_set):
+                self.xy_stage.threadedXYMove(
+                    log, 
+                    x,
+                    y,
+                    speed_x=50,
+                    speed_y=50,
+                    acceleration_x=100,
+                    acceleration_y=100, 
+                    join=True
+                )
 
-            # Wait
-            time.sleep(0.1)
+                # Wait
+                time.sleep(0.1)
 
-            # Get Position
-            x_position = self.xy_stage.getXYPosition(axis="X")
-            y_position = self.xy_stage.getXYPosition(axis="Y")
-            x_position -= x_keyence_offset
-            y_position -= y_keyence_offset
+                # Get Position
+                x_position = self.xy_stage.getXYPosition(axis="X")
+                y_position = self.xy_stage.getXYPosition(axis="Y")
+                x_position -= x_keyence_offset
+                y_position -= y_keyence_offset
 
-            # Log measurements
-            # Start time
-            t = datetime.now() - self.print_start_time 
-            async_file_hander.write(self.test_log, f"{t},")
+                # Log measurements
+                # Start time
+                t = datetime.now() - self.print_start_time 
+                async_file_hander.write(self.test_log, f"{t},")
 
-            # Get Photodiode power
-            async_file_hander.write(self.test_log, f"{self.keyence.read_sensor('visitech')},")
-            async_file_hander.write(self.test_log, f"{x_position:.3f},{y_position:.3f},")
-            async_file_hander.write(self.test_log, f"\n")
+                # Get Photodiode power
+                async_file_hander.write(self.test_log, f"{self.keyence.read_sensor('visitech')},")
+                async_file_hander.write(self.test_log, f"{x_position:.3f},{y_position:.3f},")
+                async_file_hander.write(self.test_log, f"\n")
 
-            # Wait
-            time.sleep(0.1)
+                # Wait
+                time.sleep(0.1)
 
-            if self.printing_stopped.is_set():
-                return
+                if self.printing_stopped.is_set():
+                    return
 
-            msg = {
-                "percent": int(100 * (x_index+1) / (len(x_set))),
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-            }
-            home.update_printer_state("print progress", msg)
+                msg = {
+                    "percent": int(100 * (len(x_set)*y_index+x_index+1) / (len(x_set)*len(y_set))),
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                }
+                home.update_printer_state("print progress", msg)
 
     def createCorrectionImage(self):
         import pandas as pd
