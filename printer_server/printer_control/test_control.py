@@ -736,7 +736,7 @@ class TestControl(PrintControl):
         for x in range(x_range):
             x_set.append(x_pos_sweep+x*step_size)
         for y in range(number_of_scans):
-            y_set.append(y_keyence_offset - number_of_scans*scan_spacing_mm/2 + y*scan_spacing_mm)
+            y_set.append(y_keyence_offset - (number_of_scans-1)*scan_spacing_mm/2 + y*scan_spacing_mm)
 
         # Move to x start
         self.xy_stage.threadedXYMove(log, x_set[0], y_set[0], join=True)
