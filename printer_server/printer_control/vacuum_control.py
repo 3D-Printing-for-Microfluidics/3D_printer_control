@@ -144,7 +144,7 @@ class VacuumControl(PrintControl):
             self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent2"), True)
             self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), False)
             self.mks.set_relay_mode(relay_num, "CLEAR")
-            for _ in range(150):
+            for _ in range(200):
                 if self.mks.pressures[1] >= config_dict["mks"]["atm pressure"]:
                     break
                 time.sleep(0.1)
