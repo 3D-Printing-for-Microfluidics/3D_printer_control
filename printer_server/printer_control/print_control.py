@@ -539,6 +539,7 @@ class PrintControl:
             self.layer_worker(i, layer, msg)
 
         self.post_print_tasks()
+        self.post_print_joins()
 
         # finish print
         if not self.printing_paused.is_set():

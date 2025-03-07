@@ -4,7 +4,7 @@ import logging
 from printer_server.extensions import socketio
 from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
-from printer_server.printer_control.print_control import PrintControl, run_in_thread
+from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 from printer_server.hardware_configuration.hardware_configuration import driver_handles, config_dict
 
 log = logging.getLogger(__name__)
@@ -20,6 +20,7 @@ class VacuumControl(PrintControl):
         self.degas_state = None
 
         # log files
+        self.pressure_planarization_log = str(self.current_job / "logs" / "pressure_data.csv")
         self.pressure_log = str(self.current_job / "logs" / "pressure_data.csv")
 
     def create_logs(self):
@@ -63,13 +64,67 @@ class VacuumControl(PrintControl):
                 log.warning("Unable to communicate with mks controller (%s)", ex, exc_info=True)
             super().planarization_step_1()
 
+    @run_in_thread("planarized", "Planarization Step 2")
+    def planarization_step_2(self):
+        # lower bell jar and start vacuum system
+        try:
+            self.mks_teensy.move_crane_bottom()  
+            relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
+            self.mks.set_relay_mode(relay_num, "SET")
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), True)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), True)
+        except Exception as ex:
+            log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
+            self.failed_hardware["MKS Teensy"] = self.mks_teensy
+            raise PrintingException()
+        super().planarization_step_2()
+
+    def pre_print_tasks(self):
+        # wait until vacuum system is ready
+        if self.next_layer == 0:
+            try:
+                bell_jar_target = config_dict["mks"]["target"][0]
+                bell_jar_reading = self.mks.pressures[0]
+                while bell_jar_reading > bell_jar_target:
+                    bell_jar_reading = self.mks.pressures[0]
+                    time.sleep(0.1)
+            except Exception as ex:
+                log.critical("Railed to read vacuum levels (%s)", ex, exc_info=True)
+                self.failed_hardware["Vacuum Controller"] = self.mks
+                raise PrintingException()
+        super().pre_print_tasks()
+
     def finish_print(self):
+        # vent vaccum system and raise bell jar
+        try:
+            relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
+            self.mks.set_relay_mode(relay_num, "CLEAR")
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), False)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), False)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), True)
+
+            crane_enable = False
+            while not crane_enable:
+                relay_settings_list = self.mks.get_all_relay_status()
+                for k, v in config_dict["mks"]["relays"].items():
+                    if k == "crane":
+                        crane_enable = relay_settings_list[v["relay_num"]-1]
+                time.sleep(0.1)
+            
+            time.sleep(15)
+
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), False)
+
+            self.mks_teensy.move_crane_top()
+            
+        except Exception as ex:
+            log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
+        super().finish_print()
         try:
             self.mks.logging_stop()
             self.mks.setup_log_file(None)
         except Exception as ex:
             log.critical("Unable to communicate with mks controller (%s)", ex, exc_info=True)
-        super().finish_print()
 
     def degas(self, msg):
         if msg == "run":
