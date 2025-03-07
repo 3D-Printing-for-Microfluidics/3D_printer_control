@@ -89,7 +89,7 @@ class VacuumControl(PrintControl):
                 bell_jar_reading = self.mks.pressures[0]
                 while bell_jar_reading > bell_jar_target:
                     bell_jar_reading = self.mks.pressures[0]
-                    time.sleep(0.1)
+                    time.sleep(1.0)
             except Exception as ex:
                 log.critical("Railed to read vacuum levels (%s)", ex, exc_info=True)
                 self.failed_hardware["Vacuum Controller"] = self.mks
@@ -108,17 +108,15 @@ class VacuumControl(PrintControl):
 
             bell_jar_target = config_dict["mks"]["relays"]["crane"]["setpoint"]
             bell_jar_reading = self.mks.pressures[0]
-            crane_enable = False
+            crane_enable = 0
             
-            
-            while not crane_enable and bell_jar_reading < bell_jar_target:
+            while crane_enable == 0 and bell_jar_reading < bell_jar_target:
                 bell_jar_reading = self.mks.pressures[0]
                 relay_settings_list = self.mks.get_all_relay_status()
                 for k, v in config_dict["mks"]["relays"].items():
                     if k == "crane":
-                        crane_enable = relay_settings_list[v["relay_num"]-1]
-                log.info(bell_jar_reading, relay_settings_list, crane_enable)
-                time.sleep(0.1)
+                        crane_enable = int(relay_settings_list[v["relay_num"]-1])
+                time.sleep(1.0)
             
             time.sleep(15)
 
