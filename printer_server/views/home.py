@@ -31,6 +31,11 @@ if "gpio" in config_dict:
         from printer_server.printer_control.gpio_control import GPIOControl
         parent_classes.append(GPIOControl)   
 
+# MKS needs to be before loadcell
+if "mks" in config_dict.keys() and "mks_teensy" in config_dict.keys():
+    from printer_server.printer_control.vacuum_control import VacuumControl
+    parent_classes.append(VacuumControl)
+
 # Loadcell needs to be before bp
 if "loadcell" in config_dict:
     from printer_server.printer_control.loadcell_control import LoadcellControl
@@ -69,10 +74,6 @@ if "spectrometer" in config_dict and "photodiode" in config_dict:
 if "ttr_stage" in config_dict["stages"]:
     from printer_server.printer_control.ttr_control import TTRControl
     parent_classes.append(TTRControl)
-
-if "mks" in config_dict.keys() and "mks_teensy" in config_dict.keys():
-    from printer_server.printer_control.vacuum_control import VacuumControl
-    parent_classes.append(VacuumControl)
 
 if "xy_stage" in config_dict["stages"]:
     from printer_server.printer_control.xy_control import XYControl
