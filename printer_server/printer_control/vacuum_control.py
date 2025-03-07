@@ -117,13 +117,14 @@ class VacuumControl(PrintControl):
                 for k, v in config_dict["mks"]["relays"].items():
                     if k == "crane":
                         crane_enable = relay_settings_list[v["relay_num"]-1]
+                log.info(bell_jar_reading, relay_settings_list, crane_enable)
                 time.sleep(0.1)
             
             time.sleep(15)
 
             log.info("Venting finished, raising bell jar")
             self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), False)
-            self.mks_teensy.move_crane_top()
+            # self.mks_teensy.move_crane_top()
             
         except Exception as ex:
             log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
