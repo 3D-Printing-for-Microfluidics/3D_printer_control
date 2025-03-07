@@ -122,7 +122,7 @@ class VacuumControl(PrintControl):
 
             log.info("Venting finished, raising bell jar")
             self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), False)
-            # self.mks_teensy.move_crane_top()
+            self.mks_teensy.move_crane_top()
             
         except Exception as ex:
             log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
