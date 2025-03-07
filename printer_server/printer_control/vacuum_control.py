@@ -106,8 +106,13 @@ class VacuumControl(PrintControl):
             self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), False)
             self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), True)
 
+            bell_jar_target = config_dict["mks"]["crane"]["setpoint"]
+            bell_jar_reading = self.mks.pressures[0]
             crane_enable = False
-            while not crane_enable:
+            
+            
+            while not crane_enable and bell_jar_reading < bell_jar_target:
+                bell_jar_reading = self.mks.pressures[0]
                 relay_settings_list = self.mks.get_all_relay_status()
                 for k, v in config_dict["mks"]["relays"].items():
                     if k == "crane":
