@@ -68,6 +68,7 @@ class VacuumControl(PrintControl):
     def planarization_step_2(self):
         # lower bell jar and start vacuum system
         try:
+            log.info("Lowering bell jar and starting vacuum system")
             self.mks_teensy.move_crane_bottom()  
             relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
             self.mks.set_relay_mode(relay_num, "SET")
@@ -81,6 +82,7 @@ class VacuumControl(PrintControl):
 
     def pre_print_tasks(self):
         # wait until vacuum system is ready
+        log.info("Waiting for vacuum system to reach target pressure")
         if self.next_layer == 0:
             try:
                 bell_jar_target = config_dict["mks"]["target"][0]
@@ -97,6 +99,7 @@ class VacuumControl(PrintControl):
     def finish_print(self):
         # vent vaccum system and raise bell jar
         try:
+            log.info("Venting vacuum system")
             relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
             self.mks.set_relay_mode(relay_num, "CLEAR")
             self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), False)
@@ -113,8 +116,8 @@ class VacuumControl(PrintControl):
             
             time.sleep(15)
 
+            log.info("Venting finished, raising bell jar")
             self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), False)
-
             self.mks_teensy.move_crane_top()
             
         except Exception as ex:
