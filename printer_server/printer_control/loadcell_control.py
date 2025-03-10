@@ -214,14 +214,20 @@ class LoadcellControl(PrintControl):
         backup_path = Path(Config.UPLOAD_FOLDER)/"planarization_log.backup"
         if os.path.exists(self.loadcell_planarization_log):
             shutil.move(self.loadcell_planarization_log, backup_path)
-        
-        # for HR5 vacuum we need to redo step 3
-        self.planarization_step_3()
+
         super().start(job_id)
 
         # restore planarization log
         if os.path.exists(backup_path):
             shutil.move(backup_path, self.loadcell_planarization_log)
+
+    def pre_print_tasks(self):
+        if self.next_layer == 0:
+            if self.print_settings.get("Print under vacuum", False):
+                # for HR5 vacuum we need to redo step 3
+                log.info("Repeating planarization step 3")
+                self.planarization_step_3()
+        super().pre_print_tasks()
 
     def print_worker(self):
         if self.state != "printing":
