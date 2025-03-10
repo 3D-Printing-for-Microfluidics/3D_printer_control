@@ -18,6 +18,11 @@
                     "default": "slices",
                     "description": "Directory relative to the json print job file where the images are saved."
                 },
+                "Print under vacuum": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should the printer print under vacuum?"
+                },
                 "Comment": {
                     "type": "string",
                     "default": "",

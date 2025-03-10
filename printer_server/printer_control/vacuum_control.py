@@ -1,6 +1,10 @@
+import os
 import time
+import shutil
 import logging
+from pathlib import Path
 
+from printer_server.settings import Config
 from printer_server.extensions import socketio
 from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
@@ -25,7 +29,7 @@ class VacuumControl(PrintControl):
 
     def create_logs(self):
         super().create_logs()
-        self.mks.setup_log_file(str(self.current_job / "logs"))
+        self.mks.set_log_file(self.pressure_log)
 
     def connect_hardware(self):
         mks_thread = Thread(log, name="mks_connect_thread", target=self.mks.connect)
@@ -59,6 +63,7 @@ class VacuumControl(PrintControl):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             try:
+                self.mks.set_log_file(self.pressure_planarization_log)
                 self.mks.logging_start()
             except Exception as ex:
                 log.warning("Unable to communicate with mks controller (%s)", ex, exc_info=True)
@@ -66,70 +71,87 @@ class VacuumControl(PrintControl):
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
-        # lower bell jar and start vacuum system
-        try:
-            log.info("Lowering bell jar and starting vacuum system")
-            self.mks_teensy.move_crane_bottom()  
-            relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
-            self.mks.set_relay_mode(relay_num, "SET")
-            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), True)
-            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), True)
-        except Exception as ex:
-            log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
-            self.failed_hardware["MKS Teensy"] = self.mks_teensy
-            raise PrintingException()
         super().planarization_step_2()
+        if self.print_settings.get("Print under vacuum", False):
+            # lower bell jar and start vacuum system
+            try:
+                log.info("Lowering bell jar and starting vacuum system")
+                self.mks_teensy.move_crane_bottom()  
+                relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
+                self.mks.set_relay_mode(relay_num, "SET")
+                self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), True)
+                self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), True)
+            except Exception as ex:
+                log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
+                self.failed_hardware["MKS Teensy"] = self.mks_teensy
+                raise PrintingException()
+
+    def start(self, job_id):
+        # save planarization log
+        self.mks.set_log_file(None)
+        time.sleep(0.1)
+        backup_path = Path(Config.UPLOAD_FOLDER)/"pressure_planarization_log.backup"
+        if os.path.exists(self.pressure_planarization_log):
+            shutil.move(self.pressure_planarization_log, backup_path)
+
+        super().start(job_id)
+
+        # restore planarization log
+        if os.path.exists(backup_path):
+            shutil.move(backup_path, self.pressure_planarization_log)
 
     def pre_print_tasks(self):
-        # wait until vacuum system is ready
-        log.info("Waiting for vacuum system to reach target pressure")
         if self.next_layer == 0:
-            try:
-                bell_jar_target = config_dict["mks"]["target"][0]
-                bell_jar_reading = self.mks.pressures[0]
-                while bell_jar_reading > bell_jar_target:
+            if self.print_settings.get("Print under vacuum", False):
+                # wait until vacuum system is ready
+                log.info("Waiting for vacuum system to reach target pressure")
+                try:
+                    bell_jar_target = config_dict["mks"]["target"][0]
                     bell_jar_reading = self.mks.pressures[0]
-                    time.sleep(1.0)
-            except Exception as ex:
-                log.critical("Railed to read vacuum levels (%s)", ex, exc_info=True)
-                self.failed_hardware["Vacuum Controller"] = self.mks
-                raise PrintingException()
+                    while bell_jar_reading > bell_jar_target:
+                        bell_jar_reading = self.mks.pressures[0]
+                        time.sleep(1.0)
+                except Exception as ex:
+                    log.critical("Railed to read vacuum levels (%s)", ex, exc_info=True)
+                    self.failed_hardware["Vacuum Controller"] = self.mks
+                    raise PrintingException()
         super().pre_print_tasks()
 
     def finish_print(self):
-        # vent vaccum system and raise bell jar
-        try:
-            log.info("Venting vacuum system")
-            relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
-            self.mks.set_relay_mode(relay_num, "CLEAR")
-            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), False)
-            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), False)
-            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), True)
+        if self.print_settings.get("Print under vacuum", False):
+            # vent vaccum system and raise bell jar
+            try:
+                log.info("Venting vacuum system")
+                relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
+                self.mks.set_relay_mode(relay_num, "CLEAR")
+                self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), False)
+                self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), False)
+                self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), True)
 
-            bell_jar_target = config_dict["mks"]["relays"]["crane"]["setpoint"]
-            bell_jar_reading = self.mks.pressures[0]
-            crane_enable = 0
-            
-            while crane_enable == 0 and bell_jar_reading < bell_jar_target:
+                bell_jar_target = config_dict["mks"]["relays"]["crane"]["setpoint"]
                 bell_jar_reading = self.mks.pressures[0]
-                relay_settings_list = self.mks.get_all_relay_status()
-                for k, v in config_dict["mks"]["relays"].items():
-                    if k == "crane":
-                        crane_enable = int(relay_settings_list[v["relay_num"]-1])
-                time.sleep(1.0)
-            
-            time.sleep(15)
+                crane_enable = 0
+                
+                while crane_enable == 0 and bell_jar_reading < bell_jar_target:
+                    bell_jar_reading = self.mks.pressures[0]
+                    relay_settings_list = self.mks.get_all_relay_status()
+                    for k, v in config_dict["mks"]["relays"].items():
+                        if k == "crane":
+                            crane_enable = int(relay_settings_list[v["relay_num"]-1])
+                    time.sleep(1.0)
+                
+                time.sleep(15)
 
-            log.info("Venting finished, raising bell jar")
-            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), False)
-            self.mks_teensy.move_crane_top()
-            
-        except Exception as ex:
-            log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
+                log.info("Venting finished, raising bell jar")
+                self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), False)
+                self.mks_teensy.move_crane_top()
+                
+            except Exception as ex:
+                log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
         super().finish_print()
         try:
             self.mks.logging_stop()
-            self.mks.setup_log_file(None)
+            self.mks.set_log_file(None)
         except Exception as ex:
             log.critical("Unable to communicate with mks controller (%s)", ex, exc_info=True)
 
