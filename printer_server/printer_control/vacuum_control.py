@@ -69,7 +69,7 @@ class VacuumControl(PrintControl):
 
     def pre_print_tasks(self):
         if self.next_layer == 0:
-            if self.print_settings.get("Print under vacuum", False):
+            if self.print_settings.get("Header").get("Print under vacuum", False):
                 # lower bell jar and start vacuum system
                 try:
                     log.info("Lowering bell jar and starting vacuum system")
@@ -92,7 +92,7 @@ class VacuumControl(PrintControl):
         super().pre_print_tasks()
 
     def finish_print(self):
-        if self.print_settings.get("Print under vacuum", False):
+        if self.print_settings.get("Header").get("Print under vacuum", False):
             # vent vaccum system and raise bell jar
             try:
                 log.info("Venting vacuum system")

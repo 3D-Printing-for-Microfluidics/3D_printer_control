@@ -223,7 +223,7 @@ class LoadcellControl(PrintControl):
 
     def pre_print_tasks(self):
         if self.next_layer == 0:
-            if self.print_settings.get("Print under vacuum", False):
+            if self.print_settings.get("Header").get("Print under vacuum", False):
                 # for HR5 vacuum we need to redo step 3
                 log.info("Repeating planarization step 3")
                 self.planarization_step_3()
