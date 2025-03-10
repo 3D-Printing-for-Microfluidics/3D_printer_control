@@ -24,7 +24,6 @@ class VacuumControl(PrintControl):
         self.degas_state = None
 
         # log files
-        self.pressure_planarization_log = str(self.current_job / "logs" / "pressure_data.csv")
         self.pressure_log = str(self.current_job / "logs" / "pressure_data.csv")
 
     def create_logs(self):
@@ -63,57 +62,32 @@ class VacuumControl(PrintControl):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             try:
-                self.mks.set_log_file(self.pressure_planarization_log)
                 self.mks.logging_start()
             except Exception as ex:
                 log.warning("Unable to communicate with mks controller (%s)", ex, exc_info=True)
             super().planarization_step_1()
 
-    @run_in_thread("planarized", "Planarization Step 2")
-    def planarization_step_2(self):
-        super().planarization_step_2()
-        if self.print_settings.get("Print under vacuum", False):
-            # lower bell jar and start vacuum system
-            try:
-                log.info("Lowering bell jar and starting vacuum system")
-                self.mks_teensy.move_crane_bottom()  
-                relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
-                self.mks.set_relay_mode(relay_num, "SET")
-                self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), True)
-                self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), True)
-            except Exception as ex:
-                log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
-                self.failed_hardware["MKS Teensy"] = self.mks_teensy
-                raise PrintingException()
-
-    def start(self, job_id):
-        # save planarization log
-        self.mks.set_log_file(None)
-        time.sleep(0.1)
-        backup_path = Path(Config.UPLOAD_FOLDER)/"pressure_planarization_log.backup"
-        if os.path.exists(self.pressure_planarization_log):
-            shutil.move(self.pressure_planarization_log, backup_path)
-
-        super().start(job_id)
-
-        # restore planarization log
-        if os.path.exists(backup_path):
-            shutil.move(backup_path, self.pressure_planarization_log)
-
     def pre_print_tasks(self):
         if self.next_layer == 0:
             if self.print_settings.get("Print under vacuum", False):
-                # wait until vacuum system is ready
-                log.info("Waiting for vacuum system to reach target pressure")
+                # lower bell jar and start vacuum system
                 try:
+                    log.info("Lowering bell jar and starting vacuum system")
+                    self.mks_teensy.move_crane_bottom()  
+                    relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
+                    self.mks.set_relay_mode(relay_num, "SET")
+                    self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), True)
+                    self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), True)
+
+                    log.info("Waiting for vacuum system to reach target pressure")
                     bell_jar_target = config_dict["mks"]["target"][0]
                     bell_jar_reading = self.mks.pressures[0]
                     while bell_jar_reading > bell_jar_target:
                         bell_jar_reading = self.mks.pressures[0]
                         time.sleep(1.0)
                 except Exception as ex:
-                    log.critical("Railed to read vacuum levels (%s)", ex, exc_info=True)
-                    self.failed_hardware["Vacuum Controller"] = self.mks
+                    log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
+                    self.failed_hardware["MKS Teensy"] = self.mks_teensy
                     raise PrintingException()
         super().pre_print_tasks()
 
