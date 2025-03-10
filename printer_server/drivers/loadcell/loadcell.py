@@ -89,6 +89,9 @@ class LoadCell(USBSerial):
             filename    - local path and filename (current_job/loadcell_data.txt)
         """
         self.log_file = filename
+        async_file_hander.write(
+            self.log_file, "system_time,loadcell_time,raw_data,newtons\n"
+        )
 
     def pause(self):
         """

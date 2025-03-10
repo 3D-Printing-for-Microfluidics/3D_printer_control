@@ -27,10 +27,6 @@ class LoadcellControl(PrintControl):
 
     def create_logs(self):
         super().create_logs()
-
-        async_file_hander.write(
-            self.loadcell_log, "system_time,loadcell_time,raw_data,newtons\n"
-        )
         self.loadcell.set_log_file(self.loadcell_log)
 
     def loadcell_graph_loop(self):
@@ -116,9 +112,6 @@ class LoadcellControl(PrintControl):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             try:
-                async_file_hander.write(
-                    self.loadcell_planarization_log, "system_time,loadcell_time,raw_data,newtons\n"
-                )
                 self.loadcell.set_log_file(self.loadcell_planarization_log)
 
                 self.loadcell.start()   
