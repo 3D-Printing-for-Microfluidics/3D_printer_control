@@ -716,7 +716,7 @@ class TestControl(PrintControl):
             self.light_engines[self.light_engine].stop_sequencer()
 
 
-    def measure_keyence_line(self, step_size=0.15, sample_rate_hz=80, scan_length_mm=25, number_of_scans=3, scan_spacing_mm=2.0):
+    def measure_keyence_line(self, step_size=0.15, scan_length_mm=25, number_of_scans=3, scan_spacing_mm=2.0, y_offset_mm=0.0):
         if self.printing_stopped.is_set():
             return
         ################ Step ################
@@ -736,7 +736,7 @@ class TestControl(PrintControl):
         for x in range(x_range):
             x_set.append(x_pos_sweep+x*step_size)
         for y in range(number_of_scans):
-            y_set.append(y_keyence_offset - (number_of_scans-1)*scan_spacing_mm/2 + y*scan_spacing_mm)
+            y_set.append(y_keyence_offset - (number_of_scans-1)*scan_spacing_mm/2 + y*scan_spacing_mm + y_offset_mm)
 
         # Move to x start
         self.xy_stage.threadedXYMove(log, x_set[0], y_set[0], join=True)
