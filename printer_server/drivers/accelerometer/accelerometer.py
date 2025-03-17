@@ -74,7 +74,13 @@ class Accelerometer(USBSerial):
         Parameters:
             filename    - local path and filename (current_job/accelerometer_data.txt)
         """
-        self.log_file = filename
+        if self.log_file is None and filename is not None:
+            self.log_file = filename
+            async_file_hander.write(
+                self.log_file, "system_time,accel_time,data\n"
+            )
+        elif self.log_file is not None and filename is None:
+            self.log_file = None
 
     def pause(self):
         """
@@ -113,13 +119,12 @@ class Accelerometer(USBSerial):
         """
         self.log.debug("Starting loop")
         self.flush_buffers()
-        self.read_until(b'\r\n')
+        self.read_until(b'\r\nAA')
         self.log.debug("Reached first new line")
 
-        bad_data = False
         while self.running:
             try:
-                self.read_until(b'AA')
+                
                 milliseconds = int.from_bytes(
                     self.read_bytes(4), byteorder="little", signed=False
                 )
@@ -129,10 +134,9 @@ class Accelerometer(USBSerial):
                 time = self.start_time + datetime.timedelta(
                     milliseconds=float(milliseconds)
                 )
-                ret = self.read_until(b'\r\n')
-                if ret != b'\r\n':
-                    bad_data = True
-                if bad_data:
+                ret = self.read_until(b'\r\nAA')
+                if len(ret) > 4:
+                    self.log.debug("len(ret): %s", len(ret))
                     continue
                 accel = data/16384
 
