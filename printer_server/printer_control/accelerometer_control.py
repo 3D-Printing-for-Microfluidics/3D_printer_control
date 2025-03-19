@@ -57,6 +57,7 @@ class AccelerometerControl(PrintControl):
     def finish_print(self):
         try:
             self.accelerometer.stop()
+            time.sleep(0.5)
             self.accelerometer.set_log_file(None)
         except Exception as ex:
             log.warning("Unable to stop accelerometer (%s)", ex, exc_info=True)

@@ -259,6 +259,7 @@ class LoadcellControl(PrintControl):
             self.loadcell.stop()
             self.loadcell_thread = None
             home.clear_loadcell_graph()
+            time.sleep(0.5)
             self.loadcell.set_log_file(None)
         except Exception as ex:
             log.critical("Unable to stop loadcell (%s)", ex, exc_info=True)
