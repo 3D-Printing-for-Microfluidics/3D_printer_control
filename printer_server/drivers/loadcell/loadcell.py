@@ -100,12 +100,13 @@ class LoadCell(USBSerial):
         """
         Pauses the loadcell and loadcell thread.
         """
-        self.loadcell_pause()
-
         if self.running:
             self.running = False
             self.thread.join()
             self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
+
+        time.sleep(0.1)
+        self.loadcell_pause()
         time.sleep(0.1)
         self.flush_buffers()
         self.log.info("Loadcell paused")
@@ -114,13 +115,15 @@ class LoadCell(USBSerial):
         """
         Stops the loadcell and loadcell thread. Saves data to file
         """
-        self.loadcell_stop()
+        
 
         if self.running:
             self.running = False
             self.thread.join()
             self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
 
+        time.sleep(0.1)
+        self.loadcell_stop()
         time.sleep(0.1)
         self.flush_buffers()
         self.log.info("Loadcell stopped")

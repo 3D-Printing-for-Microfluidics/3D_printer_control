@@ -86,13 +86,13 @@ class Accelerometer(USBSerial):
         """
         Pauses the accelerometer and accelerometer thread.
         """
-        self.accel_pause()
-
         if self.running:
             self.running = False
             self.thread.join()
             self.thread = Thread(self.log, name="accelerometer_loop_thread", target=self.loop)
 
+        time.sleep(0.1)
+        self.accel_pause()
         time.sleep(0.1)
         self.flush_buffers()
         self.log.info("Accelerometer paused")
@@ -101,13 +101,13 @@ class Accelerometer(USBSerial):
         """
         Stops the accelerometer and accelerometer thread. Saves data to file
         """
-        self.accel_stop()
-
         if self.running:
             self.running = False
             self.thread.join()
             self.thread = Thread(self.log, name="accelerometer_loop_thread", target=self.loop)
 
+        time.sleep(0.1)
+        self.accel_stop()
         time.sleep(0.1)
         self.flush_buffers()
         self.log.info("Accelerometer stopped")
