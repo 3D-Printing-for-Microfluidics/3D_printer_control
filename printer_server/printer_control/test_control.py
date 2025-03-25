@@ -1000,7 +1000,7 @@ class TestControl(PrintControl):
         irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
 
         filename = "corrected_test_data.csv"
-        self.measure_irradiance_grid2(fine=True, save_name=filename, correction_path_name=str(self.current_job / 'logs/uncorrected/correction_image.png'))
+        self.measure_irradiance_grid2(fine=True, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'))
         scale_factor = 1.0 # used if normalization factor was changed...
         save_directory_name = "corrected"
         self._createCorrectionImage(filename, save_directory_name, irradiance_map/scale_factor)
