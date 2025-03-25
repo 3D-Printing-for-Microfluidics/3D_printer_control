@@ -602,7 +602,7 @@ class TestControl(PrintControl):
 
     # Measures the irradiance in a grid of every 150 or 15 px 
     # Should run find_photodiode_center_and_focus and find_px_size first
-    def measure_irradiance_grid2(self, fine=True, save_name = "test_data.csv"):
+    def measure_irradiance_grid2(self, fine=True, save_name = "test_data.csv", correction_path=""):
         if self.printing_stopped.is_set():
             return
 
@@ -634,6 +634,19 @@ class TestControl(PrintControl):
         self.light_engines[self.light_engine].setup_exposure(1000, led_power=100, repeat=0, is_grayscale_corrected=False, led_num=self.led_num)
         self.light_engines[self.light_engine].perform_exposure()
 
+        spot_value = 255
+        bulk_value = 255
+        image_array = np.full((x_px, y_px), bulk_value, dtype=np.uint8)
+        image = Image.fromarray(image_array, mode='L')
+        image.save(self.current_job / self.slices_folder / f"temp.png")  # Saves the image
+        if correction_path != "":
+            mask = image
+            correction = Image.open(correction_path)
+            image = Image.composite(correction, mask, mask=mask)
+            image.save(self.current_job / self.slices_folder / f"temp.png")  # Saves the image
+        # Draw correction image
+        self.screen.draw(self.current_job / self.slices_folder / f"temp.png", light_engine=self.light_engine, led_num=self.led_num)
+
         for x_index, x in enumerate(x_range):
             for y_index, y in enumerate(y_range):
                 # Move to location
@@ -641,24 +654,30 @@ class TestControl(PrintControl):
                 y_pos = self.coord_systems["fiber_visitech"]["Y"] + (y - y_px/2)*self.y_px_size
                 self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=True)
 
-                # for index, spot_value, bulk_value in zip([0, 1], [0, 255], [255, 255]):
-                spot_value = 255
-                bulk_value = 255
-                # Create image (with 10px spot sizes)
-                # notes:
-                # the image and physical coords are swapped (x->y & y->x)
-                # the image is mirrored in the short direction
-                image_array = np.full((x_px, y_px), bulk_value, dtype=np.uint8)
-                x_start = max(y - 5, 0) 
-                x_end = min(y + 5, y_px)
-                y_start = x_px - min(x + 5, x_px)
-                y_end = x_px - max(x - 5, 0)
-                image_array[y_start:y_end, x_start:x_end] = spot_value
-                image = Image.fromarray(image_array, mode='L')
-                image.save(self.current_job / self.slices_folder / f"temp.png")  # Saves the image
+                # # for index, spot_value, bulk_value in zip([0, 1], [0, 255], [255, 255]):
+                # spot_value = 255
+                # bulk_value = 255
+                # # Create image (with 10px spot sizes)
+                # # notes:
+                # # the image and physical coords are swapped (x->y & y->x)
+                # # the image is mirrored in the short direction
+                # image_array = np.full((x_px, y_px), bulk_value, dtype=np.uint8)
+                # x_start = max(y - 5, 0) 
+                # x_end = min(y + 5, y_px)
+                # y_start = x_px - min(x + 5, x_px)
+                # y_end = x_px - max(x - 5, 0)
+                # image_array[y_start:y_end, x_start:x_end] = spot_value
+                # image = Image.fromarray(image_array, mode='L')
+                # image.save(self.current_job / self.slices_folder / f"temp.png")  # Saves the image
 
-                # Draw correction image
-                self.screen.draw(self.current_job / self.slices_folder / f"temp.png", light_engine=self.light_engine, led_num=self.led_num)
+                # if correction_path != "":
+                #     mask = image
+                #     correction = Image.open(correction_path)
+                #     image = Image.composite(correction, mask, mask=mask)
+                #     image.save(self.current_job / self.slices_folder / f"temp.png")  # Saves the image
+
+                # # Draw correction image
+                # self.screen.draw(self.current_job / self.slices_folder / f"temp.png", light_engine=self.light_engine, led_num=self.led_num)
 
                 # Get Position
                 x_position = self.xy_stage.getXYPosition(axis="X")
@@ -976,12 +995,12 @@ class TestControl(PrintControl):
         self.find_px_size()
 
         filename = "uncorrected_test_data.csv"
-        self.measure_irradiance_grid2(fine=True, save_name = filename)
+        self.measure_irradiance_grid2(fine=True, save_name=filename)
         save_directory_name = "uncorrected"
         irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
 
         filename = "corrected_test_data.csv"
-        self.measure_irradiance_grid2(fine=True, save_name = filename)
+        self.measure_irradiance_grid2(fine=True, save_name=filename, correction_path_name=str(self.current_job / 'logs/uncorrected/correction_image.png'))
         scale_factor = 1.0 # used if normalization factor was changed...
         save_directory_name = "corrected"
         self._createCorrectionImage(filename, save_directory_name, irradiance_map/scale_factor)
