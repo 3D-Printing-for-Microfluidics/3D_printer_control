@@ -1,6 +1,8 @@
 import time
 import math
+import shutil
 import logging
+
 import numpy as np
 import pandas as pd
 from PIL import Image
@@ -1004,3 +1006,5 @@ class TestControl(PrintControl):
         scale_factor = 1.0 # used if normalization factor was changed...
         save_directory_name = "corrected"
         self._createCorrectionImage(filename, save_directory_name, irradiance_map/scale_factor)
+
+        shutil.copy(self.current_job / 'logs/uncorrected/correction_image.png', self.current_job / 'logs/correction_image.png')
