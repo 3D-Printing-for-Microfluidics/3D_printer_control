@@ -66,7 +66,7 @@ class TestControl(PrintControl):
         from printer_server.drivers.generic_drivers.usb_serial import USBSerial
         from printer_server.threading_wrapper import Thread
 
-        self.xy_stage.threadedXYMove(log, -96.4, 81.8, join=True)
+        self.xy_stage.threadedXYMove(log, 96.4, 81.8, join=True)
         self.focus_stage.absMoveFocus(mm=10.00)
 
         self.light_engines[self.light_engine].setup_exposure(1000, led_power=200, repeat=0, is_grayscale_corrected=False, led_num=self.led_num)
@@ -134,6 +134,8 @@ class TestControl(PrintControl):
         u.disconnect()
 
         self.light_engines[self.light_engine].stop_sequencer()
+
+        self.focus_stage.absMoveFocus(mm=0.00)
 
     def measure_keyence_line(self, step_size=0.15, scan_length_mm=25, number_of_scans=3, scan_spacing_mm=2.0, y_offset_mm=0.0):
         if self.printing_stopped.is_set():
