@@ -66,8 +66,8 @@ class TestControl(PrintControl):
         from printer_server.drivers.generic_drivers.usb_serial import USBSerial
         from printer_server.threading_wrapper import Thread
 
-        self.xy_stage.threadedXYMove(log, -25.00, 85.56, join=True)
-        self.focus_stage.absMoveFocus(mm=6.00)
+        self.xy_stage.threadedXYMove(log, -96.4, 81.8, join=True)
+        self.focus_stage.absMoveFocus(mm=10.00)
 
         self.light_engines[self.light_engine].setup_exposure(1000, led_power=200, repeat=0, is_grayscale_corrected=False, led_num=self.led_num)
         self.light_engines[self.light_engine].perform_exposure()
