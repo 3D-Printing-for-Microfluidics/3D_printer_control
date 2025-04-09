@@ -540,6 +540,9 @@ def validate_negative_layer_thickness(print_settings):
     
     Raises ValueError if validation fails.
     """
+    if "Default layer settings" not in print_settings:
+        return
+
     if "Layers" not in print_settings:
         return
     
@@ -554,11 +557,14 @@ def validate_negative_layer_thickness(print_settings):
     for i, layer in enumerate(layers):
         if "Position settings" not in layer:
             continue
+
+        default_position_settings = print_settings["Default layer settings"]["Position settings"]
             
         position_settings = layer["Position settings"]
         if "Layer thickness (um)" not in position_settings:
             continue
-            
+
+        normal_thickness = print_settings["Default layer settings"]["Position settings"]["Layer thickness (um)"]
         thickness = position_settings["Layer thickness (um)"]
         
         # Check for negative thickness
@@ -578,7 +584,6 @@ def validate_negative_layer_thickness(print_settings):
             
             # Check if the negative thickness is appropriate for the last significant positive
             # We expect the negative thickness to be approximately equal to the positive thickness minus the normal layer thickness
-            normal_thickness = print_settings["Default layer settings"]["Position settings"]["Layer thickness (um)"]
             expected_negative = -(last_significant_positive_thickness - normal_thickness)
             
             if thickness != expected_negative:
