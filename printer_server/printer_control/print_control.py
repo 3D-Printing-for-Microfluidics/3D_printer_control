@@ -9,7 +9,7 @@ from pathlib import Path
 from flask import request
 from functools import wraps
 from datetime import datetime
-from zipfile import ZipFile, BadZipFile
+from zipfile import ZipFile, BadZipFile, ZIP_DEFLATED
 
 import printer_server.views.home as home
 from printer_server.settings import Config
@@ -747,7 +747,7 @@ class PrintControl:
     def clean_uploaded_file(self, filename):
         """Remove unwanted hidden files created by MAC OS in zipfiles."""
         temp_filename = Path(Config.UPLOAD_FOLDER) / "queue" / "temp.zip"
-        with ZipFile(filename, "r") as old_file, ZipFile(temp_filename, "w") as new_file:
+        with ZipFile(filename, "r") as old_file, ZipFile(temp_filename, "w", compression=ZIP_DEFLATED, compresslevel=6) as new_file:
             for item in old_file.infolist():
                 buffer = old_file.read(item.filename)
                 if not str(item.filename).startswith("__MACOSX/"):
