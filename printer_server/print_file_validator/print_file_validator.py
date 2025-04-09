@@ -39,6 +39,9 @@ def validate_schema(print_file):
             check_templates_compatibility(print_settings)
             expand_json(print_settings)
 
+            # Validate negative layer thickness usage
+            validate_negative_layer_thickness(print_settings)
+
             check_slices_folder_exists(zip_file_handle, print_settings)
             check_referenced_images_exist(print_settings, temp_dir)
 
@@ -526,6 +529,66 @@ def expand_json(print_settings):
         replace_templates_in_layer(print_settings, layer)
         replace_named_position_settings_in_layer(print_settings, layer)
         replace_named_image_settings_in_layer(print_settings, layer)
+
+
+def validate_negative_layer_thickness(print_settings):
+    """Validate that negative layer thickness is only used in specific circumstances.
+    
+    Negative layer thickness is only allowed when:
+    1. It follows a layer with significantly larger thickness (e.g., for membrane fabrication)
+    2. There can be zero or more layers with 0um thickness between the positive and negative layers
+    
+    Raises ValueError if validation fails.
+    """
+    if "Layers" not in print_settings:
+        return
+    
+    layers = print_settings["Layers"]
+    if not layers:
+        return
+    
+    # Track the last significant positive layer thickness
+    last_significant_positive_thickness = None
+    last_significant_positive_layer_index = None
+    
+    for i, layer in enumerate(layers):
+        if "Position settings" not in layer:
+            continue
+            
+        position_settings = layer["Position settings"]
+        if "Layer thickness (um)" not in position_settings:
+            continue
+            
+        thickness = position_settings["Layer thickness (um)"]
+        
+        # Check for negative thickness
+        if thickness < 0:
+            # If we haven't seen a significant positive thickness yet, this is an error
+            if last_significant_positive_thickness is None:
+                msg = f"Layer {i} has negative thickness ({thickness} um) but there's no previous layer with significant positive thickness."
+                raise ValueError(msg)
+                
+            # Check if there are any non-zero layers between the last significant positive and this negative
+            for j in range(last_significant_positive_layer_index + 1, i):
+                if "Position settings" in layers[j] and "Layer thickness (um)" in layers[j]["Position settings"]:
+                    intermediate_thickness = layers[j]["Position settings"]["Layer thickness (um)"]
+                    if intermediate_thickness != 0:
+                        msg = f"Layer {i} has negative thickness ({thickness} um) but there's a non-zero layer ({j}) between it and the last significant positive layer."
+                        raise ValueError(msg)
+            
+            # Check if the negative thickness is appropriate for the last significant positive
+            # We expect the negative thickness to be approximately equal to the positive thickness minus the normal layer thickness
+            normal_thickness = print_settings["Default layer settings"]["Position settings"]["Layer thickness (um)"]
+            expected_negative = -(last_significant_positive_thickness - normal_thickness)
+            
+            if thickness != expected_negative:
+                msg = f"Layer {i} has negative thickness ({thickness} um) which doesn't match the expected value ({expected_negative} um) based on the previous significant positive layer ({last_significant_positive_thickness} um)."
+                raise ValueError(msg)
+        
+        # If this is a significant positive thickness, update our tracking
+        elif thickness > normal_thickness * 2:  # Consider it significant if it's more than twice the normal thickness
+            last_significant_positive_thickness = thickness
+            last_significant_positive_layer_index = i
 
 
 if __name__ == "__main__":

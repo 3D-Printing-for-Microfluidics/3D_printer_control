@@ -127,9 +127,8 @@
                     "properties": {
                         "Layer thickness (um)": {
                             "type": "number",
-                            "minimum": 0,
                             "default": 10,
-                            "description": "Custom layer thickness"
+                            "description": "Custom layer thickness. Can be negative only when used to compensate for a previous layer with significantly larger thickness (e.g., for membrane fabrication)."
                         },
                         "Distance up (mm)": {
                             "type": "number",
@@ -405,9 +404,8 @@
                 },
                 "Layer thickness (um)": {
                     "type": "number",
-                    "minimum": 0,
                     "default": 10,
-                    "description": "Custom layer thickness"
+                    "description": "Custom layer thickness. Can be negative only when used to compensate for a previous layer with significantly larger thickness (e.g., for membrane fabrication)."
                 },
                 "Distance up (mm)": {
                     "type": "number",
