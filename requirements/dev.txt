@@ -1,4 +1,4 @@
-alembic==1.13.1
+alembic==1.13.2
 attrs==23.2.0
 bidict==0.23.1
 blinker==1.8.2
@@ -10,7 +10,7 @@ Flask==3.0.3
 Flask-Migrate==4.0.7
 Flask-SocketIO==5.3.6
 Flask-SQLAlchemy==3.1.1
-fonttools==4.56.0
+fonttools==4.57.0
 gclib @ file:///home/pi/3D_printer_control/env/lib/python3.11/site-packages/gclib
 gpiod==2.2.0
 gpiozero==2.0.1
@@ -19,7 +19,7 @@ h11==0.14.0
 ifaddr==0.2.0
 itsdangerous==2.2.0
 Jinja2==3.1.4
-jsonschema==4.22.0
+jsonschema==4.23.0
 jsonschema-specifications==2023.12.1
 kiwisolver==1.4.8
 lgpio==0.2.2.0
@@ -29,7 +29,7 @@ matplotlib==3.10.1
 numpy==2.0.0
 packaging==24.2
 pandas==2.2.3
-pillow==10.3.0
+pillow==10.4.0
 PIPython==2.10.2.1
 psutil==6.0.0
 pyparsing==3.2.3
@@ -43,9 +43,9 @@ pyusb==1.2.1
 PyVISA==1.14.1
 PyVISA-py==0.7.2
 referencing==0.35.1
-rpds-py==0.18.1
+rpds-py==0.19.0
 scapy==2.5.0
-scipy==1.14.1
+scipy==1.15.0
 seabreeze==2.9.2
 simple-websocket==1.0.0
 six==1.17.0
