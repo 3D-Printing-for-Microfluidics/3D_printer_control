@@ -232,9 +232,6 @@ This section details the setup process for deploying the system on a Raspberry P
    sudo apt install ./requirements/galil-release_1_all.deb
    sudo apt update
    sudo apt install gclib gcapsd
-   
-   # Install Python bindings
-   pip install ./requirements/gclib-1.0.0-py3-none-any.whl
    ```
 
 5. **Install Python Dependencies**
