@@ -229,18 +229,12 @@ This section details the setup process for deploying the system on a Raspberry P
 4. **Install Galil Driver**
    ```bash
    # Install CGLib Software
-   wget https://www.galil.com/sw/pub/apt/all/galil-release_1_all.deb
-   sudo apt install ./galil-release_1_all.deb
-   rm ./galil-release_1_all.deb
+   sudo apt install ./requirements/galil-release_1_all.deb
    sudo apt update
    sudo apt install gclib gcapsd
    
    # Install Python bindings
-   cd env/lib/python3.11/site-packages
-   mkdir gclib
-   cd gclib
-   cp /usr/share/gclib/src/wrappers/python/* .
-   pip install .
+   pip install ./requirements/gclib-1.0.0-py3-none-any.whl
    ```
 
 5. **Install Python Dependencies**
