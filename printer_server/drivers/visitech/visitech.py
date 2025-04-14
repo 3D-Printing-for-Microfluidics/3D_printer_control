@@ -812,16 +812,15 @@ class Visitech(EthernetSerial, LightEngineDriver):
 
         if is_grayscale_corrected:
             if "grayscale_normalization_factor" in self.config_dict:
-                normalization_factor = self.config_dict["grayscale_normalization_factor"][led_num]
+                self.normalization_factor = self.config_dict["grayscale_normalization_factor"][led_num]
             else:
                 self.log.warning("No grayscale normalization factor found in config dict, defaulting to 1.0")
-                normalization_factor = 1.0
-            normalization_factor = self.config_dict["grayscale_normalization_factor"][led_num]
+                self.normalization_factor = 1.0
         else:
             if "normalization_factor" in self.config_dict:
-                normalization_factor = self.config_dict["normalization_factor"][led_num]
+                self.normalization_factor = self.config_dict["normalization_factor"][led_num]
             else:
-                normalization_factor = 1.0
+                self.normalization_factor = 1.0
         self.set_normalization_factor(self.normalization_factor, led_num=led_num)
 
         if self.dual_led:
@@ -902,7 +901,6 @@ class Visitech(EthernetSerial, LightEngineDriver):
             else:
                 self.log.warning("No grayscale normalization factor found in config dict, defaulting to 1.0")
                 normalization_factor = 1.0
-            normalization_factor = self.config_dict["grayscale_normalization_factor"][led_num]
         else:
             if "normalization_factor" in self.config_dict:
                 normalization_factor = self.config_dict["normalization_factor"][led_num]
