@@ -129,6 +129,9 @@
         "resolution": [
             2560,
             1600
+        ],
+        "normalization_factor": [
+            1.0
         ]
     }
 }
