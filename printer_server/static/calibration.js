@@ -9,7 +9,7 @@ var enable_all_buttons = function () {
 var update_parameters = function (message) {
     for (let parameter in calibration_data) {
         if (!$.isEmptyObject(message)) {
-            document.getElementById(`${parameter.replace(' ', '-')}-state`).innerHTML = message[parameter];
+            document.getElementById(`${parameter.replaceAll(' ', '-')}-state`).innerHTML = message[parameter];
         }
     }
 }
@@ -32,7 +32,7 @@ $(document).ready(function () {
     });
 
     for (let parameter in calibration_data) {
-        parameter = parameter.replace(' ', '-');
+        parameter = parameter.replaceAll(' ', '-');
         // text inputs for absolute changes
         $(`.${parameter}-cntrl-txt`).on('change', function () {
             // Parse button content and construct message
