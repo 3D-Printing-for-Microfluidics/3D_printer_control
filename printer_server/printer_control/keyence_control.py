@@ -103,7 +103,7 @@ class KeyenceControl(PrintControl):
 
             # Step 5: Build list of measurement positions
             for light_engine in config_dict["light_engines"]:
-                self.measurement_count += repeats
+                self.measurement_count += repeats + 2
                 self.keyence_measurement_list[light_engine] = {}
                 if light_engine == "wintech":
                     self.keyence_measurement_list["offset_wintech"] = {}
