@@ -285,7 +285,7 @@ class KeyenceControl(PrintControl):
         """
 
         if len(self.wintech_thermal_drift_measurements.values()) > 0:
-            self.wintech_thermal_drift = self.wintech_thermal_drift_measurements.values()/len(self.wintech_thermal_drift_measurements.values())
+            self.wintech_thermal_drift = sum(self.wintech_thermal_drift_measurements.values())/len(self.wintech_thermal_drift_measurements.values())
             self.write_to_event_log(
                 f"Wintech Thermal Drift Offsets: {self.wintech_thermal_drift_measurements.values()}"
             )
