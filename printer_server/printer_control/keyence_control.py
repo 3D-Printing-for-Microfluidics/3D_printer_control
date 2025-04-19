@@ -172,7 +172,7 @@ class KeyenceControl(PrintControl):
                 time.sleep(1.0)
 
                 # Step 7c: Get several readings and adjusting focus between
-                for i in repeats:
+                for i in range(repeats):
                     keyence_reading = self.keyence.read_sensor(light_engine)
                     self.write_to_event_log(
                         f"{light_engine.capitalize()} Keyence Measured Position {i}: {keyence_reading}"
@@ -284,10 +284,10 @@ class KeyenceControl(PrintControl):
         Calculate new thermal drift averages using keyence measurements taken during layer's exposures.
         """
 
-        if len(self.wintech_thermal_drift_measurements.values) > 0:
-            self.wintech_thermal_drift = self.wintech_thermal_drift_measurements.values/len(self.wintech_thermal_drift_measurements.values)
+        if len(self.wintech_thermal_drift_measurements.values()) > 0:
+            self.wintech_thermal_drift = self.wintech_thermal_drift_measurements.values()/len(self.wintech_thermal_drift_measurements.values())
             self.write_to_event_log(
-                f"Wintech Thermal Drift Offsets: {self.wintech_thermal_drift_measurements.values}"
+                f"Wintech Thermal Drift Offsets: {self.wintech_thermal_drift_measurements.values()}"
             )
             self.write_to_event_log(
                 f"Average Keyence Thermal Drift: {self.wintech_thermal_drift}"
