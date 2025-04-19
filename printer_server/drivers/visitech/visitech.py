@@ -755,9 +755,10 @@ class Visitech(EthernetSerial, LightEngineDriver):
 
         Return type +OK
         """
-        cmd = f"FACTORY SET NORMALIZATION VALUE {normalization_factor}"
+        cmd = f"FACTORY SET NORMALIZATION VALUE"
         if self.dual_led:
             cmd += f" {led_num}"
+        cmd += f" {normalization_factor}"
         return self.send(cmd)
 
     def split_exposure_time(self, exposure):
