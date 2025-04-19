@@ -283,8 +283,7 @@ class PrintControl:
         )
 
     def move_build_platform(self, position_settings, layer):
-        log.warning("Base printer_control class does not have a defined bp stage. Cannot move bp")
-        return 0
+        pass
 
     def force_squeeze(self, position_settings, layer):
         log.warning("Missing loadcell_control. Cannot force_squeeze")

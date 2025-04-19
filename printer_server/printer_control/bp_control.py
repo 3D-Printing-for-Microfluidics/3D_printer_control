@@ -104,6 +104,7 @@ class BPControl(PrintControl):
             start_position = self.bp_stage.getBPPosition()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
             self.move_build_platform_up(position_settings)
+            super().move_build_platform(position_settings, layer)
             self.print_position -= layer_thickness
             self.move_build_platform_down(position_settings)
 
