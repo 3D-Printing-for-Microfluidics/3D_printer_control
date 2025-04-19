@@ -11,7 +11,7 @@ from printer_server.views.calibration import (
 )
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
 
 class KeyenceControl(PrintControl):
     def __init__(self):
@@ -273,10 +273,17 @@ class KeyenceControl(PrintControl):
         """
         if light_engine == "wintech":
             keyence_reading = self.keyence.read_sensor(light_engine)
+            log.debug("Sensor reading: %s", keyence_reading)
             if keyence_reading != -9999.99:
                 # calculate thermal drift
                 og_target = self.calibration_positions.get(f"keyence_{light_engine}",0)
+                log.debug("Target: %s", og_target)
+                log.debug("Target offset: %s", self.keyence_measurement_list["offset_wintech"][f"{self.x_offset}, {self.y_offset}"])
                 target_position = og_target - self.keyence_measurement_list["offset_wintech"][f"{self.x_offset}, {self.y_offset}"]
+                log.debug("Actual target: %s", target_position)
+                log.debug("Defocus: %s", self.defocus_um)
+                log.debug("Thermal drift: %s", keyence_reading)
+
                 self.wintech_thermal_drift_measurements[f"{self.x_offset}, {self.y_offset}"] = target_position + self.defocus_um - keyence_reading
         super().post_exposure_tasks(light_engine, msg)
 
