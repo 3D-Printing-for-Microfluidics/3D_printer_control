@@ -172,13 +172,14 @@ class KeyenceControl(PrintControl):
                 time.sleep(1.0)
 
                 # Step 7c: Get several readings and adjusting focus between
+                focus_drift = 0
                 for i in range(repeats):
                     keyence_reading = self.keyence.read_sensor(light_engine)
                     self.write_to_event_log(
                         f"{light_engine.capitalize()} Keyence Measured Position {i}: {keyence_reading}"
                     )
                     self.update_measurement_progress()
-                    focus_drift = target_position - keyence_reading
+                    focus_drift += target_position - keyence_reading
                     self.focus_stage.threadedFocusMove(log, self.coord_systems[f"keyence_{light_engine}"]["Focus"] + focus_drift/1000)
                     time.sleep(1.0)
 
