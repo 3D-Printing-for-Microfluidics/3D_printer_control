@@ -34,7 +34,7 @@ class ScreenControl(PrintControl):
         self.screen.setCorrectionEnable(light_corrected, dark_corrected, light_engine=le)
 
         self.screen_thread = Thread(
-            log, name="screen_control_draw_thread", target=self.screen.draw, args=[self.image], kwargs={"light_engine": light_engine, "led_num": led}
+            log, name="screen_control_draw_thread", target=self.screen.draw, args=[self.image], kwargs={"light_engine": le, "led_num": led}
         )
         self.screen_thread.start()
         super().pre_exposure_tasks(settings, light_engine)
@@ -48,7 +48,7 @@ class ScreenControl(PrintControl):
             self.failed_hardware["Virtual Screen"] = self.screen
             raise PrintingException()
         update_screen_preview(
-            light_engine, 
+            le, 
             self.screen.fetch_preview(le)
         )
         return super().pre_exposure_joins(light_engine)
