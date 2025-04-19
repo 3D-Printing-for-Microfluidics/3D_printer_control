@@ -227,6 +227,8 @@ class KeyenceControl(PrintControl):
 
                 # Step 7g: Repeat f but for wintech instead of keyence_wintech
                 if light_engine == "wintech":
+                    self.focus_stage.threadedFocusMove(log, self.coord_systems[light_engine]["Focus"])
+                    time.sleep(1.0)
                     for measurement in list(self.keyence_measurement_list["offset_wintech"]):
                         measurement = measurement.split(", ")
                         x_offset = float(measurement[0])
@@ -282,7 +284,7 @@ class KeyenceControl(PrintControl):
                 target_position = og_target - self.keyence_measurement_list["offset_wintech"][f"{self.x_offset}, {self.y_offset}"]
                 log.debug("Actual target: %s", target_position)
                 log.debug("Defocus: %s", self.defocus_um)
-                log.debug("Thermal drift: %s", keyence_reading)
+                log.debug("Thermal drift: %s", target_position + self.defocus_um - keyence_reading)
 
                 self.wintech_thermal_drift_measurements[f"{self.x_offset}, {self.y_offset}"] = target_position + self.defocus_um - keyence_reading
         super().post_exposure_tasks(light_engine, msg)
