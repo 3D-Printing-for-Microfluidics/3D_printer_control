@@ -56,7 +56,7 @@ class KeyenceControl(PrintControl):
 
         async_file_hander.write(
             self.thermal_drift_log,
-            "time,thermal_drift,",
+            "time,thermal_drift\n",
         )
 
     def pre_print_tasks(self):
@@ -308,8 +308,8 @@ class KeyenceControl(PrintControl):
 
             ts = "%Y-%m-%d %H:%M:%S.%f"
             async_file_hander.write(
-                self.position_log,
-                datetime.now().strftime(ts) + "," + self.wintech_thermal_drift
+                self.thermal_drift_log,
+                datetime.now().strftime(ts) + "," + self.wintech_thermal_drift + "\n"
             )
 
         return super().pre_exposure_tasks(settings, light_engine)
@@ -349,8 +349,8 @@ class KeyenceControl(PrintControl):
             )
             ts = "%Y-%m-%d %H:%M:%S.%f"
             async_file_hander.write(
-                self.position_log,
-                datetime.now().strftime(ts) + "," + self.wintech_thermal_drift
+                self.thermal_drift_log,
+                datetime.now().strftime(ts) + "," + self.wintech_thermal_drift + "\n"
             )
         super().move_build_platform(position_settings, layer)
 
