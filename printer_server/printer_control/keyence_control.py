@@ -4,6 +4,7 @@ from datetime import datetime
 
 import printer_server.views.home as home
 from printer_server.threading_wrapper import Thread
+from printer_server.async_file_handler import async_file_hander
 from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 from printer_server.views.calibration import (
@@ -30,6 +31,8 @@ class KeyenceControl(PrintControl):
         self.x_offset = None
         self.y_offset = None
 
+        self.thermal_drift_log = str(self.current_job / "logs" / "thermal_drift_data.csv")
+
     def connect_hardware(self):
         keyence_thread = Thread(log, name="keyence_control_connect_thread", target=self.keyence.connect)
         keyence_thread.start()
@@ -47,6 +50,14 @@ class KeyenceControl(PrintControl):
         }
         home.update_printer_state("print progress", msg)
         self.measurement_index += 1
+
+    def create_logs(self):
+        super().create_logs()
+
+        async_file_hander.write(
+            self.thermal_drift_log,
+            "time,thermal_drift,",
+        )
 
     def pre_print_tasks(self):
         """
@@ -195,12 +206,8 @@ class KeyenceControl(PrintControl):
                 )
 
                 # Step 7e: Update coordinate systems with new focus positions
-                self.coord_systems[f"keyence_{light_engine}"]["Focus"] = (
-                    self.coord_systems[f"keyence_{light_engine}"]["Focus"] + focus_drift/1000
-                )
-                self.coord_systems[light_engine]["Focus"] = (
-                    self.coord_systems[light_engine]["Focus"] + focus_drift/1000
-                )
+                self.coord_systems[f"keyence_{light_engine}"]["Focus"] += focus_drift/1000
+                self.coord_systems[light_engine]["Focus"] += focus_drift/1000
 
                 # Step 7f: Get measurements at each unique x,y offset position
                 for measurement in list(self.keyence_offset_targets[f"keyence_{light_engine}"]):
@@ -299,6 +306,12 @@ class KeyenceControl(PrintControl):
             self.wintech_thermal_drift = origin_target - keyence_reading
             self.write_to_event_log(f"Origin thermal drift: {self.wintech_thermal_drift}")
 
+            ts = "%Y-%m-%d %H:%M:%S.%f"
+            async_file_hander.write(
+                self.position_log,
+                datetime.now().strftime(ts) + "," + self.wintech_thermal_drift
+            )
+
         return super().pre_exposure_tasks(settings, light_engine)
             
     def post_exposure_tasks(self, light_engine, msg):
@@ -309,15 +322,13 @@ class KeyenceControl(PrintControl):
         """
         if light_engine == "wintech":
             keyence_reading = self.keyence.read_sensor(light_engine)
-            self.write_to_event_log(f"Sensor reading: {keyence_reading}")
             if keyence_reading != -9999.99:
                 # calculate thermal drift
-                self.write_to_event_log(f"Target offset: {self.keyence_offset_targets[light_engine][f'{self.x_offset}, {self.y_offset}']}")
                 target_position = self.keyence_offset_targets[light_engine][f"{self.x_offset}, {self.y_offset}"]
-                self.write_to_event_log(f"Actual target: {target_position}")
+                self.write_to_event_log(f"Offset Target: {target_position}")
+                self.write_to_event_log(f"Sensor reading: {keyence_reading}")
                 self.write_to_event_log(f"Defocus: {self.defocus_um}")
                 self.write_to_event_log(f"Thermal drift: {target_position + self.defocus_um - keyence_reading}")
-
                 self.wintech_thermal_drift_measurements[f"{self.x_offset}, {self.y_offset}"] = target_position + self.defocus_um - keyence_reading
         self.last_exposure_le = light_engine
         super().post_exposure_tasks(light_engine, msg)
@@ -335,6 +346,11 @@ class KeyenceControl(PrintControl):
             )
             self.write_to_event_log(
                 f"Average Keyence Thermal Drift: {self.wintech_thermal_drift}"
+            )
+            ts = "%Y-%m-%d %H:%M:%S.%f"
+            async_file_hander.write(
+                self.position_log,
+                datetime.now().strftime(ts) + "," + self.wintech_thermal_drift
             )
         super().move_build_platform(position_settings, layer)
 
