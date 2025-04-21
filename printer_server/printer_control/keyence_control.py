@@ -64,7 +64,6 @@ class KeyenceControl(PrintControl):
         Step-by-step procedure for pre-print keyence sensor calibration:
         
         1. Get calibration positions from calibration position log
-        # 2. Move focus stage to each light engine position to improve repeatability
         2. Get default settings from print configuration
         3. Initialize measurement tracking variables
         4. Build list of measurement positions
@@ -87,11 +86,6 @@ class KeyenceControl(PrintControl):
         try:
             # Step 1: Get calibration positions from calibration position log
             self.calibration_positions = get_last_calibration_positions_from_logs()
-
-            # # Step 2: Move focus stage to each light engine position to improve repeatability
-            # for light_engine in config_dict["light_engines"]:
-            #     self.focus_stage.threadedFocusMove(log, self.coord_systems[f"keyence_{light_engine}"]["Focus"])
-            #     time.sleep(1.0)
 
             # Step 2: Get default settings from print configuration
             try:
@@ -267,11 +261,15 @@ class KeyenceControl(PrintControl):
             raise PrintingException()
 
     def pre_exposure_tasks(self, settings, light_engine):
+        """
+        Setup for post exposure task, also after each non-wintech exposure, 
+        remeasure the thermal drift at keyence wintech origin
+        """
+         
         self.x_offset = float(settings.get("Image x offset (um)", self.default_x_offset))
         self.y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
 
         if light_engine == "wintech" and self.last_exposure_le != "wintech":
-            # Move to origin measurement position (0,0 or default x/y)
             x_pos = self.default_x_offset/1000 + self.coord_systems[f"keyence_{light_engine}"]["X"]
             y_pos = self.default_y_offset/1000 + self.coord_systems[f"keyence_{light_engine}"]["Y"]
             if "wintech" in light_engine:
@@ -317,7 +315,7 @@ class KeyenceControl(PrintControl):
     def post_exposure_tasks(self, light_engine, msg):
         """
         Read the keyence sensor after exposure then compare it to the starting values.
-        This lets us measure changing wintech focus over the course of
+        This lets us measure changing wintech focus (thermal drift) over the course of
         the print without needing to constantly return the wintech to the center.
         """
         if light_engine == "wintech":
@@ -336,6 +334,7 @@ class KeyenceControl(PrintControl):
     def move_build_platform(self, position_settings, layer):
         """
         Calculate new thermal drift averages using keyence measurements taken during layer's exposures.
+        Reset dictionary for next layer
         """
 
         if len(self.wintech_thermal_drift_measurements.values()) > 0:
