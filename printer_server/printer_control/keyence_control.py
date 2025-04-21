@@ -64,12 +64,12 @@ class KeyenceControl(PrintControl):
         Step-by-step procedure for pre-print keyence sensor calibration:
         
         1. Get calibration positions from calibration position log
-        2. Move focus stage to each light engine position to improve repeatability
-        3. Get default settings from print configuration
-        4. Initialize measurement tracking variables
-        5. Build list of measurement positions
-        6. Move build platform up for measurements
-        7. Perform measurements for each light engine:
+        # 2. Move focus stage to each light engine position to improve repeatability
+        2. Get default settings from print configuration
+        3. Initialize measurement tracking variables
+        4. Build list of measurement positions
+        5. Move build platform up for measurements
+        6. Perform measurements for each light engine:
             a. Get keyence target position
             b. Move to origin measurement position (0,0 or default x/y)
             c. Get several readings and adjusting focus between
@@ -80,7 +80,7 @@ class KeyenceControl(PrintControl):
                 - Get keyence reading
                 - Calculate and store focus offset
             g. Repeat f but for wintech instead of keyence_wintech
-        6. Move build platform back down
+        7. Move build platform back down
         """
         super().pre_print_tasks()
 
@@ -88,12 +88,12 @@ class KeyenceControl(PrintControl):
             # Step 1: Get calibration positions from calibration position log
             self.calibration_positions = get_last_calibration_positions_from_logs()
 
-            # Step 2: Move focus stage to each light engine position to improve repeatability
-            for light_engine in config_dict["light_engines"]:
-                self.focus_stage.threadedFocusMove(log, self.coord_systems[f"keyence_{light_engine}"]["Focus"])
-                time.sleep(1.0)
+            # # Step 2: Move focus stage to each light engine position to improve repeatability
+            # for light_engine in config_dict["light_engines"]:
+            #     self.focus_stage.threadedFocusMove(log, self.coord_systems[f"keyence_{light_engine}"]["Focus"])
+            #     time.sleep(1.0)
 
-            # Step 3: Get default settings from print configuration
+            # Step 2: Get default settings from print configuration
             try:
                 defaults_layer_settings = self.print_settings.get("Default layer settings")
                 default_image_settings = defaults_layer_settings.get("Image settings")
@@ -107,13 +107,13 @@ class KeyenceControl(PrintControl):
                 "Light engine", config_dict["light_engines"][0]
             )
 
-            # Step 4: Initialize measurement tracking variables
+            # Step 3: Initialize measurement tracking variables
             self.keyence_offset_targets = {}
             self.measurement_index = 0
             self.measurement_count = 0
             repeats = 3
 
-            # Step 5: Build list of measurement positions
+            # Step 4: Build list of measurement positions
             for light_engine in config_dict["light_engines"]:
                 self.measurement_count += repeats + 2
                 self.keyence_offset_targets[f"keyence_{light_engine}"] = {}
@@ -143,20 +143,20 @@ class KeyenceControl(PrintControl):
                                 self.keyence_offset_targets[light_engine][f"{x_offset}, {y_offset}"] = None
                                 self.measurement_count += 1
 
-            # Step 6: Move build platform up for measurements
+            # Step 5: Move build platform up for measurements
             self.move_build_platform_up(self.default_position_settings)
 
-            # Step 7: Perform measurements for each light engine
+            # Step 6: Perform measurements for each light engine
             for light_engine in config_dict["light_engines"]:
                 self.update_measurement_progress()
 
-                # Step 7a: Get keyence target position
+                # Step 6a: Get keyence target position
                 target_position = self.calibration_positions.get(f"keyence_{light_engine}",0)
                 self.write_to_event_log(
                     f"{light_engine.capitalize()} Keyence Target Position: {target_position}"
                 )
 
-                # Step 7b: Move to origin measurement position (0,0 or default x/y)
+                # Step 6b: Move to origin measurement position (0,0 or default x/y)
                 x_pos = self.default_x_offset/1000 + self.coord_systems[f"keyence_{light_engine}"]["X"]
                 y_pos = self.default_y_offset/1000 + self.coord_systems[f"keyence_{light_engine}"]["Y"]
                 if "wintech" in light_engine:
@@ -183,7 +183,7 @@ class KeyenceControl(PrintControl):
                         raise PrintingException()
                 time.sleep(1.0)
 
-                # Step 7c: Get several readings and adjusting focus between
+                # Step 6c: Get several readings and adjusting focus between
                 focus_drift = 0
                 for i in range(repeats):
                     keyence_reading = self.keyence.read_sensor(light_engine)
@@ -195,7 +195,7 @@ class KeyenceControl(PrintControl):
                     self.focus_stage.threadedFocusMove(log, self.coord_systems[f"keyence_{light_engine}"]["Focus"] + focus_drift/1000)
                     time.sleep(1.0)
 
-                # Step 7d: Get final reading and calculate drift from target
+                # Step 6d: Get final reading and calculate drift from target
                 keyence_error = self.keyence.read_sensor(light_engine)
                 self.write_to_event_log(
                     f"{light_engine.capitalize()} Keyence Error: {target_position - keyence_error}"
@@ -205,11 +205,11 @@ class KeyenceControl(PrintControl):
                     f"{light_engine.capitalize()} Keyence Drift: {focus_drift}"
                 )
 
-                # Step 7e: Update coordinate systems with new focus positions
+                # Step 6e: Update coordinate systems with new focus positions
                 self.coord_systems[f"keyence_{light_engine}"]["Focus"] += focus_drift/1000
                 self.coord_systems[light_engine]["Focus"] += focus_drift/1000
 
-                # Step 7f: Get measurements at each unique x,y offset position
+                # Step 6f: Get measurements at each unique x,y offset position
                 for measurement in list(self.keyence_offset_targets[f"keyence_{light_engine}"]):
                     measurement = measurement.split(", ")
                     x_offset = float(measurement[0])
@@ -231,7 +231,7 @@ class KeyenceControl(PrintControl):
                     # Calculate and store focus offset
                     self.keyence_offset_targets[f"keyence_{light_engine}"][f"{x_offset}, {y_offset}"] = keyence_reading
 
-                # Step 7g: Repeat f but for wintech instead of keyence_wintech
+                # Step 6g: Repeat f but for wintech instead of keyence_wintech
                 if light_engine == "wintech":
                     self.focus_stage.threadedFocusMove(log, self.coord_systems[light_engine]["Focus"])
                     time.sleep(1.0)
@@ -258,7 +258,7 @@ class KeyenceControl(PrintControl):
             self.update_measurement_progress()
             self.write_to_event_log(f"Keyence Focus Offsets: {self.keyence_offset_targets}")
 
-            # Step 8: Move build platform down
+            # Step 7: Move build platform down
             self.move_build_platform_down(self.default_position_settings)
 
         except Exception as ex:
