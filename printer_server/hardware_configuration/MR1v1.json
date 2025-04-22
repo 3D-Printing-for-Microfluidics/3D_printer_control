@@ -147,8 +147,8 @@
         "microcontroller": "Teensy3.2",
         "baudrate": 115200,
         "sample_period_us": 1000,
-        "calibration_intercept": 28844.00,
-        "calibration_slope": -1.078,
+        "calibration_intercept": 28640.00,
+        "calibration_slope": -1.125,
         "loadcell_planarization_enabled": true,
         "loadcell_planarization_force": 35.0,
         "loadcell_print_start_force": 5.0
