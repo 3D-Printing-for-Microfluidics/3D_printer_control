@@ -442,7 +442,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
         if mm < self.getPosition(in_mm=True, axis="Focus"):
-            self.absMove(mm=mm-0.5, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
+            self.absMove(mm=mm-0.25, speed=speed, acceleration=acceleration, wait_for_settling=False, axis="Focus")
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
 
     def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
