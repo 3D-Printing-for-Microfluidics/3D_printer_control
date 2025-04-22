@@ -262,7 +262,7 @@ class KeyenceControl(PrintControl):
                 "\ntime,data_type,x,y,data\n",
             )
             for k1, v1 in self.keyence_offset_targets.items():
-                for k2, v2 in v1:
+                for k2, v2 in v1.items():
                     async_file_hander.write(
                         self.keyence_focus_log,
                         f"{datetime.now().strftime(ts)},{k1} Offset Target Position,{k2},{v2}\n"
