@@ -290,7 +290,7 @@ class KeyenceControl(PrintControl):
         self.y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
 
         if light_engine == "wintech" and self.last_exposure_le != "wintech":
-            if self.need_origin_keyence_measurement or (self.failed_thermal_drift_measurements > 0 and len(self.wintech_thermal_drift_measurements.valves()) == 0):
+            if self.need_origin_keyence_measurement or (self.failed_thermal_drift_measurements > 0 and len(self.wintech_thermal_drift_measurements.values()) == 0):
                 self.need_origin_keyence_measurement = False
                 self.failed_thermal_drift_measurements = 0
 
