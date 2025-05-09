@@ -37,8 +37,8 @@ class GPIO:
 
             if "wintech_fan_pin1" in self.config_dict.keys():
                 self.wintech_fan_relay = True
-                self.wintech_fan_device1 = DigitalOutputDevice(self.wintech_fan_relay_pin1, active_high=True, initial_value=False)
-                self.wintech_fan_device2 = DigitalOutputDevice(self.wintech_fan_relay_pin2, active_high=True, initial_value=False)
+                self.wintech_fan_device1 = DigitalOutputDevice(self.wintech_fan_relay_pin1, active_high=False, initial_value=False)
+                self.wintech_fan_device2 = DigitalOutputDevice(self.wintech_fan_relay_pin2, active_high=False, initial_value=False)
 
             if "power_status_pin" in self.config_dict.keys():
                 self.shutdown_func = shutdown
