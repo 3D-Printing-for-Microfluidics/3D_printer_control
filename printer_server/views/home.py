@@ -33,7 +33,7 @@ if "gpio" in config_dict:
         from printer_server.printer_control.gpio_control import WintechFanGPIOControl
         parent_classes.append(WintechFanGPIOControl)   
         gpio_imported = True
-    if !gpio_imported:
+    if not gpio_imported:
         from printer_server.printer_control.gpio_control import GPIOControl
         parent_classes.append(GPIOControl)   
 
