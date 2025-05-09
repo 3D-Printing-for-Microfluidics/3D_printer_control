@@ -29,7 +29,7 @@ class GPIO_dummy:
     def film_relay_off(self):
         self.film_relay_state = False
 
-        @dummy_log
+    @dummy_log
     def wintech_fan_relay_on(self):
         self.wintech_fan_relay_state = True
 
