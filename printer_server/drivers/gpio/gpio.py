@@ -36,7 +36,7 @@ class GPIO:
                 self.film_device = DigitalOutputDevice(self.film_relay_pin, active_high=True, initial_value=False)
 
             if "wintech_fan_pin1" in self.config_dict.keys():
-                self.wintech_fan_relay = False
+                self.wintech_fan_relay = True
                 self.wintech_fan_device1 = DigitalOutputDevice(self.wintech_fan_relay_pin1, active_high=True, initial_value=False)
                 self.wintech_fan_device2 = DigitalOutputDevice(self.wintech_fan_relay_pin2, active_high=True, initial_value=False)
 
@@ -90,10 +90,10 @@ class GPIO:
         self.wintech_fan_relay_state = True
         self.wintech_fan_device1.on()
         self.wintech_fan_device2.on()
-        self.log.info("Wintech fans off")
+        self.log.info("Wintech fan relay on")
 
     def wintech_fan_relay_off(self):
         self.wintech_fan_relay_state = False
         self.wintech_fan_device1.off()
         self.wintech_fan_device2.off()
-        self.log.info("Wintech fans on")
+        self.log.info("Wintech fan relay off")
