@@ -36,7 +36,7 @@ class GPIO:
                 self.film_device = DigitalOutputDevice(self.film_relay_pin, active_high=True, initial_value=False)
 
             if "wintech_fan_pin1" in self.config_dict.keys():
-                self.wintech_fan_relay = True
+                self.wintech_fan_relay = False
                 self.wintech_fan_device1 = DigitalOutputDevice(self.wintech_fan_relay_pin1, active_high=True, initial_value=False)
                 self.wintech_fan_device2 = DigitalOutputDevice(self.wintech_fan_relay_pin2, active_high=True, initial_value=False)
 
