@@ -24,10 +24,16 @@ parent_classes.append(TestControl)
 
 # film gpio needs to be before bp
 if "gpio" in config_dict:
+    gpio_imported = False
     if "film_pin" in config_dict["gpio"]:
         from printer_server.printer_control.gpio_control import FilmGPIOControl
         parent_classes.append(FilmGPIOControl)   
-    else:
+        gpio_imported = True
+    if "wintech_fan_pin1" in config_dict["gpio"]:
+        from printer_server.printer_control.gpio_control import WintechFanGPIOControl
+        parent_classes.append(WintechFanGPIOControl)   
+        gpio_imported = True
+    if !gpio_imported:
         from printer_server.printer_control.gpio_control import GPIOControl
         parent_classes.append(GPIOControl)   
 

@@ -8,6 +8,7 @@ class GPIO_dummy:
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         self.film_relay_state = None
+        self.wintech_fan_relay_state = None
         self.connected = False
 
     @dummy_log
@@ -27,3 +28,11 @@ class GPIO_dummy:
     @dummy_log
     def film_relay_off(self):
         self.film_relay_state = False
+
+        @dummy_log
+    def wintech_fan_relay_on(self):
+        self.wintech_fan_relay_state = True
+
+    @dummy_log
+    def wintech_fan_relay_off(self):
+        self.wintech_fan_relay_state = False

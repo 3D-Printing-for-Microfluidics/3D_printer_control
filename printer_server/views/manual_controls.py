@@ -91,6 +91,10 @@ if "gpio" in config_dict.keys():
         on_load_f_init.append(
             printer_server.drivers.gpio.gpio_snip.getFilmRelayState
         )
+    if "wintech_fan_pin1" in config_dict["gpio"].keys():
+        on_load_f_init.append(
+            printer_server.drivers.gpio.gpio_snip.setWintechFanRelayState
+        )
 
 if "keyence" in config_dict.keys():
     import printer_server.drivers.keyence.keyence_snip

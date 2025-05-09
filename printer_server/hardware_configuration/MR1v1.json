@@ -136,7 +136,9 @@
     },
     "gpio": {
         "dummy": false,
-        "power_status_pin": 17
+        "power_status_pin": 17,
+        "wintech_fan_pin1": 27,
+        "wintech_fan_pin2": 22
     },
     "loadcell": {
         "dummy": false,

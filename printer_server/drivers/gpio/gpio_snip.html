@@ -1,11 +1,12 @@
 
+{% if 'film_pin' in manual_controls_data['gpio'] or 'wintech_fan_pin1' in manual_controls_data['gpio']%}
 <div class="container gpio">
-    {% if 'film_pin' in manual_controls_data['gpio']%}
     <div class="row">
         <div class="col-6">
             <h3>GPIO Controls</h3>
         </div>
     </div>
+    {% if 'film_pin' in manual_controls_data['gpio'] %}
     <div class="row">
         <div class="col-6">
             <h5>Film Relay</h5>
@@ -22,6 +23,24 @@
         </div>
     </div>
     {% endif %}
+    {% if 'wintech_fan_pin1' in manual_controls_data['gpio'] %}
+    <div class="row">
+        <div class="col-6">
+            <h5>Wintech Fan Relays</h5>
+        </div>
+        <div class="col-6">
+            <div id="w-fan-relay" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                <label
+                    class="btn btn-outline-info btn-fixed-width shadow-none">On<input
+                        type="radio" id="w-fan-on"></label>
+                <label
+                    class="btn btn-outline-info btn-fixed-width shadow-none">Off<input
+                        type="radio" id="w-fan-off"></label>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <script src="{{ url_for('manual_controls.static', filename='gpio/gpio_snip.js') }}"></script>
+{% endif %}
