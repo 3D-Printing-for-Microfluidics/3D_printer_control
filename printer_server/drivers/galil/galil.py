@@ -364,10 +364,8 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
 
         elif "DMC4040" in self.controller_name:
             self.log.info("Start homing...")
-            self.send("XQ #HMA,0")
-            self.send("XQ #HMB,1")
-            self.send("XQ #HMC,2")
-            self.send("XQ #HMD,3")
+            for i, a in enumerate(self.axes):
+                self.send(f"XQ #HM{a},{i}")
 
             time.sleep(10)
 

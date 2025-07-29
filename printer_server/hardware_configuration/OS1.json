@@ -1,0 +1,205 @@
+{
+    "valid_schema_versions": [
+        "v2"
+    ],
+    "external_control": {},
+    "coord_systems": {
+        "global": {
+            "X": 0,
+            "Y": 0,
+            "Focus": 0,
+            "Build Platform": 0
+        },
+        "parked": {
+            "X": 100,
+            "Y": 85,
+            "Focus": 0,
+            "Build Platform": 0
+        },
+        "visitech": {
+            "X": -0.4,
+            "Y": 1.06,
+            "Focus": 2.893,
+            "Build Platform": 0
+        },
+        "keyence_visitech": {
+            "X": -1.705,
+            "Y": -36.204,
+            "Focus": 2.300,
+            "Build Platform": 0
+        },
+        "fiber_visitech": {
+            "X": -86.308,
+            "Y": 68.815,
+            "Focus": 0.02,
+            "Build Platform": 0
+        }
+    },
+    "stages": {
+        "bp_stage": "galil",
+        "focus_stage": "kdc101",
+        "xy_stage": "kdc101",
+        "ttr_stage": "tiptilt"
+    },
+    "galil": {
+        "dummy": false,
+        "controller_name": "DMC4040",
+        "address": "192.168.0.9",
+        "default_axis": "D",
+        "axes": [
+            "D"
+        ],
+        "axes_common_names": [
+            "Build Platform"
+        ],
+        "axes_travel": {
+            "D": 100
+        },
+        "axes_ctspmm": {
+            "D": 51200
+        },
+        "axes_tolerance_um": {
+            "D": 0.125
+        },
+        "axes_speed": {
+            "D": 25
+        },
+        "axes_acceleration": {
+            "D": 50
+        },
+        "limits": {
+            "D": [
+                null,
+                47.0
+            ]
+        },
+        "calibration_limits": {
+            "D": [
+                null,
+                10.380125
+            ]
+        },
+        "calibration_position": 9.380125,
+        "bottom_position": 40.284,
+        "top_position": -50
+    },
+    "kdc101": {
+        "dummy": false,
+        "vendor_id": 1027,
+        "product_id": 64240,
+        "baudrate": 115200,
+        "default_axis": "0x50",
+        "axes": [
+            "0x50"
+        ],
+        "axes_common_names": [
+            "Focus"
+        ],
+        "axes_travel": {
+            "0x50": 25.0
+        },
+        "axes_ctspmm": {
+            "0x50": 34554.96
+        },
+        "axes_speed": {
+            "0x50": 2.777
+        },
+        "axes_acceleration": {
+            "0x50": 1.486
+        },
+        "limits": {
+            "0x50": [
+                null,
+                null
+            ]
+        },
+        "moving_shifts_image": true
+    },
+    "tiptilt": {
+        "dummy": false,
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "9881850",
+        "firmware_path": "Mirror_Tip_Tilt/Mirror_Tip_Tilt.ino",
+        "microcontroller": "Teensy3.2",
+        "baudrate": 115200,
+        "axes": [
+            "1",
+            "2"
+        ],
+        "axes_common_names": [
+            "Tip",
+            "Tilt"
+        ],
+        "limits": {
+            "1": [
+                null,
+                null
+            ],
+            "2": [
+                null,
+                null
+            ]
+        },
+        "auto_repositioning": false
+    },
+    "gpio": {
+        "dummy": false,
+        "power_status_pin": 17
+    },
+    "loadcell": {
+        "dummy": false,
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "5712570",
+        "firmware_path": "loadcell/loadcell.ino",
+        "microcontroller": "Teensy3.2",
+        "baudrate": 115200,
+        "sample_period_us": 1000,
+        "calibration_intercept": 34400.0,
+        "calibration_slope": -2.056,
+        "loadcell_planarization_enabled": true,
+        "loadcell_planarization_force": 35.0,
+        "loadcell_print_start_force": 5.0
+    },
+    "keyence": {
+        "dummy": false,
+        "address": "192.168.0.15",
+        "port": 24685,
+        "sensors": {
+            "visitech": {
+                "measurement_index": 0
+            }
+        }
+    },
+    "photodiode": {
+        "dummy": false,
+        "beam_diameter": 0.05,
+        "default_wavelength": 365,
+        "attenuation_db": 0,
+        "default_number_of_averages": 64,
+        "vendor_id": 4883,
+        "product_id": 32882,
+        "serial_number": "1928351"
+    },
+    "screen": {},
+    "light_engines": [
+        "visitech"
+    ],
+    "visitech": {
+        "dummy": false,
+        "address": "192.168.0.10",
+        "port": 5000,
+        "dual_led": false,
+        "leds_nm": [
+            365
+        ],
+        "resolution": [
+            2560,
+            1600
+        ],
+        "normalization_factor": [
+            1.0
+        ]
+    }
+}
