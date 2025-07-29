@@ -1,4 +1,4 @@
-# Based on https://www.thorlabs.com/Software/Motion%20Control/APT_Communications_Protocol_v38.pdf
+# Based on https://www.thorlabs.com/Software/Motion%20Control/APT_Communications_Protocol.pdf
 
 import time
 import atexit
