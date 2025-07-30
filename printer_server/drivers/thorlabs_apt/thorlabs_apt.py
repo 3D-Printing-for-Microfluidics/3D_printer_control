@@ -100,7 +100,7 @@ class ThorlabsAPT(USBSerial):
         self.source = 0x01
         self.dest = 0x50
 
-        self.homed = {}
+        self.axes_homed = {}
         self.moving = {}
         self.jogging = {}
         self.speed = {}
@@ -110,7 +110,7 @@ class ThorlabsAPT(USBSerial):
         self.current_position = {}
         self.limit_array = {}
         for a in self.axes:
-            self.homed[a] = False
+            self.axes_homed[a] = False
             self.moving[a] = False
             self.jogging[a] = False
             self.speed[a] = 0
@@ -122,6 +122,7 @@ class ThorlabsAPT(USBSerial):
 
         self.connected = None
         self.initialized = None
+        self.homed = None
 
     def getCommonName(self, axis):
         if axis is None:
@@ -161,47 +162,57 @@ class ThorlabsAPT(USBSerial):
         return self.default_acceleration[a]
 
     def initialize(self):
-        for a in self.axes:
-            self.thread_runnings[a] = True
-            self.threads[a].start()
+        if self.initialized is None:
+            self.initialized = False
+            for a in self.axes:
+                self.thread_runnings[a] = True
+                self.threads[a].start()
 
-        for axis in self.axes:
-            a = self.convertAxis(axis)
-            cntlr = self.controllers[a]
-            self.getHardwareInfo(cntlr, axis=a)
-            time.sleep(0.25)
-            self.motorOn(cntlr, axis=a)
-            time.sleep(0.25)
-            self.write_to_APT(cntlr, VEL_ACC_GET, self.channel, 0x00)
-            time.sleep(0.25)
-            self.write_to_APT(cntlr, LIMITS_GET, self.channel, 0x00)
-            time.sleep(0.25)
-            # self.write_to_APT(DC_UPDATE_GET, self.channel, 0x00)
-            self.write_to_APT(cntlr, HW_START_STATUS_CMD, 0x00, 0x00)
-            time.sleep(0.25)
+            for axis in self.axes:
+                a = self.convertAxis(axis)
+                cntlr = self.controllers[a]
+                self.getHardwareInfo(cntlr, axis=a)
+                time.sleep(0.25)
+                self.motorOn(cntlr, axis=a)
+                time.sleep(0.25)
+                self.write_to_APT(cntlr, VEL_ACC_GET, self.channel, 0x00)
+                time.sleep(0.25)
+                self.write_to_APT(cntlr, LIMITS_GET, self.channel, 0x00)
+                time.sleep(0.25)
+                # self.write_to_APT(DC_UPDATE_GET, self.channel, 0x00)
+                self.write_to_APT(cntlr, HW_START_STATUS_CMD, 0x00, 0x00)
+                time.sleep(0.25)
+            self.initialized = True
+        else:
+            while self.initialized is False:
+                time.sleep(0.1)
 
     def connect(self):
-        threads = []
-        for a in self.axes:
-            cntlr = self.controllers[a]
-            thread = Thread(
-                self.log, name=f"apt_{a}_connect_thread", target=cntlr.connect
-            )
-            thread.start()
-            threads.append(thread)
-        for t in threads:
-            t.join()
-        for a, cntlr in self.controllers.items():
-            if cntlr.connected is None or not cntlr.connected:
-                self.log.error(
-                    "%s - Failed to connect to %s (%s)",
-                    self.driver_name,
-                    a,
-                    cntlr.readable_name,
+        if self.connected is None:
+            threads = []
+            for a in self.axes:
+                cntlr = self.controllers[a]
+                thread = Thread(
+                    self.log, name=f"apt_{a}_connect_thread", target=cntlr.connect
                 )
-                return False
-        self.connected = True
-        return True
+                thread.start()
+                threads.append(thread)
+            for t in threads:
+                t.join()
+            for a, cntlr in self.controllers.items():
+                if cntlr.connected is None or not cntlr.connected:
+                    self.log.error(
+                        "%s - Failed to connect to %s (%s)",
+                        self.driver_name,
+                        a,
+                        cntlr.readable_name,
+                    )
+                    return False
+            self.connected = True
+            return True
+        else:
+            while self.connected is False:
+                time.sleep(0.1)
 
     def disconnect(self):
         if self.connected is not None and self.connected is not False:
@@ -292,7 +303,7 @@ class ThorlabsAPT(USBSerial):
         a = self.convertAxis(axis)
         getpos = self.cntsToMm(pos, axis=a)
 
-        if not self.homed[a]:
+        if not self.axes_homed[a]:
             pos = "undef"
 
         if int(getpos) == 33400:
@@ -413,7 +424,7 @@ class ThorlabsAPT(USBSerial):
 
                 elif cmd == RSPS["HOME_RSP"]:
                     # channel = a
-                    self.homed[axis] = True
+                    self.axes_homed[axis] = True
                     self.log.debug("%s - %s - %s homed", self.driver_name, axis, source)
 
                 elif (
@@ -505,7 +516,7 @@ class ThorlabsAPT(USBSerial):
                             enabled,
                         )
                     self.moving[axis] = in_motion_pos | in_motion_neg
-                    self.homed[axis] = homed
+                    self.axes_homed[axis] = homed
                     self.current_position[axis] = self.parse_position(pos)
 
                     if self.logging_running:
@@ -626,32 +637,38 @@ class ThorlabsAPT(USBSerial):
         )
 
     def home(self):
-        for axis in self.axes:
-            a = self.convertAxis(axis)
-            cntlr = self.controllers[a]
-            if not self.homed[a]:
-                self.write_to_APT(cntlr, HOME_CMD, self.channel, 0x00)
-                self.log.info("%s start homing...", a)
+        if self.homed is None:
+            self.homed = False
+            for axis in self.axes:
+                a = self.convertAxis(axis)
+                cntlr = self.controllers[a]
+                if not self.axes_homed[a]:
+                    self.write_to_APT(cntlr, HOME_CMD, self.channel, 0x00)
+                    self.log.info("%s start homing...", a)
 
-        for axis in self.axes:
-            a = self.convertAxis(axis)
-            if not self.homed[a]:
-                start = time.monotonic()
-                while (self.homed[a] != True) and (
-                    time.monotonic() - start < 60
-                ):  # 60 second timeout
-                    time.sleep(0.1)
+            for axis in self.axes:
+                a = self.convertAxis(axis)
+                if not self.axes_homed[a]:
+                    start = time.monotonic()
+                    while (self.axes_homed[a] != True) and (
+                        time.monotonic() - start < 60
+                    ):  # 60 second timeout
+                        time.sleep(0.1)
 
-                if self.homed[a] != True:
-                    self.log.error("%s homing failed!", a)
-                    raise RuntimeError("%s homing failed!", a)
+                    if self.axes_homed[a] != True:
+                        self.log.error("%s homing failed!", a)
+                        raise RuntimeError("%s homing failed!", a)
 
-        self.log.info("%s homing complete.", self.driver_name)
+            self.log.info("%s homing complete.", self.driver_name)
 
-        for axis in self.axes:
-            a = self.convertAxis(axis)
-            self.setSpeed(self.getDefaultSpeed(a), axis=a)
-            self.setAcceleration(self.getDefaultAcceleration(a), axis=a)
+            for axis in self.axes:
+                a = self.convertAxis(axis)
+                self.setSpeed(self.getDefaultSpeed(a), axis=a)
+                self.setAcceleration(self.getDefaultAcceleration(a), axis=a)
+            self.homed = True
+        else:
+            while self.homed is False:
+                time.sleep(0.1)
 
     # pylint: disable=too-many-arguments
     def relMove(
@@ -709,7 +726,7 @@ class ThorlabsAPT(USBSerial):
         """
         a = self.convertAxis(axis)
         cntlr = self.controllers[a]
-        if not self.homed[a]:
+        if not self.axes_homed[a]:
             self.log.error("%s must home before using absolute movements!", a)
             return self.getPosition(axis=a)
         old_speed = None
