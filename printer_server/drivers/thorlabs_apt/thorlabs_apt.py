@@ -52,11 +52,13 @@ class ThorlabsAPT(USBSerial):
         self,
         config_dict=None,
         log_level=logging.DEBUG,
+        driver_name="ThorlabsAPT",
     ):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         self.movement_log = None
         self.config_dict = config_dict
+        self.driver_name = driver_name
 
         self.default_axis = config_dict["default_axis"]
         self.axes = config_dict["axes"]
@@ -189,9 +191,14 @@ class ThorlabsAPT(USBSerial):
             threads.append(thread)
         for t in threads:
             t.join()
-        for cntlr in self.controllers.values():
+        for a, cntlr in self.controllers.items():
             if cntlr.connected is None or not cntlr.connected:
-                self.log.error("Failed to connect to %s", cntlr.readable_name)
+                self.log.error(
+                    "%s - Failed to connect to %s (%s)",
+                    self.driver_name,
+                    a,
+                    cntlr.readable_name,
+                )
                 return False
         self.connected = True
         return True
@@ -266,7 +273,7 @@ class ThorlabsAPT(USBSerial):
 
     def write_to_APT(self, cntlr, cmd, a, b):
         msg = pack(f"<H4B", cmd, a, b, self.dest, 0x01)
-        self.log.debug("Sent : '%s'", msg)
+        self.log.debug("%s - Sent : '%s'", self.driver_name, msg)
         cntlr.write_bytes(msg)
 
     def long_write_to_APT(self, cntlr, cmd, extra_format, extra_data, extra_len):
@@ -278,7 +285,7 @@ class ThorlabsAPT(USBSerial):
             0x01,
             *extra_data,
         )
-        self.log.debug("Sent : '%s'", msg)
+        self.log.debug("%s - Sent : '%s'", self.driver_name, msg)
         cntlr.write_bytes(msg)
 
     def parse_position(self, pos, axis=None):
@@ -315,8 +322,9 @@ class ThorlabsAPT(USBSerial):
                 if cmd == RSPS["HW_ERROR_RSP"]:
                     ident, code, error, _ = unpack("<HH63sB", extra_bytes)
                     self.log.warning(
-                        "%s %s error %s (%s)",
+                        "%s - %s - %s error %s (%s)",
                         self.driver_name,
+                        axis,
                         source,
                         code,
                         error.rstrip().decode("utf-8"),
@@ -327,8 +335,9 @@ class ThorlabsAPT(USBSerial):
                         "<i8sH4s60s3H", extra_bytes
                     )
                     self.log.debug(
-                        "%s %s hardware info: serial %s, model %s, type %s, fw ver %s, hw ver %s, mod %s, nchs %s",
+                        "%s - %s - %s hardware info: serial %s, model %s, type %s, fw ver %s, hw ver %s, mod %s, nchs %s",
                         self.driver_name,
+                        axis,
                         source,
                         serial,
                         model,
@@ -347,15 +356,21 @@ class ThorlabsAPT(USBSerial):
                     else:  # in bay x
                         bay = a
                     self.log.debug(
-                        "%s %s in bay %s (%s)", self.driver_name, source, a, bay
+                        "%s - %s - %s in bay %s (%s)",
+                        self.driver_name,
+                        axis,
+                        source,
+                        a,
+                        bay,
                     )
 
                 elif cmd == RSPS["POS_RSP"]:
                     channel, pos = unpack("<Hi", extra_bytes)
                     self.current_position[axis] = self.parse_position(pos)
                     self.log.debug(
-                        "%s %s at %s",
+                        "%s - %s - %s at %s",
                         self.driver_name,
+                        axis,
                         source,
                         self.current_position[axis],
                     )
@@ -365,8 +380,9 @@ class ThorlabsAPT(USBSerial):
                     self.speed[axis] = self.cntsToVel(speed, axis=axis)
                     self.acceleration[axis] = self.cntsToAcc(acc, axis=axis)
                     self.log.debug(
-                        "%s %s speed:%s acc:%s",
+                        "%s - %s - %s speed:%s acc:%s",
                         self.driver_name,
+                        axis,
                         source,
                         self.speed[axis],
                         self.acceleration[axis],
@@ -384,8 +400,9 @@ class ThorlabsAPT(USBSerial):
                         soft_mode,
                     ]
                     self.log.debug(
-                        "%s %s limit: upper hard %s lower hard %s, upper soft %s, lower soft %s, soft mode %s",
+                        "%s - %s - %s limit: upper hard %s lower hard %s, upper soft %s, lower soft %s, soft mode %s",
                         self.driver_name,
+                        axis,
                         source,
                         upper_mode,
                         lower_mode,
@@ -397,7 +414,7 @@ class ThorlabsAPT(USBSerial):
                 elif cmd == RSPS["HOME_RSP"]:
                     # channel = a
                     self.homed[axis] = True
-                    self.log.debug("%s %s homed", self.driver_name, source)
+                    self.log.debug("%s - %s - %s homed", self.driver_name, axis, source)
 
                 elif (
                     cmd == RSPS["MOV_RSP"]
@@ -415,8 +432,9 @@ class ThorlabsAPT(USBSerial):
                         )
                     else:
                         self.log.warning(
-                            "%s %s unknown MOV_RSP length %s",
+                            "%s - %s - %s unknown MOV_RSP length %s",
                             self.driver_name,
+                            axis,
                             source,
                             len(extra_bytes),
                         )
@@ -438,10 +456,11 @@ class ThorlabsAPT(USBSerial):
                     # self.sendServerAlive(c, axis=a)
                     if len(extra_bytes) == 14:
                         self.log.debug(
-                            "%s %s update: pos %s, speed %s, upper_hard_limit %s, lower_hard_limit %s, upper_soft_limit %s, \
+                            "%s - %s - %s update: pos %s, speed %s, upper_hard_limit %s, lower_hard_limit %s, upper_soft_limit %s, \
                                     lower_soft_limit %s, in_motion_pos %s, in_motion_neg %s, jogging_pos %s, jogging_neg %s, connected %s, \
                                     homing %s, homed %s, pos_error %s, error %s, enabled %s",
                             self.driver_name,
+                            axis,
                             source,
                             self.parse_position(pos),
                             self.cntsToVel(speed, axis=axis),
@@ -462,10 +481,11 @@ class ThorlabsAPT(USBSerial):
                         )
                     elif len(extra_bytes) == 28:
                         self.log.debug(
-                            "%s %s update: pos %s, enc %s, upper_hard_limit %s, lower_hard_limit %s, upper_soft_limit %s, \
+                            "%s - %s - %s update: pos %s, enc %s, upper_hard_limit %s, lower_hard_limit %s, upper_soft_limit %s, \
                                     lower_soft_limit %s, in_motion_pos %s, in_motion_neg %s, jogging_pos %s, jogging_neg %s, connected %s, \
                                     homing %s, homed %s, pos_error %s, error %s, enabled %s",
                             self.driver_name,
+                            axis,
                             source,
                             self.parse_position(pos),
                             self.parse_position(enc),
@@ -497,7 +517,11 @@ class ThorlabsAPT(USBSerial):
 
                 else:
                     self.log.info(
-                        "%s %s unknown message (%s)", self.driver_name, source, hex(cmd)
+                        "%s - %s - %s unknown message (%s)",
+                        self.driver_name,
+                        axis,
+                        source,
+                        hex(cmd),
                     )
                     cntlr.flush_buffers()
 
@@ -607,7 +631,7 @@ class ThorlabsAPT(USBSerial):
             cntlr = self.controllers[a]
             if not self.homed[a]:
                 self.write_to_APT(cntlr, HOME_CMD, self.channel, 0x00)
-                self.log.info("Start homing...")
+                self.log.info("%s start homing...", a)
 
         for axis in self.axes:
             a = self.convertAxis(axis)
@@ -619,10 +643,10 @@ class ThorlabsAPT(USBSerial):
                     time.sleep(0.1)
 
                 if self.homed[a] != True:
-                    self.log.error("Homing Failed!")
-                    raise RuntimeError("Homing Failed!")
+                    self.log.error("%s homing failed!", a)
+                    raise RuntimeError("%s homing failed!", a)
 
-        self.log.info("Homing complete.")
+        self.log.info("%s homing complete.", self.driver_name)
 
         for axis in self.axes:
             a = self.convertAxis(axis)
@@ -657,7 +681,7 @@ class ThorlabsAPT(USBSerial):
         self.moving[a] = True
         finished_succeccfully = self.confirmMoveFinished(axis=a)
         # if not finished_succeccfully:
-        #     self.log.warning("Move failed. Going to position 0 and retrying")
+        #     self.log.warning("%s move failed. Going to position 0 and retrying", a)
         #     self.absMove(0.0, speed=speed, acceleration=acceleration, axis=axis)
         #     self.absMove(
         #         start_position + mm, speed=speed, acceleration=acceleration, axis=axis
@@ -686,8 +710,7 @@ class ThorlabsAPT(USBSerial):
         a = self.convertAxis(axis)
         cntlr = self.controllers[a]
         if not self.homed[a]:
-            msg = "Must home before using absolute movements!"
-            self.log.error(msg)
+            self.log.error("%s must home before using absolute movements!", a)
             return self.getPosition(axis=a)
         old_speed = None
         old_acceleration = None
@@ -705,7 +728,7 @@ class ThorlabsAPT(USBSerial):
         self.moving[a] = True
         finished_succeccfully = self.confirmMoveFinished(axis=a)
         # if not finished_succeccfully:
-        #     self.log.warning("Move failed. Going to position 0 and retrying")
+        #     self.log.warning("%s move failed. Going to position 0 and retrying", a)
         #     self.absMove(0.0, speed=speed, acceleration=acceleration, axis=axis)
         #     self.absMove(mm, speed=speed, acceleration=acceleration, axis=axis)
 
@@ -721,10 +744,10 @@ class ThorlabsAPT(USBSerial):
             time.sleep(0.1)
 
         if self.moving[axis] == True:
-            self.log.error("Move Failed!")
+            self.log.error("%s move failed!", axis)
             return False
 
-        self.log.debug("Move Complete")
+        self.log.debug("%s move complete", axis)
         return True
 
     def startJog(self, speed=None, acceleration=None, axis=None):
