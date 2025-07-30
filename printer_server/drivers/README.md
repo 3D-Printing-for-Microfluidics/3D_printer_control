@@ -29,8 +29,8 @@ The `generic_drivers/` directory contains abstract base classes for different ty
 - `acs/`: ACS motion controller driver
 - `galil/`: Galil motion controller driver
 - `hexapod/`: Hexapod stage driver
-- `kdc101/`: Thorlabs KDC101 motor controller driver
-- `tiptilt/`: Tip-tilt stage driver for optical alignment
+- `thorlabs_apt`: Thorlabs motor driver for KDC101 and LTS stages
+- `tiptilt/`: Custom Tip-tilt stage driver for optical alignment
 
 ### Light Control
 - `screen/`: Screen control system
@@ -67,14 +67,13 @@ Each driver follows a common pattern:
 ### Example Usage
 
 ```python
-from printer_server.drivers.kdc101 import KDC101
-from printer_server.drivers.kdc101 import KDC101_dummy
+from printer_server.drivers.galil import Galil, Galil_dummy
 
 # For real hardware
-driver = KDC101(config_dict=config, log_level=logging.INFO)
+driver = Galil(config_dict=config, log_level=logging.INFO)
 
 # For testing/development
-driver = KDC101_dummy(config_dict=config, log_level=logging.INFO)
+driver = Galil_dummy(config_dict=config, log_level=logging.INFO)
 ```
 
 ## Adding New Drivers

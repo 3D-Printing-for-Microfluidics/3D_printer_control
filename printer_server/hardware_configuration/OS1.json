@@ -1,6 +1,6 @@
 {
     "valid_schema_versions": [
-        "v2"
+        "v3"
     ],
     "external_control": {},
     "coord_systems": {
@@ -11,35 +11,35 @@
             "Build Platform": 0
         },
         "parked": {
-            "X": 100,
-            "Y": 85,
-            "Focus": 0,
+            "X": 75.0,
+            "Y": 200.0,
+            "Focus": 5.0,
             "Build Platform": 0
         },
         "visitech": {
-            "X": -0.4,
-            "Y": 1.06,
-            "Focus": 2.893,
+            "X": 75.0,
+            "Y": 275.0,
+            "Focus": 5.0,
             "Build Platform": 0
         },
         "keyence_visitech": {
-            "X": -1.705,
-            "Y": -36.204,
-            "Focus": 2.300,
+            "X": 125.0,
+            "Y": 275.0,
+            "Focus": 5.0,
             "Build Platform": 0
         },
         "fiber_visitech": {
-            "X": -86.308,
-            "Y": 68.815,
-            "Focus": 0.02,
+            "X": 75.0,
+            "Y": 200.0,
+            "Focus": 5.0,
             "Build Platform": 0
         }
     },
     "stages": {
         "bp_stage": "galil",
-        "focus_stage": "kdc101",
-        "xy_stage": "kdc101",
-        "ttr_stage": "tiptilt"
+        "focus_stage": "kdc101_ttrf",
+        "xy_stage": "lts_xy",
+        "ttr_stage": "kdc101_ttrf"
     },
     "galil": {
         "dummy": false,
@@ -76,72 +76,144 @@
         "calibration_limits": {
             "D": [
                 null,
-                10.380125
+                0
             ]
         },
-        "calibration_position": 9.380125,
+        "calibration_position": 0,
         "bottom_position": 40.284,
         "top_position": -50
     },
-    "kdc101": {
+    "lts_xy": {
         "dummy": false,
-        "vendor_id": 1027,
-        "product_id": 64240,
-        "baudrate": 115200,
-        "default_axis": "0x50",
+        "default_axis": "Y",
+        "vendor_ids": {
+            "X": 1027,
+            "Y": 1027
+        },
+        "product_ids": {
+            "X": 64240,
+            "Y": 64240
+        },
+        "serial_numbers": {
+            "X": "45526354",
+            "Y": "45515754"
+        },
+        "baudrates": {
+            "X": 115200,
+            "Y": 115200
+        },
         "axes": [
-            "0x50"
+            "X",
+            "Y"
         ],
         "axes_common_names": [
-            "Focus"
+            "X",
+            "Y"
         ],
         "axes_travel": {
-            "0x50": 25.0
+            "X": 150.0,
+            "Y": 300.0
         },
         "axes_ctspmm": {
-            "0x50": 34554.96
+            "X": 409600.0,
+            "Y": 409600.0
+        },
+        "axes_ctspmms": {
+            "X": 21987328.0,
+            "Y": 21987328.0
+        },
+        "axes_ctspmmss": {
+            "X": 4506.0,
+            "Y": 4506.0
         },
         "axes_speed": {
-            "0x50": 2.777
+            "X": 25.0,
+            "Y": 25.0
         },
         "axes_acceleration": {
-            "0x50": 1.486
+            "X": 40.0,
+            "Y": 40.0
         },
         "limits": {
-            "0x50": [
-                null,
-                null
-            ]
-        },
-        "moving_shifts_image": true
-    },
-    "tiptilt": {
-        "dummy": false,
-        "vendor_id": 5824,
-        "product_id": 1155,
-        "serial_number": "9881850",
-        "firmware_path": "Mirror_Tip_Tilt/Mirror_Tip_Tilt.ino",
-        "microcontroller": "Teensy3.2",
-        "baudrate": 115200,
-        "axes": [
-            "1",
-            "2"
-        ],
-        "axes_common_names": [
-            "Tip",
-            "Tilt"
-        ],
-        "limits": {
-            "1": [
+            "X": [
                 null,
                 null
             ],
-            "2": [
+            "Y": [
                 null,
                 null
             ]
+        }
+    },
+    "kdc101_ttrf": {
+        "dummy": false,
+        "default_axis": "Focus",
+        "vendor_ids": {
+            "Tip": 1027,
+            "Tilt": 1027,
+            "Focus": 1027
         },
-        "auto_repositioning": false
+        "product_ids": {
+            "Tip": 64240,
+            "Tilt": 64240,
+            "Focus": 64240
+        },
+        "serial_numbers": {
+            "Tip": "27254763",
+            "Tilt": "27254658",
+            "Focus": "27270358"
+        },
+        "baudrates": {
+            "Tip": 115200,
+            "Tilt": 115200,
+            "Focus": 115200
+        },
+        "axes": [
+            "Tip",
+            "Tilt",
+            "Focus"
+        ],
+        "axes_common_names": [
+            "Tip",
+            "Tilt",
+            "Focus"
+        ],
+        "axes_travel": {
+            "Tip": 12.0,
+            "Tilt": 12.0,
+            "Focus": 25.0
+        },
+        "axes_ctspmm": {
+            "Tip": 34554.96,
+            "Tilt": 34554.96,
+            "Focus": 34554.96
+        },
+        "axes_speed": {
+            "Tip": 1.5,
+            "Tilt": 1.5,
+            "Focus": 2.0
+        },
+        "axes_acceleration": {
+            "Tip": 3.0,
+            "Tilt": 3.0,
+            "Focus": 3.0
+        },
+        "limits": {
+            "Tip": [
+                3.0,
+                9.0
+            ],
+            "Tilt": [
+                3.0,
+                9.0
+            ],
+            "Focus": [
+                null,
+                10.0
+            ]
+        },
+        "moving_shifts_image": true,
+        "auto_repositioning": true
     },
     "gpio": {
         "dummy": false,
@@ -150,10 +222,10 @@
     "loadcell": {
         "dummy": false,
         "vendor_id": 5824,
-        "product_id": 1155,
-        "serial_number": "5712570",
+        "product_id": 1158,
+        "serial_number": "17767270",
         "firmware_path": "loadcell/loadcell.ino",
-        "microcontroller": "Teensy3.2",
+        "microcontroller": "Teensy4.0",
         "baudrate": 115200,
         "sample_period_us": 1000,
         "calibration_intercept": 34400.0,
@@ -180,7 +252,7 @@
         "default_number_of_averages": 64,
         "vendor_id": 4883,
         "product_id": 32882,
-        "serial_number": "1928351"
+        "serial_number": "M01239335"
     },
     "screen": {},
     "light_engines": [

@@ -1,4 +1,6 @@
-"""The Thor Labs KDC101 module"""
+"""The Thor Labs APT module"""
 
-from .kdc101 import KDC101
+from .thorlabs_apt import ThorlabsAPT
+from .lts_xy import LTS_XY
+from .kdc101_ttrf import KDC101_TTRF
 from .kdc101_dummy import KDC101_dummy

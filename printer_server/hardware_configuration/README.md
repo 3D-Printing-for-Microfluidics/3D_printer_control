@@ -42,7 +42,8 @@ Each hardware component has its own configuration section with common fields:
 #### Motion Control
 - `acs/`: ACS motion controller settings
 - `galil/`: Galil motion controller settings
-- `kdc101/`: Thorlabs KDC101 settings
+- `kdc101_ttrf/`: Thorlabs KDC101 settings for Tip/Tilt/Focus stage
+- `lts_xy`: Thorlabs LTS settings for XY stage
 - `hexapod/`: Hexapod stage settings
 - `tiptilt/`: Tip-tilt stage settings
 
