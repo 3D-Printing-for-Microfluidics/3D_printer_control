@@ -7,9 +7,14 @@ default_log_level = logging.INFO
 dummy = False
 
 
-configuration_path = Path(Config.PRINT_SERVER_FOLDER).joinpath('hardware_configuration').rglob(f"{Config.HOSTNAME}.json")
+configuration_path = (
+    Path(Config.PRINT_SERVER_FOLDER)
+    .joinpath("hardware_configuration")
+    .rglob(f"{Config.HOSTNAME}.json")
+)
 with open(next(configuration_path), "r") as file_handle:
     config_dict = json.load(file_handle)
+
 
 class Printer3D:
     """Provides hardware handles to the Flask print control."""
@@ -18,30 +23,43 @@ class Printer3D:
         # Dynamically import python snippits
         global config_dict
         if "accelerometer" in config_dict.keys():
-            from printer_server.drivers.accelerometer import Accelerometer, Accelerometer_dummy
+            from printer_server.drivers.accelerometer import (
+                Accelerometer,
+                Accelerometer_dummy,
+            )
 
             if config_dict["accelerometer"]["dummy"]:
                 self.accelerometer = Accelerometer_dummy()
             else:
-                self.accelerometer = Accelerometer(config_dict=config_dict["accelerometer"], log_level=default_log_level)
+                self.accelerometer = Accelerometer(
+                    config_dict=config_dict["accelerometer"], log_level=default_log_level
+                )
 
         if "acs" in config_dict.keys():
             from printer_server.drivers.acs import ACS, ACS_dummy
 
             if config_dict["acs"]["dummy"]:
-                self.acs = ACS_dummy(config_dict=config_dict["acs"], log_level=default_log_level)
+                self.acs = ACS_dummy(
+                    config_dict=config_dict["acs"], log_level=default_log_level
+                )
             else:
                 self.acs = ACS(
                     config_dict=config_dict["acs"], log_level=default_log_level
                 )
 
         if "environmental_sensors" in config_dict:
-            from printer_server.drivers.environmental_sensors import EnvironmentalSensors, EnvironmentalSensors_dummy
+            from printer_server.drivers.environmental_sensors import (
+                EnvironmentalSensors,
+                EnvironmentalSensors_dummy,
+            )
 
             if config_dict["environmental_sensors"]["dummy"]:
                 self.environmental_sensors = EnvironmentalSensors_dummy()
             else:
-                self.environmental_sensors = EnvironmentalSensors(config_dict=config_dict["environmental_sensors"], log_level=default_log_level)
+                self.environmental_sensors = EnvironmentalSensors(
+                    config_dict=config_dict["environmental_sensors"],
+                    log_level=default_log_level,
+                )
 
         if "external_control" in config_dict.keys():
             from printer_server.drivers.external_control import External_Control
@@ -52,7 +70,9 @@ class Printer3D:
             from printer_server.drivers.galil import Galil, Galil_dummy
 
             if config_dict["galil"]["dummy"]:
-                self.galil = Galil_dummy(config_dict=config_dict["galil"], log_level=default_log_level)
+                self.galil = Galil_dummy(
+                    config_dict=config_dict["galil"], log_level=default_log_level
+                )
             else:
                 self.galil = Galil(
                     config_dict=config_dict["galil"], log_level=default_log_level
@@ -64,39 +84,58 @@ class Printer3D:
             if config_dict["gpio"]["dummy"]:
                 self.gpio = GPIO_dummy()
             else:
-                self.gpio = GPIO(config_dict=config_dict["gpio"], log_level=default_log_level)
+                self.gpio = GPIO(
+                    config_dict=config_dict["gpio"], log_level=default_log_level
+                )
 
         if "hexapod" in config_dict.keys():
             from printer_server.drivers.hexapod import Hexapod, Hexapod_dummy
 
             if config_dict["hexapod"]["dummy"]:
-                self.hexapod = Hexapod_dummy(config_dict=config_dict["hexapod"], log_level=default_log_level)
+                self.hexapod = Hexapod_dummy(
+                    config_dict=config_dict["hexapod"], log_level=default_log_level
+                )
             else:
-                self.hexapod = Hexapod(config_dict=config_dict["hexapod"], log_level=default_log_level)
+                self.hexapod = Hexapod(
+                    config_dict=config_dict["hexapod"], log_level=default_log_level
+                )
 
+        if "kdc101_ttrf" in config_dict.keys():
+            from printer_server.drivers.thorlabs_apt import KDC101_TTRF, KDC101_dummy
 
-        if "kdc101" in config_dict.keys():
-            from printer_server.drivers.kdc101 import KDC101, KDC101_dummy
-
-            if config_dict["kdc101"]["dummy"]:
-                self.kdc101 = KDC101_dummy(config_dict=config_dict["kdc101"], log_level=default_log_level)
+            if config_dict["kdc101_ttrf"]["dummy"]:
+                self.kdc101_ttrf = KDC101_dummy(
+                    config_dict=config_dict["kdc101_ttrf"], log_level=default_log_level
+                )
             else:
-                self.kdc101 = KDC101(config_dict=config_dict["kdc101"], log_level=default_log_level)
+                self.kdc101_ttrf = KDC101_TTRF(
+                    config_dict=config_dict["kdc101_ttrf"], log_level=default_log_level
+                )
+
+        if "lts_xy" in config_dict.keys():
+            from printer_server.drivers.thorlabs_apt import LTS_XY, KDC101_dummy
+
+            if config_dict["lts_xy"]["dummy"]:
+                self.lts_xy = KDC101_dummy(
+                    config_dict=config_dict["lts_xy"], log_level=default_log_level
+                )
+            else:
+                self.lts_xy = LTS_XY(
+                    config_dict=config_dict["lts_xy"], log_level=default_log_level
+                )
 
         if "keyence" in config_dict.keys():
             from printer_server.drivers.keyence import Keyence, Keyence_dummy
 
             if config_dict["keyence"]["dummy"]:
                 self.keyence = Keyence_dummy(
-                    config_dict=config_dict["keyence"], 
-                    log_level=default_log_level
+                    config_dict=config_dict["keyence"], log_level=default_log_level
                 )
             else:
                 self.keyence = Keyence(
-                    config_dict=config_dict["keyence"], 
-                    log_level=default_log_level
+                    config_dict=config_dict["keyence"], log_level=default_log_level
                 )
-        
+
         if "loadcell" in config_dict.keys():
             from printer_server.drivers.loadcell import LoadCell, Loadcell_dummy
 
@@ -104,13 +143,13 @@ class Printer3D:
                 self.loadcell = Loadcell_dummy(
                     config_dict=config_dict["loadcell"],
                     log_level=default_log_level,
-                    )
+                )
             else:
                 self.loadcell = LoadCell(
                     config_dict=config_dict["loadcell"],
                     log_level=default_log_level,
                 )
-        
+
         if "mks" in config_dict.keys() and "mks_teensy" in config_dict.keys():
             from printer_server.drivers.mks import MKS946, MKS946_dummy
             from printer_server.drivers.mks_teensy import MKSTeensy, MKSTeensy_dummy
@@ -119,16 +158,14 @@ class Printer3D:
                 self.mks = MKS946_dummy()
             else:
                 self.mks = MKS946(
-                    config_dict=config_dict["mks"],
-                    log_level=default_log_level
+                    config_dict=config_dict["mks"], log_level=default_log_level
                 )
-                
+
             if config_dict["mks_teensy"]["dummy"]:
                 self.mks_teensy = MKSTeensy_dummy()
             else:
                 self.mks_teensy = MKSTeensy(
-                    config_dict=config_dict["mks_teensy"],
-                    log_level=default_log_level
+                    config_dict=config_dict["mks_teensy"], log_level=default_log_level
                 )
 
         if "photodiode" in config_dict.keys():
@@ -137,7 +174,9 @@ class Printer3D:
             if config_dict["photodiode"]["dummy"]:
                 self.photodiode = Photodiode_dummy()
             else:
-                self.photodiode = Photodiode(config_dict=config_dict["photodiode"], log_level=default_log_level)
+                self.photodiode = Photodiode(
+                    config_dict=config_dict["photodiode"], log_level=default_log_level
+                )
 
         if "screen" in config_dict.keys():
             from printer_server.drivers.screen import ScreenThread
@@ -152,21 +191,25 @@ class Printer3D:
             )
 
         if "spectrometer" in config_dict.keys():
-            from printer_server.drivers.spectrometer import Spectrometer, Spectrometer_dummy
+            from printer_server.drivers.spectrometer import (
+                Spectrometer,
+                Spectrometer_dummy,
+            )
 
             if config_dict["spectrometer"]["dummy"]:
                 self.spectrometer = Spectrometer_dummy()
             else:
-                self.spectrometer = Spectrometer(config_dict=config_dict["spectrometer"], log_level=default_log_level)
+                self.spectrometer = Spectrometer(
+                    config_dict=config_dict["spectrometer"], log_level=default_log_level
+                )
 
         if "tiptilt" in config_dict.keys():
             from printer_server.drivers.tiptilt import TipTilt, TipTilt_dummy
 
             if config_dict["tiptilt"]["dummy"]:
                 self.tiptilt = TipTilt_dummy(
-                    config_dict=config_dict["tiptilt"],
-                    log_level=default_log_level
-                    )
+                    config_dict=config_dict["tiptilt"], log_level=default_log_level
+                )
             else:
                 self.tiptilt = TipTilt(
                     config_dict=config_dict["tiptilt"],
@@ -180,7 +223,8 @@ class Printer3D:
                 self.visitech = Visitech_dummy(
                     config_dict["visitech"]["leds_nm"],
                     log_level=default_log_level,
-                    dual_led=config_dict["visitech"]["dual_led"],)
+                    dual_led=config_dict["visitech"]["dual_led"],
+                )
             else:
                 self.visitech = Visitech(
                     config_dict=config_dict["visitech"],
@@ -189,7 +233,12 @@ class Printer3D:
 
         if "wintech" in config_dict.keys():
             from printer_server.drivers.wintech import Wintech
-            self.wintech = Wintech(config_dict=config_dict["wintech"], log_level=default_log_level, dummy=config_dict["wintech"]["dummy"])
+
+            self.wintech = Wintech(
+                config_dict=config_dict["wintech"],
+                log_level=default_log_level,
+                dummy=config_dict["wintech"]["dummy"],
+            )
 
         self.bp_stage = None
         self.focus_stage = None
@@ -202,37 +251,37 @@ class Printer3D:
                 self.bp_stage = getattr(self, config_dict["stages"]["bp_stage"])
             else:
                 from printer_server.drivers.generic_drivers import BPStageDriver
-                self.bp_stage = BPStageDriver()
 
+                self.bp_stage = BPStageDriver()
 
         if "focus_stage" in config_dict["stages"]:
             if hasattr(self, config_dict["stages"]["focus_stage"]):
                 self.focus_stage = getattr(self, config_dict["stages"]["focus_stage"])
             else:
                 from printer_server.drivers.generic_drivers import FocusStageDriver
-                self.focus_stage = FocusStageDriver()
 
+                self.focus_stage = FocusStageDriver()
 
         if "xy_stage" in config_dict["stages"]:
             if hasattr(self, config_dict["stages"]["xy_stage"]):
                 self.xy_stage = getattr(self, config_dict["stages"]["xy_stage"])
             else:
                 from printer_server.drivers.generic_drivers import XYStageDriver
+
                 self.xy_stage = XYStageDriver()
-   
 
         if "ttr_stage" in config_dict["stages"]:
             if hasattr(self, config_dict["stages"]["ttr_stage"]):
                 self.ttr_stage = getattr(self, config_dict["stages"]["ttr_stage"])
             else:
                 from printer_server.drivers.generic_drivers import TTRStageDriver
+
                 self.ttr_stage = TTRStageDriver()
-        
+
         if "light_engines" in config_dict:
             for light_engine in config_dict["light_engines"]:
                 if hasattr(self, light_engine):
                     self.light_engines[light_engine] = getattr(self, light_engine)
-
 
     def disconnect(self):
         if hasattr(self, "acs"):
@@ -268,5 +317,6 @@ class Printer3D:
             self.visitech.disconnect()
         if hasattr(self, "wintech"):
             self.wintech.disconnect()
-            
+
+
 driver_handles = Printer3D()

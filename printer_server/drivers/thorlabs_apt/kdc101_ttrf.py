@@ -4,7 +4,7 @@ from printer_server.drivers.generic_drivers import (
     FocusStageDriver,
     TTRStageDriver,
 )
-from printer_server.drivers.kdc101.thorlabs_apt import ThorlabsAPT
+from printer_server.drivers.thorlabs_apt.thorlabs_apt import ThorlabsAPT
 
 
 class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
