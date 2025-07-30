@@ -222,7 +222,7 @@
     "loadcell": {
         "dummy": false,
         "vendor_id": 5824,
-        "product_id": 1158,
+        "product_id": 1155,
         "serial_number": "17767270",
         "firmware_path": "loadcell/loadcell.ino",
         "microcontroller": "Teensy4.0",
