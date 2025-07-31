@@ -12,7 +12,7 @@
         },
         "parked": {
             "X": 75.0,
-            "Y": 200.0,
+            "Y": 150.0,
             "Focus": 5.0,
             "Build Platform": 0
         },
@@ -23,7 +23,7 @@
             "Build Platform": 0
         },
         "keyence_visitech": {
-            "X": 125.0,
+            "X": 25.0,
             "Y": 275.0,
             "Focus": 5.0,
             "Build Platform": 0
@@ -128,11 +128,15 @@
         },
         "axes_speed": {
             "X": 25.0,
-            "Y": 25.0
+            "Y": 10.0
         },
         "axes_acceleration": {
-            "X": 40.0,
-            "Y": 40.0
+            "X": 10.0,
+            "Y": 1.0
+        },
+        "axes_homing_speed": {
+            "X": 5.0,
+            "Y": 5.0
         },
         "limits": {
             "X": [
@@ -208,17 +212,22 @@
             "Tilt": 3.0,
             "Focus": 3.0
         },
+        "axes_homing_speed": {
+            "Tip": 1.0,
+            "Tilt": 1.0,
+            "Focus": 1.0
+        },
         "limits": {
             "Tip": [
-                3.0,
-                9.0
+                0,
+                0.104
             ],
             "Tilt": [
-                3.0,
-                9.0
+                0,
+                0.104
             ],
             "Focus": [
-                null,
+                0,
                 10.0
             ]
         },
