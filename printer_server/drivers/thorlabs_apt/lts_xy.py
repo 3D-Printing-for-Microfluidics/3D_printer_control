@@ -7,6 +7,10 @@ class LTS_XY(XYStageDriver):
         self.apt_controller = ThorlabsAPT(
             config_dict=config_dict, log_level=log_level, driver_name="LTS_XY"
         )
+        self.connected = False
+        self.initialized = None
+        self.config_dict = config_dict
+        self.axes_common_names = self.apt_controller.axes_common_names
 
     def setup_log_file(self, filename):
         self.apt_controller.setup_log_file(filename)
@@ -18,7 +22,7 @@ class LTS_XY(XYStageDriver):
         self.apt_controller.logging_stop()
 
     def connect(self):
-        return self.apt_controller.connect()
+        self.connected = self.apt_controller.connect()
 
     def initialize(self):
         self.apt_controller.initialize()

@@ -15,6 +15,10 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
         self.mount_len = (
             62.2  # Length between screw and pivot of the kinematic mount in mm
         )
+        self.connected = False
+        self.initialized = None
+        self.config_dict = config_dict
+        self.axes_common_names = self.apt_controller.axes_common_names
 
     def mm_to_rad(self, mm):
         """Convert mm to radians based on the mount length."""
@@ -34,7 +38,7 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
         self.apt_controller.logging_stop()
 
     def connect(self):
-        return self.apt_controller.connect()
+        self.connected = self.apt_controller.connect()
 
     def initialize(self):
         self.apt_controller.initialize()
