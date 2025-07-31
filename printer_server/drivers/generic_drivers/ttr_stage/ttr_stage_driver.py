@@ -32,7 +32,7 @@ class TTRStageDriver:
     def getTTRLimits(self, axis=None):
         log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
-    def setTTRLimits(self, limits, axis=None):
+    def setTTRLimits(self, limits=None, axis=None):
         log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
     def initialize_and_positionTTR(self, tip, tilt, rotate):

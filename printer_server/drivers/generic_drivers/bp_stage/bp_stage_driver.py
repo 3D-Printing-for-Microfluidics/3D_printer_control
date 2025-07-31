@@ -68,7 +68,7 @@ class BPStageDriver:
     def getBPLimits(self):
         log.warning("Function not implemented. Using abstract BPStageDriver class")
 
-    def setBPLimits(self, limits):
+    def setBPLimits(self, limits=None):
         log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def setUpperLimit(self, limit):

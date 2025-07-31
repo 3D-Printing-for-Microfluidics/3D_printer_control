@@ -56,7 +56,7 @@ class FocusStageDriver:
     def getFocusLimits(self):
         log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
-    def setFocusLimits(self, limits):
+    def setFocusLimits(self, limits=None):
         log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def initialize_and_positionFocus(self, pos):

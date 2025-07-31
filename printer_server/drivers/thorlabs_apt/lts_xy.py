@@ -54,5 +54,5 @@ class LTS_XY(XYStageDriver):
     def getXYLimits(self, axis=None):
         return self.apt_controller.getLimits(axis=axis)
 
-    def setXYLimits(self, limits, axis=None):
+    def setXYLimits(self, limits=None, axis=None):
         self.apt_controller.setLimits(limits=limits, axis=axis)
