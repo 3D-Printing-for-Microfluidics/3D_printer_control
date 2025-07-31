@@ -66,6 +66,8 @@ class XYStageDriver:
         while not self.initialized:
             time.sleep(0.1)
 
+        time.sleep(0.25)
+
         for a in ["X", "Y"]:
             self.setXYLimits(axis=a)
 
