@@ -22,10 +22,14 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
 
     def mm_to_rad(self, mm):
         """Convert mm to radians based on the mount length."""
+        if mm is None:
+            return None
         return math.atan(mm / self.mount_len)
 
     def rad_to_mm(self, rad):
         """Convert radians to mm based on the mount length."""
+        if rad is None:
+            return None
         return self.mount_len * math.tan(rad)
 
     def setup_log_file(self, filename):
@@ -88,8 +92,19 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
 
     def getTTRLimits(self, axis=None):
         """Get the limits for the TTR stage (in mm)."""
-        return self.apt_controller.getLimits(axis=axis)
+        limits = self.apt_controller.getLimits(axis=axis)
+        return [
+            self.mm_to_rad(limits[0]),
+            self.mm_to_rad(limits[1])
+        ]
 
     def setTTRLimits(self, limits=None, axis=None):
         """Set the limits for the TTR stage (in mm)."""
+        if limits is None:
+            limits = self.config_dict["limits"][axis]
+
+        limits = [
+            self.rad_to_mm(limits[0]),
+            self.rad_to_mm(limits[1])
+        ]
         self.apt_controller.setLimits(limits=limits, axis=axis)
