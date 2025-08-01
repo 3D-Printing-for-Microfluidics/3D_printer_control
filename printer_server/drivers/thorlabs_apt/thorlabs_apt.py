@@ -189,6 +189,7 @@ class ThorlabsAPT(USBSerial):
 
     def connect(self):
         if self.connected is None:
+            self.connected = False
             threads = []
             for a in self.axes:
                 cntlr = self.controllers[a]
@@ -213,6 +214,7 @@ class ThorlabsAPT(USBSerial):
         else:
             while self.connected is False:
                 time.sleep(0.1)
+            return True
 
     def disconnect(self):
         if self.connected is not None and self.connected is not False:
