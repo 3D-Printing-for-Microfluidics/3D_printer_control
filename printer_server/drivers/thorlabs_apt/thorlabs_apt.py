@@ -299,9 +299,10 @@ class ThorlabsAPT(USBSerial):
         a = self.convertAxis(axis)
         return counts / (self.ctspmmss[a])
 
-    def write_to_APT(self, cntlr, cmd, a, b):
-        msg = pack(f"<H4B", cmd, a, b, self.dest, 0x01)
-        self.log.debug("%s - Sent : '%s'", self.driver_name, msg)
+    def write_to_APT(self, cntlr, cmd, _a, _b):
+        msg = pack(f"<H4B", cmd, _a, _b, self.dest, 0x01)
+        # self.log.debug("%s - Sent : '%s', a:%s, b:%s, dest:%s, source:%s", self.driver_name, cmd, _a, _b, self.dest, 0x01)
+        # self.log.debug("%s - Sent : '%s'", self.driver_name, msg)
         cntlr.write_bytes(msg)
 
     def long_write_to_APT(self, cntlr, cmd, extra_format, extra_data, extra_len):
@@ -313,7 +314,7 @@ class ThorlabsAPT(USBSerial):
             0x01,
             *extra_data,
         )
-        self.log.debug("%s - Sent : '%s'", self.driver_name, msg)
+        # self.log.debug("%s - Sent : '%s'", self.driver_name, msg)
         cntlr.write_bytes(msg)
 
     def parse_position(self, pos, axis=None):
@@ -345,7 +346,11 @@ class ThorlabsAPT(USBSerial):
                     extra_bytes = cntlr.read_bytes(count)
                 dest &= 0x7F
 
-                axis = self.convertAxis(source)
+                # self.log.debug("%s - Recieved : '%s', a:%s, b:%s, dest:%s, source:%s", self.driver_name, cmd, a, b, dest, source)
+                # if has_extra_bytes:
+                #     self.log.debug("%s - Recieved : '%s'", self.driver_name, extra_bytes)
+
+                # axis = self.convertAxis(source)
 
                 if cmd == RSPS["HW_ERROR_RSP"]:
                     ident, code, error, _ = unpack("<HH63sB", extra_bytes)
