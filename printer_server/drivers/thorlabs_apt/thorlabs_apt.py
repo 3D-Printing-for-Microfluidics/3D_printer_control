@@ -48,7 +48,7 @@ RSPS = {
     "DC_UPDATE_RSP": 0x0491,
     "UPDATE_RSP": 0x0481,
     "BOW_INDEX_RSP": 0x04F6,
-    "HOME_PARAMS_RSP": 0x0442
+    "HOME_PARAMS_RSP": 0x0442,
 }
 
 
@@ -177,25 +177,26 @@ class ThorlabsAPT(USBSerial):
 
             for axis in self.axes:
                 a = self.convertAxis(axis)
-                cntlr = self.controllers[a]
-                self.getHardwareInfo(cntlr, axis=a)
+                self.getHardwareInfo(axis=a)
                 time.sleep(0.25)
-                self.motorOn(cntlr, axis=a)
+                self.motorOn(axis=a)
                 time.sleep(0.25)
-                self.write_to_APT(cntlr, VEL_ACC_GET, self.channel, 0x00)
+                self.write_to_APT(a, VEL_ACC_GET, self.channel, 0x00)
                 time.sleep(0.25)
-                self.write_to_APT(cntlr, LIMITS_GET, self.channel, 0x00)
+                self.write_to_APT(a, LIMITS_GET, self.channel, 0x00)
                 time.sleep(0.25)
-                self.write_to_APT(cntlr, HOME_PARAMS_GET, self.channel, 0x00)
+                self.write_to_APT(a, HOME_PARAMS_GET, self.channel, 0x00)
                 time.sleep(0.25)
-                self.homing_array[a][2] = self.velToCnts(self.config_dict["axes_homing_speed"][a], axis=a)
-                self.long_write_to_APT(
-                    cntlr, HOME_PARAMS_SET, "HHHii", [self.channel, *self.homing_array[a]], 14
+                self.homing_array[a][2] = self.velToCnts(
+                    self.config_dict["axes_homing_speed"][a], axis=a
                 )
-                # self.write_to_APT(cntlr, BOW_INDEX_GET, self.channel, 0x00)
+                self.long_write_to_APT(
+                    a, HOME_PARAMS_SET, "HHHii", [self.channel, *self.homing_array[a]], 14
+                )
+                # self.write_to_APT(a, BOW_INDEX_GET, self.channel, 0x00)
                 # time.sleep(0.25)
-                # self.write_to_APT(DC_UPDATE_GET, self.channel, 0x00)
-                self.write_to_APT(cntlr, HW_START_STATUS_CMD, 0x00, 0x00)
+                # self.write_to_APT(a, DC_UPDATE_GET, self.channel, 0x00)
+                self.write_to_APT(a, HW_START_STATUS_CMD, 0x00, 0x00)
                 time.sleep(0.25)
             self.initialized = True
         else:
@@ -246,23 +247,23 @@ class ThorlabsAPT(USBSerial):
                     )
                     self.threads[a].daemon = True
 
+                    self.motorOff(axis=a)
+                    self.write_to_APT(a, HW_STOP_STATUS_CMD, 0x00, 0x00)
+                    self.write_to_APT(a, HW_DISCONNECT_CMD, 0x00, 0x00)
                     cntlr = self.controllers[a]
-                    self.motorOff(cntlr, axis=a)
-                    self.write_to_APT(cntlr, HW_STOP_STATUS_CMD, 0x00, 0x00)
-                    self.write_to_APT(cntlr, HW_DISCONNECT_CMD, 0x00, 0x00)
                     cntlr.disconnect()
                 except:
                     pass
 
-    def getHardwareInfo(self, cntlr, axis=None):
+    def getHardwareInfo(self, axis=None):
         # Get HW info; MGMSG_HW_REQ_INFO; may be require by a K Cube to
         #  allow confirmation Rx messages
         a = self.convertAxis(axis)
-        self.write_to_APT(cntlr, HW_INFO_GET, 0x00, 0x00)
+        self.write_to_APT(a, HW_INFO_GET, 0x00, 0x00)
 
-    # def sendServerAlive(self, cntlr, axis=None):
+    # def sendServerAlive(self, axis=None):
     #     a = self.convertAxis(axis)
-    #     self.write_to_APT(cntlr, DC_UPDATE_ACK, 0x00, 0x00)
+    #     self.write_to_APT(a, DC_UPDATE_ACK, 0x00, 0x00)
 
     def write_to_disk(self, *args):
         """Write data to disk using the async file handler class.
@@ -299,13 +300,14 @@ class ThorlabsAPT(USBSerial):
         a = self.convertAxis(axis)
         return counts / (self.ctspmmss[a])
 
-    def write_to_APT(self, cntlr, cmd, _a, _b):
+    def write_to_APT(self, axis, cmd, _a, _b):
         msg = pack(f"<H4B", cmd, _a, _b, self.dest, 0x01)
         # self.log.debug("%s - Sent : '%s', a:%s, b:%s, dest:%s, source:%s", self.driver_name, cmd, _a, _b, self.dest, 0x01)
         # self.log.debug("%s - Sent : '%s'", self.driver_name, msg)
+        cntlr = self.controllers[axis]
         cntlr.write_bytes(msg)
 
-    def long_write_to_APT(self, cntlr, cmd, extra_format, extra_data, extra_len):
+    def long_write_to_APT(self, axis, cmd, extra_format, extra_data, extra_len):
         msg = pack(
             f"<2H2B{extra_format}",
             cmd,
@@ -315,6 +317,7 @@ class ThorlabsAPT(USBSerial):
             *extra_data,
         )
         # self.log.debug("%s - Sent : '%s'", self.driver_name, msg)
+        cntlr = self.controllers[axis]
         cntlr.write_bytes(msg)
 
     def parse_position(self, pos, axis=None):
@@ -445,15 +448,32 @@ class ThorlabsAPT(USBSerial):
                     )
 
                 elif cmd == RSPS["HOME_PARAMS_RSP"]:
-                    channel, direction, limit_switch, velocity, offset = unpack("<HHHii", extra_bytes)
-                    self.homing_array[ax] = [
-                        direction, limit_switch, velocity, offset
-                    ]
-                    self.log.debug("%s - %s - %s channel:%s, direction:%s, limit_switch:%s, velocity:%s, offset:%s", self.driver_name, ax, source, channel, direction, limit_switch, velocity, offset)
+                    channel, direction, limit_switch, velocity, offset = unpack(
+                        "<HHHii", extra_bytes
+                    )
+                    self.homing_array[ax] = [direction, limit_switch, velocity, offset]
+                    self.log.debug(
+                        "%s - %s - %s channel:%s, direction:%s, limit_switch:%s, velocity:%s, offset:%s",
+                        self.driver_name,
+                        ax,
+                        source,
+                        channel,
+                        direction,
+                        limit_switch,
+                        velocity,
+                        offset,
+                    )
 
                 elif cmd == RSPS["BOW_INDEX_RSP"]:
                     channel, bow_index = unpack("<HH", extra_bytes)
-                    self.log.debug("%s - %s - %s channel:%s, bow_index:%s", self.driver_name, ax, source, channel, bow_index)
+                    self.log.debug(
+                        "%s - %s - %s channel:%s, bow_index:%s",
+                        self.driver_name,
+                        ax,
+                        source,
+                        channel,
+                        bow_index,
+                    )
 
                 elif cmd == RSPS["HOME_RSP"]:
                     # channel = a
@@ -576,20 +596,20 @@ class ThorlabsAPT(USBSerial):
             self.cntsToMm(self.limit_array[a][2], axis=axis),
         )
 
-    def setLowerLimit(self, cntlr, limit, axis=None):
+    def setLowerLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
         self.limit_array[a][3] = self.mmToCnts(limit, axis=a)
         self.limit_array[a][4] = 0x02  # enable limits
         self.long_write_to_APT(
-            cntlr, LIMITS_SET, "HHHiiH", [self.channel, *self.limit_array[a]], 16
+            a, LIMITS_SET, "HHHiiH", [self.channel, *self.limit_array[a]], 16
         )
 
-    def setUpperLimit(self, cntlr, limit, axis=None):
+    def setUpperLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
         self.limit_array[a][2] = self.mmToCnts(limit, axis=a)
         self.limit_array[a][4] = 0x02  # enable limits
         self.long_write_to_APT(
-            cntlr, LIMITS_SET, "HHHiiH", [self.channel, *self.limit_array[a]], 16
+            a, LIMITS_SET, "HHHiiH", [self.channel, *self.limit_array[a]], 16
         )
 
     def getLimits(self, axis=None):
@@ -607,30 +627,29 @@ class ThorlabsAPT(USBSerial):
 
     def setLimits(self, limits=None, axis=None):
         a = self.convertAxis(axis)
-        cntlr = self.controllers[a]
         if limits is None:
             limits = self.limits[a]
         if limits[0] is not None:
-            self.setLowerLimit(cntlr, limits[0], axis=a)
+            self.setLowerLimit(limits[0], axis=a)
         if limits[1] is not None:
-            self.setUpperLimit(cntlr, limits[1], axis=a)
+            self.setUpperLimit(limits[1], axis=a)
         time.sleep(0.25)
-        self.write_to_APT(cntlr, LIMITS_GET, self.channel, 0x00)
+        self.write_to_APT(a, LIMITS_GET, self.channel, 0x00)
 
     def getPosition(self, axis=None, notify=True):
         """Return the position of the specified encoder."""
         a = self.convertAxis(axis)
         return float(self.current_position[a])
 
-    def motorOn(self, cntlr, axis=None):
+    def motorOn(self, axis=None):
         """Turn on the specified axis."""
         a = self.convertAxis(axis)
-        self.write_to_APT(cntlr, MODULE_ENABLE_SET, self.channel, 0x01)
+        self.write_to_APT(a, MODULE_ENABLE_SET, self.channel, 0x01)
 
-    def motorOff(self, cntlr, axis=None):
+    def motorOff(self, axis=None):
         """Turn off the specified axis."""
         a = self.convertAxis(axis)
-        self.write_to_APT(cntlr, MODULE_ENABLE_SET, self.channel, 0x02)
+        self.write_to_APT(a, MODULE_ENABLE_SET, self.channel, 0x02)
 
     # MTS25-Z8 Maximum Acceleration 4.5 mm/s2
     # Z906 Maximum Acceleration 4.0 mm/s2
@@ -643,13 +662,10 @@ class ThorlabsAPT(USBSerial):
     def setAcceleration(self, acceleration, axis=None):
         """Set the acceleration for the specified axis (mm/sec^2)."""
         a = self.convertAxis(axis)
-        cntlr = self.controllers[a]
         self.acceleration[a] = acceleration
         vel = self.velToCnts(self.speed[a], axis=a)
         acc = self.accToCnts(acceleration, axis=a)
-        self.long_write_to_APT(
-            cntlr, VEL_ACC_SET, "Hiii", [self.channel, 0, acc, vel], 14
-        )
+        self.long_write_to_APT(a, VEL_ACC_SET, "Hiii", [self.channel, 0, acc, vel], 14)
 
     # MTS25-Z8 Maximum Velocity 2.4 mm/s
     # Z906 Maximum Velocity 2.6 mm/s
@@ -662,23 +678,19 @@ class ThorlabsAPT(USBSerial):
     def setSpeed(self, speed, axis=None):
         """Set the speed for the specified axis (mm/sec)."""
         a = self.convertAxis(axis)
-        cntlr = self.controllers[a]
         self.speed[a] = speed
         vel = self.velToCnts(speed, axis=a)
         acc = self.accToCnts(self.acceleration[a], axis=a)
-        self.long_write_to_APT(
-            cntlr, VEL_ACC_SET, "Hiii", [self.channel, 0, acc, vel], 14
-        )
+        self.long_write_to_APT(a, VEL_ACC_SET, "Hiii", [self.channel, 0, acc, vel], 14)
 
     def home(self):
         if self.homed is None:
             self.homed = False
             for axis in self.axes:
                 a = self.convertAxis(axis)
-                cntlr = self.controllers[a]
                 self.axes_homed[a] = False
                 # if not self.axes_homed[a]:
-                self.write_to_APT(cntlr, HOME_CMD, self.channel, 0x00)
+                self.write_to_APT(a, HOME_CMD, self.channel, 0x00)
                 self.log.info("%s start homing...", a)
 
             for axis in self.axes:
@@ -715,7 +727,6 @@ class ThorlabsAPT(USBSerial):
         and mm/sec(^2).
         """
         a = self.convertAxis(axis)  # check that the axis is valid
-        cntlr = self.controllers[a]
         old_speed = None
         old_acceleration = None
         if speed is not None:
@@ -728,7 +739,7 @@ class ThorlabsAPT(USBSerial):
         start_position = self.getPosition(axis=a)
         self.log.info("Move axis %s to relative position %s", a, mm)
         self.long_write_to_APT(
-            cntlr, MOV_REL_CMD, "Hi", [self.channel, self.mmToCnts(mm, axis=a)], 6
+            a, MOV_REL_CMD, "Hi", [self.channel, self.mmToCnts(mm, axis=a)], 6
         )
         self.moving[a] = True
         finished_succeccfully = self.confirmMoveFinished(axis=a)
@@ -760,7 +771,6 @@ class ThorlabsAPT(USBSerial):
         the movement has to be.
         """
         a = self.convertAxis(axis)
-        cntlr = self.controllers[a]
         if not self.axes_homed[a]:
             self.log.error("%s must home before using absolute movements!", a)
             return self.getPosition(axis=a)
@@ -775,7 +785,7 @@ class ThorlabsAPT(USBSerial):
 
         self.log.info("Move axis %s to absolute position %s", a, mm)
         self.long_write_to_APT(
-            cntlr, MOV_ABS_CMD, "Hi", [self.channel, self.mmToCnts(mm, axis=a)], 6
+            a, MOV_ABS_CMD, "Hi", [self.channel, self.mmToCnts(mm, axis=a)], 6
         )
         self.moving[a] = True
         finished_succeccfully = self.confirmMoveFinished(axis=a)
@@ -791,11 +801,12 @@ class ThorlabsAPT(USBSerial):
         return self.getPosition(axis=a)
 
     def confirmMoveFinished(self, timeout=30, axis=None):
+        a = self.convertAxis(axis)
         start = time.monotonic()
-        while (self.moving[axis] == True) and (time.monotonic() - start < timeout):
+        while (self.moving[a] == True) and (time.monotonic() - start < timeout):
             time.sleep(0.1)
 
-        if self.moving[axis] == True:
+        if self.moving[a] == True:
             self.log.error("%s move failed!", axis)
             return False
 
@@ -805,7 +816,6 @@ class ThorlabsAPT(USBSerial):
     def startJog(self, speed=None, acceleration=None, axis=None):
         """Start a jog, non-blocking."""
         a = self.convertAxis(axis)
-        cntlr = self.controllers[a]
         if not self.jogging[a]:
             self.pre_jog_speed[a] = self.getSpeed(
                 axis=a
@@ -818,14 +828,13 @@ class ThorlabsAPT(USBSerial):
         self.setSpeed(abs(speed))
         self.setAcceleration(acceleration)
         self.log.info("Start jog on axis %s at speed %s mm/sec", a, speed)
-        self.write_to_APT(cntlr, MOV_VEL_CMD, self.channel, 0x01 if speed < 0 else 0x02)
+        self.write_to_APT(a, MOV_VEL_CMD, self.channel, 0x01 if speed < 0 else 0x02)
 
     def stopJog(self, axis=None):
         """Stop a jog, non-blocking."""
         a = self.convertAxis(axis)
-        cntlr = self.controllers[a]
         self.log.info("Stop jog on axis %s", a)
-        self.write_to_APT(cntlr, MOV_STOP_CMD, self.channel, 0x01)
+        self.write_to_APT(a, MOV_STOP_CMD, self.channel, 0x01)
         self.jogging[a] = False
         self.setSpeed(self.pre_jog_speed[a])
         self.setAcceleration(self.pre_jog_acceleration[a])
