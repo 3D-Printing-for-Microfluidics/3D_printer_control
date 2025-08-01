@@ -31,6 +31,9 @@ MOV_STOP_CMD = 0x0465
 DC_UPDATE_GET = 0x0490
 DC_UPDATE_ACK = 0x0492
 
+BOW_INDEX_GET = 0x04F5
+HOME_PARAMS_SET = 0x0440
+HOME_PARAMS_GET = 0x0441
 
 RSPS = {
     "HW_ERROR_RSP": 0x0081,
@@ -44,6 +47,8 @@ RSPS = {
     "MOV_STOP_RSP": 0x0466,
     "DC_UPDATE_RSP": 0x0491,
     "UPDATE_RSP": 0x0481,
+    "BOW_INDEX_RSP": 0x04F6,
+    "HOME_PARAMS_RSP": 0x0442
 }
 
 
@@ -109,6 +114,7 @@ class ThorlabsAPT(USBSerial):
         self.pre_jog_acceleration = {}
         self.current_position = {}
         self.limit_array = {}
+        self.homing_array = {}
         for a in self.axes:
             self.axes_homed[a] = False
             self.moving[a] = False
@@ -119,6 +125,7 @@ class ThorlabsAPT(USBSerial):
             self.pre_jog_acceleration[a] = 0
             self.current_position[a] = 0
             self.limit_array[a] = []
+            self.homing_array[a] = []
 
         self.connected = None
         self.initialized = None
@@ -179,6 +186,14 @@ class ThorlabsAPT(USBSerial):
                 time.sleep(0.25)
                 self.write_to_APT(cntlr, LIMITS_GET, self.channel, 0x00)
                 time.sleep(0.25)
+                self.write_to_APT(cntlr, HOME_PARAMS_GET, self.channel, 0x00)
+                time.sleep(0.25)
+                self.homing_array[a][2] = self.velToCnts(self.config_dict["axes_homing_speed"][a], axis=a)
+                self.long_write_to_APT(
+                    cntlr, HOME_PARAMS_SET, "HHHii", [self.channel, *self.homing_array[a]], 14
+                )
+                # self.write_to_APT(cntlr, BOW_INDEX_GET, self.channel, 0x00)
+                # time.sleep(0.25)
                 # self.write_to_APT(DC_UPDATE_GET, self.channel, 0x00)
                 self.write_to_APT(cntlr, HW_START_STATUS_CMD, 0x00, 0x00)
                 time.sleep(0.25)
@@ -424,6 +439,17 @@ class ThorlabsAPT(USBSerial):
                         soft_mode,
                     )
 
+                elif cmd == RSPS["HOME_PARAMS_RSP"]:
+                    channel, direction, limit_switch, velocity, offset = unpack("<HHHii", extra_bytes)
+                    self.homing_array[ax] = [
+                        direction, limit_switch, velocity, offset
+                    ]
+                    self.log.debug("%s - %s - %s channel:%s, direction:%s, limit_switch:%s, velocity:%s, offset:%s", self.driver_name, ax, source, channel, direction, limit_switch, velocity, offset)
+
+                elif cmd == RSPS["BOW_INDEX_RSP"]:
+                    channel, bow_index = unpack("<HH", extra_bytes)
+                    self.log.debug("%s - %s - %s channel:%s, bow_index:%s", self.driver_name, ax, source, channel, bow_index)
+
                 elif cmd == RSPS["HOME_RSP"]:
                     # channel = a
                     self.axes_homed[ax] = True
@@ -645,16 +671,17 @@ class ThorlabsAPT(USBSerial):
             for axis in self.axes:
                 a = self.convertAxis(axis)
                 cntlr = self.controllers[a]
-                if not self.axes_homed[a]:
-                    self.write_to_APT(cntlr, HOME_CMD, self.channel, 0x00)
-                    self.log.info("%s start homing...", a)
+                self.axes_homed[a] = False
+                # if not self.axes_homed[a]:
+                self.write_to_APT(cntlr, HOME_CMD, self.channel, 0x00)
+                self.log.info("%s start homing...", a)
 
             for axis in self.axes:
                 a = self.convertAxis(axis)
                 if not self.axes_homed[a]:
                     start = time.monotonic()
                     while (self.axes_homed[a] != True) and (
-                        time.monotonic() - start < 60
+                        time.monotonic() - start < 180
                     ):  # 60 second timeout
                         time.sleep(0.1)
 
