@@ -92,7 +92,7 @@ class ThorlabsAPT(USBSerial):
 
             self.threads[a] = Thread(
                 self.log,
-                name=f"{self.driver_name}_loop_thread",
+                name=f"{self.driver_name}_{a}_loop_thread",
                 target=self.loop,
                 kwargs={"axis": a},
             )
@@ -241,7 +241,7 @@ class ThorlabsAPT(USBSerial):
                     self.threads[a].join()
                     self.threads[a] = Thread(
                         self.log,
-                        name=f"{self.driver_name}_loop_thread",
+                        name=f"{self.driver_name}_{a}_loop_thread",
                         target=self.loop,
                         kwargs={"axis": a},
                     )
@@ -589,6 +589,35 @@ class ThorlabsAPT(USBSerial):
                     )
                     cntlr.flush_buffers()
 
+                # if limits are enabled, but the stage does not support it, use a python software limit
+                if (
+                    (self.limits[ax][0] is not None or self.limits[ax][1] is not None)
+                    and len(self.limit_array[ax]) == 5
+                    and self.limit_array[ax][4] == 0
+                ):
+                    pos = self.current_position[ax]
+                    print(self.limits[ax][0], pos, self.limits[ax][1])
+                    if self.limits[ax][0] is not None and pos < self.limits[ax][0]:
+                        self.log.warning(
+                            "%s - %s - %s position %s below lower limit %s",
+                            self.driver_name,
+                            ax,
+                            source,
+                            pos,
+                            self.limits[ax][0],
+                        )
+                        self.fullstop(axis=ax)
+                    elif self.limits[ax][1] is not None and pos > self.limits[ax][1]:
+                        self.log.warning(
+                            "%s - %s - %s position %s above upper limit %s",
+                            self.driver_name,
+                            ax,
+                            source,
+                            pos,
+                            self.limits[ax][1],
+                        )
+                        self.fullstop(axis=ax)
+
     def getSoftwareLimits(self, axis=None):
         a = self.convertAxis(axis)
         return (
@@ -838,6 +867,18 @@ class ThorlabsAPT(USBSerial):
         self.jogging[a] = False
         self.setSpeed(self.pre_jog_speed[a])
         self.setAcceleration(self.pre_jog_acceleration[a])
+
+    def fullstop(self, axis=None):
+        """Stop any motion, non-blocking."""
+        a = self.convertAxis(axis)
+        self.log.info("Sopping %s", a)
+        self.write_to_APT(a, MOV_STOP_CMD, self.channel, 0x01)
+        if self.jogging[a]:
+            self.jogging[a] = False
+            self.setSpeed(self.pre_jog_speed[a])
+            self.setAcceleration(self.pre_jog_acceleration[a])
+        else:
+            self.moving[a] = False
 
     def setup_log_file(self, filename):
         """Set the log file."""

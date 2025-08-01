@@ -128,7 +128,7 @@
         },
         "axes_speed": {
             "X": 25.0,
-            "Y": 10.0
+            "Y": 7.5
         },
         "axes_acceleration": {
             "X": 10.0,
@@ -141,11 +141,11 @@
         "limits": {
             "X": [
                 null,
-                null
+                90.0
             ],
             "Y": [
                 null,
-                null
+                285.0
             ]
         }
     },
