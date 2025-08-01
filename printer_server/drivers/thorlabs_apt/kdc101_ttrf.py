@@ -21,16 +21,16 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
         self.axes_common_names = self.apt_controller.axes_common_names
 
     def mm_to_rad(self, mm):
-        """Convert mm to radians based on the mount length."""
+        """Convert mm to radians (of image NOT mirror rotation) based on the mount length."""
         if mm is None:
             return None
-        return math.atan(mm / self.mount_len)
+        return math.atan(mm / self.mount_len)*2
 
     def rad_to_mm(self, rad):
-        """Convert radians to mm based on the mount length."""
+        """Convert radians (of image NOT mirror rotation) to mm based on the mount length."""
         if rad is None:
             return None
-        return self.mount_len * math.tan(rad)
+        return self.mount_len * math.tan(rad/2)
 
     def setup_log_file(self, filename):
         self.apt_controller.setup_log_file(filename)
