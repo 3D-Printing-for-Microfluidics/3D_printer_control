@@ -318,9 +318,9 @@ class ThorlabsAPT(USBSerial):
         return pos
 
     def loop(self, axis=None):
-        a = self.convertAxis(axis)
-        cntlr = self.controllers[a]
-        while self.thread_runnings[a]:
+        ax = self.convertAxis(axis)
+        cntlr = self.controllers[ax]
+        while self.thread_runnings[ax]:
             if cntlr.in_waiting >= 6:
                 rsp = cntlr.read_bytes(6)
                 cmd, a, b, dest, source = unpack("<H4B", rsp)
@@ -337,7 +337,7 @@ class ThorlabsAPT(USBSerial):
                     self.log.warning(
                         "%s - %s - %s error %s (%s)",
                         self.driver_name,
-                        axis,
+                        ax,
                         source,
                         code,
                         error.rstrip().decode("utf-8"),
@@ -350,7 +350,7 @@ class ThorlabsAPT(USBSerial):
                     self.log.debug(
                         "%s - %s - %s hardware info: serial %s, model %s, type %s, fw ver %s, hw ver %s, mod %s, nchs %s",
                         self.driver_name,
-                        axis,
+                        ax,
                         source,
                         serial,
                         model,
@@ -371,7 +371,7 @@ class ThorlabsAPT(USBSerial):
                     self.log.debug(
                         "%s - %s - %s in bay %s (%s)",
                         self.driver_name,
-                        axis,
+                        ax,
                         source,
                         a,
                         bay,
@@ -379,33 +379,33 @@ class ThorlabsAPT(USBSerial):
 
                 elif cmd == RSPS["POS_RSP"]:
                     channel, pos = unpack("<Hi", extra_bytes)
-                    self.current_position[axis] = self.parse_position(pos)
+                    self.current_position[ax] = self.parse_position(pos)
                     self.log.debug(
                         "%s - %s - %s at %s",
                         self.driver_name,
-                        axis,
+                        ax,
                         source,
-                        self.current_position[axis],
+                        self.current_position[ax],
                     )
 
                 elif cmd == RSPS["VEL_ACC_RSP"]:
                     channel, _, acc, speed = unpack("<Hiii", extra_bytes)
-                    self.speed[axis] = self.cntsToVel(speed, axis=axis)
-                    self.acceleration[axis] = self.cntsToAcc(acc, axis=axis)
+                    self.speed[ax] = self.cntsToVel(speed, axis=ax)
+                    self.acceleration[ax] = self.cntsToAcc(acc, axis=ax)
                     self.log.debug(
                         "%s - %s - %s speed:%s acc:%s",
                         self.driver_name,
-                        axis,
+                        ax,
                         source,
-                        self.speed[axis],
-                        self.acceleration[axis],
+                        self.speed[ax],
+                        self.acceleration[ax],
                     )
 
                 elif cmd == RSPS["LIMITS_RSP"]:
                     channel, upper_mode, lower_mode, upper_soft, lower_soft, soft_mode = (
                         unpack("<HHHiiH", extra_bytes)
                     )
-                    self.limit_array[axis] = [
+                    self.limit_array[ax] = [
                         upper_mode,
                         lower_mode,
                         upper_soft,
@@ -415,19 +415,19 @@ class ThorlabsAPT(USBSerial):
                     self.log.debug(
                         "%s - %s - %s limit: upper hard %s lower hard %s, upper soft %s, lower soft %s, soft mode %s",
                         self.driver_name,
-                        axis,
+                        ax,
                         source,
                         upper_mode,
                         lower_mode,
-                        self.cntsToMm(upper_soft, axis=axis),
-                        self.cntsToMm(lower_soft, axis=axis),
+                        self.cntsToMm(upper_soft, axis=ax),
+                        self.cntsToMm(lower_soft, axis=ax),
                         soft_mode,
                     )
 
                 elif cmd == RSPS["HOME_RSP"]:
                     # channel = a
-                    self.axes_homed[axis] = True
-                    self.log.debug("%s - %s - %s homed", self.driver_name, axis, source)
+                    self.axes_homed[ax] = True
+                    self.log.debug("%s - %s - %s homed", self.driver_name, ax, source)
 
                 elif (
                     cmd == RSPS["MOV_RSP"]
@@ -447,7 +447,7 @@ class ThorlabsAPT(USBSerial):
                         self.log.warning(
                             "%s - %s - %s unknown MOV_RSP length %s",
                             self.driver_name,
-                            axis,
+                            ax,
                             source,
                             len(extra_bytes),
                         )
@@ -466,17 +466,17 @@ class ThorlabsAPT(USBSerial):
                     position_error = (status & 0x4000) > 0
                     error = (status & 0x40000000) > 0
                     enabled = (status & 0x80000000) > 0
-                    # self.sendServerAlive(c, axis=a)
+                    # self.sendServerAlive(c, axis=ax)
                     if len(extra_bytes) == 14:
                         self.log.debug(
                             "%s - %s - %s update: pos %s, speed %s, upper_hard_limit %s, lower_hard_limit %s, upper_soft_limit %s, \
                                     lower_soft_limit %s, in_motion_pos %s, in_motion_neg %s, jogging_pos %s, jogging_neg %s, connected %s, \
                                     homing %s, homed %s, pos_error %s, error %s, enabled %s",
                             self.driver_name,
-                            axis,
+                            ax,
                             source,
                             self.parse_position(pos),
-                            self.cntsToVel(speed, axis=axis),
+                            self.cntsToVel(speed, axis=ax),
                             upper_hard_limit,
                             lower_hard_limit,
                             upper_soft_limit,
@@ -498,7 +498,7 @@ class ThorlabsAPT(USBSerial):
                                     lower_soft_limit %s, in_motion_pos %s, in_motion_neg %s, jogging_pos %s, jogging_neg %s, connected %s, \
                                     homing %s, homed %s, pos_error %s, error %s, enabled %s",
                             self.driver_name,
-                            axis,
+                            ax,
                             source,
                             self.parse_position(pos),
                             self.parse_position(enc),
@@ -517,22 +517,22 @@ class ThorlabsAPT(USBSerial):
                             error,
                             enabled,
                         )
-                    self.moving[axis] = in_motion_pos | in_motion_neg
-                    self.axes_homed[axis] = homed
-                    self.current_position[axis] = self.parse_position(pos)
+                    self.moving[ax] = in_motion_pos | in_motion_neg
+                    self.axes_homed[ax] = homed
+                    self.current_position[ax] = self.parse_position(pos)
 
                     if self.logging_running:
                         if self.movement_log is not None:
                             tmp = ""
-                            for a in self.axes:
-                                tmp += f"{self.current_position[a]},"
+                            for _ax in self.axes:
+                                tmp += f"{self.current_position[_ax]},"
                             self.write_to_disk(tmp)
 
                 else:
-                    self.log.info(
+                    self.log.debug(
                         "%s - %s - %s unknown message (%s)",
                         self.driver_name,
-                        axis,
+                        ax,
                         source,
                         hex(cmd),
                     )
