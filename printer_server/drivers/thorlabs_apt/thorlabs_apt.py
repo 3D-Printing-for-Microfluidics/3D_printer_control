@@ -547,7 +547,7 @@ class ThorlabsAPT(USBSerial):
 
     def setLowerLimit(self, cntlr, limit, axis=None):
         a = self.convertAxis(axis)
-        self.limit_array[a][2] = self.mmToCnts(limit, axis=a)
+        self.limit_array[a][3] = self.mmToCnts(limit, axis=a)
         self.limit_array[a][4] = 0x02  # enable limits
         self.long_write_to_APT(
             cntlr, LIMITS_SET, "HHHiiH", [self.channel, *self.limit_array[a]], 16
@@ -555,7 +555,7 @@ class ThorlabsAPT(USBSerial):
 
     def setUpperLimit(self, cntlr, limit, axis=None):
         a = self.convertAxis(axis)
-        self.limit_array[a][3] = self.mmToCnts(limit, axis=a)
+        self.limit_array[a][2] = self.mmToCnts(limit, axis=a)
         self.limit_array[a][4] = 0x02  # enable limits
         self.long_write_to_APT(
             cntlr, LIMITS_SET, "HHHiiH", [self.channel, *self.limit_array[a]], 16
@@ -563,8 +563,7 @@ class ThorlabsAPT(USBSerial):
 
     def getLimits(self, axis=None):
         a = self.convertAxis(axis)
-        cntlr = self.controllers[a]
-        sl = self.getSoftwareLimits(cntlr, axis=a)
+        sl = self.getSoftwareLimits(axis=a)
         if self.limits[a][0] is not None:
             ll = sl[0]
         else:
@@ -584,6 +583,8 @@ class ThorlabsAPT(USBSerial):
             self.setLowerLimit(cntlr, limits[0], axis=a)
         if limits[1] is not None:
             self.setUpperLimit(cntlr, limits[1], axis=a)
+        time.sleep(0.25)
+        self.write_to_APT(cntlr, LIMITS_GET, self.channel, 0x00)
 
     def getPosition(self, axis=None, notify=True):
         """Return the position of the specified encoder."""
