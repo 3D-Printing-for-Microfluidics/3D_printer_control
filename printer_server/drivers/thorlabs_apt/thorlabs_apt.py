@@ -107,6 +107,7 @@ class ThorlabsAPT(USBSerial):
 
         self.axes_homed = {}
         self.moving = {}
+        self.moving_dir = {}
         self.jogging = {}
         self.speed = {}
         self.acceleration = {}
@@ -118,6 +119,7 @@ class ThorlabsAPT(USBSerial):
         for a in self.axes:
             self.axes_homed[a] = False
             self.moving[a] = False
+            self.moving_dir[a] = None
             self.jogging[a] = False
             self.speed[a] = 0
             self.acceleration[a] = 0
@@ -568,6 +570,7 @@ class ThorlabsAPT(USBSerial):
                             error,
                             enabled,
                         )
+
                     self.moving[ax] = in_motion_pos | in_motion_neg
                     self.axes_homed[ax] = homed
                     self.current_position[ax] = self.parse_position(pos)
@@ -596,34 +599,45 @@ class ThorlabsAPT(USBSerial):
                     and self.limit_array[ax][4] == 0
                 ):
                     pos = self.current_position[ax]
-                    print(self.limits[ax][0], pos, self.limits[ax][1])
-                    if self.limits[ax][0] is not None and pos < self.limits[ax][0]:
-                        self.log.warning(
-                            "%s - %s - %s position %s below lower limit %s",
-                            self.driver_name,
-                            ax,
-                            source,
-                            pos,
-                            self.limits[ax][0],
-                        )
-                        self.fullstop(axis=ax)
-                    elif self.limits[ax][1] is not None and pos > self.limits[ax][1]:
-                        self.log.warning(
-                            "%s - %s - %s position %s above upper limit %s",
-                            self.driver_name,
-                            ax,
-                            source,
-                            pos,
-                            self.limits[ax][1],
-                        )
-                        self.fullstop(axis=ax)
+                    if self.axes_homed[ax] is True:
+                        if (
+                            self.limits[ax][0] is not None
+                            and pos < self.limits[ax][0]
+                            and self.moving_dir[ax] == "neg"
+                        ):
+                            self.log.warning(
+                                "%s - %s - %s position %s below lower limit %s",
+                                self.driver_name,
+                                ax,
+                                source,
+                                pos,
+                                self.limits[ax][0],
+                            )
+                            self.fullstop(axis=ax)
+                        elif (
+                            self.limits[ax][1] is not None
+                            and pos > self.limits[ax][1]
+                            and self.moving_dir[ax] == "pos"
+                        ):
+                            self.log.warning(
+                                "%s - %s - %s position %s above upper limit %s",
+                                self.driver_name,
+                                ax,
+                                source,
+                                pos,
+                                self.limits[ax][1],
+                            )
+                            self.fullstop(axis=ax)
 
     def getSoftwareLimits(self, axis=None):
         a = self.convertAxis(axis)
-        return (
-            self.cntsToMm(self.limit_array[a][3], axis=axis),
-            self.cntsToMm(self.limit_array[a][2], axis=axis),
-        )
+        if len(self.limit_array[a]) == 5:
+            if self.limit_array[a][4] != 0:
+                return (
+                    self.cntsToMm(self.limit_array[a][3], axis=axis),
+                    self.cntsToMm(self.limit_array[a][2], axis=axis),
+                )
+        return self.limits[a]
 
     def setLowerLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
@@ -722,6 +736,8 @@ class ThorlabsAPT(USBSerial):
                 self.write_to_APT(a, HOME_CMD, self.channel, 0x00)
                 self.log.info("%s start homing...", a)
 
+            time.sleep(0.25)
+
             for axis in self.axes:
                 a = self.convertAxis(axis)
                 if not self.axes_homed[a]:
@@ -771,6 +787,8 @@ class ThorlabsAPT(USBSerial):
             a, MOV_REL_CMD, "Hi", [self.channel, self.mmToCnts(mm, axis=a)], 6
         )
         self.moving[a] = True
+        self.moving_dir[a] = "pos" if mm > 0 else "neg" if mm < 0 else None
+        time.sleep(0.25)
         finished_succeccfully = self.confirmMoveFinished(axis=a)
         # if not finished_succeccfully:
         #     self.log.warning("%s move failed. Going to position 0 and retrying", a)
@@ -817,6 +835,12 @@ class ThorlabsAPT(USBSerial):
             a, MOV_ABS_CMD, "Hi", [self.channel, self.mmToCnts(mm, axis=a)], 6
         )
         self.moving[a] = True
+        self.moving_dir[a] = (
+            "pos"
+            if mm - self.current_position[a] > 0
+            else "neg" if mm - self.current_position[a] < 0 else None
+        )
+        time.sleep(0.25)
         finished_succeccfully = self.confirmMoveFinished(axis=a)
         # if not finished_succeccfully:
         #     self.log.warning("%s move failed. Going to position 0 and retrying", a)
@@ -853,6 +877,7 @@ class ThorlabsAPT(USBSerial):
                 axis=a
             )  # save the acceleration before jogging begins
         self.jogging[a] = True
+        self.moving_dir[ax] = "pos" if speed > 0 else "neg" if speed < 0 else None
 
         self.setSpeed(abs(speed))
         self.setAcceleration(acceleration)
@@ -865,6 +890,7 @@ class ThorlabsAPT(USBSerial):
         self.log.info("Stop jog on axis %s", a)
         self.write_to_APT(a, MOV_STOP_CMD, self.channel, 0x01)
         self.jogging[a] = False
+        self.moving_dir[ax] = None
         self.setSpeed(self.pre_jog_speed[a])
         self.setAcceleration(self.pre_jog_acceleration[a])
 
@@ -873,6 +899,7 @@ class ThorlabsAPT(USBSerial):
         a = self.convertAxis(axis)
         self.log.info("Sopping %s", a)
         self.write_to_APT(a, MOV_STOP_CMD, self.channel, 0x01)
+        self.moving_dir[a] = None
         if self.jogging[a]:
             self.jogging[a] = False
             self.setSpeed(self.pre_jog_speed[a])
