@@ -33,7 +33,7 @@ static constexpr float kI_intercept_A = 0.025f;        // I0
 static constexpr float kI_per_t_A_per_kgmm = 0.0049f;  // K
 
 // Safety timeout
-const unsigned long TIMEOUT_MS = 10000;    // ms
+const unsigned long TIMEOUT_MS = 5000;    // ms
 
 // Default PWM duty (0..255). Adjust as needed for speed/torque ramping.
 uint8_t kPWM = 200;
@@ -229,6 +229,6 @@ void loop() {
       Serial.println("timeout");
     }
 
-    delay(20);  // ~50 Hz loop
+    delay(10);  // ~100 Hz loop
   }
 }
