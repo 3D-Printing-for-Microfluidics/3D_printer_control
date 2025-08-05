@@ -90,15 +90,23 @@ class Planarization(USBSerial):
         """
         Receive lines from Teensy while running.
         Expected lines:
-          - 'torque <value>'
-          - 'done' / 'timeout' / 'start' / 'stop'
+        - 'torque <value>'
+        - 'done' / 'timeout' / 'start' / 'stop'
         """
         try:
             while self.running:
-                line = self.readline()
+                raw = self.readline()
+                if not raw:
+                    continue
+
+                # Ensure we are working with str (USBSerial returns bytes in some drivers)
+                if isinstance(raw, (bytes, bytearray)):
+                    line = raw.decode("utf-8", errors="ignore")
+                else:
+                    line = raw
+                line = line.strip()
                 if not line:
                     continue
-                line = line.strip()
 
                 if line.startswith("torque "):
                     try:
@@ -106,18 +114,20 @@ class Planarization(USBSerial):
                         if self.log_file:
                             async_file_hander.write(self.log_file, f"{time.time()},{val:.3f}\n")
                     except ValueError:
-                        self.log.debug("Parse error for torque line: %s", line)
+                        self.log.debug("Parse error for torque line: %r", line)
                         continue
 
-                elif "done" in line or "timeout" in line:
-                    # Teensy indicates motion completed or timed out
+                elif line == "done" or line == "timeout":
                     self.running = False
                     self.log.info("Planarization motor reported: %s", line)
                     break
 
-                # Optional: log starts/stops for debugging
-                elif line in ("start", "stop"):
+                elif line == "start" or line == "stop":
                     self.log.debug("Motor: %s", line)
+
+                # Optional: debug any unexpected lines
+                else:
+                    self.log.debug("Unrecognized line: %r", line)
 
         except SerialException as ex:
             self.log.warning("Planarization serial failed (%s)", ex)
