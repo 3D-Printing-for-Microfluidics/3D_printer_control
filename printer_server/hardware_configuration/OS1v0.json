@@ -239,7 +239,7 @@
         "power_status_pin": 17
     },
     "loadcell": {
-        "dummy": false,
+        "dummy": true,
         "vendor_id": 5824,
         "product_id": 1155,
         "serial_number": "17767270",
@@ -291,7 +291,7 @@
         "visitech"
     ],
     "visitech": {
-        "dummy": false,
+        "dummy": true,
         "address": "192.168.0.10",
         "port": 5000,
         "dual_led": false,
