@@ -150,6 +150,17 @@ class Printer3D:
                     log_level=default_log_level,
                 )
 
+        if "planarization" in config_dict.keys():
+            from printer_server.drivers.planarization import Planarization, Planarization_dummy
+            if config_dict["planarization"]["dummy"]:
+                self.planarization = Planarization_dummy(
+                    config_dict=config_dict["planarization"], log_level=default_log_level
+                )
+            else:
+                self.planarization = Planarization(
+                    config_dict=config_dict["planarization"], log_level=default_log_level
+                )
+
         if "mks" in config_dict.keys() and "mks_teensy" in config_dict.keys():
             from printer_server.drivers.mks import MKS946, MKS946_dummy
             from printer_server.drivers.mks_teensy import MKSTeensy, MKSTeensy_dummy
@@ -302,6 +313,8 @@ class Printer3D:
             self.keyence.disconnect()
         if hasattr(self, "loadcell"):
             self.loadcell.disconnect()
+        if hasattr(self, "planarization"):
+            self.planarization.disconnect()
         if hasattr(self, "mks") and hasattr(self, "mks_teensy"):
             self.mks.disconnect()
             self.mks_teensy.disconnect()

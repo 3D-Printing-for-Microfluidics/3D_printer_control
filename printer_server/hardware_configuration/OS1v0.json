@@ -253,6 +253,19 @@
         "loadcell_planarization_force": 35.0,
         "loadcell_print_start_force": 5.0
     },
+    "planarization": {
+        "dummy": false,
+        "vendor_id": 5824,
+        "product_id": 1155,
+        "serial_number": "",
+        "firmware_path": "planarization/firmware/planarization_controller.ino",
+        "microcontroller": "Teensy4.0",
+        "baudrate": 115200,
+        "sample_period_us": 1000,
+        "target_torque_kgmm": 40,
+        "tighten_delay_ms": 1000,
+        "motor_timeout_ms": 5000
+    },
     "keyence": {
         "dummy": false,
         "address": "192.168.0.15",
