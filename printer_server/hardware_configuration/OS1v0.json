@@ -257,7 +257,7 @@
         "dummy": false,
         "vendor_id": 5824,
         "product_id": 1155,
-        "serial_number": "",
+        "serial_number": "17767660",
         "firmware_path": "planarization/firmware/planarization_controller.ino",
         "microcontroller": "Teensy4.0",
         "baudrate": 115200,
