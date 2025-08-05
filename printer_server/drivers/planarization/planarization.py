@@ -42,8 +42,6 @@ class Planarization(USBSerial):
         pconf = config_dict.get("planarization", {})
         self.torque_target_kgmm = float(pconf.get("target_torque_kgmm", 40.0))
 
-    # ---------- public API ----------
-
     def start(self, direction: str = "tighten", torque_kgmm: float | None = None):
         """
         Start motor operation. If torque_kgmm is given, set it before motion.

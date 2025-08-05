@@ -24,17 +24,22 @@ class PlanarizationControl(PrintControl):
         self.motor.set_log_file(self.motor_log)
 
     def connect_hardware(self):
-        t = Thread(log, name="planarization_connect_thread", target=self.motor.connect)
-        t.start()
+        planarization_t = Thread(log, name="planarization_connect_thread", target=self.motor.connect)
+        planarization_t.start()
         super().connect_hardware()
-        t.join()
-        if not self.motor.connected or t.exception is not None:
+        planarization_t.join()
+        if not self.motor.connected or planarization_t.exception is not None:
             log.error("Planarization motor failed to connect!")
             self.failed_hardware["Planarization Motor"] = self.motor
 
     def initialize_hardware(self):
-        # No specific motor initialization needed beyond connect()
+        planarization_t = Thread(log, name="planarization_control_init_thread", target=self.loadcell.initialize, args=[])
+        planarization_t.start()
         super().initialize_hardware()
+        planarization_t.join()
+        if planarization_t.exception is not None:
+            log.error("Planarization Motor failed to initialize!")
+            self.failed_hardware["Planarization Motor"] = self.motor
 
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
