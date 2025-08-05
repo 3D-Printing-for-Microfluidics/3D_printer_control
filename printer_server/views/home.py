@@ -47,6 +47,10 @@ if "loadcell" in config_dict:
     from printer_server.printer_control.loadcell_control import LoadcellControl
     parent_classes.append(LoadcellControl)
 
+if "planarization" in config_dict:
+    from printer_server.printer_control.planarization_control import PlanarizationControl
+    parent_classes.append(PlanarizationControl)
+
 if "bp_stage" in config_dict["stages"]:
     from printer_server.printer_control.bp_control import BPControl
     parent_classes.append(BPControl)
