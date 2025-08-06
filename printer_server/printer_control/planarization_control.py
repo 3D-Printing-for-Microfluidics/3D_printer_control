@@ -19,10 +19,6 @@ class PlanarizationControl(PrintControl):
         self.motor = driver_handles.planarization
         self.motor_log = str(self.current_job / "logs" / "motor_planarization_data.csv")
 
-    def create_logs(self):
-        super().create_logs()
-        self.motor.set_log_file(self.motor_log)
-
     def connect_hardware(self):
         planarization_t = Thread(log, name="planarization_connect_thread", target=self.motor.connect)
         planarization_t.start()
@@ -49,6 +45,8 @@ class PlanarizationControl(PrintControl):
         """
         super().planarization_step_2()
 
+        self.motor.set_log_file(self.motor_log)
+
         try:
             pconf = config_dict["planarization"]
             delay_s = pconf["tighten_delay_ms"] / 1000.0
@@ -68,7 +66,6 @@ class PlanarizationControl(PrintControl):
                 time.sleep(0.05)
 
             log.info("Motor tightening complete.")
-            self.motor.set_log_file(None)
 
         except Exception as ex:
             log.critical("Planarization motor tightening failed (%s)", ex, exc_info=True)

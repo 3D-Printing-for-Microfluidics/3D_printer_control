@@ -120,6 +120,8 @@ class Planarization(USBSerial):
                 elif line == "done" or line == "timeout":
                     self.running = False
                     self.log.info("Planarization motor reported: %s", line)
+                    self.thread.join()
+                    self.thread = Thread(self.log, name="planarization_loop_thread", target=self.loop)
                     break
 
                 elif line == "start" or line == "stop":
