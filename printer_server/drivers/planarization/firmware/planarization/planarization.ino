@@ -10,8 +10,12 @@
 //   "s <kgmm>"      : set new torque target in kg·mm (e.g., "s 40")
 //   "q"             : query: prints "torque <kgmm>" (instantaneous)
 //
-// Teensy 4.x note: default ADC is 10-bit; you can call analogReadResolution(12) if desired.
 
+#include <ADC.h>
+#include <ADC_util.h>
+ADC *adc = new ADC(); // ADC object
+IntervalTimer controlTimer;
+volatile bool inISR = false;
 
 // ---------------- Pin assignments ----------------
 const int IN1 = 3;              // PWM-capable
@@ -19,10 +23,9 @@ const int IN2 = 4;              // PWM-capable
 const int VISEN_PIN = A0;       // Analog input for VISEN
 const int SLEEP_HB_LDO = 5;     // Combined enable (board-specific wiring)
 
-
 // ---------------- System configuration ----------------
 static constexpr float kVref = 3.3f;       // ADC analog reference (Teensy 4.x default 3.3 V)
-static constexpr int   kADC_Bits = 10;     // 10-bit default on Teensy; set to 12 if you change resolution
+static constexpr int   kADC_Bits = 12;     // 12-bit resolution
 static constexpr float kADC_Max = float((1 << kADC_Bits) - 1);
 
 // MP6550 with ISET = 2 kΩ (carrier default) => 0.2 V/A
@@ -131,8 +134,12 @@ void setup() {
   analogWriteFrequency(IN1, 20000);
   analogWriteFrequency(IN2, 20000);
 
-  // If you change kADC_Bits above to 12, uncomment this:
-  // analogReadResolution(12);
+  // Initialize ADC with desired settings
+  adc->adc0->setReference(ADC_REFERENCE::REF_3V3);              // Teensy 4.x default
+  adc->adc0->setAveraging(32);                                  // Average 32 samples
+  adc->adc0->setResolution(12);                                 // 12-bit resolution
+  adc->adc0->setConversionSpeed(ADC_CONVERSION_SPEED::MED_SPEED);
+  adc->adc0->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED);
 
   Serial.begin(115200);
 }
@@ -151,12 +158,16 @@ void startMotor(int dir) {
   } else {
     driveUntighten();
   }
+
+  controlTimer.begin(torqueControlISR, 10000);  // 100 Hz = every 10,000 µs
   Serial.println("start");
 }
 
 
+
 // Stop motor and report
 void stopMotor() {
+  controlTimer.end();  // Stop ISR
   brakeCoastOff();
   running = false;
   Serial.println("stop");
@@ -184,7 +195,7 @@ void handleLine(const String& line) {
     }
   } else if (line == "q") {
     // Query instantaneous torque
-    int adc = analogRead(VISEN_PIN);
+    int adc = adc->adc0->analogRead(VISEN_PIN);
     float visenV = visenVoltsFromADC(adc);
     float tq = torqueFromVisenVolts(visenV);
     Serial.print("torque ");
@@ -195,40 +206,51 @@ void handleLine(const String& line) {
 
 // ---------------- Main loop ----------------
 void loop() {
-  // --- Command handling (line-based) ---
+  // Only handle serial commands here
   if (Serial.available()) {
-    String cmd = Serial.readStringUntil('\n');  // read a full line
+    String cmd = Serial.readStringUntil('\n');
     cmd.trim();
     handleLine(cmd);
   }
-
-  // --- Control loop when running ---
-  if (running) {
-    // Read VISEN and convert to torque
-    int   adc     = analogRead(VISEN_PIN);
-    float visenV  = visenVoltsFromADC(adc);
-    float torque  = torqueFromVisenVolts(visenV);
-
-    // Filter + telemetry
-    torqueFilt.add(torque);
-    float torqueAvg = torqueFilt.mean();
-
-    // Stream a compact line for host logging/plotting
-    Serial.print("torque ");
-    Serial.println(torqueAvg, 3);
-
-    // Stop if target torque reached (use averaged torque)
-    if (torqueAvg >= torqueTarget_kgmm) {
-      stopMotor();
-      Serial.println("done");
-    }
-
-    // Safety timeout
-    if (millis() - startTime > TIMEOUT_MS) {
-      stopMotor();
-      Serial.println("timeout");
-    }
-
-    delay(10);  // ~100 Hz loop
-  }
 }
+
+
+// ---------------- Control ISR ----------------
+void torqueControlISR() {
+  if (!running || inISR) return;
+  inISR = true;
+
+  // Record time at ISR entry
+  uint32_t now_ms = millis();
+
+  // Read ADC
+  int adcCounts = adc->adc0->analogRead(VISEN_PIN);
+  float visenV  = visenVoltsFromADC(adcCounts);
+  float torque  = torqueFromVisenVolts(visenV);
+
+  // Filter + telemetry
+  torqueFilt.add(torque);
+  float torqueAvg = torqueFilt.mean();
+
+  // Report timestamp and torque
+  Serial.print("torque ");
+  Serial.print(torqueAvg, 3);
+  Serial.print(" @ ");
+  Serial.print(now_ms);
+  Serial.println(" ms");
+
+  // Stop if torque reached
+  if (torqueAvg >= torqueTarget_kgmm) {
+    stopMotor();
+    Serial.println("done");
+  }
+
+  // Timeout check
+  if (now_ms - startTime > TIMEOUT_MS) {
+    stopMotor();
+    Serial.println("timeout");
+  }
+
+  inISR = false;
+}
+
