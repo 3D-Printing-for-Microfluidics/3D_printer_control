@@ -47,6 +47,8 @@ class Planarization(USBSerial):
         Start motor operation. If torque_kgmm is given, set it before motion.
         direction: "tighten" | "untighten"
         """
+        if self.thread is None:
+            self.thread = Thread(self.log, name="planarization_loop_thread", target=self.loop)
         if not self.thread.is_alive():
             if torque_kgmm is None:
                 torque_kgmm = self.torque_target_kgmm
@@ -120,8 +122,7 @@ class Planarization(USBSerial):
                 elif line == "done" or line == "timeout":
                     self.running = False
                     self.log.info("Planarization motor reported: %s", line)
-                    self.thread.join()
-                    self.thread = Thread(self.log, name="planarization_loop_thread", target=self.loop)
+                    self.thread = None
                     break
 
                 elif line == "start" or line == "stop":
