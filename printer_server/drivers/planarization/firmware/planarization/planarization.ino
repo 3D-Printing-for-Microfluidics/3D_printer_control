@@ -18,10 +18,10 @@ IntervalTimer controlTimer;
 volatile bool inISR = false;
 
 // ---------------- Pin assignments ----------------
-const int IN1 = 3;              // PWM-capable
-const int IN2 = 4;              // PWM-capable
+const int IN1 = 2;              // PWM-capable
+const int IN2 = 3;              // PWM-capable
 const int VISEN_PIN = A0;       // Analog input for VISEN
-const int SLEEP_HB_LDO = 5;     // Combined enable (board-specific wiring)
+const int SLEEP_HB_LDO = 4;     // Combined enable (board-specific wiring)
 
 // ---------------- System configuration ----------------
 static constexpr float kVref = 3.3f;       // ADC analog reference (Teensy 4.x default 3.3 V)
@@ -125,7 +125,6 @@ void setup() {
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
   pinMode(SLEEP_HB_LDO, OUTPUT);
-  pinMode(VISEN_PIN, INPUT);
 
   // Enable H-bridge + 3.3 V LDO (board-specific combined line)
   digitalWrite(SLEEP_HB_LDO, HIGH);
@@ -135,13 +134,17 @@ void setup() {
   analogWriteFrequency(IN2, 20000);
 
   // Initialize ADC with desired settings
-  adc->adc0->setReference(ADC_REFERENCE::REF_3V3);              // Teensy 4.x default
+  // adc->adc0->setReference(ADC_REFERENCE::REF_3V3);              // Teensy 4.x default
   adc->adc0->setAveraging(32);                                  // Average 32 samples
   adc->adc0->setResolution(12);                                 // 12-bit resolution
   adc->adc0->setConversionSpeed(ADC_CONVERSION_SPEED::MED_SPEED);
   adc->adc0->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED);
 
   Serial.begin(115200);
+
+  Serial.print("ADC0 resolution: ");
+  Serial.println(adc->adc0->getResolution());
+  Serial.println(adc->adc0->analogRead(VISEN_PIN));
 }
 
 
@@ -195,7 +198,7 @@ void handleLine(const String& line) {
     }
   } else if (line == "q") {
     // Query instantaneous torque
-    int adcVal = adc->adc0->analogRead(VISEN_PIN);
+    uint16_t adcVal = adc->adc0->analogRead(VISEN_PIN);
     float visenV = visenVoltsFromADC(adcVal);
     float tq = torqueFromVisenVolts(visenV);
     Serial.print("torque ");
@@ -224,9 +227,13 @@ void torqueControlISR() {
   uint32_t now_ms = millis();
 
   // Read ADC
-  int adcCounts = adc->adc0->analogRead(VISEN_PIN);
-  float visenV  = visenVoltsFromADC(adcCounts);
-  float torque  = torqueFromVisenVolts(visenV);
+  uint16_t adcCounts = adc->adc0->analogRead(VISEN_PIN);
+  // Serial.print("adc ");
+  // Serial.println(adcCounts);
+  float visenV = visenVoltsFromADC(adcCounts);
+  // Serial.print("volts ");
+  // Serial.println(visenV);
+  float torque = torqueFromVisenVolts(visenV);
 
   // Filter + telemetry
   torqueFilt.add(torque);
@@ -240,10 +247,21 @@ void torqueControlISR() {
   Serial.println(" ms");
 
   // Stop if torque reached
-  if (torqueAvg >= torqueTarget_kgmm) {
-    stopMotor();
-    Serial.println("done");
+  if (torqueFilt.filled){
+    if (direction == 1){
+      if (torqueAvg >= torqueTarget_kgmm) {
+        stopMotor();
+        Serial.println("done");
+      }
+    }
+    else{
+      if (torqueAvg <= torqueTarget_kgmm) {
+        stopMotor();
+        Serial.println("done");
+      }
+    }
   }
+  
 
   // Timeout check
   if (now_ms - startTime > TIMEOUT_MS) {
