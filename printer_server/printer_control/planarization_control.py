@@ -33,7 +33,7 @@ class PlanarizationControl(PrintControl):
             self.failed_hardware["Planarization Motor"] = self.motor
 
     def initialize_hardware(self):
-        planarization_t = Thread(log, name="planarization_control_init_thread", target=self.loadcell.initialize, args=[])
+        planarization_t = Thread(log, name="planarization_control_init_thread", target=self.motor.initialize, args=[])
         planarization_t.start()
         super().initialize_hardware()
         planarization_t.join()
