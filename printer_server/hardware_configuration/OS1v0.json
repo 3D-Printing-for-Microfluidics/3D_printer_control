@@ -80,7 +80,7 @@
             ]
         },
         "calibration_position": 0,
-        "bottom_position": 40.284,
+        "bottom_position": 39.5,
         "top_position": -50
     },
     "lts_xy": {
@@ -239,7 +239,7 @@
         "power_status_pin": 17
     },
     "loadcell": {
-        "dummy": true,
+        "dummy": false,
         "vendor_id": 5824,
         "product_id": 1155,
         "serial_number": "17767270",
@@ -247,8 +247,8 @@
         "microcontroller": "Teensy4.0",
         "baudrate": 115200,
         "sample_period_us": 1000,
-        "calibration_intercept": 34400.0,
-        "calibration_slope": -2.056,
+        "calibration_intercept": 1978.0,
+        "calibration_slope": -0.2189,
         "loadcell_planarization_enabled": true,
         "loadcell_planarization_force": 35.0,
         "loadcell_print_start_force": 5.0
