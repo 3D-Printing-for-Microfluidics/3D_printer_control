@@ -195,8 +195,8 @@ void handleLine(const String& line) {
     }
   } else if (line == "q") {
     // Query instantaneous torque
-    int adc = adc->adc0->analogRead(VISEN_PIN);
-    float visenV = visenVoltsFromADC(adc);
+    int adcVal = adc->adc0->analogRead(VISEN_PIN);
+    float visenV = visenVoltsFromADC(adcVal);
     float tq = torqueFromVisenVolts(visenV);
     Serial.print("torque ");
     Serial.println(tq, 3);
