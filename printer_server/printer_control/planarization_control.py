@@ -37,6 +37,39 @@ class PlanarizationControl(PrintControl):
             log.error("Planarization Motor failed to initialize!")
             self.failed_hardware["Planarization Motor"] = self.motor
 
+    @run_in_thread("planarizing", "Planarization Step 1")
+    def planarization_step_1(self):
+        """
+        Loosen the motor before planarization
+        """
+        self.motor.set_log_file(self.motor_log)
+
+        try:
+            pconf = config_dict["planarization"]
+            timeout_ms = pconf["motor_timeout_ms"]
+
+            # Start tightening to driver's configured torque target
+            self.motor.start("untighten")
+
+            error = False
+            start_time = time.time()
+            while self.motor.running:
+                if (time.time() - start_time) * 1000.0 > timeout_ms:
+                    self.motor.stop()
+                    log.error("Planarization motor failed to reach specified torque! (%s)", self.motor.torque_target_kgmm)
+                    error = True
+                time.sleep(0.05)
+
+            if error:
+                log.info("Planarization motor loosening complete")
+
+        except Exception as ex:
+            log.critical("Planarization motor loosening failed (%s)", ex, exc_info=True)
+            self.failed_hardware["Planarization Motor"] = self.motor
+            raise PrintingException()
+
+        super().planarization_step_1()
+
     @run_in_thread("planarized", "Planarization Step 2")
     def planarization_step_2(self):
         """
@@ -44,8 +77,6 @@ class PlanarizationControl(PrintControl):
         then tighten using the motor to the configured torque. Abort on timeout.
         """
         super().planarization_step_2()
-
-        self.motor.set_log_file(self.motor_log)
 
         try:
             pconf = config_dict["planarization"]
@@ -58,19 +89,52 @@ class PlanarizationControl(PrintControl):
             # Start tightening to driver's configured torque target
             self.motor.start("tighten")
 
+            error = False
             start_time = time.time()
             while self.motor.running:
                 if (time.time() - start_time) * 1000.0 > timeout_ms:
                     self.motor.stop()
-                    raise PrintingException("Planarization tightening timeout")
+                    log.error("Planarization motor failed to reach specified torque! (%s)", self.motor.torque_target_kgmm)
+                    error = True
                 time.sleep(0.05)
 
-            log.info("Motor tightening complete.")
+            if error:
+                log.info("Planarization motor tightening complete")
 
         except Exception as ex:
             log.critical("Planarization motor tightening failed (%s)", ex, exc_info=True)
             self.failed_hardware["Planarization Motor"] = self.motor
             raise PrintingException()
+
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+        try:
+            pconf = config_dict["planarization"]
+            timeout_ms = pconf["motor_timeout_ms"]
+
+            # Start tightening to driver's configured torque target
+            self.motor.start("untighten")
+
+            error = False
+            start_time = time.time()
+            while self.motor.running:
+                if (time.time() - start_time) * 1000.0 > timeout_ms:
+                    self.motor.stop()
+                    log.error("Planarization motor failed to reach specified torque! (%s)", self.motor.torque_target_kgmm)
+                    error = True
+                time.sleep(0.05)
+
+            if error:
+                log.info("Planarization motor loosening complete")
+
+        except Exception as ex:
+            log.critical("Planarization motor loosening failed (%s)", ex, exc_info=True)
+            self.failed_hardware["Planarization Motor"] = self.motor
+            raise PrintingException()
+
+        self.motor.set_log_file(None)
+
+        super().cancel_planarization()
 
     def finish_print(self):
         """

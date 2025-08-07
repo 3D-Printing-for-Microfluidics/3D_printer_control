@@ -372,6 +372,10 @@ class PrintControl:
     def planarization_step_2(self):
         self.print_position = self.planarized_position
 
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+        async_file_hander.finish()
+
     def start(self, job_id):
         """Do all preparatory work for a print, then start the printing
         process in a separate thread.

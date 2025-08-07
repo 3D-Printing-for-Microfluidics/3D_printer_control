@@ -104,7 +104,17 @@ class FocusControl(PrintControl):
                 self.failed_hardware["Focus Stage"] = self.focus_stage
                 raise PrintingException()
             super().planarization_step_1()
-            
+
+
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+            try:
+                self.focus_stage.logging_stop()
+            except Exception as ex:
+                log.critical("Unable to communicate with focus stage (%s)", ex, exc_info=True)
+                self.failed_hardware["Focus Stage"] = self.focus_stage
+                raise PrintingException()
+            super().cancel_planarization()
 
     def get_exposure_defocus(self, settings, light_engine):
         self.previous_defocus = self.defocus_um

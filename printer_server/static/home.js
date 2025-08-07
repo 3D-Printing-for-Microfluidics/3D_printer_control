@@ -381,8 +381,8 @@ $(document).ready(function () {
     socket.on("busy", function (message) {
         $("#printer-state").text("Printer is busy");
         show_print_btn();
-        start_job_id = "";
-        $(".clickable-row").removeClass("table-success");
+        // start_job_id = "";
+        // $(".clickable-row").removeClass("table-success");
     });
 
     socket.on("uninitialized", function (message) {
@@ -406,12 +406,12 @@ $(document).ready(function () {
 
     socket.on("planarizing", function (message) {
         $("#printer-state").text("Planarizing");
-        show_print_btn("#plana2-btn, #admin-btn, #shutdown-btn");
+        show_print_btn("#plana2-btn, #planaCancel-btn, #admin-btn, #shutdown-btn");
     });
 
     socket.on("planarized", function (message) {
         $("#printer-state").text("Planarized");
-        show_print_btn("#plana1-btn, #shutdown-btn, #admin-btn");
+        show_print_btn("#planaCancel-btn, #shutdown-btn, #admin-btn");
         $("#start-btn").removeClass("d-none");
     });
 
@@ -475,10 +475,10 @@ $(document).ready(function () {
     socket.on("critical_error", function (message) {
         console.log(message);
         critical_error_process = message["process"]
-        if(critical_error_process == "initialization"){
+        if (critical_error_process == "initialization") {
             show_print_btn("#init-btn", "#shutdown-btn");
         }
-        else{
+        else {
             show_print_btn("#shutdown-btn");
         }
         $("#print-alert-title").text(message["title"]);
@@ -527,7 +527,7 @@ $(document).ready(function () {
 
     $("#init-btn").click(function () {
         $("#print-alert-title").text("Initialize");
-        $("#print-alert-body").text("WARNING: Is the build platform taken off? Initializing with the platform on can seriously damage the printer!");
+        $("#print-alert-body").text("Make sure hardware is powered on and unobstructed. Stages will begin motion.");
     });
 
     $("#plana1-btn").click(function () {
@@ -538,6 +538,11 @@ $(document).ready(function () {
     $("#plana2-btn").click(function () {
         $("#print-alert-title").text("Planarization Step 2");
         $("#print-alert-body").text("Make sure the build platform or silanized glass is flat and tighten the screws.");
+    });
+
+    $("#planaCancel-btn").click(function () {
+        $("#print-alert-title").text("Cancel Planarization");
+        $("#print-alert-body").text("Are you sure you want to cancel planarization? The build platform will return to top.");
     });
 
     $("#start-btn").click(function () {

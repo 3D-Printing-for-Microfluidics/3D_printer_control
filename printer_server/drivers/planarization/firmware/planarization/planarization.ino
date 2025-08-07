@@ -36,7 +36,7 @@ static constexpr float kI_intercept_A = 0.025f;        // I0
 static constexpr float kI_per_t_A_per_kgmm = 0.0049f;  // K
 
 // Safety timeout
-const unsigned long TIMEOUT_MS = 5000;    // ms
+const unsigned long TIMEOUT_MS = 10000;    // ms
 
 // Default PWM duty (0..255). Adjust as needed for speed/torque ramping.
 uint8_t kPWM = 200;
@@ -47,6 +47,7 @@ float torqueTarget_kgmm = 40.0f;
 
 // ---------------- State tracking ----------------
 bool running = false;
+bool motor_engaged = false;
 unsigned long startTime = 0;
 int direction = 1;  // 1 = tighten, -1 = untighten
 
@@ -150,6 +151,12 @@ void setup() {
 
 // Start motor with desired direction
 void startMotor(int dir) {
+  uint32_t now_ms = millis();
+  Serial.print("start ");
+  Serial.print(" @ ");
+  Serial.print(now_ms);
+  Serial.println(" ms");
+
   direction = dir;
   running   = true;
   startTime = millis();
@@ -163,7 +170,8 @@ void startMotor(int dir) {
   }
 
   controlTimer.begin(torqueControlISR, 10000);  // 100 Hz = every 10,000 µs
-  Serial.println("start");
+  delay(250);
+  motor_engaged = true;
 }
 
 
@@ -173,6 +181,7 @@ void stopMotor() {
   controlTimer.end();  // Stop ISR
   brakeCoastOff();
   running = false;
+  motor_engaged = false;
   Serial.println("stop");
 }
 
@@ -247,7 +256,7 @@ void torqueControlISR() {
   Serial.println(" ms");
 
   // Stop if torque reached
-  if (torqueFilt.filled){
+  if (motor_engaged && torqueFilt.filled){
     if (direction == 1){
       if (torqueAvg >= torqueTarget_kgmm) {
         stopMotor();

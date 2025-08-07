@@ -191,6 +191,22 @@ class LoadcellControl(PrintControl):
             self.failed_hardware["Loadcell or Build Platform"] = self.loadcell
             raise PrintingException()
 
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+        try:
+            self.loadcell.set_log_file(None)
+            self.loadcell.stop()   
+            time.sleep(0.5)
+            if self.loadcell_thread is not None:
+                self.loadcell_thread.join()
+                self.loadcell_thread = None
+                home.clear_loadcell_graph()
+        except Exception as ex:
+            log.critical("Critical error occured during planarization (%s)", ex, exc_info=True)
+            self.failed_hardware["Loadcell"] = self.loadcell
+            raise PrintingException()
+        super().cancel_planarization()
+
     def connect_hardware(self):
         loadcell_t = Thread(log, name="loadcell_control_connect_thread", target=self.loadcell.connect)
         loadcell_t.start()

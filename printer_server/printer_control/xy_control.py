@@ -52,6 +52,16 @@ class XYControl(PrintControl):
                 raise PrintingException()
             super().planarization_step_1()
 
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+            try:
+                self.xy_stage.logging_stop()
+            except Exception as ex:
+                log.critical("Unable to communicate with xy stage (%s)", ex, exc_info=True)
+                self.failed_hardware["XY Stage"] = self.xy_stage
+                raise PrintingException()
+            super().cancel_planarization()
+
     def pre_exposure_tasks(self, settings, light_engine):
         """Move X, Y, and Focus stages to exposure positions"""
         defaults_layer_settings = self.print_settings.get("Default layer settings")

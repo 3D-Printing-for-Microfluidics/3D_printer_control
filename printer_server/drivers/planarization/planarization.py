@@ -8,6 +8,7 @@
 #   "start" | "stop" | "done" | "timeout"
 
 import time
+import datetime
 import logging
 from serial import SerialException
 from printer_server.threading_wrapper import Thread
@@ -37,10 +38,11 @@ class Planarization(USBSerial):
         self.running = False
         self.thread = Thread(self.log, name="planarization_loop_thread", target=self.loop)
         self.log_file = None
+        self.start_time = 0
 
         # Torque targets in kg·mm (preferred)
-        pconf = config_dict.get("planarization", {})
-        self.torque_target_kgmm = float(pconf.get("target_torque_kgmm", 40.0))
+        self.default_torque_target_kgmm = float(self.config_dict.get("target_torque_kgmm", 40.0))
+        self.torque_target_kgmm = self.default_torque_target_kgmm
 
     def start(self, direction: str = "tighten", torque_kgmm: float | None = None):
         """
@@ -51,7 +53,10 @@ class Planarization(USBSerial):
             self.thread = Thread(self.log, name="planarization_loop_thread", target=self.loop)
         if not self.thread.is_alive():
             if torque_kgmm is None:
-                torque_kgmm = self.torque_target_kgmm
+                if direction == "tighten":
+                    torque_kgmm = self.default_torque_target_kgmm
+                else:
+                    torque_kgmm = 0.0
             self.set_torque_target_kgmm(torque_kgmm)
 
             self.running = True
@@ -67,6 +72,7 @@ class Planarization(USBSerial):
             self.thread.join()
             self.thread = Thread(self.log, name="planarization_loop_thread", target=self.loop)
             self.send("e", recieve=False)
+            self.start_time = 0
 
     def set_log_file(self, filename: str | None):
         """
@@ -75,7 +81,7 @@ class Planarization(USBSerial):
         """
         self.log_file = filename
         if self.log_file:
-            async_file_hander.write(self.log_file, "system_time,torque_kgmm\n")
+            async_file_hander.write(self.log_file, "system_time,motor_time,torque_kgmm\n")
 
     def set_torque_target_kgmm(self, kgmm: float):
         """Send torque target (kg·mm) to Teensy."""
@@ -110,11 +116,19 @@ class Planarization(USBSerial):
                 if not line:
                     continue
 
-                if line.startswith("torque "):
+                if "torque" in line:
                     try:
-                        val = float(line.split(" ", 1)[1])
+                        vals = (line.split(" ", 1)[1]).split(" @ ")
+                        force = float(vals[0])
+                        milliseconds = int(vals[1][:-3])
                         if self.log_file:
-                            async_file_hander.write(self.log_file, f"{time.time()},{val:.3f}\n")
+                            sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                            time = self.start_time + datetime.timedelta(
+                                milliseconds=float(milliseconds)
+                            )
+                            motor_time = time.strftime("%Y-%m-%d %H:%M:%S.%f")
+
+                            async_file_hander.write(self.log_file, f"{sys_time},{motor_time},{force:.3f}\n")
                     except ValueError:
                         self.log.debug("Parse error for torque line: %r", line)
                         continue
@@ -125,8 +139,15 @@ class Planarization(USBSerial):
                     self.thread = None
                     break
 
-                elif line == "start" or line == "stop":
+                elif "start" in line or line == "stop":
                     self.log.debug("Motor: %s", line)
+                    if "start" in line:
+                        vals = (line.split(" ", 1)[1]).split(" @ ")
+                        milliseconds = int(vals[1][:-3])
+                        if self.start_time == 0:
+                            self.start_time = datetime.datetime.now() - datetime.timedelta(
+                                milliseconds=milliseconds
+                            )
 
                 # Optional: debug any unexpected lines
                 else:

@@ -155,6 +155,18 @@ class BPControl(PrintControl):
         super().planarization_step_2()
 
     
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+        try:
+            self.bp_stage.logging_stop()
+            self.bp_stage.absMoveBP(mm=self.bp_stage.top_position)
+        except Exception as ex:
+            log.critical("Unable to move build platform stage (%s)", ex, exc_info=True)
+            self.failed_hardware["Build Platform Stage"] = self.bp_stage
+            raise PrintingException()
+        super().cancel_planarization()
+
+    
     def resume(self):
         """Resume a paused print."""
         if self.state != "paused":

@@ -261,7 +261,7 @@
         "firmware_path": "planarization/planarization.ino",
         "microcontroller": "Teensy4.0",
         "baudrate": 115200,
-        "target_torque_kgmm": 40,
+        "target_torque_kgmm": 80,
         "tighten_delay_ms": 1000,
         "motor_timeout_ms": 5000
     },

@@ -83,6 +83,16 @@ class TTRControl(PrintControl):
                 self.failed_hardware["TTR Stage"] = self.ttr_stage
                 raise PrintingException()
             super().planarization_step_1()
+
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+            try:
+                self.ttr_stage.logging_stop()
+            except Exception as ex:
+                log.critical("Unable to communicate with ttr stage (%s)", ex, exc_info=True)
+                self.failed_hardware["TTR Stage"] = self.ttr_stage
+                raise PrintingException()
+            super().cancel_planarization()
         
     def finish_print(self):
         try:
