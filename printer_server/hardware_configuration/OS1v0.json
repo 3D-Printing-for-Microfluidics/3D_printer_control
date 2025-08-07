@@ -1,6 +1,8 @@
 {
     "valid_schema_versions": [
-        "v2","v3","v5"
+        "v2",
+        "v3",
+        "v5"
     ],
     "external_control": {},
     "coord_systems": {
@@ -12,7 +14,7 @@
         },
         "parked": {
             "X": 75.0,
-            "Y": 150.0,
+            "Y": 180.0,
             "Focus": 5.0,
             "Build Platform": 0
         },
@@ -231,7 +233,7 @@
                 10.0
             ]
         },
-        "moving_shifts_image": true,
+        "moving_shifts_image": false,
         "auto_repositioning": true
     },
     "gpio": {
@@ -271,7 +273,8 @@
         "port": 24685,
         "sensors": {
             "visitech": {
-                "measurement_index": 0
+                "measurement_index": 0,
+                "invert_sign": true
             }
         }
     },
@@ -290,7 +293,7 @@
         "visitech"
     ],
     "visitech": {
-        "dummy": true,
+        "dummy": false,
         "address": "192.168.0.10",
         "port": 5000,
         "dual_led": false,
