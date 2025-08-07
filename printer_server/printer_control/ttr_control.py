@@ -68,9 +68,10 @@ class TTRControl(PrintControl):
         if self.ttr_stage.config_dict.get("auto_repositioning", True):
             if self.ttr_threads is not None:
                 for thread in self.ttr_threads:
-                    thread.join()
-                    if thread.exception is not None:
-                        log.warning("Unable to move TTR stage")
+                    if thread is not None:
+                        thread.join()
+                        if thread.exception is not None:
+                            log.warning("Unable to move TTR stage")
         super().pre_print_joins()
 
     @run_in_thread("planarizing", "Planarization Step 1")
