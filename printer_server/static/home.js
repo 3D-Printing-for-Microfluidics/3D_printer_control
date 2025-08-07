@@ -413,6 +413,9 @@ $(document).ready(function () {
         $("#printer-state").text("Planarized");
         show_print_btn("#planaCancel-btn, #shutdown-btn, #admin-btn");
         $("#start-btn").removeClass("d-none");
+        if (start_job_id != "") {
+            $("#start-btn").prop("disabled", false);
+        }
     });
 
     socket.on("printing", function (message) {
