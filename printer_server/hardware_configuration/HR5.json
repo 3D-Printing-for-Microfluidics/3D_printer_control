@@ -212,6 +212,7 @@
         "dummy": false,
         "address": "192.168.0.15",
         "port": 24685,
+        "auto_tip_tilt": false,
         "sensors": {
             "visitech": {
                 "measurement_index": 0,
