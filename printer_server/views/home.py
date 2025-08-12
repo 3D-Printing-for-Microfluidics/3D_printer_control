@@ -78,7 +78,7 @@ if "light_engines" in config_dict:
     from printer_server.printer_control.light_engine_control import LightEngineControl
     parent_classes.append(LightEngineControl)
 
-if "spectrometer" in config_dict and "photodiode" in config_dict:
+if "spectrometer" in config_dict or "photodiode" in config_dict:
     from printer_server.printer_control.light_measurement_control import LightMeasurementControl
     parent_classes.append(LightMeasurementControl)
 

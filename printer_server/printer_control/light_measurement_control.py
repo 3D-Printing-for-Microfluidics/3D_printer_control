@@ -17,35 +17,45 @@ log.setLevel(logging.INFO)
 class LightMeasurementControl(PrintControl):
     def __init__(self):
         super().__init__()
-        self.spectrometer = driver_handles.spectrometer
         self.light_engines = driver_handles.light_engines
-        self.photodiode = driver_handles.photodiode
+        if "spectrometer" in config_dict:
+            self.spectrometer = driver_handles.spectrometer
+        if "photodiode" in config_dict:
+            self.photodiode = driver_handles.photodiode
+            
 
     def connect_hardware(self):
-        # Connect spectrometer and photodiode 
-        spectrometer_thread = Thread(log, name="spectrometer_connect_thread", target=self.spectrometer.connect)
-        photodiode_thread = Thread(log, name="photodiode_connect_thread", target=self.photodiode.connect)
-        spectrometer_thread.start()
-        photodiode_thread.start()
+        # Connect spectrometer and photodiode
+        if "spectrometer" in config_dict:
+            spectrometer_thread = Thread(log, name="spectrometer_connect_thread", target=self.spectrometer.connect)
+            spectrometer_thread.start()
+        if "photodiode" in config_dict:
+            photodiode_thread = Thread(log, name="photodiode_connect_thread", target=self.photodiode.connect)
+            photodiode_thread.start()
         super().connect_hardware()
-        spectrometer_thread.join()
-        photodiode_thread.join()
-        if not self.spectrometer.connected or spectrometer_thread.exception is not None:
-            log.error("Spectrometer failed to connect!")
-            self.failed_hardware["Spectrometer"] = self.spectrometer   
-        if not self.photodiode.connected or photodiode_thread.exception is not None:
-            log.error("Photodiode failed to connect!")
-            self.failed_hardware["Photodiode"] = self.photodiode
+        if "spectrometer" in config_dict:
+            spectrometer_thread.join()
+        if "photodiode" in config_dict:
+            photodiode_thread.join()
+        if "spectrometer" in config_dict:
+            if not self.spectrometer.connected or spectrometer_thread.exception is not None:
+                log.error("Spectrometer failed to connect!")
+                self.failed_hardware["Spectrometer"] = self.spectrometer
+        if "photodiode" in config_dict:
+            if not self.photodiode.connected or photodiode_thread.exception is not None:
+                log.error("Photodiode failed to connect!")
+                self.failed_hardware["Photodiode"] = self.photodiode
 
     def initialize_hardware(self):
-        photodiode_thread = Thread(log, name="photodiode_init_thread", target=self.photodiode.initialize, args=[])
-        photodiode_thread.start()
-        super().initialize_hardware()
-        if photodiode_thread is not None:
-            photodiode_thread.join()
-            if photodiode_thread.exception is not None:
-                log.error("Photodiode failed to initialize!")
-                self.failed_hardware["Photodiode"] = self.photodiode
+        if "photodiode" in config_dict:
+            photodiode_thread = Thread(log, name="photodiode_init_thread", target=self.photodiode.initialize, args=[])
+            photodiode_thread.start()
+            super().initialize_hardware()
+            if photodiode_thread is not None:
+                photodiode_thread.join()
+                if photodiode_thread.exception is not None:
+                    log.error("Photodiode failed to initialize!")
+                    self.failed_hardware["Photodiode"] = self.photodiode
 
     def pre_print_tasks(self):
         super().pre_print_tasks()
@@ -130,14 +140,16 @@ class LightMeasurementControl(PrintControl):
                 )
 
                 # Measure spectrum and irradiance
-                try:
-                    integration_time, spectrum = self.measure_spectra(num_avg)
-                except:
-                    log.warning("Unable to measure spectra")
-                try:
-                    irr1 = self.measure_irradiance(wavelength)
-                except:
-                    log.warning("Unable to measure irradiance")
+                if "spectrometer" in config_dict:
+                    try:
+                        integration_time, spectrum = self.measure_spectra(num_avg)
+                    except:
+                        log.warning("Unable to measure spectra")
+                if "photodiode" in config_dict:
+                    try:
+                        irr1 = self.measure_irradiance(wavelength)
+                    except:
+                        log.warning("Unable to measure irradiance")
 
                 # Turn off light engine
                 light_engine_driver.stop_sequencer()
@@ -172,10 +184,11 @@ class LightMeasurementControl(PrintControl):
                     self.screen.fetch_preview(light_engine)
                 )
 
-                try:
-                    irr2 = self.measure_irradiance(wavelength)
-                except:
-                    log.warning("Unable to measure irradiance")  
+                if "photodiode" in config_dict:
+                    try:
+                        irr2 = self.measure_irradiance(wavelength)
+                    except:
+                        log.warning("Unable to measure irradiance")  
 
                 
                 # Turn off light engine
@@ -183,17 +196,18 @@ class LightMeasurementControl(PrintControl):
                 update_le_led_state(light_engine, False)
 
                 # Save spectrum to file
-                spectra_path = str(self.current_job / "logs" / f"{path_prefix}_spectra_{light_engine}_{wavelength}_nm.csv")
-                async_file_hander.write(spectra_path, f"Wavelength: {wavelength} (nm)\n")
-                async_file_hander.write(spectra_path, f"Irradiance: {irr1} mW/cm^2\n")     
-                async_file_hander.write(spectra_path, f"Irradiance (grayscale corrected): {irr2} mW/cm^2\n")               
-                async_file_hander.write(spectra_path, f"Integration time: {integration_time} ms\n")
-                async_file_hander.write(spectra_path, f"Number of Averages: {num_avg}\n")
-                async_file_hander.write(spectra_path, "\n")
-                if spectrum is not None:
-                    async_file_hander.write(spectra_path, "wavelength (nm),counts\n")
-                    for _wavelength, _counts in zip(spectrum[0], spectrum[1]):
-                        async_file_hander.write(spectra_path, f"{_wavelength},{_counts}\n") 
+                light_measurement_path = str(self.current_job / "logs" / f"{path_prefix}_Light_Measurement_{light_engine}_{wavelength}_nm.csv")
+                async_file_hander.write(light_measurement_path, f"Wavelength: {wavelength} (nm)\n")
+                async_file_hander.write(light_measurement_path, f"Irradiance: {irr1} mW/cm^2\n")     
+                async_file_hander.write(light_measurement_path, f"Irradiance (grayscale corrected): {irr2} mW/cm^2\n")               
+                async_file_hander.write(light_measurement_path, f"Integration time: {integration_time} ms\n")
+                async_file_hander.write(light_measurement_path, f"Number of Averages: {num_avg}\n")
+                async_file_hander.write(light_measurement_path, "\n")
+                if "spectrometer" in config_dict:
+                    if spectrum is not None:
+                        async_file_hander.write(light_measurement_path, "wavelength (nm),counts\n")
+                        for _wavelength, _counts in zip(spectrum[0], spectrum[1]):
+                            async_file_hander.write(light_measurement_path, f"{_wavelength},{_counts}\n") 
                     
     def measure_spectra(self, avg=1):
             log.info("Calculating spectrometer integration time")
