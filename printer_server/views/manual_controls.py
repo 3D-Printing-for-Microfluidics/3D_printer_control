@@ -58,6 +58,12 @@ if "bp_stage" in config_dict["stages"].keys():
         printer_server.drivers.generic_drivers.bp_stage.bp_stage_snip.bp_get_position
     )
 
+if "planarization" in config_dict.keys():
+    import printer_server.drivers.planarization.planarization_snip
+    on_load_f_init.append(
+        printer_server.drivers.planarization.planarization_snip.planar_status_query
+    )
+
 if "focus_stage" in config_dict["stages"].keys():
     import printer_server.drivers.generic_drivers.focus_stage.focus_stage_snip
     on_load_f_init.append(
