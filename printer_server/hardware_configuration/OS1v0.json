@@ -140,6 +140,14 @@
             "X": 5.0,
             "Y": 5.0
         },
+        "axes_homing_timeout": {
+            "X": 60.0,
+            "Y": 60.0
+        },
+        "axes_timeout": {
+            "X": 20.0,
+            "Y": 40.0
+        },
         "limits": {
             "X": [
                 null,
@@ -219,14 +227,24 @@
             "Tilt": 1.0,
             "Focus": 1.0
         },
+        "axes_homing_timeout": {
+            "Tip": 60.0,
+            "Tilt": 60.0,
+            "Focus": 60.0
+        },
+        "axes_timeout": {
+            "Tip": 20.0,
+            "Tilt": 20.0,
+            "Focus": 20.0
+        },
         "limits": {
             "Tip": [
                 0,
-                0.208
+                6.55
             ],
             "Tilt": [
                 0,
-                0.208
+                6.55
             ],
             "Focus": [
                 0,
@@ -263,7 +281,7 @@
         "firmware_path": "planarization/planarization.ino",
         "microcontroller": "Teensy4.0",
         "baudrate": 115200,
-        "target_torque_kgmm": 80,
+        "target_torque_kgmm": 60,
         "tighten_delay_ms": 1000,
         "motor_timeout_ms": 5000
     },

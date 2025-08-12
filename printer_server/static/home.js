@@ -1,4 +1,4 @@
-var start_job_id;
+var start_job_id = "";
 var delete_job_id;
 var critical_error_process = ""
 

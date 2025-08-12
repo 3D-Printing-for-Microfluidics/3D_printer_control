@@ -75,6 +75,8 @@ class ThorlabsAPT(USBSerial):
         self.default_speed = config_dict["axes_speed"]
         self.default_acceleration = config_dict["axes_acceleration"]
         self.limits = config_dict["limits"]
+        self.homing_timeout = config_dict.get("axes_homing_timeout", 60.0)
+        self.move_timeout = config_dict.get("axes_timeout", 60.0)
 
         self.controllers = {}
         self.threads = {}
@@ -743,8 +745,8 @@ class ThorlabsAPT(USBSerial):
                 if not self.axes_homed[a]:
                     start = time.monotonic()
                     while (self.axes_homed[a] != True) and (
-                        time.monotonic() - start < 180
-                    ):  # 60 second timeout
+                        time.monotonic() - start < self.homing_timeout[a]
+                    ):
                         time.sleep(0.1)
 
                     if self.axes_homed[a] != True:
@@ -853,10 +855,10 @@ class ThorlabsAPT(USBSerial):
             self.setAcceleration(old_acceleration, axis=a)
         return self.getPosition(axis=a)
 
-    def confirmMoveFinished(self, timeout=30, axis=None):
+    def confirmMoveFinished(self, axis=None):
         a = self.convertAxis(axis)
         start = time.monotonic()
-        while (self.moving[a] == True) and (time.monotonic() - start < timeout):
+        while (self.moving[a] == True) and (time.monotonic() - start < self.move_timeout[a]):
             time.sleep(0.1)
 
         if self.moving[a] == True:

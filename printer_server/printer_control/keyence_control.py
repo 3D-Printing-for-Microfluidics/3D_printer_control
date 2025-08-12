@@ -20,7 +20,7 @@ from printer_server.views.calibration import (
 )
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
 ts = "%Y-%m-%d %H:%M:%S.%f"
 
 
@@ -178,12 +178,15 @@ class KeyenceControl(PrintControl):
                 target_position = self.calibration_positions.get(
                     f"keyence_{light_engine}", 0
                 )
+                log.debug("Keyence target position for %s: %s", light_engine, target_position)
                 target_tip = self.calibration_positions.get(
                     f"keyence_{light_engine}_tip", 0
                 )
+                log.debug("Keyence target tip for %s: %s", light_engine, target_tip)
                 target_tilt = self.calibration_positions.get(
                     f"keyence_{light_engine}_tilt", 0
                 )
+                log.debug("Keyence target tilt for %s: %s", light_engine, target_tilt)
 
                 async_file_hander.write(
                     self.keyence_focus_log,
@@ -198,18 +201,124 @@ class KeyenceControl(PrintControl):
                     coord_system=f"keyence_{light_engine}",
                     is_wintech=("wintech" in light_engine),
                 )
+                log.debug("Default x offset: %s, default y offset: %s",
+                          self.default_x_offset, self.default_y_offset)
                 time.sleep(1.0)
 
                 # Auto tip tilt
                 # check if enabled
-                # measure -x-y/-xy/xy/x-y (-5mm each?)
-                measurement_distance = 10.0
-                tt_keyence_readings = []
+
+                # self.ttr_stage.threadedTTRMove(
+                #     log, 0, 0, None, join=True
+                # )
+
+                tip_iterations = 4
+                tilt_iterations = 4
+                measurement_distance = 10000.0
+                for i in range(tilt_iterations):
+                    y_keyence_readings = []
+                    for y in [
+                        -measurement_distance / 2,
+                        measurement_distance / 2,
+                    ]:
+                        self.move_xyf_stages(
+                            self.default_x_offset,
+                            self.default_y_offset + y,
+                            0,
+                            coord_system=f"keyence_{light_engine}",
+                        )
+                        time.sleep(1.0)
+                        keyence_reading = self.keyence.read_sensor(light_engine)
+                        y_keyence_readings.append(keyence_reading)
+
+                    log.debug("-y : %s", y_keyence_readings[0])
+                    log.debug("+y : %s", y_keyence_readings[1])
+
+                    dy = (-y_keyence_readings[0] + y_keyence_readings[1]) / 2
+                    log.debug("dy average: %s", dy)
+
+                    tilt = math.atan(dy / (measurement_distance))
+                    log.debug("tilt: %s", tilt)
+                    # find differece between target tilt and tilt
+                    dTilt = target_tilt - tilt
+                    log.debug("dTilt: %s", dTilt)
+                    # add difference to tilt stage position
+                    curTilt = self.ttr_stage.getTTRPosition("Tilt")
+                    log.debug("curTilt: %s", curTilt)
+                    self.ttr_stage.threadedTTRMove(
+                        log, None, curTilt + dTilt, None, join=True
+                    )
+                    log.debug("New tilt: %s", curTilt + dTilt)
+
+                    # return to origin position
+                    self.measurement_origin_return(light_engine)
+
+                # one more y measurement to log results
+                y_keyence_readings = []
+                for y in [
+                    -measurement_distance / 2,
+                    measurement_distance / 2,
+                ]:
+                    self.move_xyf_stages(
+                        self.default_x_offset,
+                        self.default_y_offset + y,
+                        0,
+                        coord_system=f"keyence_{light_engine}",
+                        is_wintech=("wintech" in light_engine),
+                    )
+                    time.sleep(1.0)
+                    keyence_reading = self.keyence.read_sensor(light_engine)
+                    y_keyence_readings.append(keyence_reading)
+
+                log.debug("Keyence -y : %s", y_keyence_readings[0])
+                log.debug("Keyence +y : %s", y_keyence_readings[1])
+
+                for i in range(tip_iterations):
+                    x_keyence_readings = []
+                    for x in [
+                        -measurement_distance / 2,
+                        measurement_distance / 2,
+                    ]:
+                        self.move_xyf_stages(
+                            self.default_x_offset + x,
+                            self.default_y_offset,
+                            0,
+                            coord_system=f"keyence_{light_engine}",
+                            is_wintech=("wintech" in light_engine),
+                        )
+                        time.sleep(1.0)
+                        keyence_reading = self.keyence.read_sensor(light_engine)
+                        x_keyence_readings.append(keyence_reading)
+
+                    log.debug("-x : %s", x_keyence_readings[0])
+                    log.debug("+x : %s", x_keyence_readings[1])
+
+                    dx = (-x_keyence_readings[0] + x_keyence_readings[1])
+                    log.debug("dx average: %s", dx)
+
+                    tip = math.atan(dx / (measurement_distance))
+                    log.debug("tip: %s", tip)
+                    # find differece between target tip and tip
+                    dTip = target_tip - tip
+                    log.debug("dTip: %s", dTip)
+                    # add difference to tip stage position
+                    curTip = self.ttr_stage.getTTRPosition("Tip")
+                    log.debug("curTip: %s", curTip)
+                    self.ttr_stage.threadedTTRMove(
+                        log, curTip + dTip, None, None, join=True
+                    )
+                    log.debug("New tip: %s", curTip + dTip)
+
+                    # return to origin position
+                    self.measurement_origin_return(light_engine)
+
+                # Sanity check take measurements again and log results (-y/+y, -x/+x)
+                keyence_readings = []
                 for x, y in [
-                    (-measurement_distance / 2, -measurement_distance / 2),
-                    (-measurement_distance / 2, measurement_distance / 2),
-                    (measurement_distance / 2, measurement_distance / 2),
-                    (measurement_distance / 2, -measurement_distance / 2),
+                    (0, -measurement_distance / 2),
+                    (0, measurement_distance / 2),
+                    (-measurement_distance / 2, 0),
+                    (measurement_distance / 2, 0),
                 ]:
                     self.move_xyf_stages(
                         self.default_x_offset + x,
@@ -220,34 +329,11 @@ class KeyenceControl(PrintControl):
                     )
                     time.sleep(1.0)
                     keyence_reading = self.keyence.read_sensor(light_engine)
-                    tt_keyence_readings.append(keyence_reading)
-
-                # math
-                # average dx and dy keyence readings
-                dx = (
-                    tt_keyence_readings[0]
-                    + tt_keyence_readings[1]
-                    - tt_keyence_readings[2]
-                    - tt_keyence_readings[3]
-                ) / 4.0
-                dy = (
-                    tt_keyence_readings[0]
-                    - tt_keyence_readings[1]
-                    + tt_keyence_readings[2]
-                    - tt_keyence_readings[3]
-                ) / 4.0
-                tip = math.arctan(dx / (measurement_distance * 1000))
-                tilt = math.arctan(dy / (measurement_distance * 1000))
-                # find differece between target tip/tilt and tip/tilt
-                dTip = target_tip - tip
-                dTilt = target_tilt - tilt
-                # add difference to tip/tilt stage position
-                curTip = self.ttr_stage.getTTRPosition("Tip")
-                curTilt = self.ttr_stage.getTTRPosition("Tilt")
-                self.ttr_stage.threadedTTRMove(
-                    log, curTip + dTip, curTilt + dTilt, None, join=True
-                )
-                # remeasure
+                    keyence_readings.append(keyence_reading)
+                log.debug("Keyence -y : %s", keyence_readings[0])
+                log.debug("Keyence +y : %s", keyence_readings[1])
+                log.debug("Keyence -x : %s", keyence_readings[2])
+                log.debug("Keyence +x : %s", keyence_readings[3])
 
                 # Step 6c: Get several readings and adjusting focus between
                 focus_drift = 0
@@ -262,7 +348,7 @@ class KeyenceControl(PrintControl):
                     self.move_xyf_stages(
                         None,
                         None,
-                        0,
+                        focus_drift,
                         coord_system=f"keyence_{light_engine}",
                         is_wintech=("wintech" in light_engine),
                     )
@@ -370,20 +456,20 @@ class KeyenceControl(PrintControl):
             raise PrintingException()
 
     def move_xyf_stages(self, x_pos, y_pos, focus_pos, coord_system, is_wintech=False):
-        _x_pos = x_pos / 1000 + self.coord_systems[coord_system]["X"]
-        _y_pos = y_pos / 1000 + self.coord_systems[coord_system]["Y"]
-        _focus_pos = focus_pos / 1000 + self.coord_systems[coord_system]["Focus"]
+        _x_pos = x_pos / 1000 + self.coord_systems[coord_system]["X"] if x_pos is not None else None
+        _y_pos = y_pos / 1000 + self.coord_systems[coord_system]["Y"] if y_pos is not None else None
+        _focus_pos = focus_pos / 1000 + self.coord_systems[coord_system]["Focus"] if focus_pos is not None else None
         if is_wintech:
             _x_pos += (
                 self.calibration_positions.get("x_drift", 0.0)
                 + self.calibration_positions.get("xy_shift", 0.0) * _y_pos / 1000
                 + self.calibration_positions.get("xx_shift", 0.0) * _x_pos / 1000
-            ) / 1000
+            ) / 1000 if x_pos is not None else None
             _y_pos += (
                 self.calibration_positions.get("y_drift", 0.0)
                 + self.calibration_positions.get("yx_shift", 0.0) * _x_pos / 1000
                 + self.calibration_positions.get("yy_shift", 0.0) * _y_pos / 1000
-            ) / 1000
+            ) / 1000 if y_pos is not None else None
 
         self.xy_threads = self.xy_stage.threadedXYMove(log, _x_pos, _y_pos, join=False)
         self.focus_thread = self.focus_stage.threadedFocusMove(
@@ -404,6 +490,20 @@ class KeyenceControl(PrintControl):
                 log.critical("Unable to move focus stage")
                 self.failed_hardware["Focus Stage"] = self.focus_stage
                 raise PrintingException()
+
+    def measurement_origin_return(self, light_engine):
+        """
+        Move the xy stage back to the origin position for the given light engine.
+        This is used to return to the origin after measurements are taken.
+        """
+        self.move_xyf_stages(
+            self.default_x_offset,
+            self.default_y_offset,
+            0,
+            coord_system=f"keyence_{light_engine}",
+            is_wintech=("wintech" in light_engine),
+        )
+        time.sleep(1.0)
 
     def pre_exposure_tasks(self, settings, light_engine):
         """

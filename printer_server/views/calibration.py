@@ -22,6 +22,8 @@ conversion_dict = {
     "Wintech Focus": "keyence_wintech",
     "Tip": "tip",
     "Tilt": "tilt",
+    "Visitech Tip": "keyence_visitech_tip",
+    "Visitech Tilt": "keyence_visitech_tilt",
     "Rotate": "rotate",
     "Pivot X": "pivot_x",
     "Pivot Y": "pivot_y",
