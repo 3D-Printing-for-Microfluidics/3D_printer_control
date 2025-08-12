@@ -37,8 +37,11 @@ def planar_start(message):
     """Begin tighten/untighten to the target torque."""
     try:
         direction = message.get("direction", "tighten")
-        torque = message.get("torque_kgmm", None)
-        torque = float(torque) if torque is not None else None
+        if direction == "tighten":
+            torque = message.get("torque_kgmm", None)
+            torque = float(torque) if torque is not None else None
+        if direction == "untighten":
+            torque = 0.0
         planar.start(direction=direction, torque_kgmm=torque)
         socketio.emit("planar_status", _planar_status_dict(), namespace="/manual")
         # Optional: if you later want push completion, run a tiny watcher thread here.
