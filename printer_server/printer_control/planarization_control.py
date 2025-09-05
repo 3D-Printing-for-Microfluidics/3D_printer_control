@@ -1,13 +1,15 @@
+import os
 import time
+import shutil
 import logging
 from pathlib import Path
 
+import printer_server.views.home as home
 from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
-import printer_server.views.home as home
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -101,6 +103,8 @@ class PlanarizationControl(PrintControl):
             if error:
                 log.info("Planarization motor tightening complete")
 
+            self.motor.set_log_file(None)
+
         except Exception as ex:
             log.critical("Planarization motor tightening failed (%s)", ex, exc_info=True)
             self.failed_hardware["Planarization Motor"] = self.motor
@@ -136,12 +140,21 @@ class PlanarizationControl(PrintControl):
 
         super().cancel_planarization()
 
-    def finish_print(self):
-        """
-        After printing completes and platform has been raised by the core pipeline,
-        untighten the screw to a *lower* torque target, then stop.
-        """
+    def start(self, job_id):
+        # save planarization log
+        backup_path = Path(Config.UPLOAD_FOLDER)/"motor_planarization_data.backup"
+        if os.path.exists(self.motor_log):
+            shutil.move(self.motor_log, backup_path)
+
+        super().start(job_id)
+
+        # restore planarization log
+        if os.path.exists(backup_path):
+            shutil.move(backup_path, self.motor_log)
+
+    def planarization_post_print_tasks(self):
         try:
+            self.motor.set_log_file(self.motor_log)
             pconf = config_dict["planarization"]
             timeout_ms = pconf["motor_timeout_ms"]
 
@@ -159,7 +172,7 @@ class PlanarizationControl(PrintControl):
             while self.motor.running:
                 if (time.time() - start_time) * 1000.0 > timeout_ms:
                     self.motor.stop()
-                    raise PrintingException("Planarization untightening timeout")
+                    log.error("Planarization untightening timeout")
                 time.sleep(0.05)
 
             log.info("Planarization screw untightened to %.3f kg·mm", unt_kgmm)
@@ -174,4 +187,24 @@ class PlanarizationControl(PrintControl):
             self.failed_hardware["Planarization Motor"] = self.motor
             raise PrintingException()
 
-        super().finish_print()
+
+    def post_print_tasks(self):
+        """
+        After printing completes and platform has been raised by the core pipeline,
+        untighten the screw to a *lower* torque target, then stop.
+        """
+        if not self.printing_paused.is_set():
+            try:
+                defaults_layer_settings = self.print_settings.get("Default layer settings")
+            except:
+                # needed for json 999
+                pass
+            
+            self.motorized_planarization_thread = Thread(log, name="planarization_loosen_thread", target=self.planarization_post_print_tasks)
+            self.motorized_planarization_thread.start()
+        super().post_print_tasks()
+              
+    def post_print_joins(self):
+        if self.motorized_planarization_thread is not None:
+            self.motorized_planarization_thread.join()
+        return super().post_print_joins()

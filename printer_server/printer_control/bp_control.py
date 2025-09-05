@@ -214,8 +214,7 @@ class BPControl(PrintControl):
                 log.critical("Unable to communicate with build platform stage (%s)", ex, exc_info=True)
                 self.failed_hardware["Build Platform Stage"] = self.bp_stage
                 raise PrintingException()
-            
-        super().post_print_tasks()
+
         try:
             defaults_layer_settings = self.print_settings.get("Default layer settings")
             default_position_settings = defaults_layer_settings.get("Position settings")
@@ -226,6 +225,8 @@ class BPControl(PrintControl):
 
         bp_pos = self.bp_stage.top_position
         self.bp_thread = self.bp_stage.threadedBPMove(log, bp_pos, join=False, speed=None, acceleration=None)
+            
+        super().post_print_tasks()
               
     def post_print_joins(self):
         if self.bp_thread is not None:

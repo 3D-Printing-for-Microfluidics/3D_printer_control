@@ -10,6 +10,7 @@ from printer_server.async_file_handler import async_file_hander
 from printer_server.printer_control.print_control import PrintControl, run_in_thread
 from printer_server.views.manual_controls import update_le_led_state, update_screen_preview
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
+from printer_server.print_file_validator import check_version
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -61,14 +62,16 @@ class LightMeasurementControl(PrintControl):
         super().pre_print_tasks()
         if not self.printing_paused.is_set():
             try:
-                self.measure_light("preprint")
+                if check_version(self.print_settings) != "v999":
+                    self.measure_light("preprint")
             except Exception as ex:
                 log.warning("Error occured during light measurement (%s)", ex, exc_info=True)
 
     def post_print_tasks(self):
         if not (self.printing_stopped.is_set() or self.printing_paused.is_set()):
             try:
-                self.measure_light("postprint")
+                if check_version(self.print_settings) != "v999":
+                    self.measure_light("postprint")
             except Exception as ex:
                 log.warning("Error occured during light measurement (%s)", ex, exc_info=True)
         super().post_print_tasks()
@@ -99,7 +102,8 @@ class LightMeasurementControl(PrintControl):
             # Setup light engines
             for i, wavelength in enumerate(config_dict[light_engine]["leds_nm"]):
                 light_engine_driver = self.light_engines[light_engine]
-                num_avg = config_dict["spectrometer"]["default_number_of_averages"]
+                if "spectrometer" in config_dict:
+                    num_avg = config_dict["spectrometer"]["default_number_of_averages"]
 
                 try:
                     self.screen.setCorrectionEnable(False, False, light_engine=light_engine)
@@ -202,8 +206,9 @@ class LightMeasurementControl(PrintControl):
                 async_file_hander.write(light_measurement_path, f"Wavelength: {wavelength} (nm)\n")
                 async_file_hander.write(light_measurement_path, f"Irradiance: {irr1} mW/cm^2\n")     
                 async_file_hander.write(light_measurement_path, f"Irradiance (grayscale corrected): {irr2} mW/cm^2\n")               
-                async_file_hander.write(light_measurement_path, f"Integration time: {integration_time} ms\n")
-                async_file_hander.write(light_measurement_path, f"Number of Averages: {num_avg}\n")
+                if "spectrometer" in config_dict:
+                    async_file_hander.write(light_measurement_path, f"Integration time: {integration_time} ms\n")
+                    async_file_hander.write(light_measurement_path, f"Number of Averages: {num_avg}\n")
                 async_file_hander.write(light_measurement_path, "\n")
                 if "spectrometer" in config_dict:
                     if spectrum is not None:
