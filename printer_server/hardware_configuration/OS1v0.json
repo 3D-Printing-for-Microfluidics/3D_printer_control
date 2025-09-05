@@ -130,11 +130,11 @@
         },
         "axes_speed": {
             "X": 25.0,
-            "Y": 7.5
+            "Y": 25.0
         },
         "axes_acceleration": {
-            "X": 10.0,
-            "Y": 1.0
+            "X": 25.0,
+            "Y": 25.0
         },
         "axes_homing_speed": {
             "X": 5.0,
@@ -213,14 +213,14 @@
             "Focus": 263.8443072
         },
         "axes_speed": {
-            "Tip": 1.5,
-            "Tilt": 1.5,
+            "Tip": 2.0,
+            "Tilt": 2.0,
             "Focus": 2.0
         },
         "axes_acceleration": {
-            "Tip": 3.0,
-            "Tilt": 3.0,
-            "Focus": 3.0
+            "Tip": 3.2,
+            "Tilt": 3.2,
+            "Focus": 3.6
         },
         "axes_homing_speed": {
             "Tip": 1.0,
