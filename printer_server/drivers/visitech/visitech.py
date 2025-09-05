@@ -467,8 +467,21 @@ class Visitech(EthernetSerial, LightEngineDriver):
 
         Return type +OK
         """
-        time.sleep(5)  # must wait for at least 5 seconds to read or write operation mode
-        return self.send(f"SET OPERATION MODE {mode}")
+        if mode == "VIDEO_PATTERN_MODE":
+            start_time = time.time()
+            timeout = 30.0 # must wait for at least 5 seconds to read or write operation mode
+            while (time.time() - start_time) < timeout:
+                dmd_status = self.get_dmd_status()    
+                if dmd_status["external_video_source_locked"]:
+                    return self.send(f"SET OPERATION MODE {mode}")
+                time.sleep(0.1)
+        else:
+            return self.send(f"SET OPERATION MODE {mode}")
+
+        # usually caused by one of 2 things:
+        # - bad hdmi config
+        # - screen blanking not disabled
+        raise RuntimeError(f"Light engine failed to get video lock. Check HDMI connection or try rebooting pi and hardware.")
 
     def get_dmd_operation_mode(self):
         """
