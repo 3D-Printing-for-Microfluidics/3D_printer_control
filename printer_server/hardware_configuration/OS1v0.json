@@ -325,6 +325,7 @@
         ],
         "normalization_factor": [
             1.0
-        ]
+        ],
+        "orientation": "X"
     }
 }

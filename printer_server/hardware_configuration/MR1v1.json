@@ -218,7 +218,8 @@
         "resolution": [
             2560,
             1600
-        ]
+        ],
+        "orientation": "X"
     },
     "wintech": {
         "dummy": false,
@@ -231,6 +232,7 @@
         "resolution": [
             1920,
             1080
-        ]
+        ],
+        "orientation": "X"
     }
 }

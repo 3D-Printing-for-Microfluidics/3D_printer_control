@@ -176,6 +176,7 @@
         ],
         "grayscale_normalization_factor": [
             0.78
-        ]
+        ],
+        "orientation": "Y"
     }
 }
