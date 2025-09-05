@@ -899,7 +899,7 @@ class ThorlabsAPT(USBSerial):
     def fullstop(self, axis=None):
         """Stop any motion, non-blocking."""
         a = self.convertAxis(axis)
-        self.log.info("Sopping %s", a)
+        self.log.info("Stopping %s", a)
         self.write_to_APT(a, MOV_STOP_CMD, self.channel, 0x01)
         self.moving_dir[a] = None
         if self.jogging[a]:
