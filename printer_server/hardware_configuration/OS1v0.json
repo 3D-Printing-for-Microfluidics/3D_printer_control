@@ -254,6 +254,8 @@
         },
         "moving_shifts_image": false,
         "auto_repositioning": true,
+        "auto_tip_tilt": true,
+        "auto_focus": true,
         "link_focus_and_y_movement": true
     },
     "gpio": {
@@ -291,7 +293,6 @@
         "dummy": false,
         "address": "192.168.0.15",
         "port": 24685,
-        "auto_tip_tilt": true,
         "sensors": {
             "visitech": {
                 "measurement_index": 0,

@@ -134,7 +134,9 @@
         },
         "calibration_position": 45.2148438,
         "bottom_position": 43.875,
-        "top_position": -50
+        "top_position": -50,
+        "auto_tip_tilt": false,
+        "auto_focus": true
     },
     "tiptilt": {
         "dummy": false,
@@ -189,7 +191,6 @@
         "dummy": false,
         "address": "192.168.0.15",
         "port": 24685,
-        "auto_tip_tilt": false,
         "sensors": {
             "visitech": {
                 "measurement_index": 1,

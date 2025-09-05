@@ -108,7 +108,9 @@
         },
         "calibration_position": 0,
         "bottom_position": 27.5,
-        "top_position": -50
+        "top_position": -50,
+        "auto_tip_tilt": false,
+        "auto_focus": true
     },
     "hexapod": {
         "dummy": false,
@@ -212,7 +214,6 @@
         "dummy": false,
         "address": "192.168.0.15",
         "port": 24685,
-        "auto_tip_tilt": false,
         "sensors": {
             "visitech": {
                 "measurement_index": 0,

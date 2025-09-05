@@ -91,6 +91,9 @@ blueprint = Blueprint(
 
 
 def create_calibration_data():
+    from printer_server.hardware_configuration.hardware_configuration import (
+        driver_handles,
+    )
     calibration_data = {}
 
     def add_to_dict(l):
@@ -98,32 +101,24 @@ def create_calibration_data():
             calibration_data[machine_to_human(setting)] = last_positions.get(setting, 0.0)
 
     last_positions = get_last_calibration_positions_from_logs()
-    # Use dynamic focus if available
-    if "keyence" in config_dict.keys():
-        keyence_sensors = []
-        for sensor in config_dict["keyence"]["sensors"].keys():
-            setting = f"keyence_{sensor}"
-            if setting not in conversion_dict.values():
-                conversion_dict[f"{sensor.capitalize()} Focus"] = setting
-            keyence_sensors.append(setting)
-        add_to_dict(keyence_sensors)
-    else:
-        add_to_dict(["focus"])
-
-    # Add tip/tilt or keyence tip/tilt
-    if "keyence" in config_dict.keys() and config_dict["keyence"].get(
-        "auto_tip_tilt", False
-    ):
-        keyence_sensors = []
-        for sensor in config_dict["keyence"]["sensors"].keys():
+    if driver_handles.ttr_stage.config_dict.get("auto_tip_tilt", False):
+        settings_list = []
+        for le in config_dict["light_engines"]:
             for axis in ["tip", "tilt"]:
-                setting = f"keyence_{sensor}_{axis}"
-                if setting not in conversion_dict.values():
-                    conversion_dict[f"{sensor.capitalize()} Focus"] = setting
-                keyence_sensors.append(setting)
-        add_to_dict(keyence_sensors)
+                setting = f"keyence_{le}_{axis}"
+                settings_list.append(setting)
+        add_to_dict(settings_list)
     else:
         add_to_dict(["tip", "tilt"])
+
+    if driver_handles.focus_stage.config_dict.get("auto_focus", False):
+        settings_list = []
+        for le in config_dict["light_engines"]:
+            setting = f"keyence_{le}"
+            settings_list.append(setting)
+        add_to_dict(settings_list)
+    else:
+        add_to_dict(["focus"])
 
     # Add TTR axis (if hexapod also add pivot)
     if "hexapod" in config_dict.keys():
