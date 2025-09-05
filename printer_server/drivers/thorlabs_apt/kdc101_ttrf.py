@@ -19,7 +19,7 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
         self.mount_len = (
             62.2  # Length between screw and pivot of the kinematic mount in mm
         )
-        self.tip_multiplier = 1.30
+        self.tip_multiplier = 1.44
         self.tilt_multiplier = 2.0
         self.connected = False
         self.initialized = None
