@@ -210,7 +210,7 @@ class ScreenThread(Thread):
             else:
                 self.log.info("\tDark correction image: %s", Path(self.screens[screen].dark_correction_paths[led_num]).name)
 
-        trys = 2 # very occationally the screen will fail to find the image. Not sure why, but hopefully this will fix it
+        trys = 3 # very occationally the screen will fail to find the image. Not sure why, but hopefully this will fix it
         for i in range(trys):
             try:
                 self.screens[screen].draw(img_path, led_num=led_num)
@@ -218,6 +218,10 @@ class ScreenThread(Thread):
             except IndexError:
                 if i != trys - 1:
                     self.log.error("Screen for %s (screen %s) does not exist", light_engine, screen)
+            except AssertionError:
+                if i != trys - 1:
+                    self.log.error("Screen for %s (screen %s) failed to load image", light_engine, screen)
+            time.sleep(0.1)
 
     def clear(self, light_engine="visitech"):
         """Clear the specified screen."""
