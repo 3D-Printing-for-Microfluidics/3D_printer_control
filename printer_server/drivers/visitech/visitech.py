@@ -95,16 +95,13 @@ class Visitech(EthernetSerial, LightEngineDriver):
         # set default state for light engine and clear previous errors
         self.log.info("Initializing Visitech...")
         self.get_sticky_errors(warn="NONE")
-        if not self.get_video_source() == "HDMI":
-            self.set_video_source("HDMI")
-        if not self.get_led_driver_regulation_mode() == "LIGHT":
-            if self.dual_led:
-                self.set_led_driver_regulation_mode("LIGHT", led_num=0)
-                self.set_led_driver_regulation_mode("LIGHT", led_num=1)
-            else:
-                self.set_led_driver_regulation_mode("LIGHT")
-        if not self.get_dmd_operation_mode() == "VIDEO_PATTERN_MODE":
-            self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
+        self.set_video_source("HDMI")
+        if self.dual_led:
+            self.set_led_driver_regulation_mode("LIGHT", led_num=0)
+            self.set_led_driver_regulation_mode("LIGHT", led_num=1)
+        else:
+            self.set_led_driver_regulation_mode("LIGHT")
+        self.set_dmd_operation_mode("VIDEO_PATTERN_MODE")
         self.log.info("Initialized Visitech")
 
     def disconnect(self):
