@@ -2,7 +2,8 @@
     "valid_schema_versions": [
         "v2",
         "v3",
-        "v5"
+        "v5",
+        "v999"
     ],
     "external_control": {},
     "coord_systems": {
