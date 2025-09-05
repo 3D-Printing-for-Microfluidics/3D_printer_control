@@ -19,21 +19,21 @@
             "Build Platform": 0
         },
         "visitech": {
-            "X": 75.0,
-            "Y": 275.0,
+            "X": 70.0,
+            "Y": 268.0,
             "Focus": 5.0,
             "Build Platform": 0
         },
         "keyence_visitech": {
-            "X": 25.0,
-            "Y": 275.0,
+            "X": 16.0,
+            "Y": 271.0,
             "Focus": 5.0,
             "Build Platform": 0
         },
         "fiber_visitech": {
-            "X": 75.0,
-            "Y": 200.0,
-            "Focus": 5.0,
+            "X": 70.515,
+            "Y": 199.73,
+            "Focus": 6.67,
             "Build Platform": 0
         }
     },
