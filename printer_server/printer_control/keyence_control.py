@@ -471,10 +471,12 @@ class KeyenceControl(PrintControl):
                 + self.calibration_positions.get("yy_shift", 0.0) * _y_pos / 1000
             ) / 1000 if y_pos is not None else None
 
-        self.xy_threads = self.xy_stage.threadedXYMove(log, _x_pos, _y_pos, join=False)
         self.focus_thread = self.focus_stage.threadedFocusMove(
             log, _focus_pos, join=False
         )
+        time.sleep(0.05)
+        self.xy_threads = self.xy_stage.threadedXYMove(log, _x_pos, _y_pos, join=False)
+        
 
         # Wait for moves to complete
         for thread in self.xy_threads:

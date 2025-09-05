@@ -252,7 +252,8 @@
             ]
         },
         "moving_shifts_image": false,
-        "auto_repositioning": true
+        "auto_repositioning": true,
+        "link_focus_and_y_movement": true
     },
     "gpio": {
         "dummy": false,

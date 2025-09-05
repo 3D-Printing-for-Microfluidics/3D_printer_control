@@ -29,6 +29,8 @@ class XYControl(PrintControl):
             self.failed_hardware["XY Stage"] = self.xy_stage
 
     def initialize_hardware(self):
+        if driver_handles.focus_stage.config_dict.get("link_focus_and_y_movement", False):
+            self.xy_stage.linked_focus_stage = driver_handles.focus_stage
         x_pos = self.coord_systems["parked"]["X"]
         y_pos = self.coord_systems["parked"]["Y"]
         self.xy_thread = Thread(log, name="xy_control_init_thread", target=self.xy_stage.initialize_and_positionXY, args=[x_pos, y_pos])

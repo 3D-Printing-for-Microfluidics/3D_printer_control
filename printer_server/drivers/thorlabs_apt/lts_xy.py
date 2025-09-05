@@ -1,9 +1,14 @@
+import logging
+
 from printer_server.drivers.generic_drivers import XYStageDriver
 from printer_server.drivers.thorlabs_apt.thorlabs_apt import ThorlabsAPT
 
 
 class LTS_XY(XYStageDriver):
     def __init__(self, config_dict=None, log_level=None):
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+
         self.apt_controller = ThorlabsAPT(
             config_dict=config_dict, log_level=log_level, driver_name="LTS_XY"
         )
@@ -11,6 +16,7 @@ class LTS_XY(XYStageDriver):
         self.initialized = None
         self.config_dict = config_dict
         self.axes_common_names = self.apt_controller.axes_common_names
+        self.linked_focus_stage = None
 
     def setup_log_file(self, filename):
         self.apt_controller.setup_log_file(filename)
@@ -37,16 +43,33 @@ class LTS_XY(XYStageDriver):
         return self.apt_controller.getDefaultAcceleration(axis=axis)
 
     def getXYPosition(self, axis=None, notify=True):
-        return self.apt_controller.getPosition(axis=axis)
+        if axis == "Y" and self.linked_focus_stage is not None:
+            return self.apt_controller.getPosition(axis=axis) + self.linked_focus_stage.target_focus
+        else:
+            return self.apt_controller.getPosition(axis=axis)
 
     def absMoveXY(
         self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None
     ):
+        cur = self.getXYPosition(axis=axis)
+        # self.log.info(f"{axis} {mm}, {cur}, {self.apt_controller.getPosition(axis=axis)}, {self.linked_focus_stage.target_focus}, {abs(mm - cur)}")
+        # if abs(mm - cur) < 0.025:
+        #     self.absMoveXY(cur+0.1, speed=speed, acceleration=acceleration, axis=axis)
+
+        if axis == "Y" and self.linked_focus_stage is not None:
+            mm -= self.linked_focus_stage.target_focus
+
+        if mm < 0:
+            mm = 0
+
         self.apt_controller.absMove(mm, speed=speed, acceleration=acceleration, axis=axis)
 
     def relMoveXY(
         self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None
     ):
+        self.log.info(f"{axis} {mm}")
+        # if abs(mm) < 0.025:
+        #     self.relMove(+0.1, speed=speed, acceleration=acceleration, axis=axis)
         self.apt_controller.relMove(mm, speed=speed, acceleration=acceleration, axis=axis)
 
     def startXYJog(self, speed=None, acceleration=None, axis=None):

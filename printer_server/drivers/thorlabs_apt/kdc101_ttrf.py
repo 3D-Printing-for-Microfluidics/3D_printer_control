@@ -25,6 +25,7 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
         self.initialized = None
         self.config_dict = config_dict
         self.axes_common_names = self.apt_controller.axes_common_names
+        self.target_focus = 0.0
 
     def mm_to_rad(self, mm, axis):
         """Convert mm to radians (of image NOT mirror rotation) based on the mount length."""
@@ -76,11 +77,13 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
         return self.apt_controller.getPosition(axis="Focus")
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.target_focus = mm
         self.apt_controller.absMove(
             mm, speed=speed, acceleration=acceleration, axis="Focus"
         )
 
     def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        self.target_focus += mm
         self.apt_controller.relMove(
             mm, speed=speed, acceleration=acceleration, axis="Focus"
         )
@@ -89,6 +92,7 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
         self.apt_controller.startJog(speed=speed, acceleration=acceleration, axis="Focus")
 
     def stopFocusJog(self):
+        self.target_focus = self.getFocusPosition()
         self.apt_controller.stopJog(axis="Focus")
 
     def getFocusLimits(self):

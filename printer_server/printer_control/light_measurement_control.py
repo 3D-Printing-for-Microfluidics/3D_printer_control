@@ -80,8 +80,10 @@ class LightMeasurementControl(PrintControl):
             x_pos = self.coord_systems[f"fiber_{light_engine}"]["X"]
             y_pos = self.coord_systems[f"fiber_{light_engine}"]["Y"]
             focus_pos = self.coord_systems[f"fiber_{light_engine}"]["Focus"]
-            self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
             self.focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False)
+            time.sleep(0.05)
+            self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
+            
 
             # Join threads
             for thread in self.xy_threads:

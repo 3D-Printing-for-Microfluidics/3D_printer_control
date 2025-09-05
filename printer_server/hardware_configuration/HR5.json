@@ -270,6 +270,7 @@
             2560,
             1600
         ],
+        "orientation": "Y",
         "light_grayscale_correction_image": [
             "20241202-XU19030146.png"
         ],
