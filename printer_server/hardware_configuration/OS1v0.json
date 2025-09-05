@@ -1,334 +1,334 @@
 {
-    "valid_schema_versions": [
-        "v2",
-        "v3",
-        "v5",
-        "v999"
-    ],
-    "external_control": {},
-    "coord_systems": {
-        "global": {
-            "X": 0,
-            "Y": 0,
-            "Focus": 0,
-            "Build Platform": 0
-        },
-        "parked": {
-            "X": 75.0,
-            "Y": 180.0,
-            "Focus": 5.0,
-            "Build Platform": 0
-        },
-        "visitech": {
-            "X": 70.0,
-            "Y": 268.0,
-            "Focus": 5.0,
-            "Build Platform": 0
-        },
-        "keyence_visitech": {
-            "X": 16.0,
-            "Y": 271.0,
-            "Focus": 5.0,
-            "Build Platform": 0
-        },
-        "fiber_visitech": {
-            "X": 70.515,
-            "Y": 199.73,
-            "Focus": 6.67,
-            "Build Platform": 0
-        }
+  "valid_schema_versions": [
+    "v2",
+    "v3",
+    "v5",
+    "v999"
+  ],
+  "external_control": {},
+  "coord_systems": {
+    "global": {
+      "X": 0,
+      "Y": 0,
+      "Focus": 0,
+      "Build Platform": 0
     },
-    "stages": {
-        "bp_stage": "galil",
-        "focus_stage": "kdc101_ttrf",
-        "xy_stage": "lts_xy",
-        "ttr_stage": "kdc101_ttrf"
+    "parked": {
+      "X": 75.0,
+      "Y": 180.0,
+      "Focus": 5.0,
+      "Build Platform": 0
     },
-    "galil": {
-        "dummy": false,
-        "controller_name": "DMC4040",
-        "address": "192.168.0.9",
-        "default_axis": "D",
-        "axes": [
-            "D"
-        ],
-        "axes_common_names": [
-            "Build Platform"
-        ],
-        "axes_travel": {
-            "D": 100
-        },
-        "axes_ctspmm": {
-            "D": 51200
-        },
-        "axes_tolerance_um": {
-            "D": 0.125
-        },
-        "axes_speed": {
-            "D": 25
-        },
-        "axes_acceleration": {
-            "D": 50
-        },
-        "limits": {
-            "D": [
-                null,
-                47.0
-            ]
-        },
-        "calibration_limits": {
-            "D": [
-                null,
-                0
-            ]
-        },
-        "calibration_position": 0,
-        "bottom_position": 39.5,
-        "top_position": -50
-    },
-    "lts_xy": {
-        "dummy": false,
-        "default_axis": "Y",
-        "vendor_ids": {
-            "X": 1027,
-            "Y": 1027
-        },
-        "product_ids": {
-            "X": 64240,
-            "Y": 64240
-        },
-        "serial_numbers": {
-            "X": "45526354",
-            "Y": "45515754"
-        },
-        "baudrates": {
-            "X": 115200,
-            "Y": 115200
-        },
-        "axes": [
-            "X",
-            "Y"
-        ],
-        "axes_common_names": [
-            "X",
-            "Y"
-        ],
-        "axes_travel": {
-            "X": 150.0,
-            "Y": 300.0
-        },
-        "axes_ctspmm": {
-            "X": 409600.0,
-            "Y": 409600.0
-        },
-        "axes_ctspmms": {
-            "X": 21987328.0,
-            "Y": 21987328.0
-        },
-        "axes_ctspmmss": {
-            "X": 4506.0,
-            "Y": 4506.0
-        },
-        "axes_speed": {
-            "X": 25.0,
-            "Y": 25.0
-        },
-        "axes_acceleration": {
-            "X": 25.0,
-            "Y": 25.0
-        },
-        "axes_homing_speed": {
-            "X": 5.0,
-            "Y": 5.0
-        },
-        "axes_homing_timeout": {
-            "X": 60.0,
-            "Y": 60.0
-        },
-        "axes_timeout": {
-            "X": 20.0,
-            "Y": 40.0
-        },
-        "limits": {
-            "X": [
-                0.0,
-                90.0
-            ],
-            "Y": [
-                0.0,
-                285.0
-            ]
-        }
-    },
-    "kdc101_ttrf": {
-        "dummy": false,
-        "default_axis": "Focus",
-        "vendor_ids": {
-            "Tip": 1027,
-            "Tilt": 1027,
-            "Focus": 1027
-        },
-        "product_ids": {
-            "Tip": 64240,
-            "Tilt": 64240,
-            "Focus": 64240
-        },
-        "serial_numbers": {
-            "Tip": "27254763",
-            "Tilt": "27254658",
-            "Focus": "27270358"
-        },
-        "baudrates": {
-            "Tip": 115200,
-            "Tilt": 115200,
-            "Focus": 115200
-        },
-        "axes": [
-            "Tip",
-            "Tilt",
-            "Focus"
-        ],
-        "axes_common_names": [
-            "Tip",
-            "Tilt",
-            "Focus"
-        ],
-        "axes_travel": {
-            "Tip": 12.0,
-            "Tilt": 12.0,
-            "Focus": 25.0
-        },
-        "axes_ctspmm": {
-            "Tip": 34554.96,
-            "Tilt": 34554.96,
-            "Focus": 34554.96
-        },
-        "axes_ctspmms": {
-            "Tip": 772981.3692,
-            "Tilt": 772981.3692,
-            "Focus": 772981.3692
-        },
-        "axes_ctspmmss": {
-            "Tip": 263.8443072,
-            "Tilt": 263.8443072,
-            "Focus": 263.8443072
-        },
-        "axes_speed": {
-            "Tip": 2.0,
-            "Tilt": 2.0,
-            "Focus": 2.0
-        },
-        "axes_acceleration": {
-            "Tip": 3.2,
-            "Tilt": 3.2,
-            "Focus": 3.6
-        },
-        "axes_homing_speed": {
-            "Tip": 1.0,
-            "Tilt": 1.0,
-            "Focus": 1.0
-        },
-        "axes_homing_timeout": {
-            "Tip": 60.0,
-            "Tilt": 60.0,
-            "Focus": 60.0
-        },
-        "axes_timeout": {
-            "Tip": 20.0,
-            "Tilt": 20.0,
-            "Focus": 20.0
-        },
-        "limits": {
-            "Tip": [
-                0,
-                6.55
-            ],
-            "Tilt": [
-                0,
-                6.55
-            ],
-            "Focus": [
-                0,
-                10.0
-            ]
-        },
-        "moving_shifts_image": false,
-        "auto_repositioning": true,
-        "auto_tip_tilt": true,
-        "auto_focus": true,
-        "link_focus_and_y_movement": true
-    },
-    "gpio": {
-        "dummy": false,
-        "power_status_pin": 17
-    },
-    "loadcell": {
-        "dummy": false,
-        "vendor_id": 5824,
-        "product_id": 1155,
-        "serial_number": "17767270",
-        "firmware_path": "loadcell/loadcell.ino",
-        "microcontroller": "Teensy4.0",
-        "baudrate": 115200,
-        "sample_period_us": 1000,
-        "calibration_intercept": 1978.0,
-        "calibration_slope": -0.2189,
-        "loadcell_planarization_enabled": true,
-        "loadcell_planarization_force": 35.0,
-        "loadcell_print_start_force": 5.0
-    },
-    "planarization": {
-        "dummy": false,
-        "vendor_id": 5824,
-        "product_id": 1155,
-        "serial_number": "17767660",
-        "firmware_path": "planarization/planarization.ino",
-        "microcontroller": "Teensy4.0",
-        "baudrate": 115200,
-        "target_torque_kgmm": 100,
-        "tighten_delay_ms": 1000,
-        "motor_timeout_ms": 7500
-    },
-    "keyence": {
-        "dummy": false,
-        "address": "192.168.0.15",
-        "port": 24685,
-        "sensors": {
-            "visitech": {
-                "measurement_index": 0,
-                "invert_sign": true
-            }
-        }
-    },
-    "photodiode": {
-        "dummy": false,
-        "beam_diameter": 0.05,
-        "default_wavelength": 365,
-        "attenuation_db": 0,
-        "default_number_of_averages": 64,
-        "vendor_id": 4883,
-        "product_id": 32882,
-        "serial_number": "M01239335"
-    },
-    "screen": {},
-    "light_engines": [
-        "visitech"
-    ],
     "visitech": {
-        "dummy": false,
-        "address": "192.168.0.10",
-        "port": 5000,
-        "dual_led": false,
-        "leds_nm": [
-            365
-        ],
-        "resolution": [
-            2560,
-            1600
-        ],
-        "normalization_factor": [
-            1.0
-        ],
-        "orientation": "X"
+      "X": 70.0,
+      "Y": 268.0,
+      "Focus": 5.0,
+      "Build Platform": 0
+    },
+    "keyence_visitech": {
+      "X": 16.0,
+      "Y": 271.0,
+      "Focus": 5.0,
+      "Build Platform": 0
+    },
+    "fiber_visitech": {
+      "X": 70.515,
+      "Y": 199.73,
+      "Focus": 6.67,
+      "Build Platform": 0
     }
+  },
+  "stages": {
+    "bp_stage": "galil",
+    "focus_stage": "kdc101_ttrf",
+    "xy_stage": "lts_xy",
+    "ttr_stage": "kdc101_ttrf"
+  },
+  "galil": {
+    "dummy": false,
+    "controller_name": "DMC4040",
+    "address": "192.168.0.9",
+    "default_axis": "D",
+    "axes": [
+      "D"
+    ],
+    "axes_common_names": [
+      "Build Platform"
+    ],
+    "axes_travel": {
+      "D": 100
+    },
+    "axes_ctspmm": {
+      "D": 51200
+    },
+    "axes_tolerance_um": {
+      "D": 0.125
+    },
+    "axes_speed": {
+      "D": 25
+    },
+    "axes_acceleration": {
+      "D": 50
+    },
+    "limits": {
+      "D": [
+        null,
+        47.0
+      ]
+    },
+    "calibration_limits": {
+      "D": [
+        null,
+        0
+      ]
+    },
+    "calibration_position": 0,
+    "bottom_position": 39.5,
+    "top_position": -50
+  },
+  "lts_xy": {
+    "dummy": false,
+    "default_axis": "Y",
+    "vendor_ids": {
+      "X": 1027,
+      "Y": 1027
+    },
+    "product_ids": {
+      "X": 64240,
+      "Y": 64240
+    },
+    "serial_numbers": {
+      "X": "45526354",
+      "Y": "45515754"
+    },
+    "baudrates": {
+      "X": 115200,
+      "Y": 115200
+    },
+    "axes": [
+      "X",
+      "Y"
+    ],
+    "axes_common_names": [
+      "X",
+      "Y"
+    ],
+    "axes_travel": {
+      "X": 150.0,
+      "Y": 300.0
+    },
+    "axes_ctspmm": {
+      "X": 409600.0,
+      "Y": 409600.0
+    },
+    "axes_ctspmms": {
+      "X": 21987328.0,
+      "Y": 21987328.0
+    },
+    "axes_ctspmmss": {
+      "X": 4506.0,
+      "Y": 4506.0
+    },
+    "axes_speed": {
+      "X": 25.0,
+      "Y": 25.0
+    },
+    "axes_acceleration": {
+      "X": 25.0,
+      "Y": 25.0
+    },
+    "axes_homing_speed": {
+      "X": 5.0,
+      "Y": 5.0
+    },
+    "axes_homing_timeout": {
+      "X": 60.0,
+      "Y": 60.0
+    },
+    "axes_timeout": {
+      "X": 20.0,
+      "Y": 40.0
+    },
+    "limits": {
+      "X": [
+        0.0,
+        90.0
+      ],
+      "Y": [
+        0.0,
+        285.0
+      ]
+    }
+  },
+  "kdc101_ttrf": {
+    "dummy": false,
+    "default_axis": "Focus",
+    "vendor_ids": {
+      "Tip": 1027,
+      "Tilt": 1027,
+      "Focus": 1027
+    },
+    "product_ids": {
+      "Tip": 64240,
+      "Tilt": 64240,
+      "Focus": 64240
+    },
+    "serial_numbers": {
+      "Tip": "27254763",
+      "Tilt": "27254658",
+      "Focus": "27270358"
+    },
+    "baudrates": {
+      "Tip": 115200,
+      "Tilt": 115200,
+      "Focus": 115200
+    },
+    "axes": [
+      "Tip",
+      "Tilt",
+      "Focus"
+    ],
+    "axes_common_names": [
+      "Tip",
+      "Tilt",
+      "Focus"
+    ],
+    "axes_travel": {
+      "Tip": 12.0,
+      "Tilt": 12.0,
+      "Focus": 25.0
+    },
+    "axes_ctspmm": {
+      "Tip": 34554.96,
+      "Tilt": 34554.96,
+      "Focus": 34554.96
+    },
+    "axes_ctspmms": {
+      "Tip": 772981.3692,
+      "Tilt": 772981.3692,
+      "Focus": 772981.3692
+    },
+    "axes_ctspmmss": {
+      "Tip": 263.8443072,
+      "Tilt": 263.8443072,
+      "Focus": 263.8443072
+    },
+    "axes_speed": {
+      "Tip": 2.0,
+      "Tilt": 2.0,
+      "Focus": 2.0
+    },
+    "axes_acceleration": {
+      "Tip": 3.2,
+      "Tilt": 3.2,
+      "Focus": 3.6
+    },
+    "axes_homing_speed": {
+      "Tip": 1.0,
+      "Tilt": 1.0,
+      "Focus": 1.0
+    },
+    "axes_homing_timeout": {
+      "Tip": 60.0,
+      "Tilt": 60.0,
+      "Focus": 60.0
+    },
+    "axes_timeout": {
+      "Tip": 20.0,
+      "Tilt": 20.0,
+      "Focus": 20.0
+    },
+    "limits": {
+      "Tip": [
+        0,
+        6.55
+      ],
+      "Tilt": [
+        0,
+        6.55
+      ],
+      "Focus": [
+        0,
+        10.0
+      ]
+    },
+    "moving_shifts_image": false,
+    "auto_repositioning": true,
+    "auto_tip_tilt": true,
+    "auto_focus": true,
+    "link_focus_and_y_movement": true
+  },
+  "gpio": {
+    "dummy": false,
+    "power_status_pin": 17
+  },
+  "loadcell": {
+    "dummy": false,
+    "vendor_id": 5824,
+    "product_id": 1155,
+    "serial_number": "17767270",
+    "firmware_path": "loadcell/loadcell.ino",
+    "microcontroller": "Teensy4.0",
+    "baudrate": 115200,
+    "sample_period_us": 1000,
+    "calibration_intercept": 1978.0,
+    "calibration_slope": -0.2189,
+    "loadcell_planarization_enabled": true,
+    "loadcell_planarization_force": 35.0,
+    "loadcell_print_start_force": 5.0
+  },
+  "planarization": {
+    "dummy": false,
+    "vendor_id": 5824,
+    "product_id": 1155,
+    "serial_number": "17767660",
+    "firmware_path": "planarization/planarization.ino",
+    "microcontroller": "Teensy4.0",
+    "baudrate": 115200,
+    "target_torque_kgmm": 100,
+    "tighten_delay_ms": 1000,
+    "motor_timeout_ms": 7500
+  },
+  "keyence": {
+    "dummy": false,
+    "address": "192.168.0.15",
+    "port": 24685,
+    "sensors": {
+      "visitech": {
+        "measurement_index": 0,
+        "invert_sign": true
+      }
+    }
+  },
+  "photodiode": {
+    "dummy": false,
+    "beam_diameter": 0.05,
+    "default_wavelength": 365,
+    "attenuation_db": 0,
+    "default_number_of_averages": 64,
+    "vendor_id": 4883,
+    "product_id": 32882,
+    "serial_number": "M01239335"
+  },
+  "screen": {},
+  "light_engines": [
+    "visitech"
+  ],
+  "visitech": {
+    "dummy": false,
+    "address": "192.168.0.10",
+    "port": 5000,
+    "dual_led": false,
+    "leds_nm": [
+      365
+    ],
+    "resolution": [
+      2560,
+      1600
+    ],
+    "normalization_factor": [
+      1.0
+    ],
+    "orientation": "X"
+  }
 }
