@@ -32,8 +32,9 @@ static constexpr float kADC_Max = float((1 << kADC_Bits) - 1);
 static constexpr float kVisen_V_per_A = 0.200f;   // 200 mV/A
 
 // Your motor current model: I(A) = I0 + K * t(kg·mm)
-static constexpr float kI_intercept_A = 0.025f;        // I0
-static constexpr float kI_per_t_A_per_kgmm = 0.0049f;  // K
+static constexpr float kI_intercept_A = 0.05f;        // I0 old = 0.025f; new = 0.05f
+static constexpr float kI_per_t_A_per_kgmm = 0.0065f;  // K old = 0.0049f; new = 0.0065f
+static constexpr float no_load_current = 0.081f;
 
 // Safety timeout
 const unsigned long TIMEOUT_MS = 10000;    // ms
@@ -59,24 +60,20 @@ inline float visenVoltsFromADC(int adcCounts) {
   return (float(adcCounts) / kADC_Max) * kVref;
 }
 
-// Convert VISEN volts -> current (A) using 0.2 V/A
-inline float currentFromVisenVolts(float visenV) {
-  return visenV / kVisen_V_per_A;
-}
-
 // Convert VISEN volts -> torque (kg·mm) using inverse of your motor model
 float torqueFromVisenVolts(float visenV) {
-  const float I = currentFromVisenVolts(visenV);                 // A
+  const float I = visenV / kVisen_V_per_A;                       // A
+  if (I < no_load_current) return 0.0f;                           // below no-load current
   float t = (I - kI_intercept_A) / kI_per_t_A_per_kgmm;          // kg·mm
   if (t < 0.0f) t = 0.0f;                                        // guard small negatives
   return t;
 }
 
 // Optional: torque -> VISEN volts (useful if you ever want to set a voltage threshold internally)
-float visenVoltsFromTorque(float torque_kgmm) {
-  const float I = kI_intercept_A + kI_per_t_A_per_kgmm * torque_kgmm;
-  return I * kVisen_V_per_A;  // V
-}
+// float visenVoltsFromTorque(float torque_kgmm) {
+//   const float I = kI_intercept_A + kI_per_t_A_per_kgmm * torque_kgmm;
+//   return I * kVisen_V_per_A;  // V
+// }
 
 
 // ---------------- Simple moving average filter ----------------
@@ -170,7 +167,7 @@ void startMotor(int dir) {
   }
 
   controlTimer.begin(torqueControlISR, 10000);  // 100 Hz = every 10,000 µs
-  delay(250);
+  delay(500);
   motor_engaged = true;
 }
 
