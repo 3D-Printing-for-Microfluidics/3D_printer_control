@@ -375,7 +375,7 @@ class KeyenceControl(PrintControl):
         defocus_um = settings["Relative focus position (um)"]
 
         # keyence correction
-        origin_target = self.calibration_positions.get(f"keyence_{light_engine}",0)
+        origin_target = self.calibration_positions.get(f"keyence_{screen_light_engine}",0)
         keyence_measurement = origin_target - self.keyence_offset_targets[f"keyence_{screen_light_engine}"][
             f"{self.x_offset}, {self.y_offset}"
         ]
