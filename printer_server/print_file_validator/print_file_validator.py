@@ -29,6 +29,7 @@ def validate_schema(print_file):
             zip_file_handle.extractall(temp_dir, members=namelist)
             print_settings = check_for_unique_print_settings(temp_dir)
             version = check_version(print_settings)
+            print_settings = expand_variables(print_settings)
             validate_against_schema(print_settings, f"schema_{version}.json")
 
             if version == "v999":
@@ -90,7 +91,7 @@ def expand_variables(print_settings):
     # Define default variables
 
     variables = print_settings.get("Variables", {})
-    print_settings = resolve_expressions(print_settings, variables)
+    return resolve_expressions(print_settings, variables)
 
 
 def resolve_expressions(obj, variables):
