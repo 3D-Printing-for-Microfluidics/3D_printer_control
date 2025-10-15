@@ -278,6 +278,10 @@
                 "Image settings"
             ]
         },
+        "Variables": {
+            "type": "object",
+            "additionalProperties": true
+        },
         "Named position settings": {
             "type": "object",
             "additionalProperties": {
