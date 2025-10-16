@@ -121,7 +121,6 @@ class LightMeasurementControl(PrintControl):
                 imagePath = os.path.join(
                     Config.PRINT_SERVER_FOLDER, f"drivers/{light_engine}/images", f"white.png"
                 )
-                print(imagePath, light_engine)
                 screen_thread = Thread(
                     log, name="screen_control_draw_thread", target=self.screen.draw, args=[imagePath], kwargs={"light_engine": light_engine, "led_num": i}
                 )
