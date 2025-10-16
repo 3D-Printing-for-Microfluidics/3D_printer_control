@@ -32,6 +32,15 @@ log.setLevel(logging.INFO)
 # sample_rate_hz = 1/300
 # time_to_process = 0.0033
 
+plt.rcParams.update({
+    'font.size': 30,         # Base font size for most text
+    'axes.titlesize': 36,    # Title size
+    'axes.labelsize': 30,    # X and Y axis labels
+    'xtick.labelsize': 30,   # X tick labels
+    'ytick.labelsize': 30,   # Y tick labels
+    'legend.fontsize': 36,   # Legend text
+})
+
 class TestControl(PrintControl):
     def test_worker(self):
         self.printing_stopped.clear()
@@ -82,7 +91,6 @@ class TestControl(PrintControl):
         self.pre_print_joins()
 
         # Setup
-        self.slices_folder = Path(self.print_settings["Header"]["Image directory"])
         self.photodiode.set_wavelength(365)
         self.photodiode.set_num_averages(2)
         self.photodiode.zero()
@@ -130,7 +138,7 @@ class TestControl(PrintControl):
 
         # repeat tests
         for i, image_name in enumerate(images):
-            self.screen.draw(self.current_job / self.slices_folder / f"{image_name}.png", light_engine=self.light_engine, led_num=self.led_num)
+            self.screen.draw(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / f"{image_name}.png", light_engine=self.light_engine, led_num=self.led_num)
             time.sleep(0.1)
             log.info("Starting test")
             result = u.send("c")
@@ -146,7 +154,7 @@ class TestControl(PrintControl):
 
         # 500ms tests
         for i, image_name in enumerate(images):
-            self.screen.draw(self.current_job / self.slices_folder / f"{image_name}.png", light_engine=self.light_engine, led_num=self.led_num)
+            self.screen.draw(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / f"{image_name}.png", light_engine=self.light_engine, led_num=self.led_num)
             self.light_engines[self.light_engine].stop_sequencer()
             self.light_engines[self.light_engine].setup_exposure(300, led_power=200, repeat=1, is_grayscale_corrected=False, led_num=self.led_num)
             time.sleep(0.1)
@@ -254,7 +262,7 @@ class TestControl(PrintControl):
         self._update_progress(1,6,progress)
 
         # Draw white
-        self.screen.draw(self.current_job / self.slices_folder / "white.png", light_engine=self.light_engine, led_num=self.led_num)
+        self.screen.draw(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / "white.png", light_engine=self.light_engine, led_num=self.led_num)
 
         self._update_progress(2,6,progress)
 
@@ -427,7 +435,7 @@ class TestControl(PrintControl):
             
             # Draw image
             screen_thread = Thread(
-                log, name="screen_draw_thread", target=self.screen.draw, args=[self.current_job / self.slices_folder / image[0]], kwargs={"light_engine": self.light_engine, "led_num": self.led_num}
+                log, name="screen_draw_thread", target=self.screen.draw, args=[Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / image[0]], kwargs={"light_engine": self.light_engine, "led_num": self.led_num}
             )
             screen_thread.start()
             irr_list = []
@@ -465,10 +473,10 @@ class TestControl(PrintControl):
             pos_list.append(pos)
             irr_list.append(self.photodiode.get_power_density())
             if len(image) > 1:
-                self.screen.draw(self.current_job / self.slices_folder / image[1], light_engine=self.light_engine, led_num=self.led_num)
+                self.screen.draw(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / image[1], light_engine=self.light_engine, led_num=self.led_num)
                 irr_list2.append(self.photodiode.get_power_density())
                 screen_thread = Thread(
-                    log, name="screen_draw_thread", target=self.screen.draw, args=[self.current_job / self.slices_folder / image[0]], kwargs={"light_engine": self.light_engine, "led_num": self.led_num}
+                    log, name="screen_draw_thread", target=self.screen.draw, args=[Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / image[0]], kwargs={"light_engine": self.light_engine, "led_num": self.led_num}
                 )
                 screen_thread.start()
             for i in range(step_count):
@@ -492,10 +500,10 @@ class TestControl(PrintControl):
                 pos_list.append(pos)
                 irr_list.append(self.photodiode.get_power_density())
                 if len(image) > 1:
-                    self.screen.draw(self.current_job / self.slices_folder / image[1], light_engine=self.light_engine, led_num=self.led_num)
+                    self.screen.draw(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / image[1], light_engine=self.light_engine, led_num=self.led_num)
                     irr_list2.append(self.photodiode.get_power_density())
                     screen_thread = Thread(
-                        log, name="screen_draw_thread", target=self.screen.draw, args=[self.current_job / self.slices_folder / image[0]], kwargs={"light_engine": self.light_engine, "led_num": self.led_num}
+                        log, name="screen_draw_thread", target=self.screen.draw, args=[Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / image[0]], kwargs={"light_engine": self.light_engine, "led_num": self.led_num}
                     )
                     screen_thread.start()
 
@@ -614,7 +622,7 @@ class TestControl(PrintControl):
         for i in range(256):
             if self.printing_stopped.is_set():
                 return
-            self.screen.draw(self.current_job / self.slices_folder / f"image_with_grayscale_{i}.png", light_engine=self.light_engine, led_num=self.led_num)
+            self.screen.draw(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / f"image_with_grayscale_{i}.png", light_engine=self.light_engine, led_num=self.led_num)
 
             # Wait
             time.sleep(0.1)
@@ -663,7 +671,8 @@ class TestControl(PrintControl):
         x_pos = self.coord_systems["fiber_visitech"]["X"] - (x_px-focus_spot_px)*x_px_size/2
         y_pos = self.coord_systems["fiber_visitech"]["Y"] - (y_px-focus_spot_px)*y_px_size/2
         self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=True)
-        self.find_photodiode_center_and_focus(find_corners=True, progress=self._subdivide_progress(0,4,progress))
+        # self.find_photodiode_center_and_focus(find_corners=True, progress=self._subdivide_progress(0,4,progress))
+        self.find_photodiode_center_and_focus(position="corner", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(0,4,progress))
         x1 = self.xy_stage.getXYPosition(axis="X")
         y1 = self.xy_stage.getXYPosition(axis="Y")
         if self.printing_stopped.is_set():
@@ -672,7 +681,8 @@ class TestControl(PrintControl):
         x_pos = self.coord_systems["fiber_visitech"]["X"] - (x_px-focus_spot_px)*x_px_size/2
         y_pos = self.coord_systems["fiber_visitech"]["Y"] + (y_px-focus_spot_px)*y_px_size/2
         self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=True)
-        self.find_photodiode_center_and_focus(find_corners=True, progress=self._subdivide_progress(1,4,progress))
+        # self.find_photodiode_center_and_focus(find_corners=True, progress=self._subdivide_progress(1,4,progress))
+        self.find_photodiode_center_and_focus(position="corner", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(1,4,progress))
         x2 = self.xy_stage.getXYPosition(axis="X")
         y2 = self.xy_stage.getXYPosition(axis="Y")
         if self.printing_stopped.is_set():
@@ -681,7 +691,8 @@ class TestControl(PrintControl):
         x_pos = self.coord_systems["fiber_visitech"]["X"] + (x_px-focus_spot_px)*x_px_size/2
         y_pos = self.coord_systems["fiber_visitech"]["Y"] + (y_px-focus_spot_px)*y_px_size/2
         self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=True)
-        self.find_photodiode_center_and_focus(find_corners=True, progress=self._subdivide_progress(2,4,progress))
+        # self.find_photodiode_center_and_focus(find_corners=True, progress=self._subdivide_progress(2,4,progress))
+        self.find_photodiode_center_and_focus(position="corner", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(2,4,progress))
         x3 = self.xy_stage.getXYPosition(axis="X")
         y3 = self.xy_stage.getXYPosition(axis="Y")
         if self.printing_stopped.is_set():
@@ -690,7 +701,8 @@ class TestControl(PrintControl):
         x_pos = self.coord_systems["fiber_visitech"]["X"] + (x_px-focus_spot_px)*x_px_size/2
         y_pos = self.coord_systems["fiber_visitech"]["Y"] - (y_px-focus_spot_px)*y_px_size/2
         self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=True)
-        self.find_photodiode_center_and_focus(find_corners=True, progress=self._subdivide_progress(3,4,progress))
+        # self.find_photodiode_center_and_focus(find_corners=True, progress=self._subdivide_progress(3,4,progress))
+        self.find_photodiode_center_and_focus(position="corner", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(3,4,progress))
         x4 = self.xy_stage.getXYPosition(axis="X")
         y4 = self.xy_stage.getXYPosition(axis="Y")
         if self.printing_stopped.is_set():
@@ -753,19 +765,19 @@ class TestControl(PrintControl):
 
         self._update_progress(0, len(x_range)*len(y_range), progress)
 
-        self.light_engines[self.light_engine].setup_exposure(1000, led_power=100, repeat=0, is_grayscale_corrected=False, led_num=self.led_num)
+        self.light_engines[self.light_engine].setup_exposure(1000, led_power=100, repeat=0, is_grayscale_corrected=(correction_path != ""), led_num=self.led_num)
         self.light_engines[self.light_engine].perform_exposure()
         
-        # image = Image.open(self.current_job / self.slices_folder / f"demarked.png") # Used to check orientation
-        image = Image.open(self.current_job / self.slices_folder / f"white.png")
+        # image = Image.open(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / "demarked.png") # Used to check orientation
+        image = Image.open(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / "white.png")
 
         if correction_path != "":
             mask = image
             correction = Image.open(correction_path)
             image = Image.composite(correction, mask, mask=mask)
-        image.save(self.current_job / self.slices_folder / f"temp.png")  # Saves the image
+        image.save(self.current_job / self.print_settings["Header"]["Image directory"] / f"temp.png")  # Saves the image
         # Draw correction image
-        self.screen.draw(self.current_job / self.slices_folder / f"temp.png", light_engine=self.light_engine, led_num=self.led_num)
+        self.screen.draw(self.current_job / self.print_settings["Header"]["Image directory"] / f"temp.png", light_engine=self.light_engine, led_num=self.led_num)
 
         for x_index, x in enumerate(x_range):
             for y_index, y in enumerate(y_range):
@@ -773,31 +785,6 @@ class TestControl(PrintControl):
                 x_pos = self.coord_systems["fiber_visitech"]["X"] + (x - x_px/2)*self.x_px_size
                 y_pos = self.coord_systems["fiber_visitech"]["Y"] + (y - y_px/2)*self.y_px_size
                 self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=True)
-
-                # # for index, spot_value, bulk_value in zip([0, 1], [0, 255], [255, 255]):
-                # spot_value = 255
-                # bulk_value = 255
-                # # Create image (with 10px spot sizes)
-                # # notes:
-                # # the image and physical coords are swapped (x->y & y->x)
-                # # the image is mirrored in the short direction
-                # image_array = np.full((x_px, y_px), bulk_value, dtype=np.uint8)
-                # x_start = max(y - 5, 0) 
-                # x_end = min(y + 5, y_px)
-                # y_start = x_px - min(x + 5, x_px)
-                # y_end = x_px - max(x - 5, 0)
-                # image_array[y_start:y_end, x_start:x_end] = spot_value
-                # image = Image.fromarray(image_array, mode='L')
-                # image.save(self.current_job / self.slices_folder / f"temp.png")  # Saves the image
-
-                # if correction_path != "":
-                #     mask = image
-                #     correction = Image.open(correction_path)
-                #     image = Image.composite(correction, mask, mask=mask)
-                #     image.save(self.current_job / self.slices_folder / f"temp.png")  # Saves the image
-
-                # # Draw correction image
-                # self.screen.draw(self.current_job / self.slices_folder / f"temp.png", light_engine=self.light_engine, led_num=self.led_num)
 
                 # Get Position
                 x_position = self.xy_stage.getXYPosition(axis="X")
@@ -991,12 +978,12 @@ class TestControl(PrintControl):
             image = Image.fromarray(uint16_array, mode='L')  # 'L' mode for grayscale
             image.save(str(directory / save_directory_name / 'stddev grid fit px.png'))
             
-            tmp = 32767*stddev_data/np.max(stddev_data)
-            tmp[0,0] = 65535
-            tmp[0,1] = 0
-            uint16_array = tmp.astype(np.uint16)
-            image = Image.fromarray(uint16_array, mode='I;16')  # 'L' mode for grayscale
-            image.save(str(directory / save_directory_name / 'stddev grid fit normalized.png'))
+            # tmp = 32767*stddev_data/np.max(stddev_data)
+            # tmp[0,0] = 65535
+            # tmp[0,1] = 0
+            # uint16_array = tmp.astype(np.uint16)
+            # image = Image.fromarray(uint16_array, mode='I;16')  # 'L' mode for grayscale
+            # image.save(str(directory / save_directory_name / 'stddev grid fit normalized.png'))
             
             tmp = stddev_data*1000
             uint16_array = tmp.astype(np.uint16)
@@ -1009,12 +996,12 @@ class TestControl(PrintControl):
             image = Image.fromarray(uint16_array, mode='L')  # 'L' mode for grayscale
             image.save(str(directory / save_directory_name / 'grid fit px.png'))
 
-            tmp = 32767*fit_data/np.max(fit_data)
-            tmp[0,0] = 65535
-            tmp[0,1] = 0
-            uint16_array = tmp.astype(np.uint16)
-            image = Image.fromarray(uint16_array, mode='I;16')  # 'L' mode for grayscale
-            image.save(str(directory / save_directory_name / 'grid fit normalized.png'))
+            # tmp = 32767*fit_data/np.max(fit_data)
+            # tmp[0,0] = 65535
+            # tmp[0,1] = 0
+            # uint16_array = tmp.astype(np.uint16)
+            # image = Image.fromarray(uint16_array, mode='I;16')  # 'L' mode for grayscale
+            # image.save(str(directory / save_directory_name / 'grid fit normalized.png'))
 
             tmp = fit_data*fit_max*1000
             uint16_array = tmp.astype(np.uint16)
@@ -1056,7 +1043,7 @@ class TestControl(PrintControl):
             stats_df.to_csv(str(directory / save_directory_name / "stats.csv"), index=False)
 
         def save_violin_plot(data, name, scale=None):
-            plt.figure(figsize=(8, 6))
+            plt.figure(figsize=(16, 12))
             plt.violinplot(data, showmeans=True)
             plt.title(f"Violin Plot of {name}")
             if scale is not None:
@@ -1106,9 +1093,9 @@ class TestControl(PrintControl):
         else:
             violin_min = np.min(irradiance_map)/1.1
             violin_max = np.max(irradiance_map)*1.1
-        save_violin_plot(fit_data.flatten(), "irradiance", scale=(violin_min, violin_max))
-        save_violin_plot(fit_data_cropped.flatten(), "irradiance_cropped_10", scale=(violin_min, violin_max))
-        save_violin_plot(fit_data_cropped2.flatten(), "irradiance_cropped_100", scale=(violin_min, violin_max))
+        save_violin_plot(fit_data.flatten(), f"{save_directory_name.capitalize()} Irradiance", scale=(violin_min, violin_max))
+        save_violin_plot(fit_data_cropped.flatten(), f"{save_directory_name.capitalize()} Irradiance_cropped_10", scale=(violin_min, violin_max))
+        save_violin_plot(fit_data_cropped2.flatten(), f"{save_directory_name.capitalize()} Irradiance_cropped_100", scale=(violin_min, violin_max))
 
         # normalize data
         normalized_fit_data = normalize_data(fit_data)
@@ -1122,8 +1109,26 @@ class TestControl(PrintControl):
         return fit_data
 
     def capture_and_process_grayscale_correction(self, fine=True, progress=(0,100)):
+        x_pos = self.coord_systems["fiber_visitech"]["X"]
+        y_pos = self.coord_systems["fiber_visitech"]["Y"]
+        z_pos = self.coord_systems["fiber_visitech"]["Focus"]
+        focus_thread = self.focus_stage.threadedFocusMove(log, mm=z_pos, join=False)
+        time.sleep(0.05)
+        xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
+
+        for thread in xy_threads:
+            if thread is not None:
+                thread.join()
+                thread = None
+        if focus_thread is not None:
+            focus_thread.join()
+            focus_thread = None
+
         self._update_progress(0, 4, progress)
+        # self.x_px_size = 0.00756
+        # self.y_px_size =  0.00756
         self.find_photodiode_center_and_focus(progress=self._subdivide_progress(0,4,progress))
+        # self.find_photodiode_center_and_focus(position="center", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(0,4,progress))
         if self.printing_stopped.is_set():
             return
         self.find_px_size(progress=self._subdivide_progress(1,4,progress))
@@ -1135,6 +1140,21 @@ class TestControl(PrintControl):
         save_directory_name = "uncorrected"
         irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
 
+        if "grayscale_normalization_factor" not in self.light_engines[self.light_engine].config_dict.keys():
+            self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"] = self.light_engines[self.light_engine].config_dict["normalization_factor"].copy()
+        else:
+            self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num] = self.light_engines[self.light_engine].config_dict["normalization_factor"][self.led_num]
+        filename = "corrected_nonnormalized_test_data.csv"
+        self.measure_irradiance_grid2(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'))
+        save_directory_name = "corrected_nonnormalized"
+        nonnormalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
+        self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num] = round(self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num]*np.mean(irradiance_map)/np.mean(nonnormalized_irradiance_map),3)
+        filename = "corrected_normalized_test_data.csv"
+        self.measure_irradiance_grid2(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'))
+        save_directory_name = "corrected_normalized"
+        normalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
+        log.info("Pre mean irradiance: %s, Post mean irradiance: %s, Updated to: %s", np.mean(irradiance_map), np.mean(nonnormalized_irradiance_map), np.mean(normalized_irradiance_map))
+
         filename = "corrected_test_data.csv"
         correction_img = self.current_job / "logs/uncorrected/correction_image.png"
         self.measure_irradiance_grid2(fine=fine, save_name=filename, correction_path=str(correction_img), progress=self._subdivide_progress(3,4,progress))
@@ -1142,8 +1162,79 @@ class TestControl(PrintControl):
             return
         scale_factor = 1.0  # used if normalization factor was changed...
         save_directory_name = "corrected"
-        self._createCorrectionImage(filename, save_directory_name, irradiance_map / scale_factor)
-        shutil.copy(correction_img, self.current_job / 'logs/correction_image.png')
+        final_irradiance_map = self._createCorrectionImage(filename, save_directory_name, irradiance_map/scale_factor)
+
+        # Combine datasets for global min/max and histogram
+        combined_fit_data = np.concatenate([irradiance_map.flatten(), final_irradiance_map.flatten()])
+
+        # Compute global min and max for grayscale mapping
+        global_min = np.min(combined_fit_data)
+        global_max = np.max(combined_fit_data)
+
+        # Save grayscale remapped 8-bit images for both datasets
+        def save_remapped_grayscale(data, save_path, vmin, vmax):
+            # Clip and normalize
+            clipped = np.clip(data, vmin, vmax)
+            normalized = ((clipped - vmin) / (vmax - vmin) * 255).astype(np.uint8)
+            img = Image.fromarray(normalized, mode='L')
+            img.save(save_path)
+
+        save_remapped_grayscale(irradiance_map,
+                                self.current_job / "logs" / "uncorrected" / "grid fit remapped.png",
+                                global_min, global_max)
+
+        save_remapped_grayscale(final_irradiance_map,
+                                self.current_job / "logs" / "corrected" / "grid fit remapped.png",
+                                global_min, global_max)
+
+        def plot_histogram_dual_yaxis(uncorrected, corrected, out_path, min_val, max_val):
+            """
+            Plot histogram with:
+            - Primary Y-axis = pixel count
+            - Secondary Y-axis = piecewise function for remap to 8-bit gray levels.
+            - Zoomed option centers around [min_val, max_val] with margin
+            """
+            span = max_val - min_val
+            margin = span * 0.05
+            x_min = min_val - margin
+            x_max = max_val + margin
+
+            fig, ax1 = plt.subplots(figsize=(20, 12))
+            bins = np.linspace(x_min, x_max, 256)
+
+            # Histograms for both images
+            ax1.hist(uncorrected, bins=bins, alpha=0.6, color='blue', edgecolor='black', label='Uncorrected')
+            ax1.hist(corrected, bins=bins, alpha=0.6, color='red', edgecolor='black', label='Corrected')
+
+            ax1.set_xlabel("Irradiance (mW/cm²)")
+            ax1.set_ylabel("Pixel Count")
+            ax1.set_title("Grayscale Mapping for Uncorrected and Corrected Data")
+            ax1.legend(loc="upper left")
+
+            # Secondary Y-axis: piecewise mapping
+            ax2 = ax1.twinx()
+
+            # Define piecewise function for visualization
+            x_vals = np.linspace(x_min, x_max, 500)  # μW/cm²
+            gray_vals = np.piecewise(
+                x_vals,
+                [x_vals < min_val, (x_vals >= min_val) & (x_vals <= max_val), x_vals > max_val],
+                [0, lambda x: (x - min_val) / (max_val - min_val) * 255, 255]
+            )
+
+            ax2.plot(x_vals, gray_vals, color='green', linewidth=2, label="Gray Level Mapping")
+            ax2.set_ylabel("Gray Level (0-255)")
+            ax2.set_ylim(0, 255)
+            ax2.legend(loc="upper right")
+
+            plt.xlim(x_min, x_max)
+            plt.tight_layout()
+            plt.savefig(out_path, dpi=300)
+            plt.close()
+
+        plot_histogram_dual_yaxis(irradiance_map.flatten(), final_irradiance_map.flatten(), self.current_job / "logs" / "histogram.png", global_min, global_max)
+
+        shutil.copy(self.current_job / 'logs/uncorrected/correction_image.png', self.current_job / 'logs/correction_image.png')
 
         # --- persist the corrected correction image with a single timestamp used everywhere ---
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1299,7 +1390,7 @@ class TestControl(PrintControl):
         """
         self.light_engines[self.light_engine].setup_exposure(1000, led_power=100, repeat=0, is_grayscale_corrected=False, led_num=self.led_num)
         self.light_engines[self.light_engine].perform_exposure()
-        self.screen.draw(self.current_job / self.slices_folder / "white.png", light_engine=self.light_engine, led_num=self.led_num)
+        self.screen.draw(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / "white.png", light_engine=self.light_engine, led_num=self.led_num)
         time.sleep(0.05)
 
         x = self.xy_stage.getXYPosition(axis="X")
