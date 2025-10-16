@@ -40,8 +40,28 @@ log = logging.getLogger(__name__)
 
 # Exammple of how to set up the virtual screen
 s = ScreenThread(
-    resolutions=((2560, 1600), (1920, 1080)),
-    config_dict={"light_engines": ["visitech, wintech"]},
+    config_dict={
+        "light_engines": ["visitech, wintech"],
+        "visitech": {
+            "leds_nm": [
+                365
+            ],
+            "resolution": [
+                1920,
+                1080
+            ]
+        },
+        "wintech": {
+            "leds_nm": [
+                405,
+                365
+            ],
+            "resolution": [
+                2560,
+                1600
+            ]
+        }
+    },
     log_level=logging.INFO,
 )
 
@@ -58,10 +78,10 @@ p.dmd_controller.get_firmware_version()
 p.dmd_controller.get_hardware_configuration_and_firmware_tag()
 
 # Example of how to draw images to Visitech and Wintech virtual screens
-s.draw(screen=1, img_path="printer_server/drivers/wintech/images/1.png")
-# s.draw(screen=1, img_path="printer_server/drivers/wintech/images/white.png")
-s.draw(screen=0, img_path="printer_server/drivers/visitech/images/visitech_1.png")
-# s.draw(screen=0, img_path="printer_server/drivers/visitech/images/white.png")
+s.draw(light_engine="wintech", img_path="printer_server/drivers/wintech/images/1.png")
+# s.draw(light_engine="wintech", img_path="printer_server/drivers/wintech/images/white.png")
+s.draw(light_engine="visitech", img_path="printer_server/drivers/visitech/images/visitech_1.png")
+# s.draw(light_engine="visitech", img_path="printer_server/drivers/visitech/images/white.png")
 
 # Some test code to run a number of projections and report some class data
 num_tests = 10

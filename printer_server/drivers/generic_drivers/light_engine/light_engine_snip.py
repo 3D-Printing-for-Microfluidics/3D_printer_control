@@ -3,6 +3,7 @@ from printer_server.extensions import socketio
 from printer_server.hardware_configuration.hardware_configuration import driver_handles, config_dict
 
 light_engines = driver_handles.light_engines
+screen = driver_handles.screen
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -31,8 +32,12 @@ def light_engine_start(message):
         led = int(message.get("led", 0))
         socketio.emit("light_engine_update_led_state", {"light_engine":light_engine, "state":True}, namespace="/manual")
         light_engines[light_engine].idle_off()
+        
+        # check if correction is active/update correction image to match led num
+        correction = screen.getLightCorrectionEnable(light_engine)
+
         light_engines[light_engine].stop_sequencer()
-        light_engines[light_engine].setup_exposure(exposure, led_power=ledPower, repeat=repeat, led_num=led)
+        light_engines[light_engine].setup_exposure(exposure, led_power=ledPower, repeat=repeat, is_grayscale_corrected=correction, led_num=led)
         light_engines[light_engine].perform_exposure()
         if repeat != 0:
             socketio.emit("light_engine_update_led_state", {"light_engine":light_engine, "state":False}, namespace="/manual")

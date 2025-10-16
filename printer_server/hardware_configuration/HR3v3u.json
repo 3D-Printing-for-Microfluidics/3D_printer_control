@@ -35,10 +35,16 @@
             "A": 50
         },
         "limits": {
-            "A": [null,47.0]
+            "A": [
+                null,
+                47.0
+            ]
         },
         "calibration_limits": {
-            "A": [null,10.380125]
+            "A": [
+                null,
+                10.380125
+            ]
         },
         "calibration_position": 9.380125,
         "bottom_position": 40.284,
@@ -60,7 +66,7 @@
             "0x50": 25.0
         },
         "axes_ctspmm": {
-            "0x50": 34554.96 
+            "0x50": 34554.96
         },
         "axes_speed": {
             "0x50": 2.777
@@ -69,7 +75,10 @@
             "0x50": 1.486
         },
         "limits": {
-            "0x50": [null,null]
+            "0x50": [
+                null,
+                null
+            ]
         },
         "moving_shifts_image": true
     },
@@ -90,8 +99,14 @@
             "Tilt"
         ],
         "limits": {
-            "1": [null,null],
-            "2": [null,null]
+            "1": [
+                null,
+                null
+            ],
+            "2": [
+                null,
+                null
+            ]
         },
         "auto_repositioning": false
     },
@@ -108,8 +123,8 @@
         "microcontroller": "Teensy3.2",
         "baudrate": 115200,
         "sample_period_us": 1000,
-        "calibration_intercept": 34990.0,
-        "calibration_slope": -2.1,
+        "calibration_intercept": 34400.0,
+        "calibration_slope": -2.056,
         "loadcell_planarization_enabled": true,
         "loadcell_planarization_force": 35.0,
         "loadcell_print_start_force": 5.0
@@ -129,6 +144,9 @@
         "resolution": [
             2560,
             1600
+        ],
+        "normalization_factor": [
+            1.0
         ]
     }
 }

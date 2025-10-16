@@ -18,6 +18,11 @@
                     "default": "slices",
                     "description": "Directory relative to the json print job file where the images are saved."
                 },
+                "Print under vacuum": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should the printer print under vacuum?"
+                },
                 "Comment": {
                     "type": "string",
                     "default": "",
@@ -122,9 +127,8 @@
                     "properties": {
                         "Layer thickness (um)": {
                             "type": "number",
-                            "minimum": 0,
                             "default": 10,
-                            "description": "Custom layer thickness"
+                            "description": "Custom layer thickness. Can be negative only when used to compensate for a previous layer with significantly larger thickness (e.g., for membrane fabrication)."
                         },
                         "Distance up (mm)": {
                             "type": "number",
@@ -218,6 +222,16 @@
                             "default": "png",
                             "description": "Default image file"
                         },
+                        "Do light grayscale correction": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Should the printer apply a grayscale irradiance correction to the white values of this image?"
+                        },
+                        "Do dark grayscale correction": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Should the printer apply a grayscale irradiance correction to the dark values of this image?"
+                        },
                         "Image x offset (um)": {
                             "type": "number",
                             "default": 0,
@@ -273,6 +287,10 @@
                 "Position settings",
                 "Image settings"
             ]
+        },
+        "Variables": {
+            "type": "object",
+            "additionalProperties": true
         },
         "Named position settings": {
             "type": "object",
@@ -390,9 +408,8 @@
                 },
                 "Layer thickness (um)": {
                     "type": "number",
-                    "minimum": 0,
                     "default": 10,
-                    "description": "Custom layer thickness"
+                    "description": "Custom layer thickness. Can be negative only when used to compensate for a previous layer with significantly larger thickness (e.g., for membrane fabrication)."
                 },
                 "Distance up (mm)": {
                     "type": "number",
@@ -479,6 +496,16 @@
                     "type": "string",
                     "default": "png",
                     "description": "Default image file"
+                },
+                "Do light grayscale correction": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should the printer apply a grayscale irradiance correction to the white values of this image?"
+                },
+                "Do dark grayscale correction": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should the printer apply a grayscale irradiance correction to the dark values of this image?"
                 },
                 "Image x offset (um)": {
                     "type": "number",

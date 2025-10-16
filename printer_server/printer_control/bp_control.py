@@ -104,6 +104,7 @@ class BPControl(PrintControl):
             start_position = self.bp_stage.getBPPosition()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
             self.move_build_platform_up(position_settings)
+            super().move_build_platform(position_settings, layer)
             self.print_position -= layer_thickness
             self.move_build_platform_down(position_settings)
 
@@ -203,9 +204,13 @@ class BPControl(PrintControl):
                 raise PrintingException()
             
         super().post_print_tasks()
-        defaults_layer_settings = self.print_settings.get("Default layer settings")
-        default_position_settings = defaults_layer_settings.get("Position settings")
-        self.move_build_platform_up(default_position_settings)
+        try:
+            defaults_layer_settings = self.print_settings.get("Default layer settings")
+            default_position_settings = defaults_layer_settings.get("Position settings")
+            self.move_build_platform_up(default_position_settings)
+        except:
+            # needed for json 999
+            pass
 
         bp_pos = self.bp_stage.top_position
         self.bp_thread = self.bp_stage.threadedBPMove(log, bp_pos, join=False, speed=None, acceleration=None)

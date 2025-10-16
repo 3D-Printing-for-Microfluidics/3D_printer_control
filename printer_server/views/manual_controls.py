@@ -91,6 +91,10 @@ if "gpio" in config_dict.keys():
         on_load_f_init.append(
             printer_server.drivers.gpio.gpio_snip.getFilmRelayState
         )
+    if "wintech_fan_pin1" in config_dict["gpio"].keys():
+        on_load_f_init.append(
+            printer_server.drivers.gpio.gpio_snip.getWintechFanRelayState
+        )
 
 if "keyence" in config_dict.keys():
     import printer_server.drivers.keyence.keyence_snip
@@ -133,7 +137,10 @@ if "photodiode" in config_dict.keys():
 if "screen" in config_dict.keys():
     import printer_server.drivers.screen.screen_snip
     on_load_f_init.append(
-        printer_server.drivers.screen.screen_snip.fetch_previews
+        printer_server.drivers.screen.screen_snip.screenLoad
+    )
+    on_load_f_init.append(
+        printer_server.drivers.screen.screen_snip.screenFetchPreviews
     )
 
 if "spectrometer" in config_dict.keys():

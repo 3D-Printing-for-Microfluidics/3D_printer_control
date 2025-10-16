@@ -9,7 +9,7 @@ from pathlib import Path
 from flask import request
 from functools import wraps
 from datetime import datetime
-from zipfile import ZipFile, BadZipFile
+from zipfile import ZipFile, BadZipFile, ZIP_DEFLATED
 
 import printer_server.views.home as home
 from printer_server.settings import Config
@@ -17,7 +17,7 @@ from printer_server.threading_wrapper import Thread
 from printer_server.models import PrintQueue, PrintRecord
 from printer_server.async_file_handler import async_file_hander
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
-from printer_server.print_file_validator import validate_schema, read_json, expand_json
+from printer_server.print_file_validator import validate_schema, read_json, expand_json, check_version
 from printer_server.views.calibration import (
     get_last_calibration_positions_from_logs,
 )
@@ -283,8 +283,7 @@ class PrintControl:
         )
 
     def move_build_platform(self, position_settings, layer):
-        log.warning("Base printer_control class does not have a defined bp stage. Cannot move bp")
-        return 0
+        pass
 
     def force_squeeze(self, position_settings, layer):
         log.warning("Missing loadcell_control. Cannot force_squeeze")
@@ -419,8 +418,12 @@ class PrintControl:
         self.print_start_time = datetime.now()
 
         # start printing process in a new thread
-        self.print_thread = Thread(log, name="print_control_print_worker_thread", target=self.print_worker)
-        self.print_thread.start()
+        if check_version(self.print_settings) != "v999":
+            self.print_thread = Thread(log, name="print_control_print_worker_thread", target=self.print_worker)
+            self.print_thread.start()
+        else:
+            self.print_thread = Thread(log, name="print_control_test_worker_thread", target=self.test_worker)
+            self.print_thread.start()
 
     @run_in_thread("paused", "Pause Printing")
     def pause(self):
@@ -482,6 +485,9 @@ class PrintControl:
     
     def post_print_joins(self):
         return
+    
+    def test_worker(self):
+        return
 
     def print_worker(self):
         """Do a 3D print.
@@ -532,6 +538,7 @@ class PrintControl:
             self.layer_worker(i, layer, msg)
 
         self.post_print_tasks()
+        self.post_print_joins()
 
         # finish print
         if not self.printing_paused.is_set():
@@ -739,7 +746,7 @@ class PrintControl:
     def clean_uploaded_file(self, filename):
         """Remove unwanted hidden files created by MAC OS in zipfiles."""
         temp_filename = Path(Config.UPLOAD_FOLDER) / "queue" / "temp.zip"
-        with ZipFile(filename, "r") as old_file, ZipFile(temp_filename, "w") as new_file:
+        with ZipFile(filename, "r") as old_file, ZipFile(temp_filename, "w", compression=ZIP_DEFLATED, compresslevel=6) as new_file:
             for item in old_file.infolist():
                 buffer = old_file.read(item.filename)
                 if not str(item.filename).startswith("__MACOSX/"):

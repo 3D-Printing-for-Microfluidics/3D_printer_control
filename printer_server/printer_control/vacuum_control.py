@@ -1,10 +1,14 @@
+import os
 import time
+import shutil
 import logging
+from pathlib import Path
 
+from printer_server.settings import Config
 from printer_server.extensions import socketio
 from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
-from printer_server.printer_control.print_control import PrintControl, run_in_thread
+from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 from printer_server.hardware_configuration.hardware_configuration import driver_handles, config_dict
 
 log = logging.getLogger(__name__)
@@ -24,7 +28,7 @@ class VacuumControl(PrintControl):
 
     def create_logs(self):
         super().create_logs()
-        self.mks.setup_log_file(str(self.current_job / "logs"))
+        self.mks.set_log_file(self.pressure_log)
 
     def connect_hardware(self):
         mks_thread = Thread(log, name="mks_connect_thread", target=self.mks.connect)
@@ -63,13 +67,69 @@ class VacuumControl(PrintControl):
                 log.warning("Unable to communicate with mks controller (%s)", ex, exc_info=True)
             super().planarization_step_1()
 
+    def pre_print_tasks(self):
+        if self.next_layer == 0:
+            if self.print_settings.get("Header").get("Print under vacuum", False):
+                # lower bell jar and start vacuum system
+                try:
+                    log.info("Lowering bell jar and starting vacuum system")
+                    self.mks_teensy.move_crane_bottom()  
+                    relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
+                    self.mks.set_relay_mode(relay_num, "SET")
+                    self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), True)
+                    self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), True)
+                    self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), False, force=True)
+
+                    log.info("Waiting for vacuum system to reach target pressure")
+                    bell_jar_target = config_dict["mks"]["target"][0]
+                    bell_jar_reading = self.mks.pressures[0]
+                    while bell_jar_reading > bell_jar_target:
+                        bell_jar_reading = self.mks.pressures[0]
+                        time.sleep(0.1)
+                    self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), False)
+                except Exception as ex:
+                    log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
+                    self.failed_hardware["MKS Teensy"] = self.mks_teensy
+                    raise PrintingException()
+        super().pre_print_tasks()
+
     def finish_print(self):
+        if self.print_settings.get("Header").get("Print under vacuum", False):
+            # vent vaccum system and raise bell jar
+            try:
+                log.info("Venting vacuum system")
+                relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
+                self.mks.set_relay_mode(relay_num, "CLEAR")
+                self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), False)
+                self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), False, force=True)
+                self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), True)
+
+                bell_jar_target = config_dict["mks"]["relays"]["crane"]["setpoint"]
+                bell_jar_reading = self.mks.pressures[0]
+                crane_enable = 0
+                
+                while crane_enable == 0 and bell_jar_reading < bell_jar_target:
+                    bell_jar_reading = self.mks.pressures[0]
+                    relay_settings_list = self.mks.get_all_relay_status()
+                    for k, v in config_dict["mks"]["relays"].items():
+                        if k == "crane":
+                            crane_enable = int(relay_settings_list[v["relay_num"]-1])
+                    time.sleep(1.0)
+                
+                time.sleep(15)
+
+                log.info("Venting finished, raising bell jar")
+                self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), False, force=True)
+                self.mks_teensy.move_crane_top()
+                
+            except Exception as ex:
+                log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
+        super().finish_print()
         try:
             self.mks.logging_stop()
-            self.mks.setup_log_file(None)
+            self.mks.set_log_file(None)
         except Exception as ex:
             log.critical("Unable to communicate with mks controller (%s)", ex, exc_info=True)
-        super().finish_print()
 
     def degas(self, msg):
         if msg == "run":
@@ -97,8 +157,8 @@ class VacuumControl(PrintControl):
             relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
 
             self.mks.set_relay_mode(relay_num, "SET")
-            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), True)
             self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("stirring"), True)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), True)
             self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent2"), False, force=True)
             pumping = False
             for p, w, h in zip(set_pressures, waits, hysteresis):
@@ -140,14 +200,14 @@ class VacuumControl(PrintControl):
         try:
             relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]
             self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("stirring"), False)
-            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump2"), False)
-            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent2"), True)
             self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vacuum"), False)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump2"), False, force=True)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent2"), True)
             self.mks.set_relay_mode(relay_num, "CLEAR")
-            for _ in range(150):
+            for _ in range(200):
                 if self.mks.pressures[1] >= config_dict["mks"]["atm pressure"]:
                     break
                 time.sleep(0.1)
-            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent2"), False)
+            self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent2"), False, force=True)
         except Exception as ex:
             log.warning("Error occured in degassing thread (%s)", ex, exc_info=True)

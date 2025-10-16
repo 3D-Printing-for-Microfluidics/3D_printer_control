@@ -1,3 +1,4 @@
+import time
 import logging
 
 from printer_server.threading_wrapper import Thread
@@ -17,9 +18,6 @@ class AccelerometerControl(PrintControl):
 
     def create_logs(self):
         super().create_logs()
-        async_file_hander.write(
-            self.accelerometer_log, "system_time,accel_time,data\n"
-        )
         self.accelerometer.set_log_file(self.accelerometer_log)
 
     def connect_hardware(self):
@@ -40,22 +38,13 @@ class AccelerometerControl(PrintControl):
             log.error("Accelerometer failed to initialize!")
             self.failed_hardware["Accelerometer"] = self.accelerometer
 
-    @run_in_thread("planarizing", "Planarization Step 1")
-    def planarization_step_1(self):
-        """Lower the build platform for planarization."""
-        if self.state in ["initialized", "planarized", "completed", "stopped"]:
-            try:
-                self.accelerometer.start()
-            except Exception as ex:
-                log.warning("Unable to start accelerometer (%s)", ex, exc_info=True)
-            super().planarization_step_1()
-
     def print_worker(self):
         if self.state != "printing":
             return
         if not self.accelerometer.running:
             try:
                 self.accelerometer.start()
+                time.sleep(0.5)
             except Exception as ex:
                 log.warning("Unable to start accelerometer (%s)", ex, exc_info=True)
         super().print_worker()
@@ -68,6 +57,7 @@ class AccelerometerControl(PrintControl):
     def finish_print(self):
         try:
             self.accelerometer.stop()
+            time.sleep(0.5)
             self.accelerometer.set_log_file(None)
         except Exception as ex:
             log.warning("Unable to stop accelerometer (%s)", ex, exc_info=True)

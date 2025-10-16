@@ -27,10 +27,6 @@ class LoadcellControl(PrintControl):
 
     def create_logs(self):
         super().create_logs()
-
-        async_file_hander.write(
-            self.loadcell_log, "system_time,loadcell_time,raw_data,newtons\n"
-        )
         self.loadcell.set_log_file(self.loadcell_log)
 
     def loadcell_graph_loop(self):
@@ -116,9 +112,6 @@ class LoadcellControl(PrintControl):
         """Lower the build platform for planarization."""
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             try:
-                async_file_hander.write(
-                    self.loadcell_planarization_log, "system_time,loadcell_time,raw_data,newtons\n"
-                )
                 self.loadcell.set_log_file(self.loadcell_planarization_log)
 
                 self.loadcell.start()   
@@ -221,11 +214,20 @@ class LoadcellControl(PrintControl):
         backup_path = Path(Config.UPLOAD_FOLDER)/"planarization_log.backup"
         if os.path.exists(self.loadcell_planarization_log):
             shutil.move(self.loadcell_planarization_log, backup_path)
+
         super().start(job_id)
 
         # restore planarization log
         if os.path.exists(backup_path):
             shutil.move(backup_path, self.loadcell_planarization_log)
+
+    def pre_print_tasks(self):
+        if self.next_layer == 0:
+            if self.print_settings.get("Header").get("Print under vacuum", False):
+                # for HR5 vacuum we need to redo step 3
+                log.info("Repeating planarization step 3")
+                self.planarization_step_3()
+        super().pre_print_tasks()
 
     def print_worker(self):
         if self.state != "printing":
@@ -257,6 +259,7 @@ class LoadcellControl(PrintControl):
             self.loadcell.stop()
             self.loadcell_thread = None
             home.clear_loadcell_graph()
+            time.sleep(0.5)
             self.loadcell.set_log_file(None)
         except Exception as ex:
             log.critical("Unable to stop loadcell (%s)", ex, exc_info=True)

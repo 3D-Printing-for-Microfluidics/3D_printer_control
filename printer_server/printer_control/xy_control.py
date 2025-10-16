@@ -52,16 +52,13 @@ class XYControl(PrintControl):
                 raise PrintingException()
             super().planarization_step_1()
 
-    def pre_print_tasks(self):
-        super().pre_print_tasks()
-
+    def pre_exposure_tasks(self, settings, light_engine):
+        """Move X, Y, and Focus stages to exposure positions"""
         defaults_layer_settings = self.print_settings.get("Default layer settings")
         default_image_settings = defaults_layer_settings.get("Image settings")
         self.default_x_offset = default_image_settings.get("Image x offset (um)", 0)
         self.default_y_offset = default_image_settings.get("Image y offset (um)", 0)
 
-    def pre_exposure_tasks(self, settings, light_engine):
-        """Move X, Y, and Focus stages to exposure positions"""
         x_offset = float(settings.get("Image x offset (um)", self.default_x_offset))
         y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
         screen_light_engine = self.convert_le_to_screen_le(light_engine)

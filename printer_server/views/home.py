@@ -19,14 +19,28 @@ log.setLevel(logging.INFO)
 
 parent_classes = []
 
+from printer_server.printer_control.test_control import TestControl
+parent_classes.append(TestControl)   
+
 # film gpio needs to be before bp
 if "gpio" in config_dict:
+    gpio_imported = False
     if "film_pin" in config_dict["gpio"]:
         from printer_server.printer_control.gpio_control import FilmGPIOControl
         parent_classes.append(FilmGPIOControl)   
-    else:
+        gpio_imported = True
+    if "wintech_fan_pin1" in config_dict["gpio"]:
+        from printer_server.printer_control.gpio_control import WintechFanGPIOControl
+        parent_classes.append(WintechFanGPIOControl)   
+        gpio_imported = True
+    if not gpio_imported:
         from printer_server.printer_control.gpio_control import GPIOControl
         parent_classes.append(GPIOControl)   
+
+# MKS needs to be before loadcell
+if "mks" in config_dict.keys() and "mks_teensy" in config_dict.keys():
+    from printer_server.printer_control.vacuum_control import VacuumControl
+    parent_classes.append(VacuumControl)
 
 # Loadcell needs to be before bp
 if "loadcell" in config_dict:
@@ -66,10 +80,6 @@ if "spectrometer" in config_dict and "photodiode" in config_dict:
 if "ttr_stage" in config_dict["stages"]:
     from printer_server.printer_control.ttr_control import TTRControl
     parent_classes.append(TTRControl)
-
-if "mks" in config_dict.keys() and "mks_teensy" in config_dict.keys():
-    from printer_server.printer_control.vacuum_control import VacuumControl
-    parent_classes.append(VacuumControl)
 
 if "xy_stage" in config_dict["stages"]:
     from printer_server.printer_control.xy_control import XYControl

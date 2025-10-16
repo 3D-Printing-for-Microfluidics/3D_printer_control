@@ -88,18 +88,25 @@ class LoadCell(USBSerial):
         Parameters:
             filename    - local path and filename (current_job/loadcell_data.txt)
         """
-        self.log_file = filename
+        if self.log_file is None and filename is not None:
+            self.log_file = filename
+            async_file_hander.write(
+                self.log_file, "system_time,loadcell_time,raw_data,newtons\n"
+            )
+        elif self.log_file is not None and filename is None:
+            self.log_file = None
 
     def pause(self):
         """
         Pauses the loadcell and loadcell thread.
         """
-        self.loadcell_pause()
-
         if self.running:
             self.running = False
             self.thread.join()
             self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
+
+        time.sleep(0.1)
+        self.loadcell_pause()
         time.sleep(0.1)
         self.flush_buffers()
         self.log.info("Loadcell paused")
@@ -108,13 +115,15 @@ class LoadCell(USBSerial):
         """
         Stops the loadcell and loadcell thread. Saves data to file
         """
-        self.loadcell_stop()
+        
 
         if self.running:
             self.running = False
             self.thread.join()
             self.thread = Thread(self.log, name="loadcell_loop_thread", target=self.loop)
 
+        time.sleep(0.1)
+        self.loadcell_stop()
         time.sleep(0.1)
         self.flush_buffers()
         self.log.info("Loadcell stopped")

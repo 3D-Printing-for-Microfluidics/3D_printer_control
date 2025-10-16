@@ -119,10 +119,10 @@ class MKS946(USBSerial):
                 pass
         super().disconnect()
 
-    def setup_log_file(self, filename):
+    def set_log_file(self, filename):
         """Set the log file."""
         if self.pressure_log is None and filename is not None:
-            self.pressure_log = str(Path(filename) / "pressure_data.csv")
+            self.pressure_log = filename
             async_file_hander.write(
                 self.pressure_log, "timestamp,pressure1,pressure2\n"
             )

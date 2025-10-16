@@ -86,7 +86,7 @@ class LightEngineControl(ScreenControl):
             name=f"{le}_control_setup_thread",
             target=light_engine_driver.setup_exposure,
             args=[self.exposure_time_ms],
-            kwargs={"led_power": self.power, "led_num": led},
+            kwargs={"led_power": self.power, "is_grayscale_corrected": settings.get("Do light grayscale correction", False), "led_num": led},
         )
         self.light_engine_threads.start()
         super().pre_exposure_tasks(settings, light_engine)
