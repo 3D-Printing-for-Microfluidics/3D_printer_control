@@ -85,7 +85,8 @@ class VacuumControl(PrintControl):
                     bell_jar_reading = self.mks.pressures[0]
                     while bell_jar_reading > bell_jar_target:
                         bell_jar_reading = self.mks.pressures[0]
-                        time.sleep(1.0)
+                        time.sleep(0.1)
+                    self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), False)
                 except Exception as ex:
                     log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
                     self.failed_hardware["MKS Teensy"] = self.mks_teensy

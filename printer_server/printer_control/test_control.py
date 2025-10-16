@@ -24,6 +24,15 @@ log.setLevel(logging.INFO)
 # sample_rate_hz = 1/300
 # time_to_process = 0.0033
 
+plt.rcParams.update({
+    'font.size': 30,         # Base font size for most text
+    'axes.titlesize': 36,    # Title size
+    'axes.labelsize': 30,    # X and Y axis labels
+    'xtick.labelsize': 30,   # X tick labels
+    'ytick.labelsize': 30,   # Y tick labels
+    'legend.fontsize': 36,   # Legend text
+})
+
 class TestControl(PrintControl):
     def test_worker(self):
         self.printing_stopped.clear()
@@ -635,7 +644,7 @@ class TestControl(PrintControl):
             # x_range = range(5, x_px, 530)
             # y_range = range(5, y_px, 510)
 
-        self.light_engines[self.light_engine].setup_exposure(1000, led_power=100, repeat=0, is_grayscale_corrected=False, led_num=self.led_num)
+        self.light_engines[self.light_engine].setup_exposure(1000, led_power=100, repeat=0, is_grayscale_corrected=(correction_path != ""), led_num=self.led_num)
         self.light_engines[self.light_engine].perform_exposure()
 
         spot_value = 255
@@ -863,12 +872,12 @@ class TestControl(PrintControl):
             image = Image.fromarray(uint16_array, mode='L')  # 'L' mode for grayscale
             image.save(str(directory / save_directory_name / 'stddev grid fit px.png'))
             
-            tmp = 32767*stddev_data/np.max(stddev_data)
-            tmp[0,0] = 65535
-            tmp[0,1] = 0
-            uint16_array = tmp.astype(np.uint16)
-            image = Image.fromarray(uint16_array, mode='I;16')  # 'L' mode for grayscale
-            image.save(str(directory / save_directory_name / 'stddev grid fit normalized.png'))
+            # tmp = 32767*stddev_data/np.max(stddev_data)
+            # tmp[0,0] = 65535
+            # tmp[0,1] = 0
+            # uint16_array = tmp.astype(np.uint16)
+            # image = Image.fromarray(uint16_array, mode='I;16')  # 'L' mode for grayscale
+            # image.save(str(directory / save_directory_name / 'stddev grid fit normalized.png'))
             
             tmp = stddev_data*1000
             uint16_array = tmp.astype(np.uint16)
@@ -881,12 +890,12 @@ class TestControl(PrintControl):
             image = Image.fromarray(uint16_array, mode='L')  # 'L' mode for grayscale
             image.save(str(directory / save_directory_name / 'grid fit px.png'))
 
-            tmp = 32767*fit_data/np.max(fit_data)
-            tmp[0,0] = 65535
-            tmp[0,1] = 0
-            uint16_array = tmp.astype(np.uint16)
-            image = Image.fromarray(uint16_array, mode='I;16')  # 'L' mode for grayscale
-            image.save(str(directory / save_directory_name / 'grid fit normalized.png'))
+            # tmp = 32767*fit_data/np.max(fit_data)
+            # tmp[0,0] = 65535
+            # tmp[0,1] = 0
+            # uint16_array = tmp.astype(np.uint16)
+            # image = Image.fromarray(uint16_array, mode='I;16')  # 'L' mode for grayscale
+            # image.save(str(directory / save_directory_name / 'grid fit normalized.png'))
 
             tmp = fit_data*fit_max*1000
             uint16_array = tmp.astype(np.uint16)
@@ -928,7 +937,7 @@ class TestControl(PrintControl):
             stats_df.to_csv(str(directory / save_directory_name / "stats.csv"), index=False)
 
         def save_violin_plot(data, name, scale=None):
-            plt.figure(figsize=(8, 6))
+            plt.figure(figsize=(16, 12))
             plt.violinplot(data, showmeans=True)
             plt.title(f"Violin Plot of {name}")
             if scale is not None:
@@ -978,9 +987,9 @@ class TestControl(PrintControl):
         else:
             violin_min = np.min(irradiance_map)/1.1
             violin_max = np.max(irradiance_map)*1.1
-        save_violin_plot(fit_data.flatten(), "irradiance", scale=(violin_min, violin_max))
-        save_violin_plot(fit_data_cropped.flatten(), "irradiance_cropped_10", scale=(violin_min, violin_max))
-        save_violin_plot(fit_data_cropped2.flatten(), "irradiance_cropped_100", scale=(violin_min, violin_max))
+        save_violin_plot(fit_data.flatten(), f"{save_directory_name.capitalize()} Irradiance", scale=(violin_min, violin_max))
+        save_violin_plot(fit_data_cropped.flatten(), f"{save_directory_name.capitalize()} Irradiance_cropped_10", scale=(violin_min, violin_max))
+        save_violin_plot(fit_data_cropped2.flatten(), f"{save_directory_name.capitalize()} Irradiance_cropped_100", scale=(violin_min, violin_max))
 
         # normalize data
         normalized_fit_data = normalize_data(fit_data)
@@ -997,16 +1006,104 @@ class TestControl(PrintControl):
     def capture_and_process_grayscale_correction(self):
         self.find_photodiode_center_and_focus()
         self.find_px_size()
+        # self.x_px_size = 0.00756
+        # self.y_px_size = 0.00756
 
         filename = "uncorrected_test_data.csv"
         self.measure_irradiance_grid2(fine=True, save_name=filename)
         save_directory_name = "uncorrected"
         irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
 
+        if "grayscale_normalization_factor" not in self.light_engines[self.light_engine].config_dict.keys():
+            self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"] = self.light_engines[self.light_engine].config_dict["normalization_factor"].copy()
+        else:
+            self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num] = self.light_engines[self.light_engine].config_dict["normalization_factor"][self.led_num]
+        filename = "corrected_nonnormalized_test_data.csv"
+        self.measure_irradiance_grid2(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'))
+        save_directory_name = "corrected_nonnormalized"
+        nonnormalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
+        self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num] = round(self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num]*np.mean(irradiance_map)/np.mean(nonnormalized_irradiance_map),3)
+        filename = "corrected_normalized_test_data.csv"
+        self.measure_irradiance_grid2(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'))
+        save_directory_name = "corrected_normalized"
+        normalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
+        log.info("Pre mean irradiance: %s, Post mean irradiance: %s, Updated to: %s", np.mean(irradiance_map), np.mean(nonnormalized_irradiance_map), np.mean(normalized_irradiance_map))
+
+
         filename = "corrected_test_data.csv"
         self.measure_irradiance_grid2(fine=True, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'))
         scale_factor = 1.0 # used if normalization factor was changed...
         save_directory_name = "corrected"
-        self._createCorrectionImage(filename, save_directory_name, irradiance_map/scale_factor)
+        final_irradiance_map = self._createCorrectionImage(filename, save_directory_name, irradiance_map/scale_factor)
+
+        # Combine datasets for global min/max and histogram
+        combined_fit_data = np.concatenate([irradiance_map.flatten(), final_irradiance_map.flatten()])
+
+        # Compute global min and max for grayscale mapping
+        global_min = np.min(combined_fit_data)
+        global_max = np.max(combined_fit_data)
+
+        # Save grayscale remapped 8-bit images for both datasets
+        def save_remapped_grayscale(data, save_path, vmin, vmax):
+            # Clip and normalize
+            clipped = np.clip(data, vmin, vmax)
+            normalized = ((clipped - vmin) / (vmax - vmin) * 255).astype(np.uint8)
+            img = Image.fromarray(normalized, mode='L')
+            img.save(save_path)
+
+        save_remapped_grayscale(irradiance_map,
+                                self.current_job / "logs" / "uncorrected" / "grid fit remapped.png",
+                                global_min, global_max)
+
+        save_remapped_grayscale(final_irradiance_map,
+                                self.current_job / "logs" / "corrected" / "grid fit remapped.png",
+                                global_min, global_max)
+
+        def plot_histogram_dual_yaxis(uncorrected, corrected, out_path, min_val, max_val):
+            """
+            Plot histogram with:
+            - Primary Y-axis = pixel count
+            - Secondary Y-axis = piecewise function for remap to 8-bit gray levels.
+            - Zoomed option centers around [min_val, max_val] with margin
+            """
+            span = max_val - min_val
+            margin = span * 0.05
+            x_min = min_val - margin
+            x_max = max_val + margin
+
+            fig, ax1 = plt.subplots(figsize=(20, 12))
+            bins = np.linspace(x_min, x_max, 256)
+
+            # Histograms for both images
+            ax1.hist(uncorrected, bins=bins, alpha=0.6, color='blue', edgecolor='black', label='Uncorrected')
+            ax1.hist(corrected, bins=bins, alpha=0.6, color='red', edgecolor='black', label='Corrected')
+
+            ax1.set_xlabel("Irradiance (mW/cm²)")
+            ax1.set_ylabel("Pixel Count")
+            ax1.set_title("Grayscale Mapping for Uncorrected and Corrected Data")
+            ax1.legend(loc="upper left")
+
+            # Secondary Y-axis: piecewise mapping
+            ax2 = ax1.twinx()
+
+            # Define piecewise function for visualization
+            x_vals = np.linspace(x_min, x_max, 500)  # μW/cm²
+            gray_vals = np.piecewise(
+                x_vals,
+                [x_vals < min_val, (x_vals >= min_val) & (x_vals <= max_val), x_vals > max_val],
+                [0, lambda x: (x - min_val) / (max_val - min_val) * 255, 255]
+            )
+
+            ax2.plot(x_vals, gray_vals, color='green', linewidth=2, label="Gray Level Mapping")
+            ax2.set_ylabel("Gray Level (0-255)")
+            ax2.set_ylim(0, 255)
+            ax2.legend(loc="upper right")
+
+            plt.xlim(x_min, x_max)
+            plt.tight_layout()
+            plt.savefig(out_path, dpi=300)
+            plt.close()
+
+        plot_histogram_dual_yaxis(irradiance_map.flatten(), final_irradiance_map.flatten(), self.current_job / "logs" / "histogram.png", global_min, global_max)
 
         shutil.copy(self.current_job / 'logs/uncorrected/correction_image.png', self.current_job / 'logs/correction_image.png')

@@ -31,9 +31,9 @@
             "Build Platform": 0
         },
         "fiber_visitech": {
-            "X": -86.308,
-            "Y": 68.815,
-            "Focus": 0.02,
+            "X": -86.492,
+            "Y": 68.282,
+            "Focus": -0.025,
             "Build Platform": 0
         }
     },
@@ -79,14 +79,32 @@
             "2": 50
         },
         "limits": {
-            "0": [null,null],
-            "1": [null,85],
-            "2": [null,34]
+            "0": [
+                null,
+                null
+            ],
+            "1": [
+                null,
+                85
+            ],
+            "2": [
+                null,
+                34
+            ]
         },
         "calibration_limits": {
-            "0": [null,null],
-            "1": [null,null],
-            "2": [null,26.000]
+            "0": [
+                null,
+                null
+            ],
+            "1": [
+                null,
+                null
+            ],
+            "2": [
+                null,
+                26.000
+            ]
         },
         "calibration_position": 0,
         "bottom_position": 27.5,
@@ -109,10 +127,22 @@
             "Rotate"
         ],
         "limits": {
-            "Z": [null,10],
-            "U": [null,null],
-            "V": [null,null],
-            "W": [null,null]
+            "Z": [
+                null,
+                10
+            ],
+            "U": [
+                null,
+                null
+            ],
+            "V": [
+                null,
+                null
+            ],
+            "W": [
+                null,
+                null
+            ]
         },
         "auto_repositioning": true
     },
@@ -125,8 +155,8 @@
         "address": "253",
         "atm pressure": 650,
         "target": [
-            0.20,
-            0.035
+            1,
+            0.02
         ],
         "relays": {
             "crane": {
