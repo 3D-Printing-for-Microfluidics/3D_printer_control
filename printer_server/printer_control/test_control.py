@@ -300,14 +300,29 @@ class TestControl(PrintControl):
 
         self._update_progress(6,6,progress)
     
-    def find_photodiode_center_and_focus(self, find_corners=False, progress=(0,100)):
-        self.test_log = str(self.current_job / "logs" / "xyz_test_data.csv")
+    def find_photodiode_center_and_focus(self, position="center", rough_pass=True, log_file="xyz_test_data.csv", progress=(0,100)):
+        # initial positioning
 
-        if find_corners:
+        r_img_1 = "v_150px_vert_cent.png"
+        r_img_2 = "v_150px_horz_cent.png"
+        f_img_1 = "v_14px_vert.png"
+        f_img_2 = "v_14px_horz.png"
+        f_img_3 = "v_4px_vert.png"
+        f_img_4 = "v_4px_horz.png"
+
+        if position == "-x":
+            r_img_1 = "v_150px_vert_right.png"
+        elif position == "+x":
+            r_img_1 = "v_150px_vert_left.png"
+        elif position == "-y":
+            r_img_2 = "v_150px_horz_top.png"
+        elif position == "+y":
+            r_img_2 = "v_150px_horz_bottom.png"
+        elif position == "corner":
             self.test_photodiode_centering(
                 initial_positioning=False, 
-                rough_pass=True,
-                log_file="xyz_test_data.csv", 
+                rough_pass=rough_pass,
+                log_file=log_file, 
                 orders=["X", "Y", "X", "Y"], 
                 step_sizes=[0.01, 0.01, 0.0025, 0.0025], 
                 step_counts=[20, 20, 20, 20], 
@@ -318,52 +333,51 @@ class TestControl(PrintControl):
                 use_positions=[True, True, True, True], 
                 progress=progress
             )
-            
-        else: 
-            if self.light_engine_alignment == "X":
-                r_img_1 = "v_150px_vert_cent.png"
-                r_img_2 = "v_150px_horz_cent.png"
-                f_img_1 = "v_14px_vert.png"
-                f_img_2 = "v_14px_horz.png"
-                f_img_3 = "v_4px_vert.png"
-                f_img_4 = "v_4px_horz.png"
-            else:
-                r_img_1 = "v_150px_horz_cent.png"
-                r_img_2 = "v_150px_vert_cent.png"
-                f_img_1 = "v_14px_horz.png"
-                f_img_2 = "v_14px_vert.png"
-                f_img_3 = "v_4px_horz.png"
-                f_img_4 = "v_4px_vert.png"
+            return
+        elif position != "center":
+            log.warning("Invalid position (%s) in find_photodiode_center_and_focus", position)
 
-            self.test_photodiode_centering(
-                initial_positioning=True, 
-                rough_pass=True,
-                log_file=f"xyz_test_data.csv",
-                orders=["X","Y","X","Y","Focus","X","Y","Focus","X","Y","Focus","X","Y","Focus"], 
-                step_sizes=[1.0,1.0,0.1,0.1,0.25,0.01,0.01,0.025,0.001,0.001,0.0025,0.001,0.001,0.0025], 
-                step_counts=[20,20,20,20,40,20,20,50,20,20,50,20,20,50], 
-                images=[
-                    [r_img_1],
-                    [r_img_2],
-                    [f_img_1],
-                    [f_img_2],
-                    ["v_14px_cross.png"],
-                    [f_img_3],
-                    [f_img_4],
-                    ["v_4px_cross.png"],
-                    ["v_1px_ring_inside.png"],
-                    ["v_1px_ring_inside.png"],
-                    ["v_2px_ring_inside.png","v_2px_ring_outside.png"],
-                    ["v_1px_ring_inside.png"],
-                    ["v_1px_ring_inside.png"],
-                    ["v_2px_ring_inside.png","v_2px_ring_outside.png"]
-                ], 
-                use_find_peaks=[False,False,False,False,False,False,False,False,False,False,False,False,False,False], 
-                use_fits=[False,False,False,False,True,False,False,True,False,False,True,False,False,True], 
-                adjust_coords=[True,True,True,True,True,True,True,True,True,True,True,True,True,True],
-                use_positions=[True,True,True,True,True,True,True,True,True,True,True,True,True,True],
-                progress=progress
-            )
+        
+        if self.light_engine_alignment == "Y":
+            tmp = r_img_1
+            r_img_1 = r_img_2
+            r_img_2 = tmp
+            tmp = f_img_1
+            f_img_1 = f_img_2
+            f_img_2 = tmp
+            tmp = f_img_3
+            f_img_3 = f_img_4
+            f_img_4 = tmp
+
+        self.test_photodiode_centering(
+            initial_positioning=False, 
+            rough_pass=rough_pass,
+            log_file=log_file,
+            orders=["X","Y","X","Y","Focus","X","Y","Focus","X","Y","Focus","X","Y","Focus"], 
+            step_sizes=[1.0,1.0,0.1,0.1,0.25,0.01,0.01,0.025,0.001,0.001,0.0025,0.001,0.001,0.0025], 
+            step_counts=[20,20,20,20,40,20,20,50,20,20,50,20,20,50], 
+            images=[
+                [r_img_1],
+                [r_img_2],
+                [f_img_1],
+                [f_img_2],
+                ["v_14px_cross.png"],
+                [f_img_3],
+                [f_img_4],
+                ["v_4px_cross.png"],
+                ["v_1px_ring_inside.png"],
+                ["v_1px_ring_inside.png"],
+                ["v_2px_ring_inside.png","v_2px_ring_outside.png"],
+                ["v_1px_ring_inside.png"],
+                ["v_1px_ring_inside.png"],
+                ["v_2px_ring_inside.png","v_2px_ring_outside.png"]
+            ], 
+            use_find_peaks=[False for _ in range(14)], 
+            use_fits=[False,False,False,False,True,False,False,True,False,False,True,False,False,True], 
+            adjust_coords=[position == "center" for _ in range(14)],
+            use_positions=[True for _ in range(14)],
+            progress=progress
+        )
 
     def _excel_like_polyfit(self, x, y, degree):
         x = np.array(x, dtype=float)
@@ -1314,10 +1328,6 @@ class TestControl(PrintControl):
 
         self.test_log = str(self.current_job / "logs" / f"keyence_{axis}.csv")
 
-        target_offset = self.calibration_positions.get(
-            f"keyence_{self.light_engine}_{axis.lower()}", 0
-        )
-
         step = 0
         if check:
             iterations += 1
@@ -1361,26 +1371,20 @@ class TestControl(PrintControl):
             log.info(f"d{axis} average: {diff}")
             async_file_hander.write(self.test_log, f"d{axis} average: {diff}\n")
 
-            log.info(f"{axis} target rad: {target_offset}")
-            async_file_hander.write(self.test_log, f"{axis} target rad: {target_offset}\n")
             offset = math.atan(diff / (measurement_distance))
             log.info(f"{axis} rad: {offset}")
             async_file_hander.write(self.test_log, f"{axis} rad: {offset}\n")
-            # find differece between target offset and offset
-            dOffset = target_offset - offset
-            log.info(f"d{axis} rad: {dOffset}")
-            async_file_hander.write(self.test_log, f"d{axis} rad: {dOffset}\n")
             # add difference to tilt stage position
             if not(check and i == iterations - 1):
                 curOffset = self.ttr_stage.getTTRPosition(axis)
                 log.info(f"curOffset: {curOffset}")
                 async_file_hander.write(self.test_log, f"curOffset: {curOffset}\n")
-                log.info(f"New {axis} offset: {curOffset + dOffset}")
-                async_file_hander.write(self.test_log, f"New {axis} offset: {curOffset + dOffset}\n")
-                self.ttr_stage.absMoveTTR(rad=curOffset + dOffset, axis=axis)
+                log.info(f"New {axis} offset: {curOffset - offset}")
+                async_file_hander.write(self.test_log, f"New {axis} offset: {curOffset - offset}\n")
+                self.ttr_stage.absMoveTTR(rad=curOffset - offset, axis=axis)
 
                 last_positions = get_last_calibration_positions_from_logs()
-                last_positions[axis.lower()] = float(f"{(curOffset + dOffset)*1000:.1f}")
+                last_positions[axis.lower()] = float(f"{(curOffset - offset)*1000:.1f}")
                 write_to_position_log(last_positions)
         async_file_hander.write(self.test_log, f"\n")
 
@@ -1423,17 +1427,13 @@ class TestControl(PrintControl):
                 leg_count += 1
             steps_in_leg += 1  # after two legs, increase leg length
 
-    def photodidode_tip_tilt_correction(self, axis="", iterations=2, rough_pass=True, check=True, measurement_distance=10852.8, progress=(0,100)):
+    def photodiode_tip_tilt_correction(self, axis="", iterations=2, rough_pass=True, check=True, measurement_distance=10852.8, progress=(0,100)):
         if axis == "Tilt":
             x, y = 0, measurement_distance / 1000 / 2
         elif axis == "Tip":
-            x, y = measurement_distance / 1000 / 2, 0
+            x, y = -measurement_distance / 1000 / 2, 0
         else:
             raise ValueError("Axis must be either 'Tilt' or 'Tip'.")
-
-        target_offset = self.calibration_positions.get(
-            f"keyence_{self.light_engine}_{axis.lower()}", 0
-        )
 
         if check:
             iterations += 1
@@ -1461,64 +1461,77 @@ class TestControl(PrintControl):
                 # spiral until we are on the image
                 if rough_pass:
                     self.spiral_until_threshold()
+                
                 if axis == "Tilt":
                     if Y < 0:
-                        r_img_1 = "v_150px_vert_cent.png"
-                        r_img_2 = "v_150px_horz_top.png"
+                        position = "-y"
                     else:
-                        r_img_1 = "v_150px_vert_cent.png"
-                        r_img_2 = "v_150px_horz_bottom.png"
+                        position = "+y"
                 else:
                     if X < 0:
-                        r_img_1 = "v_150px_vert_right.png"
-                        r_img_2 = "v_150px_horz_cent.png"
+                        position = "-x"
                     else:
-                        r_img_1 = "v_150px_vert_left.png"
-                        r_img_2 = "v_150px_horz_cent.png"
+                        position = "+x"
+
+                self.find_photodiode_center_and_focus(position=position, rough_pass=True, log_file=f"photodiode_{axis}_{i}.csv", progress=self._subdivide_progress(step, (iterations*2), progress))
+                # if axis == "Tilt":
+                #     if Y < 0:
+                #         r_img_1 = "v_150px_vert_cent.png"
+                #         r_img_2 = "v_150px_horz_top.png"
+                #     else:
+                #         r_img_1 = "v_150px_vert_cent.png"
+                #         r_img_2 = "v_150px_horz_bottom.png"
+                # else:
+                #     if X < 0:
+                #         r_img_1 = "v_150px_vert_right.png"
+                #         r_img_2 = "v_150px_horz_cent.png"
+                #     else:
+                #         r_img_1 = "v_150px_vert_left.png"
+                #         r_img_2 = "v_150px_horz_cent.png"
                 
 
-                if self.light_engine_alignment == "X":
-                    f_img_1 = "v_14px_vert.png"
-                    f_img_2 = "v_14px_horz.png"
-                    f_img_3 = "v_4px_vert.png"
-                    f_img_4 = "v_4px_horz.png"
-                else:
-                    tmp = r_img_1
-                    r_img_1 = r_img_2
-                    r_img_2 = tmp
-                    f_img_1 = "v_14px_horz.png"
-                    f_img_2 = "v_14px_vert.png"
-                    f_img_3 = "v_4px_horz.png"
-                    f_img_4 = "v_4px_vert.png"
+                # if self.light_engine_alignment == "X":
+                #     f_img_1 = "v_14px_vert.png"
+                #     f_img_2 = "v_14px_horz.png"
+                #     f_img_3 = "v_4px_vert.png"
+                #     f_img_4 = "v_4px_horz.png"
+                # else:
+                #     tmp = r_img_1
+                #     r_img_1 = r_img_2
+                #     r_img_2 = tmp
+                #     f_img_1 = "v_14px_horz.png"
+                #     f_img_2 = "v_14px_vert.png"
+                #     f_img_3 = "v_4px_horz.png"
+                #     f_img_4 = "v_4px_vert.png"
 
-                self.test_photodiode_centering(
-                    initial_positioning=False, 
-                    rough_pass=rough_pass,
-                    log_file=f"photodiode_{axis}_{i}.csv",
-                    orders=["X","Y","X","Y","Focus","X","Y","Focus","X","Y","Focus","X","Y","Focus"], 
-                    step_sizes=[1.0,1.0,0.1,0.1,0.25,0.01,0.01,0.025,0.001,0.001,0.0025,0.001,0.001,0.0025], 
-                    step_counts=[20,20,20,20,40,20,20,50,20,20,50,20,20,50], 
-                    images=[
-                        [r_img_1],
-                        [r_img_2],
-                        [f_img_1],
-                        [f_img_2],
-                        ["v_14px_cross.png"],
-                        [f_img_3],
-                        [f_img_4],
-                        ["v_4px_cross.png"],
-                        ["v_1px_ring_inside.png"],
-                        ["v_1px_ring_inside.png"],
-                        ["v_2px_ring_inside.png","v_2px_ring_outside.png"],
-                        ["v_1px_ring_inside.png"],
-                        ["v_1px_ring_inside.png"],
-                        ["v_2px_ring_inside.png","v_2px_ring_outside.png"]
-                    ], 
-                    use_find_peaks=[False,False,False,False,False,False,False,False,False,False,False,False,False,False], 
-                    use_fits=[False,False,False,False,True,False,False,True,False,False,True,False,False,True], 
-                    adjust_coords=[False,False,False,False,False,False,False,False,False,False,False,False,False,False],
-                    use_positions=[True,True,True,True,True,True,True,True,True,True,True,True,True,True],
-                    progress=self._subdivide_progress(step, (iterations*2), progress))
+                # self.test_photodiode_centering(
+                #     initial_positioning=False, 
+                #     rough_pass=rough_pass,
+                #     log_file=f"photodiode_{axis}_{i}.csv",
+                #     orders=["X","Y","X","Y","Focus","X","Y","Focus","X","Y","Focus","X","Y","Focus"], 
+                #     step_sizes=[1.0,1.0,0.1,0.1,0.25,0.01,0.01,0.025,0.001,0.001,0.0025,0.001,0.001,0.0025], 
+                #     step_counts=[20,20,20,20,40,20,20,50,20,20,50,20,20,50], 
+                #     images=[
+                #         [r_img_1],
+                #         [r_img_2],
+                #         [f_img_1],
+                #         [f_img_2],
+                #         ["v_14px_cross.png"],
+                #         [f_img_3],
+                #         [f_img_4],
+                #         ["v_4px_cross.png"],
+                #         ["v_1px_ring_inside.png"],
+                #         ["v_1px_ring_inside.png"],
+                #         ["v_2px_ring_inside.png","v_2px_ring_outside.png"],
+                #         ["v_1px_ring_inside.png"],
+                #         ["v_1px_ring_inside.png"],
+                #         ["v_2px_ring_inside.png","v_2px_ring_outside.png"]
+                #     ], 
+                #     use_find_peaks=[False,False,False,False,False,False,False,False,False,False,False,False,False,False], 
+                #     use_fits=[False,False,False,False,True,False,False,True,False,False,True,False,False,True], 
+                #     adjust_coords=[False,False,False,False,False,False,False,False,False,False,False,False,False,False],
+                #     use_positions=[True,True,True,True,True,True,True,True,True,True,True,True,True,True],
+                #     progress=self._subdivide_progress(step, (iterations*2), progress))
                 reading = self.focus_stage.getFocusPosition()*1000
                 readings.append(reading)
                 step += 1
@@ -1535,25 +1548,19 @@ class TestControl(PrintControl):
             log.info(f"d{axis} average: {diff}")
             async_file_hander.write(self.test_log, f"d{axis} average: {diff}\n")
 
-            log.info(f"{axis} target rad: {target_offset}")
-            async_file_hander.write(self.test_log, f"{axis} target rad: {target_offset}\n")
             offset = math.atan(diff / (measurement_distance))
             log.info(f"{axis} rad: {offset}")
             async_file_hander.write(self.test_log, f"{axis} rad: {offset}\n")
-            # find differece between target offset and offset
-            dOffset = target_offset - offset
-            log.info(f"d{axis} rad: {dOffset}")
-            async_file_hander.write(self.test_log, f"d{axis} rad: {dOffset}\n")
 
             if not(check and i == iterations - 1):
                 # add difference to tilt stage position
                 curOffset = self.ttr_stage.getTTRPosition(axis)
                 log.info(f"curOffset: {curOffset}")
                 async_file_hander.write(self.test_log, f"curOffset: {curOffset}\n")
-                log.info(f"New {axis} offset: {curOffset + dOffset}")
-                async_file_hander.write(self.test_log, f"New {axis} offset: {curOffset + dOffset}\n")
-                self.ttr_stage.absMoveTTR(rad=curOffset + dOffset, axis=axis)
+                log.info(f"New {axis} offset: {curOffset - offset}")
+                async_file_hander.write(self.test_log, f"New {axis} offset: {curOffset - offset}\n")
+                self.ttr_stage.absMoveTTR(rad=curOffset - offset, axis=axis)
 
                 last_positions = get_last_calibration_positions_from_logs()
-                last_positions[axis.lower()] = float(f"{(curOffset + dOffset)*1000:.1f}")
+                last_positions[axis.lower()] = float(f"{(curOffset - offset)*1000:.1f}")
                 write_to_position_log(last_positions)
