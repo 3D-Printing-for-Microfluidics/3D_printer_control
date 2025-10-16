@@ -66,8 +66,8 @@ if "accelerometer" in config_dict:
 
 # keyence needs to be before focus
 if "keyence" in config_dict:
-    from printer_server.printer_control.keyence_control import KeyenceControl
-    parent_classes.append(KeyenceControl)
+    from printer_server.printer_control.keyence_focus_control import KeyenceFocusControl
+    parent_classes.append(KeyenceFocusControl)
 
 if "focus_stage" in config_dict["stages"]:
     from printer_server.printer_control.focus_control import FocusControl
