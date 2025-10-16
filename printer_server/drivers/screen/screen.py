@@ -71,6 +71,7 @@ class Screen:
 
         except (OSError, FileNotFoundError):
             self.log.warning("Image not found, drawing white")
+            self.log.info("\t%s", img_path)
             self.image = Image.new(mode="L", size=self.resolution, color=255)
         self.tk_image = ImageTk.PhotoImage(self.image)
         self.canvas.itemconfig(self.canvas_image, image=self.tk_image)
