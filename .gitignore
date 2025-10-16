@@ -16,9 +16,13 @@ slices/
 error.txt
 upload/current_job/
 upload/print_history/
+upload/queue/
+upload/calibration_images/
 rpi/load_cell_print_file*
 rpi/encoder_print_file*
 rpi/encoder_initialization*
 rpi/encoder_planarization*
 logs/
 .idea/
+printer_server/drivers/loadcell/firmware/loadcell/build/
+printer_server/drivers/planarization/firmware/planarization/build/
