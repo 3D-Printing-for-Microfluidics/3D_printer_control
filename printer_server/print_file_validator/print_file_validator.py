@@ -635,7 +635,7 @@ def validate_negative_layer_thickness(print_settings):
                 last_significant_positive_thickness - normal_thickness
             )
 
-            if thickness >= expected_negative_min and thickness <= expected_negative_max:
+            if thickness < expected_negative_min or thickness > expected_negative_max:
                 msg = f"Layer {i} has negative thickness ({thickness} um) which doesn't match the expected value ({expected_negative_max}>= thickness >={expected_negative_min} um) based on the previous significant positive layer ({last_significant_positive_thickness} um)."
                 raise ValueError(msg)
 
