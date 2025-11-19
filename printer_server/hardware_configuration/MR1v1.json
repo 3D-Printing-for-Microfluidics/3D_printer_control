@@ -19,8 +19,8 @@
             "Build Platform": 0
         },
         "visitech": {
-            "X": -130.388,
-            "Y": -31.800,
+            "X": -130.548,
+            "Y": -29.010,
             "Focus": 49.065,
             "Build Platform": 0
         },
@@ -31,14 +31,14 @@
             "Build Platform": 0
         },
         "keyence_visitech": {
-            "X": -79.128,
-            "Y": -19.986,
+            "X": -79.268,
+            "Y": -17.216,
             "Focus": 47.737,
             "Build Platform": 0
         },
         "keyence_wintech": {
-            "X": 92.640,
-            "Y": -17.110,
+            "X": 92.275,
+            "Y": -17.670,
             "Focus": 48.870,
             "Build Platform": 0
         }
@@ -97,16 +97,40 @@
             "D": 50
         },
         "limits": {
-            "A": [null,null],
-            "B": [null,null],
-            "C": [null,null],
-            "D": [null,50.000]
+            "A": [
+                null,
+                null
+            ],
+            "B": [
+                null,
+                null
+            ],
+            "C": [
+                null,
+                null
+            ],
+            "D": [
+                null,
+                50.000
+            ]
         },
         "calibration_limits": {
-            "A": [null,null],
-            "B": [null,null],
-            "C": [null,null],
-            "D": [null,46.2148438]
+            "A": [
+                null,
+                null
+            ],
+            "B": [
+                null,
+                null
+            ],
+            "C": [
+                null,
+                null
+            ],
+            "D": [
+                null,
+                46.2148438
+            ]
         },
         "calibration_position": 45.2148438,
         "bottom_position": 43.875,
@@ -129,8 +153,14 @@
             "Tilt"
         ],
         "limits": {
-            "1": [null,null],
-            "2": [null,null]
+            "1": [
+                null,
+                null
+            ],
+            "2": [
+                null,
+                null
+            ]
         },
         "auto_repositioning": false
     },
