@@ -14,27 +14,27 @@
       "Build Platform": 0
     },
     "parked": {
-      "X": 75.0,
-      "Y": 180.0,
+      "X": 66.088,
+      "Y": 160.0,
       "Focus": 5.0,
       "Build Platform": 0
     },
     "visitech": {
-      "X": 70.0,
-      "Y": 268.0,
-      "Focus": 5.0,
+      "X": 66.088,
+      "Y": 271.5,
+      "Focus": 1.0,
       "Build Platform": 0
     },
     "keyence_visitech": {
-      "X": 16.0,
-      "Y": 271.0,
-      "Focus": 5.0,
+      "X": 66.088,
+      "Y": 76.5,
+      "Focus": 2.0,
       "Build Platform": 0
     },
     "fiber_visitech": {
-      "X": 70.515,
-      "Y": 199.73,
-      "Focus": 6.67,
+      "X": 66.088,
+      "Y": 200.629,
+      "Focus": 7.562,
       "Build Platform": 0
     }
   },
@@ -83,7 +83,7 @@
       ]
     },
     "calibration_position": 0,
-    "bottom_position": 39.5,
+    "bottom_position": 34.3,
     "top_position": -50
   },
   "lts_xy": {
@@ -214,14 +214,14 @@
       "Focus": 263.8443072
     },
     "axes_speed": {
-      "Tip": 2.0,
-      "Tilt": 2.0,
-      "Focus": 2.0
+      "Tip": 0.5,
+      "Tilt": 0.5,
+      "Focus": 1.0
     },
     "axes_acceleration": {
-      "Tip": 3.2,
-      "Tilt": 3.2,
-      "Focus": 3.6
+      "Tip": 0.5,
+      "Tilt": 0.5,
+      "Focus": 1.0
     },
     "axes_homing_speed": {
       "Tip": 1.0,
@@ -255,7 +255,8 @@
     "moving_shifts_image": false,
     "auto_repositioning": true,
     "auto_tip_tilt": true,
-    "auto_focus": true,
+    "auto_focus_with_keyence": true,
+    "auto_focus_with_photodiode": false,
     "link_focus_and_y_movement": true
   },
   "gpio": {
@@ -266,13 +267,13 @@
     "dummy": false,
     "vendor_id": 5824,
     "product_id": 1155,
-    "serial_number": "17767270",
+    "serial_number": "5745280",
     "firmware_path": "loadcell/loadcell.ino",
-    "microcontroller": "Teensy4.0",
+    "microcontroller": "Teensy3.2",
     "baudrate": 115200,
     "sample_period_us": 1000,
-    "calibration_intercept": 1978.0,
-    "calibration_slope": -0.2189,
+    "calibration_intercept": 32160.0,
+    "calibration_slope": -2.064,
     "loadcell_planarization_enabled": true,
     "loadcell_planarization_force": 35.0,
     "loadcell_print_start_force": 5.0
@@ -285,7 +286,7 @@
     "firmware_path": "planarization/planarization.ino",
     "microcontroller": "Teensy4.0",
     "baudrate": 115200,
-    "target_torque_kgmm": 100,
+    "target_torque_kgmm": 80,
     "tighten_delay_ms": 1000,
     "motor_timeout_ms": 7500
   },
@@ -327,6 +328,9 @@
       1600
     ],
     "normalization_factor": [
+      0.75
+    ],
+    "grayscale_normalization_factor": [
       1.0
     ],
     "orientation": "X",

@@ -5,7 +5,7 @@
         "v2"
     ],
     "external_control": {},
-    "coord_systems": {
+    "_systems": {
         "global": {
             "X": 0,
             "Y": 0,
@@ -136,7 +136,8 @@
         "bottom_position": 43.875,
         "top_position": -50,
         "auto_tip_tilt": false,
-        "auto_focus": true
+        "auto_focus_with_keyence": true,
+        "auto_focus_with_photodiode": false
     },
     "tiptilt": {
         "dummy": false,

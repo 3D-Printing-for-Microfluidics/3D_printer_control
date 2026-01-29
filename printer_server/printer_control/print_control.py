@@ -107,6 +107,9 @@ class PrintControl:
         self.image = None
         self.planarized_position = None
         self.focus = None
+        self.tip = None
+        self.tilt = None
+        self.rotate = None
         self.print_position = None
         self.print_settings = None
         self.exposure_time_ms = None
@@ -404,10 +407,6 @@ class PrintControl:
         self.write_to_event_log(f"Calibration")
         for k, v in position.items():
             self.write_to_event_log(f"{k}: {v}")
-        self.focus = float(position.get("focus",0)) / 1000
-        self.tip = float(position.get("tip",0)) / 1000
-        self.tilt = float(position.get("tilt",0)) / 1000
-        self.rotate = float(position.get("rotate",0)) / 1000
 
         # update frontend progress bar
         self.state = "printing"

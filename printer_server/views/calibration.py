@@ -18,12 +18,20 @@ log.setLevel(logging.INFO)
 
 conversion_dict = {
     "Focus": "focus",
-    "Visitech Focus": "keyence_visitech",
-    "Wintech Focus": "keyence_wintech",
+    "Visitech Focus": "_visitech_focus",
+    "Wintech Focus": "_wintech_focus",
+    "Visitech Focus Offset": "active_visitech_focus",
+    "Wintech Focus Offset": "active_wintech_focus",
     "Tip": "tip",
     "Tilt": "tilt",
-    "Visitech Tip": "keyence_visitech_tip",
-    "Visitech Tilt": "keyence_visitech_tilt",
+    "Visitech Tip": "_visitech_tip",
+    "Visitech Tilt": "_visitech_tilt",
+    "Visitech Tip Offset": "active_visitech_tip",
+    "Visitech Tilt Offset": "active_visitech_tilt",
+    "Wintech Tip": "_wintech_tip",
+    "Wintech Tilt": "_wintech_tilt",
+    "Wintech Tip Offset": "active_wintech_tip",
+    "Wintech Tilt Offset": "active_wintech_tilt",
     "Rotate": "rotate",
     "Pivot X": "pivot_x",
     "Pivot Y": "pivot_y",
@@ -105,17 +113,17 @@ def create_calibration_data():
         settings_list = []
         for le in config_dict["light_engines"]:
             for axis in ["tip", "tilt"]:
-                setting = f"keyence_{le}_{axis}"
-                settings_list.append(setting)
+                # settings_list.append(f"_{le}_{axis}") # Don't show on Calibration page
+                settings_list.append(f"active_{le}_{axis}")
         add_to_dict(settings_list)
     else:
         add_to_dict(["tip", "tilt"])
 
-    if driver_handles.focus_stage.config_dict.get("auto_focus", False):
+    if driver_handles.focus_stage.config_dict.get("auto_focus_with_keyence", False) or driver_handles.focus_stage.config_dict.get("auto_focus_with_photodiode", False):
         settings_list = []
         for le in config_dict["light_engines"]:
-            setting = f"keyence_{le}"
-            settings_list.append(setting)
+            # settings_list.append(f"_{le}_focus") # Don't show on Calibration page
+            settings_list.append(f"active_{le}_focus")
         add_to_dict(settings_list)
     else:
         add_to_dict(["focus"])
@@ -211,3 +219,42 @@ def goto():
         raise focus_thread.exception
 
     socketio.emit("goto_done", create_calibration_data(), namespace="/calibration")
+
+
+'''
+Sudocode for calibration upgrades
+
+frontend changes:
+x    - add correct target buttons
+
+
+- 3 modes for focus: 
+    direct
+    keyence target
+    photodiode target
+
+- 4 modes for tip/tilt:
+    direct
+    keyence target
+    photodiode target
+    combo keyence photodiode
+
+if using photodiode, focus has to change for stitching
+
+new additions to calibration page:
+- add grayscale correction "print"
+- add auto tip/tilt "print"
+- add a calibration prints (tip, tilt, focus)
+    - text description for how to interpret the print
+
+needs:
+- folder of calibration print images
+- template json
+- modify grayscale correction "print" to upload image and modify printer hardware_config (path)
+- make auto tip/tilt set the calibration_positions_log.txt file values
+- modify auto tip/tilt and add code for the photodiode portion (in test_control.py)
+- skip planarization in test_control?
+- add auto focus setting to keyence_control
+- rename "keyence_xxx" to "xxx_target" in calibration_positions_log.txt and other places it is used
+
+'''

@@ -43,6 +43,7 @@ plt.rcParams.update({
 
 class TestControl(PrintControl):
     def test_worker(self):
+        self.tmp_photodiode_focus = self.coord_systems["fiber_visitech"]["Focus"]
         self.printing_stopped.clear()
 
         funcs = self.print_settings["Functions"]
@@ -249,58 +250,7 @@ class TestControl(PrintControl):
 
                 self._update_progress(len(x_set)*y_index+x_index+1, len(x_set)*len(y_set), progress)
 
-    def measure_spectra_and_power(self, filename="spectra.csv", progress=(0,100)):
-        if self.printing_stopped.is_set():
-            return
-        self._update_progress(0, 6, progress)
-
-        # Move to center
-        x_pos = self.coord_systems["fiber_visitech"]["X"]
-        y_pos =  self.coord_systems["fiber_visitech"]["Y"]
-        self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=True)
-
-        self._update_progress(1,6,progress)
-
-        # Draw white
-        self.screen.draw(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / "white.png", light_engine=self.light_engine, led_num=self.led_num)
-
-        self._update_progress(2,6,progress)
-
-        self.light_engines[self.light_engine].setup_exposure(1000, led_power=100, repeat=0, is_grayscale_corrected=True, led_num=self.led_num)
-        self.light_engines[self.light_engine].perform_exposure()
-
-        self._update_progress(3,6,progress)
-
-        # Read spectra and exp
-        integration_time = self.spectrometer.set_integration_time(None)
-        spectrum = self.spectrometer.get_spectrum(100)
-
-        self._update_progress(4,6,progress)
-
-        irradiances = []
-        for _ in range(100):
-            irradiances.append(self.photodiode.get_power_density())
-            time.sleep(0.01)
-        irradiance =  sum(irradiances)/len(irradiances)
-
-        self._update_progress(5,6,progress)
-
-        spectra_path = str(self.current_job / "logs" / filename)
-        async_file_hander.write(spectra_path, f"Wavelength: 365 (nm)\n")
-        async_file_hander.write(spectra_path, f"Irradiance: {irradiance} mW/cm^2\n")               
-        async_file_hander.write(spectra_path, f"Integration time: {integration_time} ms\n")
-        async_file_hander.write(spectra_path, f"Number of Averages: 100\n")
-        async_file_hander.write(spectra_path, "\n")
-        if spectrum is not None:
-            async_file_hander.write(spectra_path, "wavelength (nm),counts\n")
-            for _wavelength, _counts in zip(spectrum[0], spectrum[1]):
-                async_file_hander.write(spectra_path, f"{_wavelength},{_counts}\n") 
-
-        self.light_engines[self.light_engine].stop_sequencer()
-
-        self._update_progress(6,6,progress)
-    
-    def find_photodiode_center_and_focus(self, position="center", rough_pass=True, log_file="xyz_test_data.csv", progress=(0,100)):
+    def find_photodiode_position_and_focus(self, position="center", initial_positioning=False, rough_pass=True, log_file="xyz_test_data.csv", progress=(0,100)):
         # initial positioning
 
         r_img_1 = "v_150px_vert_cent.png"
@@ -319,7 +269,7 @@ class TestControl(PrintControl):
         elif position == "+y":
             r_img_2 = "v_150px_horz_bottom.png"
         elif position == "corner":
-            self.test_photodiode_centering(
+            self._find_photodiode_position(
                 initial_positioning=False, 
                 rough_pass=rough_pass,
                 log_file=log_file, 
@@ -335,7 +285,7 @@ class TestControl(PrintControl):
             )
             return
         elif position != "center":
-            log.warning("Invalid position (%s) in find_photodiode_center_and_focus", position)
+            log.warning("Invalid position (%s) in find_photodiode_position_and_focus", position)
 
         
         if self.light_engine_alignment == "Y":
@@ -349,8 +299,8 @@ class TestControl(PrintControl):
             f_img_3 = f_img_4
             f_img_4 = tmp
 
-        self.test_photodiode_centering(
-            initial_positioning=False, 
+        self._find_photodiode_position(
+            initial_positioning=initial_positioning, 
             rough_pass=rough_pass,
             log_file=log_file,
             orders=["X","Y","X","Y","Focus","X","Y","Focus","X","Y","Focus","X","Y","Focus"], 
@@ -405,7 +355,7 @@ class TestControl(PrintControl):
 
         return poly, coeffs_scaled, p_original.coefficients, (x_mean, x_scale)
 
-    def test_photodiode_centering(self, initial_positioning=True, rough_pass=True, log_file="photodiode_focus.csv", orders=[], step_sizes=[], step_counts=[], images=[], use_find_peaks=[], use_fits=[], adjust_coords=[], use_positions=[], progress=(0,100)):
+    def _find_photodiode_position(self, initial_positioning=True, rough_pass=True, log_file="photodiode_focus.csv", orders=[], step_sizes=[], step_counts=[], images=[], use_find_peaks=[], use_fits=[], adjust_coords=[], use_positions=[], progress=(0,100)):
         self.test_log = str(self.current_job / "logs" / log_file)
 
         xy_threads = None
@@ -446,6 +396,13 @@ class TestControl(PrintControl):
             
             if self.printing_stopped.is_set():
                 return
+
+            if stage == "X":
+                x_pos = round(x_pos/step_size)*step_size
+            if stage == "Y":
+                y_pos = round(y_pos/step_size)*step_size
+            if stage == "Z":
+                z_pos = round(z_pos/step_size)*step_size
             
             # Draw image
             screen_thread = Thread(
@@ -585,7 +542,7 @@ class TestControl(PrintControl):
                 elif stage == "Focus":
                     z_pos = peak_pos
                     if adjust_coord:
-                        self.coord_systems["fiber_visitech"][stage] = z_pos
+                        self.tmp_photodiode_focus = z_pos
             if stage == "X":
                 xy_threads = self.xy_stage.threadedXYMove(log, x_pos, None, join=False)
             if stage == "Y":
@@ -621,52 +578,9 @@ class TestControl(PrintControl):
             async_file_hander.write(self.test_log, f"\n")
 
         self.light_engines[self.light_engine].stop_sequencer()
-        
-    def measure_grayscale_at_center(self, sample_rate_hz=80, progress=(0,100)):
-        self.test_log = str(self.current_job / "logs" / "gray_test_data.csv")
-        async_file_hander.write(
-            self.test_log, "time,grayvalue,irradiance,\n"
-        )
-
-        self._update_progress(0, 256, progress)
-
-        self.light_engines[self.light_engine].setup_exposure(1000, led_power=100, repeat=0, is_grayscale_corrected=False, led_num=self.led_num)
-        self.light_engines[self.light_engine].perform_exposure()
-        
-        for i in range(256):
-            if self.printing_stopped.is_set():
-                return
-            self.screen.draw(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / f"image_with_grayscale_{i}.png", light_engine=self.light_engine, led_num=self.led_num)
-
-            # Wait
-            time.sleep(0.1)
-
-            log.info(f"{i}: {self.photodiode.get_power_density()}")
-
-            time.sleep(0.01)
-
-            # Log measurements
-            for _ in range(150):
-                # Start time
-                t = datetime.now() - self.print_start_time 
-                async_file_hander.write(self.test_log, f"{t},")
-
-                # Get Photodiode power
-                irradiance = self.photodiode.get_power_density()
-                async_file_hander.write(self.test_log, f"{i},")
-                async_file_hander.write(self.test_log, f"{irradiance},")
-                async_file_hander.write(self.test_log, f"\n")
-
-                # Wait
-                time_to_process = 0.0033
-                time.sleep(1/sample_rate_hz - time_to_process)
-
-            self._update_progress(i+1, 256, progress)
-
-        self.light_engines[self.light_engine].stop_sequencer()
 
     # Measures the 4 corners to find out the exact pixel size in x and y
-    def find_px_size(self, progress=(0,100)):
+    def _find_px_size(self, progress=(0,100)):
         if self.light_engine_alignment == "X":
             x_px = 2560
             y_px = 1600
@@ -685,8 +599,8 @@ class TestControl(PrintControl):
         x_pos = self.coord_systems["fiber_visitech"]["X"] - (x_px-focus_spot_px)*x_px_size/2
         y_pos = self.coord_systems["fiber_visitech"]["Y"] - (y_px-focus_spot_px)*y_px_size/2
         self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=True)
-        # self.find_photodiode_center_and_focus(find_corners=True, progress=self._subdivide_progress(0,4,progress))
-        self.find_photodiode_center_and_focus(position="corner", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(0,4,progress))
+        # self.find_photodiode_position_and_focus(find_corners=True, progress=self._subdivide_progress(0,4,progress))
+        self.find_photodiode_position_and_focus(position="corner", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(0,4,progress))
         x1 = self.xy_stage.getXYPosition(axis="X")
         y1 = self.xy_stage.getXYPosition(axis="Y")
         if self.printing_stopped.is_set():
@@ -695,8 +609,8 @@ class TestControl(PrintControl):
         x_pos = self.coord_systems["fiber_visitech"]["X"] - (x_px-focus_spot_px)*x_px_size/2
         y_pos = self.coord_systems["fiber_visitech"]["Y"] + (y_px-focus_spot_px)*y_px_size/2
         self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=True)
-        # self.find_photodiode_center_and_focus(find_corners=True, progress=self._subdivide_progress(1,4,progress))
-        self.find_photodiode_center_and_focus(position="corner", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(1,4,progress))
+        # self.find_photodiode_position_and_focus(find_corners=True, progress=self._subdivide_progress(1,4,progress))
+        self.find_photodiode_position_and_focus(position="corner", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(1,4,progress))
         x2 = self.xy_stage.getXYPosition(axis="X")
         y2 = self.xy_stage.getXYPosition(axis="Y")
         if self.printing_stopped.is_set():
@@ -705,8 +619,8 @@ class TestControl(PrintControl):
         x_pos = self.coord_systems["fiber_visitech"]["X"] + (x_px-focus_spot_px)*x_px_size/2
         y_pos = self.coord_systems["fiber_visitech"]["Y"] + (y_px-focus_spot_px)*y_px_size/2
         self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=True)
-        # self.find_photodiode_center_and_focus(find_corners=True, progress=self._subdivide_progress(2,4,progress))
-        self.find_photodiode_center_and_focus(position="corner", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(2,4,progress))
+        # self.find_photodiode_position_and_focus(find_corners=True, progress=self._subdivide_progress(2,4,progress))
+        self.find_photodiode_position_and_focus(position="corner", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(2,4,progress))
         x3 = self.xy_stage.getXYPosition(axis="X")
         y3 = self.xy_stage.getXYPosition(axis="Y")
         if self.printing_stopped.is_set():
@@ -715,8 +629,8 @@ class TestControl(PrintControl):
         x_pos = self.coord_systems["fiber_visitech"]["X"] + (x_px-focus_spot_px)*x_px_size/2
         y_pos = self.coord_systems["fiber_visitech"]["Y"] - (y_px-focus_spot_px)*y_px_size/2
         self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=True)
-        # self.find_photodiode_center_and_focus(find_corners=True, progress=self._subdivide_progress(3,4,progress))
-        self.find_photodiode_center_and_focus(position="corner", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(3,4,progress))
+        # self.find_photodiode_position_and_focus(find_corners=True, progress=self._subdivide_progress(3,4,progress))
+        self.find_photodiode_position_and_focus(position="corner", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(3,4,progress))
         x4 = self.xy_stage.getXYPosition(axis="X")
         y4 = self.xy_stage.getXYPosition(axis="Y")
         if self.printing_stopped.is_set():
@@ -736,8 +650,8 @@ class TestControl(PrintControl):
         log.info(f"xpx: {self.x_px_size}, ypx: {self.y_px_size}")
        
     # Measures the irradiance in a grid of every 150 or 15 px 
-    # Should run find_photodiode_center_and_focus and find_px_size first
-    def measure_irradiance_grid2(self, fine=True, save_name = "test_data.csv", correction_path="", progress=(0,100)):
+    # Should run find_photodiode_position_and_focus and _find_px_size first
+    def _measure_irradiance_grid(self, fine=True, save_name = "test_data.csv", correction_path="", progress=(0,100)):
         if self.printing_stopped.is_set():
             return
 
@@ -1125,7 +1039,7 @@ class TestControl(PrintControl):
     def capture_and_process_grayscale_correction(self, fine=True, progress=(0,100)):
         x_pos = self.coord_systems["fiber_visitech"]["X"]
         y_pos = self.coord_systems["fiber_visitech"]["Y"]
-        z_pos = self.coord_systems["fiber_visitech"]["Focus"]
+        z_pos = self.tmp_photodiode_focus
         focus_thread = self.focus_stage.threadedFocusMove(log, mm=z_pos, join=False)
         time.sleep(0.05)
         xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
@@ -1141,14 +1055,13 @@ class TestControl(PrintControl):
         self._update_progress(0, 4, progress)
         # self.x_px_size = 0.00756
         # self.y_px_size =  0.00756
-        self.find_photodiode_center_and_focus(progress=self._subdivide_progress(0,4,progress))
-        # self.find_photodiode_center_and_focus(position="center", rough_pass=True, log_file="xyz_test_data.csv", progress=self._subdivide_progress(0,4,progress))
+        self.find_photodiode_position_and_focus(progress=self._subdivide_progress(0,4,progress))
         if self.printing_stopped.is_set():
             return
-        self.find_px_size(progress=self._subdivide_progress(1,4,progress))
+        self._find_px_size(progress=self._subdivide_progress(1,4,progress))
 
         filename = "uncorrected_test_data.csv"
-        self.measure_irradiance_grid2(fine=fine, save_name=filename, progress=self._subdivide_progress(2,4,progress))
+        self._measure_irradiance_grid(fine=fine, save_name=filename, progress=self._subdivide_progress(2,4,progress))
         if self.printing_stopped.is_set():
             return
         save_directory_name = "uncorrected"
@@ -1159,19 +1072,19 @@ class TestControl(PrintControl):
         else:
             self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num] = self.light_engines[self.light_engine].config_dict["normalization_factor"][self.led_num]
         filename = "corrected_nonnormalized_test_data.csv"
-        self.measure_irradiance_grid2(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'))
+        self._measure_irradiance_grid(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'))
         save_directory_name = "corrected_nonnormalized"
         nonnormalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
         self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num] = round(self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num]*np.mean(irradiance_map)/np.mean(nonnormalized_irradiance_map),3)
         filename = "corrected_normalized_test_data.csv"
-        self.measure_irradiance_grid2(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'))
+        self._measure_irradiance_grid(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'))
         save_directory_name = "corrected_normalized"
         normalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
         log.info("Pre mean irradiance: %s, Post mean irradiance: %s, Updated to: %s", np.mean(irradiance_map), np.mean(nonnormalized_irradiance_map), np.mean(normalized_irradiance_map))
 
         filename = "corrected_test_data.csv"
         correction_img = self.current_job / "logs/uncorrected/correction_image.png"
-        self.measure_irradiance_grid2(fine=fine, save_name=filename, correction_path=str(correction_img), progress=self._subdivide_progress(3,4,progress))
+        self._measure_irradiance_grid(fine=fine, save_name=filename, correction_path=str(correction_img), progress=self._subdivide_progress(3,4,progress))
         if self.printing_stopped.is_set():
             return
         scale_factor = 1.0  # used if normalization factor was changed...
@@ -1313,16 +1226,16 @@ class TestControl(PrintControl):
                     raise PrintingException()
 
         last_positions = get_last_calibration_positions_from_logs()
-        last_positions["focus"] = float(f"{(self.focus_stage.getFocusPosition())*1000:.1f}")
-        last_positions["tip"] = float(f"{(self.ttr_stage.getTTRPosition('Tip'))*1000:.1f}")
-        last_positions["tilt"] = float(f"{(self.ttr_stage.getTTRPosition('Tilt'))*1000:.1f}")   
+        last_positions[f"_{self.light_engine}_focus"] = float(f"{(self.focus_stage.getFocusPosition())*1000:.1f}")
+        last_positions[f"_{self.light_engine}_tip"] = float(f"{(self.ttr_stage.getTTRPosition('Tip'))*1000:.1f}")
+        last_positions[f"_{self.light_engine}_tilt"] = float(f"{(self.ttr_stage.getTTRPosition('Tilt'))*1000:.1f}")   
         write_to_position_log(last_positions)
     
     def keyence_tip_tilt_correction(self, axis="", iterations=4, check=True, rough_pass=True, measurement_distance=10000.0, progress=(0,100)):
         if axis == "Tilt":
             x, y = 0, measurement_distance / 1000 / 2
         elif axis == "Tip":
-            x, y = measurement_distance / 1000 / 2, 0
+            x, y = -measurement_distance / 1000 / 2, 0
         else:
             raise ValueError("Axis must be either 'Tilt' or 'Tip'.")
 
@@ -1332,15 +1245,15 @@ class TestControl(PrintControl):
         if check:
             iterations += 1
         self._update_progress(step, 4, progress)
+        x_pos = self.coord_systems["keyence_visitech"]["X"]
+        y_pos = self.coord_systems["keyence_visitech"]["Y"]
+        z_pos = self.coord_systems["keyence_visitech"]["Focus"]
         for i in range(iterations):
             keyence_readings = []
             for X , Y in [
                 (-x, -y),
                 (x, y),
             ]:
-                x_pos = self.coord_systems["keyence_visitech"]["X"]
-                y_pos = self.coord_systems["keyence_visitech"]["Y"]
-                z_pos = self.coord_systems["keyence_visitech"]["Focus"]
                 focus_thread = self.focus_stage.threadedFocusMove(log, mm=z_pos, join=False)
                 time.sleep(0.05)
                 xy_threads = self.xy_stage.threadedXYMove(log, x_pos+X, y_pos+Y, join=False)
@@ -1376,19 +1289,19 @@ class TestControl(PrintControl):
             async_file_hander.write(self.test_log, f"{axis} rad: {offset}\n")
             # add difference to tilt stage position
             if not(check and i == iterations - 1):
-                curOffset = self.ttr_stage.getTTRPosition(axis)
+                last_positions = get_last_calibration_positions_from_logs()
+                curOffset = last_positions.get(f"_{self.light_engine}_{axis.lower()}",0)/1000
                 log.info(f"curOffset: {curOffset}")
                 async_file_hander.write(self.test_log, f"curOffset: {curOffset}\n")
                 log.info(f"New {axis} offset: {curOffset - offset}")
                 async_file_hander.write(self.test_log, f"New {axis} offset: {curOffset - offset}\n")
                 self.ttr_stage.absMoveTTR(rad=curOffset - offset, axis=axis)
 
-                last_positions = get_last_calibration_positions_from_logs()
-                last_positions[axis.lower()] = float(f"{(curOffset - offset)*1000:.1f}")
+                last_positions[f"_{self.light_engine}_{axis.lower()}"] = float(f"{(curOffset - offset)*1000:.1f}")
                 write_to_position_log(last_positions)
         async_file_hander.write(self.test_log, f"\n")
 
-    def spiral_until_threshold(self, step=5.0, photodiode_threshold=30.0):
+    def _spiral_until_threshold(self, step=5.0, photodiode_threshold=30.0):
         """
         Moves the stage in a square spiral in 'step' increments until photodiode exceeds threshold.
         """
@@ -1438,15 +1351,15 @@ class TestControl(PrintControl):
         if check:
             iterations += 1
         step = 0
+        x_pos = self.coord_systems["fiber_visitech"]["X"]
+        y_pos = self.coord_systems["fiber_visitech"]["Y"]
+        z_pos = self.tmp_photodiode_focus
         for i in range(iterations):
             readings = []
             for X , Y in [
                 (-x, -y),
                 (x, y),
             ]:
-                x_pos = self.coord_systems["fiber_visitech"]["X"]
-                y_pos = self.coord_systems["fiber_visitech"]["Y"]
-                z_pos = self.coord_systems["fiber_visitech"]["Focus"]
                 focus_thread = self.focus_stage.threadedFocusMove(log, mm=z_pos, join=False)
                 time.sleep(0.05)
                 xy_threads = self.xy_stage.threadedXYMove(log, x_pos+X, y_pos+Y, join=False)
@@ -1460,7 +1373,7 @@ class TestControl(PrintControl):
                 
                 # spiral until we are on the image
                 if rough_pass:
-                    self.spiral_until_threshold()
+                    self._spiral_until_threshold()
                 
                 if axis == "Tilt":
                     if Y < 0:
@@ -1473,65 +1386,7 @@ class TestControl(PrintControl):
                     else:
                         position = "+x"
 
-                self.find_photodiode_center_and_focus(position=position, rough_pass=True, log_file=f"photodiode_{axis}_{i}.csv", progress=self._subdivide_progress(step, (iterations*2), progress))
-                # if axis == "Tilt":
-                #     if Y < 0:
-                #         r_img_1 = "v_150px_vert_cent.png"
-                #         r_img_2 = "v_150px_horz_top.png"
-                #     else:
-                #         r_img_1 = "v_150px_vert_cent.png"
-                #         r_img_2 = "v_150px_horz_bottom.png"
-                # else:
-                #     if X < 0:
-                #         r_img_1 = "v_150px_vert_right.png"
-                #         r_img_2 = "v_150px_horz_cent.png"
-                #     else:
-                #         r_img_1 = "v_150px_vert_left.png"
-                #         r_img_2 = "v_150px_horz_cent.png"
-                
-
-                # if self.light_engine_alignment == "X":
-                #     f_img_1 = "v_14px_vert.png"
-                #     f_img_2 = "v_14px_horz.png"
-                #     f_img_3 = "v_4px_vert.png"
-                #     f_img_4 = "v_4px_horz.png"
-                # else:
-                #     tmp = r_img_1
-                #     r_img_1 = r_img_2
-                #     r_img_2 = tmp
-                #     f_img_1 = "v_14px_horz.png"
-                #     f_img_2 = "v_14px_vert.png"
-                #     f_img_3 = "v_4px_horz.png"
-                #     f_img_4 = "v_4px_vert.png"
-
-                # self.test_photodiode_centering(
-                #     initial_positioning=False, 
-                #     rough_pass=rough_pass,
-                #     log_file=f"photodiode_{axis}_{i}.csv",
-                #     orders=["X","Y","X","Y","Focus","X","Y","Focus","X","Y","Focus","X","Y","Focus"], 
-                #     step_sizes=[1.0,1.0,0.1,0.1,0.25,0.01,0.01,0.025,0.001,0.001,0.0025,0.001,0.001,0.0025], 
-                #     step_counts=[20,20,20,20,40,20,20,50,20,20,50,20,20,50], 
-                #     images=[
-                #         [r_img_1],
-                #         [r_img_2],
-                #         [f_img_1],
-                #         [f_img_2],
-                #         ["v_14px_cross.png"],
-                #         [f_img_3],
-                #         [f_img_4],
-                #         ["v_4px_cross.png"],
-                #         ["v_1px_ring_inside.png"],
-                #         ["v_1px_ring_inside.png"],
-                #         ["v_2px_ring_inside.png","v_2px_ring_outside.png"],
-                #         ["v_1px_ring_inside.png"],
-                #         ["v_1px_ring_inside.png"],
-                #         ["v_2px_ring_inside.png","v_2px_ring_outside.png"]
-                #     ], 
-                #     use_find_peaks=[False,False,False,False,False,False,False,False,False,False,False,False,False,False], 
-                #     use_fits=[False,False,False,False,True,False,False,True,False,False,True,False,False,True], 
-                #     adjust_coords=[False,False,False,False,False,False,False,False,False,False,False,False,False,False],
-                #     use_positions=[True,True,True,True,True,True,True,True,True,True,True,True,True,True],
-                #     progress=self._subdivide_progress(step, (iterations*2), progress))
+                self.find_photodiode_position_and_focus(position=position, rough_pass=True, log_file=f"photodiode_{axis}_{i}.csv", progress=self._subdivide_progress(step, (iterations*2), progress))
                 reading = self.focus_stage.getFocusPosition()*1000
                 readings.append(reading)
                 step += 1
@@ -1554,13 +1409,13 @@ class TestControl(PrintControl):
 
             if not(check and i == iterations - 1):
                 # add difference to tilt stage position
-                curOffset = self.ttr_stage.getTTRPosition(axis)
+                last_positions = get_last_calibration_positions_from_logs()
+                curOffset = last_positions.get(f"_{self.light_engine}_{axis.lower()}",0)/1000
                 log.info(f"curOffset: {curOffset}")
                 async_file_hander.write(self.test_log, f"curOffset: {curOffset}\n")
                 log.info(f"New {axis} offset: {curOffset - offset}")
                 async_file_hander.write(self.test_log, f"New {axis} offset: {curOffset - offset}\n")
                 self.ttr_stage.absMoveTTR(rad=curOffset - offset, axis=axis)
 
-                last_positions = get_last_calibration_positions_from_logs()
-                last_positions[axis.lower()] = float(f"{(curOffset - offset)*1000:.1f}")
+                last_positions[f"_{self.light_engine}_{axis.lower()}"] = float(f"{(curOffset - offset)*1000:.1f}")
                 write_to_position_log(last_positions)

@@ -117,6 +117,7 @@ class FocusControl(PrintControl):
             super().cancel_planarization()
 
     def get_exposure_defocus(self, settings, light_engine):
+        self.focus = get_last_calibration_positions_from_logs().get(f"focus",0)/1000
         self.previous_defocus = self.defocus_um
         self.defocus_um = settings["Relative focus position (um)"]
 

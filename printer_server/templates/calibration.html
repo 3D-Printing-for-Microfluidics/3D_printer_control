@@ -13,18 +13,22 @@
 
 {% block page_content %}
 
-{% if initialized %}
+{% set has_pivot = false %}
+{% for parameter in calibration_data %}
+{% if 'pivot' in parameter|lower %}
+{% set has_pivot = true %}
+{% endif %}
+{% endfor %}
 
+{% if initialized and has_pivot %}
 <div class="container">
     <div class="row">
         <div class="col-12">
-            <button type="button" class="btn btn-outline-info btn-block" id="goto">Go to position</button>
+            <button type="button" class="btn btn-outline-info btn-block" id="goto">Set new pivot position</button>
         </div>
     </div>
 </div>
-
 <hr class="bg-secondary">
-
 {% endif %}
 
 {% for parameter in calibration_data %}
@@ -39,11 +43,11 @@
         </div>
         <div class="col-7">
             {% if ("Tip" in parameter) or ("Tilt" in parameter) or ("Rotate" in parameter) %}
-            <input class="form-control {{ parameter | replace(' ', '-') }}-cntrl-txt" type="text" id="{{ parameter | replace(' ', '-') }}-txt"
-                placeholder="Position (mrad)">
+            <input class="form-control {{ parameter | replace(' ', '-') }}-cntrl-txt" type="text"
+                id="{{ parameter | replace(' ', '-') }}-txt" placeholder="Position (mrad)">
             {% else %}
-            <input class="form-control {{ parameter | replace(' ', '-') }}-cntrl-txt" type="text" id="{{ parameter | replace(' ', '-') }}-txt"
-                placeholder="Position (um)">
+            <input class="form-control {{ parameter | replace(' ', '-') }}-cntrl-txt" type="text"
+                id="{{ parameter | replace(' ', '-') }}-txt" placeholder="Position (um)">
             {% endif %}
         </div>
     </div>
@@ -51,16 +55,26 @@
         <div class="col-2"></div>
         <div class="col-10 text-right">
             <div class="btn-group" role="group">
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-10000</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-1000</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-100</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-10</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-1</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">1</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">10</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">100</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">1000</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">10000</button>
+                <button type="button"
+                    class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-10000</button>
+                <button type="button"
+                    class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-1000</button>
+                <button type="button"
+                    class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-100</button>
+                <button type="button"
+                    class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-10</button>
+                <button type="button"
+                    class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-1</button>
+                <button type="button"
+                    class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">1</button>
+                <button type="button"
+                    class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">10</button>
+                <button type="button"
+                    class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">100</button>
+                <button type="button"
+                    class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">1000</button>
+                <button type="button"
+                    class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">10000</button>
             </div>
         </div>
     </div>
