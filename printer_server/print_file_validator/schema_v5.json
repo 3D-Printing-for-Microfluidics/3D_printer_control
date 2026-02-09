@@ -284,6 +284,10 @@
                     ]
                 },
                 "description": "Dictionary of variable names and their values to be used in variable substitution."
+            },
+            "Distance_up (mm)": {
+                "type": "number",
+                "exclusiveMinimum": 0
             }
         },
         "LAYER_BASE": {
@@ -310,11 +314,7 @@
                         "$ref": "#/$defs/IMAGE_SETTINGS"
                     }
                 }
-            },
-            "Distance_up (mm)": {
-                    "type": "number",
-                    "exclusiveMinimum": 0
-                }
+            }
         },
         "POSITION_SETTINGS": {
             "type": "object",
