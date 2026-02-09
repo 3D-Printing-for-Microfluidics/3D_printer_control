@@ -29,7 +29,7 @@
                     "description": "Directory relative to the json print job file where the images are saved."
                 },
                 "Comment": {
-                    "$ref": "#/$defs/COMMON_PROPS/COMMENT"
+                    "$ref": "#/$defs/COMMENT"
                 }
             }
         },
@@ -38,7 +38,7 @@
             "additionalProperties": false,
             "properties": {
                 "Comment": {
-                    "$ref": "#/$defs/COMMON_PROPS/COMMENT"
+                    "$ref": "#/$defs/COMMENT"
                 },
                 "User": {
                     "type": "string",
@@ -95,10 +95,10 @@
             "additionalProperties": false,
             "properties": {
                 "Comment": {
-                    "$ref": "#/$defs/COMMON_PROPS/COMMENT"
+                    "$ref": "#/$defs/COMMENT"
                 },
                 "Number of duplications": {
-                    "$ref": "#/$defs/COMMON_PROPS/NUM_DUPS"
+                    "$ref": "#/$defs/NUM_DUPS"
                 },
                 "Position settings": {
                     "allOf": [
@@ -144,7 +144,7 @@
         "Variables": {
             "allOf": [
                 {
-                    "$ref": "#/$defs/COMMON_PROPS/VARS"
+                    "$ref": "#/$defs/VARS"
                 }
             ]
         },
@@ -152,7 +152,7 @@
             "type": "object",
             "properties": {
                 "Comment": {
-                    "$ref": "#/$defs/COMMON_PROPS/COMMENT"
+                    "$ref": "#/$defs/COMMENT"
                 }
             },
             "additionalProperties": {
@@ -163,7 +163,7 @@
             "type": "object",
             "properties": {
                 "Comment": {
-                    "$ref": "#/$defs/COMMON_PROPS/COMMENT"
+                    "$ref": "#/$defs/COMMENT"
                 }
             },
             "additionalProperties": {
@@ -174,7 +174,7 @@
             "type": "object",
             "properties": {
                 "Comment": {
-                    "$ref": "#/$defs/COMMON_PROPS/COMMENT"
+                    "$ref": "#/$defs/COMMENT"
                 }
             },
             "additionalProperties": {
@@ -189,7 +189,7 @@
             "additionalProperties": false,
             "properties": {
                 "Comment": {
-                    "$ref": "#/$defs/COMMON_PROPS/COMMENT"
+                    "$ref": "#/$defs/COMMENT"
                 },
                 "Print under vacuum": {
                     "type": "object",
@@ -235,18 +235,18 @@
                         "additionalProperties": false,
                         "properties": {
                             "Comment": {
-                                "$ref": "#/$defs/COMMON_PROPS/COMMENT"
+                                "$ref": "#/$defs/COMMENT"
                             },
                             "Using named layer group": {
                                 "type": "string"
                             },
                             "Number of duplications": {
-                                "$ref": "#/$defs/COMMON_PROPS/NUM_DUPS"
+                                "$ref": "#/$defs/NUM_DUPS"
                             },
                             "Variables": {
                                 "allOf": [
                                     {
-                                        "$ref": "#/$defs/COMMON_PROPS/VARS"
+                                        "$ref": "#/$defs/VARS"
                                     }
                                 ],
                                 "description": "Override global variables for variable in this specific named layer group instance."
@@ -258,47 +258,45 @@
         }
     },
     "$defs": {
-        "COMMON_PROPS": {
-            "COMMENT": {
-                "type": "string",
-                "default": ""
+        "COMMENT": {
+            "type": "string",
+            "default": ""
+        },
+        "NUM_DUPS": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1,
+            "description": "Custom number of times to duplicate a layer"
+        },
+        "VARS": {
+            "type": "object",
+            "properties": {
+                "Comment": {
+                    "$ref": "#/$defs/COMMENT"
+                }
             },
-            "NUM_DUPS": {
-                "type": "integer",
-                "minimum": 1,
-                "default": 1,
-                "description": "Custom number of times to duplicate a layer"
+            "additionalProperties": {
+                "type": [
+                    "string",
+                    "number",
+                    "boolean"
+                ]
             },
-            "VARS": {
-                "type": "object",
-                "properties": {
-                    "Comment": {
-                        "$ref": "#/$defs/COMMON_PROPS/COMMENT"
-                    }
-                },
-                "additionalProperties": {
-                    "type": [
-                        "string",
-                        "number",
-                        "boolean"
-                    ]
-                },
-                "description": "Dictionary of variable names and their values to be used in variable substitution."
-            },
-            "DIST_UP (mm)": {
-                "type": "number",
-                "exclusiveMinimum": 0
-            }
+            "description": "Dictionary of variable names and their values to be used in variable substitution."
+        },
+        "DIST_UP (mm)": {
+            "type": "number",
+            "exclusiveMinimum": 0
         },
         "LAYER_BASE": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
                 "Comment": {
-                    "$ref": "#/$defs/COMMON_PROPS/COMMENT"
+                    "$ref": "#/$defs/COMMENT"
                 },
                 "Number of duplications": {
-                    "$ref": "#/$defs/COMMON_PROPS/NUM_DUPS"
+                    "$ref": "#/$defs/NUM_DUPS"
                 },
                 "Position settings": {
                     "$ref": "#/$defs/POSITION_SETTINGS"
@@ -321,7 +319,7 @@
             "additionalProperties": false,
             "properties": {
                 "Comment": {
-                    "$ref": "#/$defs/COMMON_PROPS/COMMENT"
+                    "$ref": "#/$defs/COMMENT"
                 },
                 "Using named position settings": {
                     "type": "string",
@@ -337,7 +335,7 @@
                 "Distance up (mm)": {
                     "allOf": [
                         {
-                            "$ref": "#/$defs/COMMON_PROPS/DIST_UP"
+                            "$ref": "#/$defs/DIST_UP"
                         }
                     ],
                     "description": "Distance to move the build up after completing a layer."
@@ -428,7 +426,7 @@
             "additionalProperties": false,
             "properties": {
                 "Comment": {
-                    "$ref": "#/$defs/COMMON_PROPS/COMMENT"
+                    "$ref": "#/$defs/COMMENT"
                 },
                 "Using named image settings": {
                     "type": "string",
@@ -510,7 +508,7 @@
                                     "description": "If true, duplicate this image with 0 um layer thickness."
                                 },
                                 "Number of duplications": {
-                                    "$ref": "#/$defs/COMMON_PROPS/NUM_DUPS"
+                                    "$ref": "#/$defs/NUM_DUPS"
                                 }
                             }
                         },
@@ -527,7 +525,7 @@
                                 "Distance up (mm)": {
                                     "allOf": [
                                         {
-                                            "$ref": "#/$defs/COMMON_PROPS/DIST_UP"
+                                            "$ref": "#/$defs/DIST_UP"
                                         }
                                     ],
                                     "default": 0.3,
