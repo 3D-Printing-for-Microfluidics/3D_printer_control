@@ -309,12 +309,12 @@
                     "items": {
                         "$ref": "#/$defs/IMAGE_SETTINGS"
                     }
-                },
-                "Distance up (mm)": {
+                }
+            },
+            "Distance_up (mm)": {
                     "type": "number",
                     "exclusiveMinimum": 0
                 }
-            }
         },
         "POSITION_SETTINGS": {
             "type": "object",
