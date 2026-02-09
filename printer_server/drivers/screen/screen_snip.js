@@ -43,10 +43,8 @@ $(document).ready(function () {
 
     socket.on('screen_load', function(message) {
         for (let le in manual_controls_data["light_engines"]) {
-            let lightCheckboxElement = document.getElementById(`${le}-light-correction-chkbx`);
-            let darkCheckboxElement = document.getElementById(`${le}-dark-correction-chkbx`);
-            lightCheckboxElement.checked = message[le]["light"];
-            darkCheckboxElement.checked = message[le]["dark"];
+            let checkboxElement = document.getElementById(`${le}-correction-chkbx`);
+            checkboxElement.checked = message[le];
             
         }
     });
@@ -88,19 +86,11 @@ $(document).ready(function () {
         });
 
         // Correction button click function
-        $(`#${le}-light-correction-chkbx`).on("click", function (e) {
+        $(`#${le}-correction-chkbx`).on("click", function (e) {
             let projector = $(this).closest(".container").attr('aria-label');
-            let checkboxElement = document.getElementById(`${le}-light-correction-chkbx`);
+            let checkboxElement = document.getElementById(`${le}-correction-chkbx`);
             let correction = Number(checkboxElement.checked);
-            socket.emit("screen_light_grayscale_correction", { "light_engine": projector, "correction":  correction});
-        });
-
-        // Correction button click function
-        $(`#${le}-dark-correction-chkbx`).on("click", function (e) {
-            let projector = $(this).closest(".container").attr('aria-label');
-            let checkboxElement = document.getElementById(`${le}-dark-correction-chkbx`);
-            let correction = Number(checkboxElement.checked);
-            socket.emit("screen_dark_grayscale_correction", { "light_engine": projector, "correction":  correction});
+            socket.emit("screen_grayscale_correction", { "light_engine": projector, "correction":  correction});
         });
 
         // Upload button click function

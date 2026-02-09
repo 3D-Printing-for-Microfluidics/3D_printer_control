@@ -17,7 +17,13 @@ from printer_server.threading_wrapper import Thread
 from printer_server.models import PrintQueue, PrintRecord
 from printer_server.async_file_handler import async_file_hander
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
-from printer_server.print_file_validator import validate_schema, read_json, expand_json, check_version
+from printer_server.print_file_validator import (
+    validate_schema,
+    read_json,
+    expand_json,
+    check_version,
+    validate_printer_compatibility,
+)
 from printer_server.views.calibration import (
     get_last_calibration_positions_from_logs,
 )
@@ -235,6 +241,26 @@ class PrintControl:
             layer_settings.update(overrides)
         return layer_settings
 
+    def get_force_squeeze_settings(self, position_settings):
+        """Return force squeeze settings for a layer.
+
+        Supports v5 schema nesting under "Special layer techniques" -> "Squeeze out resin",
+        while remaining backward-compatible with legacy flat keys.
+        """
+        special_settings = position_settings.get("Special layer techniques", {})
+        force_squeeze_settings = special_settings.get("Squeeze out resin", {})
+        if force_squeeze_settings:
+            return force_squeeze_settings
+        legacy_keys = {
+            "Enable force squeeze",
+            "Squeeze count",
+            "Squeeze force (N)",
+            "Squeeze wait (ms)",
+        }
+        if any(key in position_settings for key in legacy_keys):
+            return position_settings
+        return {}
+
     def get_image_settings(self, layer):
         """Return a list of the image settings for the layer."""
         defaults = self.print_settings.get("Default layer settings").get("Image settings")
@@ -282,9 +308,15 @@ class PrintControl:
             self.event_log, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')},{msg}\n"
         )
 
-    def move_build_platform(self, position_settings, layer):
+    def move_build_platform_up(self, position_settings):
         pass
 
+    def move_build_platform_down(self, position_settings):
+        pass
+
+    def move_build_platform(self, position_settings, layer):
+        pass
+    
     def force_squeeze(self, position_settings, layer):
         log.warning("Missing loadcell_control. Cannot force_squeeze")
         return 0
@@ -474,6 +506,20 @@ class PrintControl:
                 self.print_thread.join()
             log.info("Print stopped.")
 
+    def get_vacuum_settings(self):
+        """Return vacuum settings for a print.
+
+        Supports v5 schema nesting under "Special print techniques" -> "Print under vacuum",
+        while remaining backward-compatible with legacy Header keys.
+        """
+        special_print_techniques = self.print_settings.get("Special print techniques", {})
+        vacuum_settings = special_print_techniques.get("Print under vacuum", {})
+        if vacuum_settings:
+            return vacuum_settings
+        header = self.print_settings.get("Header", {})
+        legacy_enable = header.get("Print under vacuum", False)
+        return {"Enable vacuum": legacy_enable}
+
     def pre_print_tasks(self):
         return
 
@@ -576,15 +622,92 @@ class PrintControl:
 
         # read settings for this layer
         current_layer_settings = self.print_settings["Layers"][layer[0]]
+        position_settings = self.get_position_settings(current_layer_settings)
         image_settings_list = self.get_image_settings(current_layer_settings)
-        
-        # do exposures
-        for j, settings in enumerate(image_settings_list):
-            msg = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
-            msg += f" Exposure {j}"
-            log.info(msg)
-            self.write_to_event_log(msg)
-            self.exposure_worker(j, layer, settings, msg)
+
+        def split_print_on_film(exposures):
+            film_exposures = []
+            normal_exposures = []
+            for exposure_settings in exposures:
+                special_settings = exposure_settings.get("Special image techniques", {})
+                film_settings = special_settings.get("Print on film", {})
+                if film_settings.get("Enable print on film", False):
+                    film_exposures.append(exposure_settings)
+                else:
+                    normal_exposures.append(exposure_settings)
+            return film_exposures, normal_exposures
+
+        def collect_zero_um_layers(exposures):
+            zero_um_settings_list = []
+            max_dups = 0
+            for exposure_settings in exposures:
+                special_settings = exposure_settings.get("Special image techniques", {})
+                zero_um_settings = special_settings.get("0 um layer", {})
+                if not zero_um_settings.get("Enable 0 um layer", False):
+                    continue
+                dup_count = int(zero_um_settings.get("Number of duplications", 1))
+                dup_count = max(1, dup_count)
+                max_dups = max(max_dups, dup_count)
+                zero_um_settings_list.append((exposure_settings, dup_count))
+            zero_um_layers = [[] for _ in range(max_dups)]
+            for exposure_settings, dup_count in zero_um_settings_list:
+                for dup_index in range(dup_count):
+                    zero_um_layers[dup_index].append(exposure_settings)
+            return zero_um_layers
+
+        def run_exposures(exposures, layer_label, position_settings_override=None):
+            if not exposures:
+                return
+            if self.printing_paused.is_set() or self.printing_stopped.is_set():
+                return
+            if position_settings_override is not None:
+                self.move_build_platform(position_settings_override, layer)
+            film_exposures, normal_exposures = split_print_on_film(exposures)
+            film_offset = 0.0
+            for j, exposure_settings in enumerate(film_exposures):
+                if self.printing_paused.is_set() or self.printing_stopped.is_set():
+                    return
+                film_settings = exposure_settings.get("Special image techniques", {}).get("Print on film", {})
+                target_offset = film_settings.get("Distance up (mm)", 0.3)
+                delta = target_offset - film_offset
+                if delta != 0:
+                    film_position_settings = position_settings.copy()
+                    film_position_settings["Distance up (mm)"] = abs(delta)
+                    if delta > 0:
+                        self.move_build_platform_up(film_position_settings)
+                    else:
+                        self.move_build_platform_down(film_position_settings)
+                    film_offset = target_offset
+                msg = f"{layer_label} Film Exposure {j}"
+                log.info(msg)
+                self.write_to_event_log(msg)
+                self.exposure_worker(j, layer, exposure_settings, msg)
+
+            if film_offset != 0:
+                film_position_settings = position_settings.copy()
+                film_position_settings["Distance up (mm)"] = abs(film_offset)
+                self.move_build_platform_down(film_position_settings)
+
+            for j, exposure_settings in enumerate(normal_exposures):
+                if self.printing_paused.is_set() or self.printing_stopped.is_set():
+                    return
+                msg = f"{layer_label} Exposure {j}"
+                log.info(msg)
+                self.write_to_event_log(msg)
+                self.exposure_worker(j, layer, exposure_settings, msg)
+
+        layer_label = f"Layer {layer[0]}-{layer[1]}" if layer[1] else f"Layer {layer[0]}"
+        run_exposures(image_settings_list, layer_label)
+
+        zero_um_layers = collect_zero_um_layers(image_settings_list)
+        if zero_um_layers:
+            zero_position_settings = position_settings.copy()
+            zero_position_settings["Layer thickness (um)"] = 0
+            for dup_index, zero_layer_exposures in enumerate(zero_um_layers, start=1):
+                if self.printing_paused.is_set() or self.printing_stopped.is_set():
+                    return
+                dup_label = f"{layer_label} 0um Dup {dup_index}"
+                run_exposures(zero_layer_exposures, dup_label, position_settings_override=zero_position_settings)
 
     def get_exposure_defocus(self, settings, light_engine):
         return
@@ -774,9 +897,13 @@ class PrintControl:
                 log.debug("Removing hiden '__MACOSX' folder from %s ...", f.filename)
                 self.clean_uploaded_file(filename_on_disk)
             try:
-                _, schema_ver = validate_schema(filename_on_disk)
+                print_settings, schema_ver = validate_schema(filename_on_disk)
                 if schema_ver not in config_dict["valid_schema_versions"]:
                     raise ValueError(f"Printer does not support {schema_ver} JSON format")
+                validate_printer_compatibility(print_settings)
+                
+
+
                 log.info("Print job %s uploaded successfully.", f.filename)
                 new_print_job = PrintQueue(
                     original_filename=f.filename,

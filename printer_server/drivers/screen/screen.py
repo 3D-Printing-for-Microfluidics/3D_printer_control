@@ -14,7 +14,7 @@ from printer_server.threading_wrapper import Thread
 class Screen:
     """Create and manage a new Tk window."""
 
-    def __init__(self, resolution, light_correction_paths, dark_correction_paths, screen_offset=0, log_level=logging.DEBUG):
+    def __init__(self, resolution, correction_paths, screen_offset=0, log_level=logging.DEBUG):
         """Initialize a new screen object.
 
         resolution: The (width, height) resolution of the screen
@@ -29,10 +29,8 @@ class Screen:
         self.tk_image = None
         self.image_path = None
         self.led_num = 0
-        self.do_light_correction = False
-        self.do_dark_correction = False
-        self.light_correction_paths = light_correction_paths
-        self.dark_correction_paths = dark_correction_paths
+        self.do_correction = False
+        self.correction_paths = correction_paths
         self.resolution = resolution
         self.window = tkinter.Toplevel()
 
@@ -59,14 +57,10 @@ class Screen:
         try:
             self.led_num = led_num
             self.image = Image.open(img_path)
-            if self.do_light_correction and self.light_correction_paths[led_num] is not None:
+            if self.do_correction and self.correction_paths[led_num] is not None:
                 mask = self.image
-                correction = Image.open(self.light_correction_paths[led_num])
+                correction = Image.open(self.correction_paths[led_num])
                 self.image = Image.composite(correction, mask, mask=mask)
-            if self.do_dark_correction and self.dark_correction_paths[led_num] is not None:
-                dark_correction = Image.open(self.dark_correction_paths[led_num])
-                mask = Image.eval(self.image, lambda x: 255 if x == 0 else 0)
-                self.image = Image.composite(dark_correction, self.image, mask=mask)
             self.image_path = img_path
 
         except (OSError, FileNotFoundError):
@@ -134,58 +128,43 @@ class ScreenThread(Thread):
         self.screens = []
         self.total_offset = 0
         for le in self.light_engines:
-            light_correction_paths = []
-            dark_correction_paths = []
+            correction_paths = []
             for led in range(len(self.config_dict[le]["leds_nm"])):
                 correction_directory= Path(Config.PRINT_SERVER_FOLDER) / Path("grayscale_correction_data")
                 try:
-                    light_correction_image = Path(self.config_dict[le]["light_grayscale_correction_image"][led])
-                    light_correction_paths.append(correction_directory / light_correction_image)
+                    correction_image = Path(self.config_dict[le]["grayscale_correction_image"][led])
+                    correction_paths.append(correction_directory / correction_image)
                 except:
-                    light_correction_paths.append(None)
-                try:
-                    dark_correction_image = Path(self.config_dict[le]["dark_grayscale_correction_image"][led])
-                    dark_correction_paths.append(correction_directory / dark_correction_image)
-                except:
-                    dark_correction_paths.append(None)
+                    correction_paths.append(None)
             
             resolution = tuple(self.config_dict[le]["resolution"])
-            self.screens.append(Screen(resolution, light_correction_paths, dark_correction_paths, screen_offset=self.total_offset, log_level=self.log_level))
+            self.screens.append(Screen(resolution, correction_paths, screen_offset=self.total_offset, log_level=self.log_level))
             self.total_offset += resolution[0]
 
         atexit.register(self.stop)
         tkinter.mainloop()
         self.log.info("Screen thread closed")
 
-    def setCorrectionEnable(self, light_enable, dark_enable, light_engine="visitech"):
+    def setCorrectionEnable(self, enable, light_engine="visitech"):
         screen = self._getScreenIndex(light_engine)
         try:         
-            prev_light_val = self.screens[screen].do_light_correction
-            prev_dark_val = self.screens[screen].do_dark_correction
-            self.screens[screen].do_light_correction = light_enable
-            self.screens[screen].do_dark_correction = dark_enable
-            if (prev_light_val != light_enable or prev_dark_val != dark_enable) and self.screens[screen].image_path is not None:
+            prev_val = self.screens[screen].do_correction
+            self.screens[screen].do_correction = enable
+            if (prev_val != enable) and self.screens[screen].image_path is not None:
                 self.draw(self.screens[screen].image_path, light_engine=light_engine, led_num=self.screens[screen].led_num)
                 
         except IndexError:
             self.log.error("Screen for %s (screen %s) does not exist", light_engine, screen)
             return
         
-    def getLightCorrectionEnable(self, light_engine="visitech"):
+    def getCorrectionEnable(self, light_engine="visitech"):
         screen = self._getScreenIndex(light_engine)
         try:
-            return self.screens[screen].do_light_correction
+            return self.screens[screen].do_correction
         except IndexError:
             self.log.error("Screen for %s (screen %s) does not exist", light_engine, screen)
             return False
         
-    def getDarkCorrectionEnable(self, light_engine="visitech"):
-        screen = self._getScreenIndex(light_engine)
-        try:
-            return self.screens[screen].do_dark_correction
-        except IndexError:
-            self.log.error("Screen for %s (screen %s) does not exist", light_engine, screen)
-            return False
 
     def stop(self):
         """Stop the thread."""
@@ -199,16 +178,11 @@ class ScreenThread(Thread):
         """Draw an image to the specified screen."""
         screen = self._getScreenIndex(light_engine)
         self.log.info("Drawing %s to %s (screen %s)", Path(img_path).name, light_engine, screen)
-        if self.getLightCorrectionEnable(light_engine):
-            if self.screens[screen].light_correction_paths[led_num] is None:
-                self.log.warning("Light correction image %s missing", Path(self.screens[screen].light_correction_paths[led_num]).name)
+        if self.getCorrectionEnable(light_engine):
+            if self.screens[screen].correction_paths[led_num] is None:
+                self.log.warning("Correction image %s missing", Path(self.screens[screen].correction_paths[led_num]).name)
             else:
-                self.log.info("\tLight correction image: %s", Path(self.screens[screen].light_correction_paths[led_num]).name)
-        if self.getDarkCorrectionEnable(light_engine):
-            if self.screens[screen].dark_correction_paths[led_num] is None:
-                self.log.warning("Dark correction image %s missing", Path(self.screens[screen].dark_correction_paths[led_num]).name)
-            else:
-                self.log.info("\tDark correction image: %s", Path(self.screens[screen].dark_correction_paths[led_num]).name)
+                self.log.info("\tCorrection image: %s", Path(self.screens[screen].correction_paths[led_num]).name)
 
         trys = 2 # very occationally the screen will fail to find the image. Not sure why, but hopefully this will fix it
         for i in range(trys):

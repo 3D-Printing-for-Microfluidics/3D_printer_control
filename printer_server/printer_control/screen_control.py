@@ -27,11 +27,14 @@ class ScreenControl(PrintControl):
 
     def pre_exposure_tasks(self, settings, light_engine):
         from printer_server.printer_control.light_engine_control import parseJSONLightEngine
-        le, led = parseJSONLightEngine(light_engine)
+        le, led = parseJSONLightEngine(light_engine, settings.get("Light engine wavelength (nm)"))
 
-        light_corrected = settings.get("Do light grayscale correction", False)
-        dark_corrected = settings.get("Do dark grayscale correction", False)
-        self.screen.setCorrectionEnable(light_corrected, dark_corrected, light_engine=le)
+        # "Do light grayscale correction" setting deprecated, use "Do grayscale correction"
+        corrected = settings.get(
+            "Do light grayscale correction",
+            settings.get("Do grayscale correction", False),
+        )
+        self.screen.setCorrectionEnable(corrected, light_engine=le)
 
         self.screen_thread = Thread(
             log, name="screen_control_draw_thread", target=self.screen.draw, args=[self.image], kwargs={"light_engine": le, "led_num": led}
@@ -57,7 +60,7 @@ class ScreenControl(PrintControl):
         for le in self.screen.light_engines:
             try:
                 self.screen.clear(le)
-                self.screen.setCorrectionEnable(False, False, light_engine=le)
+                self.screen.setCorrectionEnable(False, light_engine=le)
                 update_screen_preview(
                     le, 
                     self.screen.fetch_preview(le)

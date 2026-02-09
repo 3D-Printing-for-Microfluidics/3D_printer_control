@@ -82,4 +82,4 @@ Compatibility utilities:
 - `views/` - Web interface views
 - `templates/` - HTML templates
 - `static/` - Static web assets
-- `grayscale_correction_data/` - Light correction data 
+- `grayscale_correction_data/` - Grayscale correction data 

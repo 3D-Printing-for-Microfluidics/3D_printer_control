@@ -69,7 +69,8 @@ class VacuumControl(PrintControl):
 
     def pre_print_tasks(self):
         if self.next_layer == 0:
-            if self.print_settings.get("Header").get("Print under vacuum", False):
+            vacuum_settings = self.get_vacuum_settings()
+            if vacuum_settings.get("Enable vacuum", False):
                 # lower bell jar and start vacuum system
                 try:
                     log.info("Lowering bell jar and starting vacuum system")
@@ -81,11 +82,16 @@ class VacuumControl(PrintControl):
                     self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_vent1"), False, force=True)
 
                     log.info("Waiting for vacuum system to reach target pressure")
-                    bell_jar_target = config_dict["mks"]["target"][0]
+                    bell_jar_target = vacuum_settings.get(
+                        "Target vacuum level (Torr)", config_dict["mks"]["target"][0]
+                    )
                     bell_jar_reading = self.mks.pressures[0]
                     while bell_jar_reading > bell_jar_target:
                         bell_jar_reading = self.mks.pressures[0]
                         time.sleep(0.1)
+                    vacuum_wait = vacuum_settings.get("Vacuum wait time (sec)", 0)
+                    if vacuum_wait > 0:
+                        time.sleep(vacuum_wait)
                     self.mks_teensy.switch_relay(config_dict["mks_teensy"]["relays"].index("valve_pump1"), False)
                 except Exception as ex:
                     log.critical("Unable to control vacuum system or bell jar (%s)", ex, exc_info=True)
@@ -94,8 +100,9 @@ class VacuumControl(PrintControl):
         super().pre_print_tasks()
 
     def finish_print(self):
-        if self.print_settings.get("Header").get("Print under vacuum", False):
-            # vent vaccum system and raise bell jar
+        vacuum_settings = self.get_vacuum_settings()
+        if vacuum_settings.get("Enable vacuum", False):
+            # vent vacuum system and raise bell jar
             try:
                 log.info("Venting vacuum system")
                 relay_num = config_dict["mks"]["relays"]["vacuum_pump"]["relay_num"]

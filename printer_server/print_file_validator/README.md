@@ -20,23 +20,29 @@ The system supports several schema versions:
 - Simple layer settings
 - Limited validation
 
-### v2.x (Current)
+### v2.x (Legacy)
 - Enhanced validation
 - Support for named settings
 - Template system
 - Improved layer control
 
-### v3.x (Current)
+### v3.x (Legacy)
 - Extended features
     - Adds XY stages
 - Additional validation rules
 - Enhanced template support
 
-### v4.x (Current)
+### v4.x (Legacy)
 - Latest features
     - Adds multiple light engine support
 - Advanced validation
 - Extended hardware support
+
+### v5.0
+- Adds per-exposure wavelength selection
+- Supports Print on film and 0 um layers
+- Adds special print techniques (vacuum settings)
+- Updates force squeeze settings under special layer techniques
 
 ### v999 (Testing)
 - Special schema for testing
@@ -102,8 +108,7 @@ except ValueError as ex:
 {
     "Header": {
         "Schema version": "2.3.0",
-        "Image directory": "slices",
-        "Print under vacuum": false
+        "Image directory": "slices"
     },
     "Design": {
         "Purpose": "Test print",

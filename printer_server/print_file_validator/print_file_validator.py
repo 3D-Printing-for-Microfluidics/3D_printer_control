@@ -1,5 +1,6 @@
 import re
 import json
+import copy
 from printer_server.settings import Config
 from pathlib import Path
 from zipfile import ZipFile, BadZipFile
@@ -13,7 +14,7 @@ VAR_PATTERN = re.compile(r"\$\{([^}]+)\}")
 
 
 def validate_schema(print_file):
-    """Validate a version 0.2 print file and return the print settings
+    """Validate a print file and return the print settings
     as JSON. If an error is detected, a ValueError is raised with
     appropriate information.
     """
@@ -27,15 +28,21 @@ def validate_schema(print_file):
                 if (".csv" in name) or (".log" in name) or ("exposure_data" in name):
                     namelist.remove(name)
             zip_file_handle.extractall(temp_dir, members=namelist)
+            
+            # Check that there is only 1 json file and read it
             print_settings = check_for_unique_print_settings(temp_dir)
+
+            # Check version and validate against schema
+            # We must expand named layer groups and expand variables before validation
             version = check_version(print_settings)
+            expand_named_layer_groups(print_settings)
             print_settings = expand_variables(print_settings)
             validate_against_schema(print_settings, f"schema_{version}.json")
 
             if version == "v999":
                 return print_settings, version
 
-            # check named settings and templates
+            # Check named settings and templates (TEMPLATES DEPRECATED)
             check_referenced_templates_exist(print_settings)
             check_referenced_named_position_settings_exist(print_settings)
             check_referenced_named_image_settings_exist(print_settings)
@@ -44,7 +51,7 @@ def validate_schema(print_file):
             expand_json(print_settings)
 
             # Validate negative layer thickness usage
-            validate_negative_layer_thickness(print_settings)
+            validate_negative_layer_thickness(print_settings) # DEPRECATED
 
             check_slices_folder_exists(zip_file_handle, print_settings)
             check_referenced_images_exist(print_settings, temp_dir)
@@ -100,19 +107,78 @@ def resolve_expressions(obj, variables):
     elif isinstance(obj, list):
         return [resolve_expressions(item, variables) for item in obj]
     elif isinstance(obj, str):
-        # Replace ${...} with evaluated expressions
-        def replace(match):
-            expr = match.group(1)
-            try:
-                return simple_eval(expr, names=variables)
-            except Exception as e:
-                raise ValueError(f"Error evaluating expression '{expr}': {e}")
+        matches = list(VAR_PATTERN.finditer(obj))
 
-        if VAR_PATTERN.search(obj):
-            return replace(VAR_PATTERN.search(obj))
-        return obj
-    else:
-        return obj  # leave numbers/booleans/etc as-is
+        if not matches:
+            return obj
+
+        # Case 1: Pure Expression - preserve the original type (bool, int, etc.)
+        # e.g., obj is exactly "${my_boolean_var}"
+        if len(matches) == 1 and matches[0].group(0) == obj:
+            return simple_eval(matches[0].group(1), names=variables)
+
+        # Case 2: String Interpolation - convert everything to a string
+        # e.g., obj is "Speed: ${base_speed * 1.2} mm/s"
+        last_end = 0
+        result_parts = []
+        for match in matches:
+            result_parts.append(obj[last_end : match.start()])
+            val = simple_eval(match.group(1), names=variables)
+            result_parts.append(str(val))
+            last_end = match.end()
+        result_parts.append(obj[last_end:])
+
+        return "".join(result_parts)
+
+    return obj
+
+
+def build_scoped_variables(global_variables, override_variables):
+    """Return resolved variables for a scoped context (e.g., named layer group)."""
+    merged = dict(global_variables or {})
+    if override_variables:
+        merged.update(override_variables)
+    return resolve_expressions(merged, merged)
+
+
+def expand_named_layer_groups(print_settings):
+    """Expand named layer groups into the main Layers list with variable overrides."""
+    if "Named layer groups" not in print_settings:
+        return
+
+    named_layer_groups = print_settings.get("Named layer groups") or {}
+    layers = print_settings.get("Layers", [])
+    if not layers:
+        return
+
+    global_variables = print_settings.get("Variables", {})
+    expanded_layers = []
+
+    for layer in layers:
+        if "Using named layer group" not in layer:
+            expanded_layers.append(layer)
+            continue
+
+        layer_group_name = layer["Using named layer group"]
+        if layer_group_name not in named_layer_groups:
+            msg = f"Referenced named layer group '{layer_group_name}' could not be found."
+            raise ValueError(msg)
+
+        group_layers = named_layer_groups[layer_group_name]
+        group_variables = layer.get("Variables", {})
+        scoped_variables = build_scoped_variables(global_variables, group_variables)
+
+        resolved_group_layers = []
+        for group_layer in group_layers:
+            resolved_layer = resolve_expressions(copy.deepcopy(group_layer), scoped_variables)
+            resolved_group_layers.append(resolved_layer)
+
+        num_group_dups = layer.get("Number of duplications", 1)
+        for _ in range(num_group_dups):
+            for resolved_layer in resolved_group_layers:
+                expanded_layers.append(copy.deepcopy(resolved_layer))
+
+    print_settings["Layers"] = expanded_layers
 
 
 def check_slices_folder_exists(zip_file_handle, print_settings):
@@ -123,7 +189,7 @@ def check_slices_folder_exists(zip_file_handle, print_settings):
 
 
 def check_version(print_settings):
-    """Check the version of print settings file. Should be '0.2 or 2.x.x-4.x.x'."""
+    """Check the version of print settings file. Should be '0.2 or 2.x.x-5.x.x'."""
     if "Header" not in print_settings:
         msg = "'Header' missing from json file."
         raise ValueError(msg)
@@ -151,7 +217,7 @@ def check_version(print_settings):
         msg = "File is version 0.1. Use converter to convert to version 0.2"
         msg += "  Check 'Header' -> 'Schema Version'"
         raise ValueError(msg)
-    elif int(ver[0]) > 4 and not int(ver[0]) == 999:
+    elif int(ver[0]) > 5 and not int(ver[0]) == 999:
         msg = "Invalid major version number."
         msg += "  Check 'Header' -> 'Schema Version'"
         raise ValueError(msg)
@@ -204,6 +270,7 @@ def check_referenced_images_exist(print_settings, temp_dir):
                     check_image_format(img_path)
 
 
+########################### DEPRECATED ###########################
 def check_referenced_templates_exist(print_settings):
     """Check that all templates referenced in JSON exist."""
     if "Templates" in print_settings:
@@ -226,6 +293,7 @@ def check_referenced_templates_exist(print_settings):
                 if template not in templates.keys():
                     msg = f"Referenced template '{template}' could not be found."
                     raise ValueError(msg)
+#################################################################
 
 
 def check_referenced_named_position_settings_exist(print_settings):
@@ -246,6 +314,7 @@ def check_referenced_named_position_settings_exist(print_settings):
                     msg = f"Referenced position settings '{parent_named_position_setting}' could not be found."
                     raise ValueError(msg)
 
+    ########################### DEPRECATED ###########################
     "'Templates[]'->'Position settings'->'Using named position settings'"
     if "Templates" in print_settings:
         for template in print_settings["Templates"].values():
@@ -258,6 +327,7 @@ def check_referenced_named_position_settings_exist(print_settings):
                     if named_position_setting not in named_position_settings.keys():
                         msg = f"Referenced position settings '{named_position_setting}' could not be found."
                         raise ValueError(msg)
+    #################################################################
 
     "'Layers[]'->'Position settings'->'Using named position settings'"
     for layer in print_settings["Layers"]:
@@ -290,6 +360,7 @@ def check_referenced_named_image_settings_exist(print_settings):
                     msg = f"Referenced image settings '{parent_named_image_setting}' could not be found."
                     raise ValueError(msg)
 
+    ########################### DEPRECATED ###########################
     "'Templates'->'Using named default image settings' and 'Templates[]'->'Image settings list[]'->'Using named image settings'"
     if "Templates" in print_settings:
         for template in print_settings["Templates"].values():
@@ -305,6 +376,7 @@ def check_referenced_named_image_settings_exist(print_settings):
                         if named_image_setting not in named_image_settings.keys():
                             msg = f"Referenced image settings '{named_image_setting}' could not be found."
                             raise ValueError(msg)
+    #################################################################
 
     "'Layers[]'->'Using named default image settings' and 'Layers[]'->'Image settings list[]'->'Using named image settings'"
     for layer in print_settings["Layers"]:
@@ -322,6 +394,7 @@ def check_referenced_named_image_settings_exist(print_settings):
                         raise ValueError(msg)
 
 
+########################### DEPRECATED ###########################
 # Expand templates before calling
 def check_templates_compatibility(print_settings):
     "Check template compatibility in Layers"
@@ -350,6 +423,7 @@ def check_templates_compatibility(print_settings):
             ):
                 msg = f"Incorrect number of image settings for given templates in layer {layer_num}! Needs {len_image_settings_list} image settings."
                 raise ValueError(msg)
+#################################################################
 
 
 def update_json(overrides, defaults):
@@ -463,7 +537,7 @@ def expand_named_image_settings(print_settings):
             else:
                 last_pass_length = len(root_image_settings)
 
-
+########################### DEPRECATED ###########################
 def expand_templates(print_settings):
     # RESOLVE TEMPLATE INHERITANCE
     if "Templates" in print_settings:
@@ -504,6 +578,7 @@ def replace_templates_in_layer(print_settings, layer):
             number_of_image_settings = len(parent_template_copy["Image settings list"])
             layer.update(update_layer_json(layer, parent_template_copy))
         layer.pop("Using templates")
+#################################################################
 
 
 def replace_named_position_settings_in_layer(print_settings, layer):
@@ -559,15 +634,16 @@ def expand_json(print_settings):
 
     expand_named_position_settings(print_settings)
     expand_named_image_settings(print_settings)
-    expand_templates(print_settings)
+    expand_templates(print_settings) # DEPRECATED
 
     # EXPAND LAYERS
     for layer in print_settings["Layers"]:
-        replace_templates_in_layer(print_settings, layer)
+        replace_templates_in_layer(print_settings, layer) # DEPRECATED
         replace_named_position_settings_in_layer(print_settings, layer)
         replace_named_image_settings_in_layer(print_settings, layer)
 
 
+########################### DEPRECATED ###########################
 def validate_negative_layer_thickness(print_settings):
     """Validate that negative layer thickness is only used in specific circumstances.
 
@@ -645,6 +721,7 @@ def validate_negative_layer_thickness(print_settings):
         ):  # Consider it significant if it's more than twice the normal thickness
             last_significant_positive_thickness = thickness
             last_significant_positive_layer_index = i
+#################################################################
 
 
 if __name__ == "__main__":
