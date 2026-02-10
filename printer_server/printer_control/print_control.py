@@ -249,7 +249,7 @@ class PrintControl:
         """
         special_settings = position_settings.get("Special layer techniques", {})
         force_squeeze_settings = special_settings.get("Squeeze out resin", {})
-        if force_squeeze_settings:
+        if len(force_squeeze_settings) > 0:
             return force_squeeze_settings
         legacy_keys = {
             "Enable force squeeze",
