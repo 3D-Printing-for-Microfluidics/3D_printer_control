@@ -46,7 +46,7 @@ def validate_printer_compatibility(print_settings):
 	# Validate vacuum support
 	vacuum_settings = (
 		print_settings.get("Special print techniques", {})
-		.get("Vacuum settings", {})
+		.get("Print under vacuum", {})
 	)
 	if vacuum_settings.get("Enable vacuum"):
 		if "mks" not in config_dict:
