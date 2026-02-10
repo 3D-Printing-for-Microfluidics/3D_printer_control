@@ -50,12 +50,8 @@ def screenLoad():
     try:
         data = {}
         for light_engine in screen.light_engines:
-            light_corrected = screen.getLightCorrectionEnable(light_engine)
-            dark_corrected = screen.getDarkCorrectionEnable(light_engine)
-            data[light_engine] = {
-                "light": light_corrected, 
-                "dark": dark_corrected
-            }
+            corrected = screen.getCorrectionEnable(light_engine)
+            data[light_engine] = corrected
         socketio.emit(
             "screen_load", data, namespace="/manual"
         )
@@ -77,26 +73,12 @@ def screenFetchPreviews():
         socketio.emit("hardware_failure", "screen", namespace="/manual")
 
 
-@socketio.on("screen_light_grayscale_correction", namespace="/manual")
-def screenLightGrayscaleCorrection(message):
+@socketio.on("screen_grayscale_correction", namespace="/manual")
+def screenGrayscaleCorrection(message):
     try:
         light_engine = message["light_engine"]
         correction = bool(message["correction"])
-        screen.setCorrectionEnable(correction, screen.getDarkCorrectionEnable(light_engine), light_engine=light_engine)
-        socketio.emit(
-            "screen_done", {light_engine: screen.fetch_preview(light_engine)}, namespace="/manual"
-        )
-    except Exception as ex:
-        log.warn("Screen manual control failed (%s)", ex, exc_info=True)
-        socketio.emit("hardware_failure", "screen", namespace="/manual")
-
-@socketio.on("screen_dark_grayscale_correction", namespace="/manual")
-def screenDarkGrayscaleCorrection(message):
-    try:
-        light_engine = message["light_engine"]
-        correction = bool(message["correction"])
-        
-        screen.setCorrectionEnable(screen.getLightCorrectionEnable(light_engine), correction, light_engine=light_engine)
+        screen.setCorrectionEnable(correction, light_engine=light_engine)
         socketio.emit(
             "screen_done", {light_engine: screen.fetch_preview(light_engine)}, namespace="/manual"
         )

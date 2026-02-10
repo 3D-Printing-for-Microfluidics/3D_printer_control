@@ -1,8 +1,9 @@
 {
     "valid_schema_versions": [
-        "v4",
+        "v2",
         "v3",
-        "v2"
+        "v4",
+        "v5"
     ],
     "external_control": {},
     "coord_systems": {
