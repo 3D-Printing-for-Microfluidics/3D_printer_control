@@ -108,7 +108,8 @@ class BPControl(PrintControl):
             self.print_position -= layer_thickness
             self.move_build_platform_down(position_settings)
 
-            force_squeeze = position_settings.get("Enable force squeeze", False)
+            force_squeeze_settings = self.get_force_squeeze_settings(position_settings)
+            force_squeeze = force_squeeze_settings.get("Enable force squeeze", force_squeeze_settings.get("Enable squeeze", False))
             if force_squeeze:
                 self.force_squeeze(position_settings, layer)
             time.sleep(final_wait)

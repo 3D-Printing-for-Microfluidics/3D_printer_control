@@ -1,7 +1,8 @@
 {
     "valid_schema_versions": [
-        "v3",
         "v2",
+        "v3",
+        "v5",
         "v999"
     ],
     "external_control": {},
@@ -31,9 +32,9 @@
             "Build Platform": 0
         },
         "fiber_visitech": {
-            "X": -86.308,
-            "Y": 68.815,
-            "Focus": 0.02,
+            "X": -86.492,
+            "Y": 68.282,
+            "Focus": -0.025,
             "Build Platform": 0
         }
     },
@@ -158,8 +159,8 @@
         "address": "253",
         "atm pressure": 650,
         "target": [
-            0.20,
-            0.035
+            1,
+            0.02
         ],
         "relays": {
             "crane": {
@@ -273,11 +274,8 @@
             1600
         ],
         "orientation": "Y",
-        "light_grayscale_correction_image": [
+        "grayscale_correction_image": [
             "20241202-XU19030146.png"
-        ],
-        "dark_grayscale_correction_image": [
-            "20241202-XU19030146-dark.png"
         ],
         "normalization_factor": [
             0.70

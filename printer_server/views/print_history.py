@@ -8,7 +8,7 @@ from printer_server.models import PrintRecord, PrintQueue
 from printer_server.settings import Config
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration.hardware_configuration import config_dict
-from printer_server.print_file_validator import validate_schema
+from printer_server.print_file_validator import validate_schema, validate_printer_compatibility
 
 blueprint = Blueprint(
     "print_history", __name__, url_prefix="/", static_folder="../static"
@@ -99,9 +99,10 @@ def add_to_queue(job_id):
     shutil.copyfile(old_filename, new_filename)
 
     try:
-        _, schema_ver = validate_schema(new_filename)
+        print_settings, schema_ver = validate_schema(new_filename)
         if schema_ver not in config_dict["valid_schema_versions"]:
-            raise ValueError(f"Printer does not support v{schema_ver} JSON format")
+            raise ValueError(f"Printer does not support {schema_ver} JSON format")
+        validate_printer_compatibility(print_settings)
         msg = f"{job.original_filename} added to print queue."
         log.info(msg)
         print_job = PrintQueue(

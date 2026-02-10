@@ -10,15 +10,18 @@ from printer_server.hardware_configuration.hardware_configuration import config_
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
-def parseJSONLightEngine(json_le):
+def parseJSONLightEngine(json_le, wavelength_nm=None):
     led = 0
     for le in config_dict["light_engines"]:
         if le in json_le:
             if len(config_dict[le]["leds_nm"]) > 1:
-                for i, wavelength in enumerate(config_dict[le]["leds_nm"]):
-                    if str(wavelength) in json_le:
-                        led = i
-                        break
+                if wavelength_nm is not None and wavelength_nm in config_dict[le]["leds_nm"]:
+                    led = config_dict[le]["leds_nm"].index(wavelength_nm)
+                else:
+                    for i, wavelength in enumerate(config_dict[le]["leds_nm"]):
+                        if str(wavelength) in json_le:
+                            led = i
+                            break
             return le, led
 
 class LightEngineControl(ScreenControl):
@@ -78,15 +81,20 @@ class LightEngineControl(ScreenControl):
         super().pre_print_tasks()
 
     def pre_exposure_tasks(self, settings, light_engine):
-        le, led = parseJSONLightEngine(light_engine)
+        le, led = parseJSONLightEngine(light_engine, settings.get("Light engine wavelength (nm)"))
         light_engine_driver = self.light_engines[le]
         
+        # "Do light grayscale correction" setting deprecated, use "Do grayscale correction"
+        corrected = settings.get(
+            "Do light grayscale correction",
+            settings.get("Do grayscale correction", False),
+        )
         self.light_engine_threads = Thread(
             log, 
             name=f"{le}_control_setup_thread",
             target=light_engine_driver.setup_exposure,
             args=[self.exposure_time_ms],
-            kwargs={"led_power": self.power, "is_grayscale_corrected": settings.get("Do light grayscale correction", False), "led_num": led},
+            kwargs={"led_power": self.power, "is_grayscale_corrected": corrected, "led_num": led},
         )
         self.light_engine_threads.start()
         super().pre_exposure_tasks(settings, light_engine)
@@ -101,7 +109,7 @@ class LightEngineControl(ScreenControl):
 
     def exposure(self, settings, light_engine):
         try:
-            le, _ = parseJSONLightEngine(light_engine)
+            le, _ = parseJSONLightEngine(light_engine, settings.get("Light engine wavelength (nm)"))
             light_engine_driver = self.light_engines[le]
             update_le_led_state(le, True)
             light_engine_driver.perform_exposure()
@@ -114,7 +122,7 @@ class LightEngineControl(ScreenControl):
 
     def get_le_status(self, settings, light_engine, warn="ALL"):
         try:
-            le, _ = parseJSONLightEngine(light_engine)
+            le, _ = parseJSONLightEngine(light_engine, settings.get("Light engine wavelength (nm)"))
             light_engine_driver = self.light_engines[le]
             return light_engine_driver.read_all_status(warn)
         except Exception as ex:

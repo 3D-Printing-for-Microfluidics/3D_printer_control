@@ -39,11 +39,12 @@ class LoadcellControl(PrintControl):
 
     def force_squeeze(self, position_settings, layer):
         try:
-            squeeze_count = position_settings.get("Squeeze count", 1)
+            force_squeeze_settings = self.get_force_squeeze_settings(position_settings)
+            squeeze_count = force_squeeze_settings.get("Squeeze count", 1)
             final_wait = position_settings["Final wait (ms)"] / 1000
             for i in range(squeeze_count):
                 self.write_to_event_log("Start Force Squeeze")
-                self.squeeze_resin(position_settings, layer)
+                self.squeeze_resin(force_squeeze_settings, layer)
                 self.write_to_event_log("Finish Force Squeeze")
                 if i < squeeze_count-1:
                     time.sleep(final_wait)
@@ -52,9 +53,9 @@ class LoadcellControl(PrintControl):
             self.failed_hardware["Loadcell"] = self.loadcell
             raise PrintingException()
 
-    def squeeze_resin(self, position_settings, layer):
-        squeeze_target = position_settings["Squeeze force (N)"]
-        squeeze_wait = position_settings["Squeeze wait (ms)"] / 1000
+    def squeeze_resin(self, force_squeeze_settings, layer):
+        squeeze_target = force_squeeze_settings["Squeeze force (N)"]
+        squeeze_wait = force_squeeze_settings.get("Squeeze time (ms)", force_squeeze_settings.get("Squeeze wait (ms)", 0)) / 1000
 
         first_count = self.move_bp_to_force(squeeze_target - 5, speed=0.5)
         second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
@@ -239,7 +240,8 @@ class LoadcellControl(PrintControl):
 
     def pre_print_tasks(self):
         if self.next_layer == 0:
-            if self.print_settings.get("Header").get("Print under vacuum", False):
+            vacuum_settings = self.get_vacuum_settings()
+            if vacuum_settings.get("Enable vacuum", False):
                 # for HR5 vacuum we need to redo step 3
                 log.info("Repeating planarization step 3")
                 self.planarization_step_3()

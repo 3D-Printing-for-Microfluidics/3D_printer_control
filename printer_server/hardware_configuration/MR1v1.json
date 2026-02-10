@@ -1,8 +1,9 @@
 {
     "valid_schema_versions": [
-        "v4",
+        "v2",
         "v3",
-        "v2"
+        "v4",
+        "v5"
     ],
     "external_control": {},
     "_systems": {
@@ -19,8 +20,8 @@
             "Build Platform": 0
         },
         "visitech": {
-            "X": -130.388,
-            "Y": -31.800,
+            "X": -130.548,
+            "Y": -29.010,
             "Focus": 49.065,
             "Build Platform": 0
         },
@@ -31,14 +32,14 @@
             "Build Platform": 0
         },
         "keyence_visitech": {
-            "X": -79.128,
-            "Y": -19.986,
+            "X": -79.268,
+            "Y": -17.216,
             "Focus": 47.737,
             "Build Platform": 0
         },
         "keyence_wintech": {
-            "X": 92.640,
-            "Y": -17.110,
+            "X": 92.275,
+            "Y": -17.670,
             "Focus": 48.870,
             "Build Platform": 0
         }

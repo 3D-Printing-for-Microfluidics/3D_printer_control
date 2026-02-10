@@ -99,7 +99,7 @@ class TestControl(PrintControl):
         self.light_engine = "visitech"
         self.light_engine_alignment = self.light_engines[self.light_engine].config_dict["orientation"]
         self.led_num = 0
-        self.screen.setCorrectionEnable(False, False, light_engine=self.light_engine)
+        self.screen.setCorrectionEnable(False, light_engine=self.light_engine)
 
     def cleanup_tests(self):
         self.post_print_tasks()
