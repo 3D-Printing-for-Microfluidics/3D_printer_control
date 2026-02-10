@@ -102,7 +102,12 @@ def expand_variables(print_settings):
     # Define default variables
 
     variables = print_settings.get("Variables", {})
-    print_settings = resolve_expressions(print_settings, variables)
+    resolved_print_settings = resolve_expressions(print_settings, variables)
+    for key in list(print_settings.keys()):
+        if key not in resolved_print_settings.keys():
+            del print_settings[key]
+    for key in resolved_print_settings.keys():
+        print_settings[key] = resolved_print_settings[key]
 
 
 def resolve_expressions(obj, variables):
