@@ -1,7 +1,6 @@
 import re
 import json
 import copy
-from printer_server.settings import Config
 from pathlib import Path
 from zipfile import ZipFile, BadZipFile
 from tempfile import TemporaryDirectory
@@ -36,7 +35,7 @@ def validate_schema(print_file):
             # We must expand named layer groups and expand variables before validation
             version = check_version(print_settings)
             expand_named_layer_groups(print_settings)
-            print_settings = expand_variables(print_settings)
+            expand_variables(print_settings)
             validate_against_schema(print_settings, f"schema_{version}.json")
 
             if version == "v999":
@@ -56,10 +55,15 @@ def validate_schema(print_file):
             check_slices_folder_exists(zip_file_handle, print_settings)
             check_referenced_images_exist(print_settings, temp_dir)
 
-            write_json(
-                Path(Config.PROJECT_ROOT) / "logs" / "last_validation.json",
-                print_settings,
-            )
+            if __name__ != "__main__":
+                from printer_server.settings import Config
+                write_json(
+                    Path(Config.PROJECT_ROOT) / "logs" / "last_validation.json",
+                    print_settings,
+                )
+            else:
+                print(f"Validation successful for {print_file} with schema version {version}.")
+                print(f"Validated print settings JSON:\n{json.dumps(print_settings, indent=2)}")
 
             return print_settings, version
     except BadZipFile:
@@ -98,7 +102,7 @@ def expand_variables(print_settings):
     # Define default variables
 
     variables = print_settings.get("Variables", {})
-    return resolve_expressions(print_settings, variables)
+    print_settings = resolve_expressions(print_settings, variables)
 
 
 def resolve_expressions(obj, variables):
@@ -631,6 +635,9 @@ def expand_json(print_settings):
     """Expands the JSON to remove all named image/position settings and templates"""
     if check_version(print_settings) == "v999":
         return
+    
+    expand_named_layer_groups(print_settings)
+    expand_variables(print_settings)
 
     expand_named_position_settings(print_settings)
     expand_named_image_settings(print_settings)
@@ -725,9 +732,21 @@ def validate_negative_layer_thickness(print_settings):
 
 
 if __name__ == "__main__":
-    for print_job in Path("test_print_files_v2").glob("*.zip"):
-        try:
-            print_settings, schema_ver = validate_schema(print_job)
-            print(f"{schema_ver}: {print_job} is good")
-        except ValueError as ex:
-            print(f"Error in {print_job}:\n {ex}")
+    # for print_job in Path("test_print_files_v2").glob("*.zip"):
+    #     try:
+    #         print_settings, schema_ver = validate_schema(print_job)
+    #         print(f"{schema_ver}: {print_job} is good")
+    #     except ValueError as ex:
+    #         print(f"Error in {print_job}:\n {ex}")
+
+    # get print settings file from command line argument and validate
+    import argparse
+    parser = argparse.ArgumentParser(description="Validate a print settings file.")
+    parser.add_argument("print_file", type=str, help="Path to the print settings .zip file.")
+    args = parser.parse_args()
+    print_file = args.print_file
+    try:
+        print_settings, schema_ver = validate_schema(print_file)
+        print(f"{schema_ver}: {print_file} is good")
+    except ValueError as ex:
+        print(f"Error in {print_file}:\n {ex}")
