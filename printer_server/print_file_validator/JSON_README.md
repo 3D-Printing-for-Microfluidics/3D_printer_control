@@ -470,7 +470,8 @@ Special techniques are available at the print, layer, and image levels:
                 },
                 "Print on film": {
                     "Enable print on film": true,
-                    "Distance up (mm)": 0.3
+                    "Distance up (mm)": 0.3,
+                    "Wait before exposure (ms)": 20000
                 }
             }
         }

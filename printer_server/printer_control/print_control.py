@@ -632,6 +632,8 @@ class PrintControl:
                 special_settings = exposure_settings.get("Special image techniques", {})
                 film_settings = special_settings.get("Print on film", {})
                 if film_settings.get("Enable print on film", False):
+                    if len(film_exposures) == 0 and film_settings.get("Wait before exposure (ms)", 0) > exposure_settings.get("Wait before exposure (ms)", 0):
+                        exposure_settings["Wait before exposure (ms)"] = film_settings.get("Wait before exposure (ms)", 0)
                     film_exposures.append(exposure_settings)
                 else:
                     normal_exposures.append(exposure_settings)

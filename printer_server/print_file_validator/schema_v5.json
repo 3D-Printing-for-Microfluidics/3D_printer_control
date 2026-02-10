@@ -532,6 +532,12 @@
                                     ],
                                     "default": 0.3,
                                     "description": "Distance to move the build up before exposure."
+                                },
+                                "Wait before exposure (ms)": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "default": 0,
+                                    "description": "Wait time before exposure"
                                 }
                             }
                         }
