@@ -90,7 +90,7 @@ class LightMeasurementControl(PrintControl):
                 num_avg = config_dict["spectrometer"]["default_number_of_averages"]
 
                 try:
-                    self.screen.setCorrectionEnable(False, False, light_engine=light_engine)
+                    self.screen.setCorrectionEnable(False, light_engine=light_engine)
                 except:
                     continue
 
@@ -144,7 +144,7 @@ class LightMeasurementControl(PrintControl):
                 update_le_led_state(light_engine, False)
 
                 try:
-                    self.screen.setCorrectionEnable(True, False, light_engine=light_engine)
+                    self.screen.setCorrectionEnable(True, light_engine=light_engine)
                 except Exception as ex:
                     continue
 

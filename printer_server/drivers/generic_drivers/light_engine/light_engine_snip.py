@@ -34,7 +34,7 @@ def light_engine_start(message):
         light_engines[light_engine].idle_off()
         
         # check if correction is active/update correction image to match led num
-        correction = screen.getLightCorrectionEnable(light_engine)
+        correction = screen.getCorrectionEnable(light_engine)
 
         light_engines[light_engine].stop_sequencer()
         light_engines[light_engine].setup_exposure(exposure, led_power=ledPower, repeat=repeat, is_grayscale_corrected=correction, led_num=led)

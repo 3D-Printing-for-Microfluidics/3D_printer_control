@@ -1,7 +1,8 @@
 {
     "valid_schema_versions": [
-        "v3",
         "v2",
+        "v3",
+        "v5",
         "v999"
     ],
     "external_control": {},
@@ -268,11 +269,8 @@
             2560,
             1600
         ],
-        "light_grayscale_correction_image": [
+        "grayscale_correction_image": [
             "20241202-XU19030146.png"
-        ],
-        "dark_grayscale_correction_image": [
-            "20241202-XU19030146-dark.png"
         ],
         "normalization_factor": [
             0.70

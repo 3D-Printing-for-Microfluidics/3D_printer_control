@@ -1,6 +1,7 @@
 {
     "valid_schema_versions": [
-        "v2"
+        "v2",
+        "v5"
     ],
     "external_control": {},
     "stages": {
