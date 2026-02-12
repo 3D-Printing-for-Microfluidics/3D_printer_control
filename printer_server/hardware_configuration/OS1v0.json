@@ -334,7 +334,7 @@
       1.0
     ],
     "orientation": "X",
-    "light_grayscale_correction_image": [
+    "grayscale_correction_image": [
       "OS1v0_corrected_20250905_140900.png"
     ]
   }
