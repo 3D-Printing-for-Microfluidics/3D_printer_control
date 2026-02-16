@@ -43,3 +43,17 @@ h5,
 .h5 {
     margin-top: 6px;
 }
+
+.calibration-prints {
+    margin-top: 20px;
+}
+
+.calibration-print-readme img {
+    max-width: 100%;
+    height: auto;
+}
+
+.calibration-print-info {
+    margin-bottom: 10px;
+    color: #666;
+}

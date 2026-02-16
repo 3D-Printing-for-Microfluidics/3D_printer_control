@@ -1,0 +1,155 @@
+{
+    "Header": {
+        "Schema version": "5.0.0",
+        "Image directory": "slices"
+    },
+    "Default layer settings": {
+        "Number of duplications": 1,
+        "Position settings": {
+            "Layer thickness (um)": 10,
+            "Distance up (mm)": 1.0,
+            "Initial wait (ms)": 100.0,
+            "BP up speed (mm/sec)": 25.0,
+            "BP up acceleration (mm/sec^2)": 50.0,
+            "Up wait (ms)": 0,
+            "BP down speed (mm/sec)": 20.0,
+            "BP down acceleration (mm/sec^2)": 50,
+            "Final wait (ms)": 0
+        },
+        "Image settings": {
+            "Image file": "base.png",
+            "Layer exposure time (ms)": "${Bulk Exposure}",
+            "Light engine power setting": 100,
+            "Relative focus position (um)": 0,
+            "Wait before exposure (ms)": 0,
+            "Wait after exposure (ms)": 0
+        }
+    },
+    "Variables": {
+        "Bulk Exposure": 300,
+        "Sweep Step Size (um)": 20
+    },
+    "Layers": [
+        {
+            "Image settings list": [
+                {
+                    "Layer exposure time (ms)": 10000
+                }
+            ]
+        },
+        {
+            "Image settings list": [
+                {
+                    "Layer exposure time (ms)": 5000
+                }
+            ]
+        },
+        {
+            "Image settings list": [
+                {
+                    "Layer exposure time (ms)": 2500
+                }
+            ]
+        },
+        {
+            "Image settings list": [
+                {
+                    "Layer exposure time (ms)": 1000
+                }
+            ]
+        },
+        {
+            "Number of duplications": 21
+        },
+        {
+            "Number of duplications": 2,
+            "Image settings list": [
+                {
+                    "Image file": "-8.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * -8"
+                },
+                {
+                    "Image file": "-7.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * -7"
+                },
+                {
+                    "Image file": "-6.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * -6"
+                },
+                {
+                    "Image file": "-5.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * -5"
+                },
+                {
+                    "Image file": "-4.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * -4"
+                },
+                {
+                    "Image file": "-3.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * -3"
+                },
+                {
+                    "Image file": "-2.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * -2"
+                },
+                {
+                    "Image file": "-1.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * -1"
+                },
+                {
+                    "Image file": "0.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": 0
+                },
+                {
+                    "Image file": "1.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * 1"
+                },
+                {
+                    "Image file": "2.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * 2"
+                },
+                {
+                    "Image file": "3.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * 3"
+                },
+                {
+                    "Image file": "4.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * 4"
+                },
+                {
+                    "Image file": "5.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * 5"
+                },
+                {
+                    "Image file": "6.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * 6"
+                },
+                {
+                    "Image file": "7.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * 7"
+                },
+                {
+                    "Image file": "8.png",
+                    "Layer exposure time (ms)": 450,
+                    "Relative focus position (um)": "${Sweep Step Size (um)} * 8"
+                }
+            ]
+        }
+    ]
+}
