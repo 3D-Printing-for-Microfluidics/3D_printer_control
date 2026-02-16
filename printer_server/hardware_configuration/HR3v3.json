@@ -85,13 +85,12 @@
             "Focus": 263.8443072
         },
         "axes_speed": {
-            "Focus": 2.0
+            "Focus": 1.0
         },
         "axes_acceleration": {
-            "Focus": 3.0
+            "Focus": 1.0
         },
         "axes_homing_speed": {
-            "Tilt": 1.0,
             "Focus": 1.0
         },
         "limits": {
