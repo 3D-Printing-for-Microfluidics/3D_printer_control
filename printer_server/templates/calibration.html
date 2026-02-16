@@ -87,26 +87,26 @@
         </div>
     </div>
     <div class="row">
+        <div class="col-4">
+            <div id="calibration-print-list" class="list-group calibration-print-list"></div>
+        </div>
         <div class="col-8">
-            <select id="calibration-print-select" class="form-control"></select>
-        </div>
-        <div class="col-4 text-right">
-            <button type="button" class="btn btn-outline-info btn-block" id="calibration-print-add">Add to queue</button>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-12">
-            <div id="calibration-print-alerts"></div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-6">
-            <h5>Parameters</h5>
-            <div id="calibration-print-variables"></div>
-        </div>
-        <div class="col-6">
-            <h5>Description</h5>
-            <div id="calibration-print-readme" class="calibration-print-readme"></div>
+            <div id="calibration-print-empty" class="text-muted">Select a calibration print to view details.</div>
+            <div id="calibration-print-details" class="d-none">
+                <div class="text-right">
+                    <button type="button" class="btn btn-outline-info" id="calibration-print-add">Add to queue</button>
+                </div>
+                <div id="calibration-print-alerts" class="top-buffer"></div>
+                <div class="row">
+                    <div class="col-6">
+                        <div id="calibration-print-variables"></div>
+                    </div>
+                    <div class="col-6">
+                        <h5>Description</h5>
+                        <div id="calibration-print-readme" class="calibration-print-readme"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

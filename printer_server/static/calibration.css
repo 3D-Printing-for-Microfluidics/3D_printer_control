@@ -52,3 +52,8 @@ h5,
     max-width: 100%;
     height: auto;
 }
+
+.calibration-print-list {
+    max-height: 320px;
+    overflow-y: auto;
+}

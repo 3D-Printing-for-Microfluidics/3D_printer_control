@@ -24,6 +24,20 @@ var show_calibration_print_alert = function (text, category = "info") {
     $("#calibration-print-alerts").html(alert);
 }
 
+var show_calibration_print_details = function () {
+    $("#calibration-print-empty").addClass("d-none");
+    $("#calibration-print-details").removeClass("d-none");
+}
+
+var reset_calibration_print_details = function () {
+    $("#calibration-print-details").addClass("d-none");
+    $("#calibration-print-empty").removeClass("d-none");
+    $("#calibration-print-alerts").empty();
+    $("#calibration-print-variables").empty();
+    $("#calibration-print-readme").empty();
+    $("#calibration-print-add").prop("disabled", true);
+}
+
 var render_calibration_print_variables = function (variables) {
     let $container = $("#calibration-print-variables");
     $container.empty();
@@ -89,21 +103,27 @@ $(document).ready(function () {
 
     socket.on("calibration_prints_list_done", function (message) {
         let prints = message.prints || [];
-        let $select = $("#calibration-print-select");
-        $select.empty();
+        let $list = $("#calibration-print-list");
+        $list.empty();
+        reset_calibration_print_details();
         if (prints.length === 0) {
-            $select.append(`<option value="">No calibration prints found</option>`);
+            $list.append(`<div class="text-muted">No calibration prints found.</div>`);
             return;
         }
         prints.forEach(function (item) {
-            $select.append(`<option value="${item.id}">${item.name}</option>`);
+            $list.append(`
+                <button type="button" class="list-group-item list-group-item-action" data-id="${item.id}">
+                    ${item.name}
+                </button>
+            `);
         });
-        $select.trigger("change");
     });
 
     socket.on("calibration_prints_details_done", function (details) {
         render_calibration_print_variables(details.variables);
         $("#calibration-print-readme").html(details.readme_html || "");
+        $("#calibration-print-add").prop("disabled", false).data("id", details.id);
+        show_calibration_print_details();
     });
 
     socket.on("calibration_prints_add_done", function (message) {
@@ -116,16 +136,19 @@ $(document).ready(function () {
         $("#calibration-print-add").prop("disabled", false);
     });
 
-    $("#calibration-print-select").on("change", function () {
-        let id = $(this).val();
+    $("#calibration-print-list").on("click", ".list-group-item", function () {
+        let id = $(this).data("id");
         if (!id) {
             return;
         }
+        $("#calibration-print-list .list-group-item").removeClass("active");
+        $(this).addClass("active");
+        $("#calibration-print-add").prop("disabled", true).data("id", id);
         socket.emit("calibration_prints_details", { id: id });
     });
 
     $("#calibration-print-add").on("click", function () {
-        let id = $("#calibration-print-select").val();
+        let id = $(this).data("id");
         if (!id) {
             show_calibration_print_alert("Select a calibration print first.", "warning");
             return;
@@ -140,5 +163,6 @@ $(document).ready(function () {
     });
 
     load_calibration_prints();
+    reset_calibration_print_details();
 
 });
