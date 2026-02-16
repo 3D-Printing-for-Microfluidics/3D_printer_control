@@ -116,10 +116,11 @@ def list_calibration_prints():
         if not subdir.is_dir():
             continue
         json_files = sorted(subdir.glob("*.json"))
-        for json_file in json_files:
-            rel = json_file.relative_to(CALIBRATION_PRINTS_ROOT).as_posix()
-            display_name = f"{subdir.name}/{json_file.stem}"
-            prints.append({"id": rel, "name": display_name})
+        if not json_files:
+            continue
+        json_file = json_files[0]
+        rel = json_file.relative_to(CALIBRATION_PRINTS_ROOT).as_posix()
+        prints.append({"id": rel, "name": subdir.name})
     return prints
 
 
@@ -317,8 +318,9 @@ def calibration_prints_add_to_queue(message):
             raise ValueError(f"Printer does not support {schema_ver} JSON format")
         validate_printer_compatibility(print_settings)
 
+        display_name = print_path.parent.name
         print_job = PrintQueue(
-            original_filename=print_path.name,
+            original_filename=display_name,
             upload_time=upload_time,
             upload_ip=request.remote_addr,
         ).save()
@@ -327,7 +329,7 @@ def calibration_prints_add_to_queue(message):
             "job uploaded",
             {
                 "id": print_job.id,
-                "name": print_path.name,
+                "name": display_name,
                 "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
                 "upload_ip": request.remote_addr,
             },
@@ -335,7 +337,7 @@ def calibration_prints_add_to_queue(message):
         )
         socketio.emit(
             "calibration_prints_add_done",
-            {"text": f"{print_path.name} added to queue."},
+            {"text": f"{display_name} added to queue."},
             namespace="/calibration",
         )
     except (ValueError, FileNotFoundError, json.JSONDecodeError) as ex:

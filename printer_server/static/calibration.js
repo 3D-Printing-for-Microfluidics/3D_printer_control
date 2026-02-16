@@ -50,9 +50,13 @@ var render_calibration_print_variables = function (variables) {
         let label = item.label || item.key;
         let value = item.value;
         let input = `
-            <div class="form-group">
-                <label>${label}</label>
-                <input type="text" class="form-control calibration-print-variable" data-var="${key}" value="${value}">
+            <div class="row">
+                <div class="col-6">
+                    <label>${label}</label>
+                </div>
+                <div class="col-6">
+                    <input type="text" class="form-control calibration-print-variable" data-var="${key}" value="${value}">
+                </div>
             </div>
         `;
         $container.append(input);
