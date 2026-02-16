@@ -24,20 +24,6 @@ var show_calibration_print_alert = function (text, category = "info") {
     $("#calibration-print-alerts").html(alert);
 }
 
-var render_calibration_print_info = function (info) {
-    if (!info) {
-        $("#calibration-print-info").empty();
-        return;
-    }
-    let rows = [];
-    for (let key in info) {
-        if (info[key] !== null && info[key] !== undefined) {
-            rows.push(`<div><strong>${key}:</strong> ${info[key]}</div>`);
-        }
-    }
-    $("#calibration-print-info").html(rows.join(""));
-}
-
 var render_calibration_print_variables = function (variables) {
     let $container = $("#calibration-print-variables");
     $container.empty();
@@ -45,16 +31,18 @@ var render_calibration_print_variables = function (variables) {
         $container.html("<div class='text-muted'>No variables defined.</div>");
         return;
     }
-    for (let key in variables) {
-        let value = variables[key];
+    variables.forEach(function (item) {
+        let key = item.key;
+        let label = item.label || item.key;
+        let value = item.value;
         let input = `
             <div class="form-group">
-                <label>${key}</label>
+                <label>${label}</label>
                 <input type="text" class="form-control calibration-print-variable" data-var="${key}" value="${value}">
             </div>
         `;
         $container.append(input);
-    }
+    });
 }
 
 var load_calibration_prints = function () {
@@ -114,7 +102,6 @@ $(document).ready(function () {
     });
 
     socket.on("calibration_prints_details_done", function (details) {
-        render_calibration_print_info(details.info);
         render_calibration_print_variables(details.variables);
         $("#calibration-print-readme").html(details.readme_html || "");
     });

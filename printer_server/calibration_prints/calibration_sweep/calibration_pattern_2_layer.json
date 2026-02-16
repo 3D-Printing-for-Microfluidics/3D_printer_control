@@ -3,6 +3,23 @@
         "Schema version": "5.0.0",
         "Image directory": "slices"
     },
+    "Design": {
+        "User": "Printer",
+        "Purpose": "Calibration sweep print",
+        "Description": "A print with columns at variying focus positions used to determine best focus.",
+        "Slicer": "Custom",
+        "Date": "2026-02-16"
+    },
+    "Variables": {
+        "Comment": "{'bulk_exp': 'Bulk Exposure (ms)', 'sweep_step_um': 'Focus sweep step (um)'}",
+        "bulk_exp": 300,
+        "sweep_step_um": 20
+    },
+    "Named image settings": {
+        "Focus Pillars": {
+            "Layer exposure time (ms)": "${bulk_exp * 1.5}"
+        }
+    },
     "Default layer settings": {
         "Number of duplications": 1,
         "Position settings": {
@@ -18,16 +35,14 @@
         },
         "Image settings": {
             "Image file": "base.png",
-            "Layer exposure time (ms)": "${Bulk Exposure}",
+            "Layer exposure time (ms)": "${bulk_exp}",
+            "Light engine": "visitech",
+            "Light engine wavelength (nm)": 365,
             "Light engine power setting": 100,
             "Relative focus position (um)": 0,
             "Wait before exposure (ms)": 0,
             "Wait after exposure (ms)": 0
         }
-    },
-    "Variables": {
-        "Bulk Exposure": 300,
-        "Sweep Step Size (um)": 20
     },
     "Layers": [
         {
@@ -65,89 +80,88 @@
             "Number of duplications": 2,
             "Image settings list": [
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "-8.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * -8"
+                    "Relative focus position (um)": "${sweep_step_um * -8}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "-7.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * -7"
+                    "Relative focus position (um)": "${sweep_step_um * -7}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "-6.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * -6"
+                    "Relative focus position (um)": "${sweep_step_um * -6}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "-5.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * -5"
+                    "Relative focus position (um)": "${sweep_step_um * -5}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "-4.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * -4"
+                    "Relative focus position (um)": "${sweep_step_um * -4}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "-3.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * -3"
+                    "Relative focus position (um)": "${sweep_step_um * -3}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "-2.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * -2"
+                    "Relative focus position (um)": "${sweep_step_um * -2}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "-1.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * -1"
+                    "Relative focus position (um)": "${sweep_step_um * -1}"
                 },
                 {
-                    "Image file": "0.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": 0
+                    "Using named image settings": "Focus Pillars",
+                    "Image file": "0.png"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "1.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * 1"
+                    "Relative focus position (um)": "${sweep_step_um * 1}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "2.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * 2"
+                    "Relative focus position (um)": "${sweep_step_um * 2}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "3.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * 3"
+                    "Relative focus position (um)": "${sweep_step_um * 3}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "4.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * 4"
+                    "Relative focus position (um)": "${sweep_step_um * 4}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "5.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * 5"
+                    "Relative focus position (um)": "${sweep_step_um * 5}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "6.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * 6"
+                    "Relative focus position (um)": "${sweep_step_um * 6}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "7.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * 7"
+                    "Relative focus position (um)": "${sweep_step_um * 7}"
                 },
                 {
+                    "Using named image settings": "Focus Pillars",
                     "Image file": "8.png",
-                    "Layer exposure time (ms)": 450,
-                    "Relative focus position (um)": "${Sweep Step Size (um)} * 8"
+                    "Relative focus position (um)": "${sweep_step_um * 8}"
                 }
             ]
         }

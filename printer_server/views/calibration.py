@@ -129,11 +129,22 @@ def get_calibration_print_details(print_id):
         raise ValueError("Calibration print not found")
     print_settings = json.loads(print_path.read_text(encoding="utf-8"))
     variables = print_settings.get("Variables", {})
+    translation = variables.get("Comment", {})
+    if isinstance(translation, str):
+        try:
+            translation = json.loads(translation)
+        except json.JSONDecodeError:
+            translation = {}
+    if not isinstance(translation, dict):
+        translation = {}
+    variable_items = []
+    for key, value in variables.items():
+        if key == "Comment":
+            continue
+        variable_items.append(
+            {"key": key, "label": translation.get(key, key), "value": value}
+        )
     header = print_settings.get("Header", {})
-    info = {
-        "Schema version": header.get("Schema version"),
-        "Image directory": header.get("Image directory"),
-    }
     readme_html = ""
     readme_path = print_path.parent / "README.md"
     if readme_path.exists():
@@ -142,8 +153,7 @@ def get_calibration_print_details(print_id):
     return {
         "id": print_id,
         "name": print_path.stem,
-        "variables": variables,
-        "info": info,
+        "variables": variable_items,
         "readme_html": readme_html,
     }
 
@@ -274,7 +284,7 @@ def calibration_prints_add_to_queue(message):
         print_settings = json.loads(print_path.read_text(encoding="utf-8"))
         variables = print_settings.get("Variables", {})
         for key, value in override_vars.items():
-            if key in variables:
+            if key in variables and key != "Comment":
                 variables[key] = _coerce_variable_value(value, variables.get(key))
         print_settings["Variables"] = variables
 
