@@ -182,7 +182,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
     @dummy_log    
     def set_pose(self, x, y, z, u, v, w):
         """ Perform absolute simultaneous translation and rotation of all translational and rotational axes to the specified 
-        positions and angles in X, Y, Z, U, V, and W to specify the pose of the inate system that corresponds to the current 
+        positions and angles in X, Y, Z, U, V, and W to specify the pose of the coordinate system that corresponds to the current 
         pivot point
 
         Args:
@@ -214,7 +214,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
 
     @dummy_log
     def get_pose(self, axis=None):
-        """ Get the current pose (translation and rotation) of the iante system corresponding to the current pivot point of the system
+        """ Get the current pose (translation and rotation) of the coordinate system corresponding to the current pivot point of the system
 
         Returns:
             list: values of the translational and rotational axes of the hexapod
@@ -244,9 +244,9 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         """ Set the value of the pivot point about which the rotational commands are executed
 
         Args:
-            r (float): 'R' axis target position (corresponding to the equivalent new iante system's 'X' axis)
-            s (float): 'S' axis target position (corresponding to the equivalent new iante system's 'Y' axis)
-            t (float): 'T' axis target position (corresponding to the equivalent new iante system's 'Z' axis)
+            r (float): 'R' axis target position (corresponding to the equivalent new coordinate system's 'X' axis)
+            s (float): 'S' axis target position (corresponding to the equivalent new coordinate system's 'Y' axis)
+            t (float): 'T' axis target position (corresponding to the equivalent new coordinate system's 'Z' axis)
 
         Returns:
             bool: successful change of pivot point
@@ -322,7 +322,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
             OrderedDict: ordered dictionary (native PI type) describing the range for each of hte queried axes in the direction of the target pose
         """
         if (len(target_axes) != len(target_pose)):
-            self.log.error("The amount of axes queried is not equal to the inates for target pose")
+            self.log.error("The amount of axes queried is not equal to the coordinates for target pose")
             return None
         
         dynamic_range = dict()

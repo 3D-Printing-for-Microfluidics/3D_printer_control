@@ -6,7 +6,7 @@
         "v999"
     ],
     "external_control": {},
-    "_systems": {
+    "coord_systems": {
         "global": {
             "X": 0,
             "Y": 0,

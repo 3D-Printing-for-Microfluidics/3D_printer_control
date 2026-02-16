@@ -4,7 +4,7 @@
  * If more than one motor is moved by one controller all motors will arrive at 
  * their targets at the same time. E.g., if the motors are part of a 
  * x/y transport system, the transport move on a straight diagonal line to the
- * target inates.
+ * target coordinates.
  * 
  * The sketch also shows examples how the motor properties are set up
  *

@@ -14,13 +14,13 @@ Specifies which schema versions are supported by the configuration.
 
 ### 2. Coordinate Systems
 ```json
-"_systems": {
+"coord_systems": {
     "global": { "X": 0, "Y": 0, "Focus": 0, "Build Platform": 0 },
     "parked": { "X": 100, "Y": 85, "Focus": 0, "Build Platform": 0 },
     "visitech": { "X": -0.4, "Y": 1.06, "Focus": 2.893, "Build Platform": 0 }
 }
 ```
-Defines different inate systems for various components and positions.
+Defines different coordinate systems for various components and positions.
 
 ### 3. Stage Configuration
 ```json
@@ -70,7 +70,7 @@ Here's a simplified example of a configuration file:
 ```json
 {
     "valid_schema_versions": ["v3", "v2"],
-    "_systems": {
+    "coord_systems": {
         "global": { "X": 0, "Y": 0, "Focus": 0, "Build Platform": 0 }
     },
     "stages": {
@@ -103,7 +103,7 @@ To add new hardware to a printer:
 1. Create a new driver in the `drivers/` directory
 2. Add a configuration section to the printer's JSON file
 3. Update `hardware_configuration.py` to support the new hardware
-4. Add any necessary inate systems or stage mappings
+4. Add any necessary coordinate systems or stage mappings
 
 ## Firmware Management
 
