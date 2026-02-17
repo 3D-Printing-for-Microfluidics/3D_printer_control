@@ -131,17 +131,22 @@ def get_calibration_print_details(print_id):
     print_settings = json.loads(print_path.read_text(encoding="utf-8"))
     variables = print_settings.get("Variables", {})
     translation = variables.get("Comment", {})
+    log.info(f"Translation Comment: {translation}")
     if isinstance(translation, str):
         try:
             translation = json.loads(translation)
+            log.info(f"Translation Loaded: {translation}")
         except json.JSONDecodeError:
             translation = {}
+            log.info(f"Translation Failed: {translation}")
     if not isinstance(translation, dict):
         translation = {}
+    log.info(f"Translation: {translation}")
     variable_items = []
     for key, value in variables.items():
         if key == "Comment":
             continue
+        log.info(f"Translating key: {key}, translation: {translation.get(key, key)}")
         variable_items.append(
             {"key": key, "label": translation.get(key, key), "value": value}
         )
