@@ -188,7 +188,7 @@ class LightMeasurementControl(PrintControl):
                     log.warning("Unable to measure irradiance")
 
                 if "photodiode" in config_dict and irr1 is not None:
-                    target = self._get_irradiance_target(light_engine, wavelength, grayscale=False)
+                    target = self._get_irradiance_target(light_engine, wavelength)
                     if target is not None and target > 0 and irr1 > 0:
                         current = light_engine_driver.config_dict.get("normalization_factor", [1.0])[i]
                         updated = round(current * (target / irr1), 2)
@@ -243,13 +243,13 @@ class LightMeasurementControl(PrintControl):
                     log.warning("Unable to measure irradiance")  
 
                 if "photodiode" in config_dict and irr2 is not None:
-                    target_gray = self._get_irradiance_target(light_engine, wavelength, grayscale=True)
-                    if target_gray is not None and target_gray > 0 and irr2 > 0:
+                    target = self._get_irradiance_target(light_engine, wavelength)
+                    if target is not None and target > 0 and irr2 > 0:
                         current_gray = light_engine_driver.config_dict.get(
                             "grayscale_normalization_factor",
                             light_engine_driver.config_dict.get("normalization_factor", [1.0]),
                         )[i]
-                        updated_gray = round(current_gray * (target_gray / irr2), 2)
+                        updated_gray = round(current_gray * (target / irr2), 2)
                         self._update_normalization_factor(
                             light_engine_driver, light_engine, i, updated_gray, is_grayscale=True
                         )
@@ -258,7 +258,7 @@ class LightMeasurementControl(PrintControl):
                             light_engine,
                             wavelength,
                             updated_gray,
-                            target_gray,
+                            target,
                             irr2,
                         )
 
@@ -272,10 +272,8 @@ class LightMeasurementControl(PrintControl):
                 async_file_hander.write(spectra_path, f"Irradiance: {irr1} mW/cm^2\n")     
                 async_file_hander.write(spectra_path, f"Irradiance (grayscale corrected): {irr2} mW/cm^2\n")   
                 if "photodiode" in config_dict:
-                    target = self._get_irradiance_target(light_engine, wavelength, grayscale=False)
-                    target_gray = self._get_irradiance_target(light_engine, wavelength, grayscale=True)
+                    target = self._get_irradiance_target(light_engine, wavelength)
                     async_file_hander.write(spectra_path, f"Irradiance target: {target} mW/cm^2\n")
-                    async_file_hander.write(spectra_path, f"Irradiance target (grayscale): {target_gray} mW/cm^2\n")
                     async_file_hander.write(
                         spectra_path,
                         f"Normalization factor: {light_engine_driver.config_dict.get('normalization_factor', [None])[i]}\n",

@@ -127,9 +127,7 @@ def create_calibration_data():
         for light_engine in config_dict.get("light_engines", []):
             for wavelength in config_dict.get(light_engine, {}).get("leds_nm", []):
                 add_to_dict([f"irradiance_target_{light_engine}_{wavelength}"])
-                add_to_dict([f"irradiance_target_grayscale_{light_engine}_{wavelength}"])
 
-    log.info(f"Calibration data: {calibration_data}")
     return calibration_data
 
 
