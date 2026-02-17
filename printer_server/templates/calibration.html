@@ -27,25 +27,25 @@
 
 {% endif %}
 
-{% for parameter in calibration_data %}
-<div class="container" aria-label="{{ parameter | replace(' ', '-') }}">
+{% macro render_parameter(item) %}
+<div class="container" aria-label="{{ item.machine_name }}" data-group="{{ item.group }}">
     <div class="row">
         <div class="col-3">
-            <h5>{{ parameter }}</h5>
+            <h5>{{ item.human_name }}</h5>
         </div>
         <div class="col-2">
-            <h5 class="col text-right" id="{{ parameter | replace(' ', '-') }}-state">{{ calibration_data[parameter]}}
+            <h5 class="col text-right" id="{{ item.machine_name }}-state">{{ item.value }}
             </h5>
         </div>
         <div class="col-7">
-            {% if "Irradiance" in parameter %}
-            <input class="form-control {{ parameter | replace(' ', '-') }}-cntrl-txt" type="text"
-                id="{{ parameter | replace(' ', '-') }}-txt" placeholder="Irradiance (mW/cm^2)">
-            {% elif ("Tip" in parameter) or ("Tilt" in parameter) or ("Rotate" in parameter) %}
-            <input class="form-control {{ parameter | replace(' ', '-') }}-cntrl-txt" type="text" id="{{ parameter | replace(' ', '-') }}-txt"
+            {% if item.group == "irradiance_targets" %}
+            <input class="form-control {{ item.machine_name }}-cntrl-txt" type="text"
+                id="{{ item.machine_name }}-txt" placeholder="Irradiance (mW/cm^2)">
+            {% elif ("Tip" in item.human_name) or ("Tilt" in item.human_name) or ("Rotate" in item.human_name) %}
+            <input class="form-control {{ item.machine_name }}-cntrl-txt" type="text" id="{{ item.machine_name }}-txt"
                 placeholder="Position (mrad)">
             {% else %}
-            <input class="form-control {{ parameter | replace(' ', '-') }}-cntrl-txt" type="text" id="{{ parameter | replace(' ', '-') }}-txt"
+            <input class="form-control {{ item.machine_name }}-cntrl-txt" type="text" id="{{ item.machine_name }}-txt"
                 placeholder="Position (um)">
             {% endif %}
         </div>
@@ -54,21 +54,38 @@
         <div class="col-2"></div>
         <div class="col-10 text-right">
             <div class="btn-group" role="group">
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-10000</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-1000</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-100</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-10</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">-1</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">1</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">10</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">100</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">1000</button>
-                <button type="button" class="btn btn-outline-info {{ parameter | replace(' ', '-') }}-cntrl-btn">10000</button>
+                <button type="button" class="btn btn-outline-info {{ item.machine_name }}-cntrl-btn">-10000</button>
+                <button type="button" class="btn btn-outline-info {{ item.machine_name }}-cntrl-btn">-1000</button>
+                <button type="button" class="btn btn-outline-info {{ item.machine_name }}-cntrl-btn">-100</button>
+                <button type="button" class="btn btn-outline-info {{ item.machine_name }}-cntrl-btn">-10</button>
+                <button type="button" class="btn btn-outline-info {{ item.machine_name }}-cntrl-btn">-1</button>
+                <button type="button" class="btn btn-outline-info {{ item.machine_name }}-cntrl-btn">1</button>
+                <button type="button" class="btn btn-outline-info {{ item.machine_name }}-cntrl-btn">10</button>
+                <button type="button" class="btn btn-outline-info {{ item.machine_name }}-cntrl-btn">100</button>
+                <button type="button" class="btn btn-outline-info {{ item.machine_name }}-cntrl-btn">1000</button>
+                <button type="button" class="btn btn-outline-info {{ item.machine_name }}-cntrl-btn">10000</button>
             </div>
         </div>
     </div>
 
 </div>
+{% endmacro %}
+
+{% for group_key, group_label in calibration_groups.items() %}
+    {% set items = calibration_data | selectattr('group', 'equalto', group_key) | list %}
+    {% if items %}
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h4>{{ group_label }}</h4>
+            </div>
+        </div>
+    </div>
+    {% for item in items %}
+        {{ render_parameter(item) }}
+    {% endfor %}
+    <hr class="bg-secondary">
+    {% endif %}
 {% endfor %}
 
 {% if initialized %}
