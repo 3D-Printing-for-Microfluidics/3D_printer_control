@@ -38,7 +38,7 @@ def register_irradiance_targets():
         return
     for light_engine in config_dict.get("light_engines", []):
         for wavelength in config_dict.get(light_engine, {}).get("leds_nm", []):
-            human = f"{light_engine} ({wavelength} nm) Irradiance (mW/cm^2)"
+            human = f"{light_engine.capitalize()} ({wavelength} nm)"
             machine = f"irradiance_target_{light_engine}_{wavelength}"
             conversion_dict.setdefault(human, machine)
 
