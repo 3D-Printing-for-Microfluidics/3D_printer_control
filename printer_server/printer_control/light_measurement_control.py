@@ -1,7 +1,9 @@
 import os
 import time
 import logging
+import json
 from datetime import datetime
+from pathlib import Path
 
 import printer_server.views.home as home
 from printer_server.settings import Config
@@ -63,6 +65,48 @@ class LightMeasurementControl(PrintControl):
                 log.warning("Error occured during light measurement (%s)", ex, exc_info=True)
         super().post_print_tasks()
 
+    def _get_last_calibration_positions_from_logs(self):
+        log_file = Path(Config.PROJECT_ROOT) / "logs" / "calibration_position_log.txt"
+        last_line = None
+        try:
+            with open(log_file) as file_handle:
+                for line in file_handle:
+                    last_line = line.rstrip()
+            if not last_line:
+                return {}
+            last_line = last_line[20:]
+            last_line = last_line.replace("'", '"')
+            return json.loads(last_line)
+        except FileNotFoundError:
+            return {}
+        except json.JSONDecodeError:
+            return {}
+
+    def _get_irradiance_target(self, light_engine, wavelength):
+        positions = self._get_last_calibration_positions_from_logs()
+        key = f"irradiance_target_{light_engine}_{wavelength}"
+        return positions.get(key)
+
+    def _update_normalization_factor(self, light_engine_driver, light_engine, led_num, new_value, is_grayscale=False):
+        key = "grayscale_normalization_factor" if is_grayscale else "normalization_factor"
+        if key not in light_engine_driver.config_dict:
+            if "normalization_factor" in light_engine_driver.config_dict:
+                light_engine_driver.config_dict[key] = light_engine_driver.config_dict["normalization_factor"].copy()
+            else:
+                light_engine_driver.config_dict[key] = [1.0] * len(config_dict.get(light_engine, {}).get("leds_nm", []))
+        if key not in config_dict.get(light_engine, {}):
+            config_dict[light_engine][key] = light_engine_driver.config_dict[key].copy()
+
+        if led_num >= len(light_engine_driver.config_dict[key]):
+            missing = (led_num + 1) - len(light_engine_driver.config_dict[key])
+            light_engine_driver.config_dict[key].extend([1.0] * missing)
+        if led_num >= len(config_dict[light_engine][key]):
+            missing = (led_num + 1) - len(config_dict[light_engine][key])
+            config_dict[light_engine][key].extend([1.0] * missing)
+
+        light_engine_driver.config_dict[key][led_num] = new_value
+        config_dict[light_engine][key][led_num] = new_value
+
     def measure_light(self, path_prefix):
         for light_engine in config_dict["light_engines"]:
             
@@ -88,6 +132,10 @@ class LightMeasurementControl(PrintControl):
             for i, wavelength in enumerate(config_dict[light_engine]["leds_nm"]):
                 light_engine_driver = self.light_engines[light_engine]
                 num_avg = config_dict["spectrometer"]["default_number_of_averages"]
+                integration_time = None
+                spectrum = None
+                irr1 = None
+                irr2 = None
 
                 try:
                     self.screen.setCorrectionEnable(False, light_engine=light_engine)
@@ -139,6 +187,23 @@ class LightMeasurementControl(PrintControl):
                 except:
                     log.warning("Unable to measure irradiance")
 
+                if "photodiode" in config_dict and irr1 is not None:
+                    target = self._get_irradiance_target(light_engine, wavelength, grayscale=False)
+                    if target is not None and target > 0 and irr1 > 0:
+                        current = light_engine_driver.config_dict.get("normalization_factor", [1.0])[i]
+                        updated = round(current * (target / irr1), 2)
+                        self._update_normalization_factor(
+                            light_engine_driver, light_engine, i, updated, is_grayscale=False
+                        )
+                        log.info(
+                            "Updated normalization factor for %s %s nm to %s (target=%s, measured=%s)",
+                            light_engine,
+                            wavelength,
+                            updated,
+                            target,
+                            irr1,
+                        )
+
                 # Turn off light engine
                 light_engine_driver.stop_sequencer()
                 update_le_led_state(light_engine, False)
@@ -177,7 +242,26 @@ class LightMeasurementControl(PrintControl):
                 except:
                     log.warning("Unable to measure irradiance")  
 
-                
+                if "photodiode" in config_dict and irr2 is not None:
+                    target_gray = self._get_irradiance_target(light_engine, wavelength, grayscale=True)
+                    if target_gray is not None and target_gray > 0 and irr2 > 0:
+                        current_gray = light_engine_driver.config_dict.get(
+                            "grayscale_normalization_factor",
+                            light_engine_driver.config_dict.get("normalization_factor", [1.0]),
+                        )[i]
+                        updated_gray = round(current_gray * (target_gray / irr2), 2)
+                        self._update_normalization_factor(
+                            light_engine_driver, light_engine, i, updated_gray, is_grayscale=True
+                        )
+                        log.info(
+                            "Updated grayscale normalization factor for %s %s nm to %s (target=%s, measured=%s)",
+                            light_engine,
+                            wavelength,
+                            updated_gray,
+                            target_gray,
+                            irr2,
+                        )
+
                 # Turn off light engine
                 light_engine_driver.stop_sequencer()
                 update_le_led_state(light_engine, False)
@@ -186,7 +270,20 @@ class LightMeasurementControl(PrintControl):
                 spectra_path = str(self.current_job / "logs" / f"{path_prefix}_spectra_{light_engine}_{wavelength}_nm.csv")
                 async_file_hander.write(spectra_path, f"Wavelength: {wavelength} (nm)\n")
                 async_file_hander.write(spectra_path, f"Irradiance: {irr1} mW/cm^2\n")     
-                async_file_hander.write(spectra_path, f"Irradiance (grayscale corrected): {irr2} mW/cm^2\n")               
+                async_file_hander.write(spectra_path, f"Irradiance (grayscale corrected): {irr2} mW/cm^2\n")   
+                if "photodiode" in config_dict:
+                    target = self._get_irradiance_target(light_engine, wavelength, grayscale=False)
+                    target_gray = self._get_irradiance_target(light_engine, wavelength, grayscale=True)
+                    async_file_hander.write(spectra_path, f"Irradiance target: {target} mW/cm^2\n")
+                    async_file_hander.write(spectra_path, f"Irradiance target (grayscale): {target_gray} mW/cm^2\n")
+                    async_file_hander.write(
+                        spectra_path,
+                        f"Normalization factor: {light_engine_driver.config_dict.get('normalization_factor', [None])[i]}\n",
+                    )
+                    async_file_hander.write(
+                        spectra_path,
+                        f"Normalization factor (grayscale): {light_engine_driver.config_dict.get('grayscale_normalization_factor', light_engine_driver.config_dict.get('normalization_factor', [None]))[i]}\n",
+                    )            
                 async_file_hander.write(spectra_path, f"Integration time: {integration_time} ms\n")
                 async_file_hander.write(spectra_path, f"Number of Averages: {num_avg}\n")
                 async_file_hander.write(spectra_path, "\n")

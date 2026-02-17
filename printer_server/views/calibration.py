@@ -33,6 +33,15 @@ conversion_dict = {
     "Wintech Y Shift per mm Y": "yy_shift",
 }
 
+def register_irradiance_targets():
+    if "photodiode" not in config_dict:
+        return
+    for light_engine in config_dict.get("light_engines", []):
+        for wavelength in config_dict.get(light_engine, {}).get("leds_nm", []):
+            human = f"{light_engine} ({wavelength} nm) Irradiance (mW/cm^2)"
+            machine = f"irradiance_target_{light_engine}_{wavelength}"
+            conversion_dict.setdefault(human, machine)
+
 position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
 
 def write_to_position_log(message):
@@ -90,6 +99,7 @@ def create_calibration_data():
         for setting in l:
             calibration_data[machine_to_human(setting)] = last_positions.get(setting, 0.0)
 
+    register_irradiance_targets()
     last_positions = get_last_calibration_positions_from_logs()
     # Use dynamic focus if available
     if "keyence" in config_dict.keys():
@@ -113,6 +123,12 @@ def create_calibration_data():
     if "wintech" in config_dict.keys():
         add_to_dict(["x_drift", "y_drift", "xy_shift", "yx_shift", "xx_shift", "yy_shift"])
 
+    if "photodiode" in config_dict:
+        for light_engine in config_dict.get("light_engines", []):
+            for wavelength in config_dict.get(light_engine, {}).get("leds_nm", []):
+                add_to_dict([f"irradiance_target_{light_engine}_{wavelength}"])
+                add_to_dict([f"irradiance_target_grayscale_{light_engine}_{wavelength}"])
+
     return calibration_data
 
 
@@ -130,14 +146,18 @@ def index():
 
 @socketio.on("set", namespace="/calibration")
 def set(message):
+    register_irradiance_targets()
     mode = message["mode"]
     distance = float(message["distance"])
     parameter = message.get("parameter",None)
     last_positions = get_last_calibration_positions_from_logs()
+    round_precision = 1
+    if parameter and "Irradiance Target" in parameter:
+        round_precision = 2
     if mode == "absolute":
-        last_positions[human_to_machine(parameter)] = round(distance,1)
+        last_positions[human_to_machine(parameter)] = round(distance, round_precision)
     elif mode == "relative":
-        last_positions[human_to_machine(parameter)] = round(distance + last_positions.get(human_to_machine(parameter),0.0),1)
+        last_positions[human_to_machine(parameter)] = round(distance + last_positions.get(human_to_machine(parameter),0.0), round_precision)
     write_to_position_log(last_positions)
     socketio.emit(
         "set_done", create_calibration_data(), namespace="/calibration"

@@ -38,7 +38,10 @@
             </h5>
         </div>
         <div class="col-7">
-            {% if ("Tip" in parameter) or ("Tilt" in parameter) or ("Rotate" in parameter) %}
+            {% if "Irradiance" in parameter %}
+            <input class="form-control {{ parameter | replace(' ', '-') }}-cntrl-txt" type="text"
+                id="{{ parameter | replace(' ', '-') }}-txt" placeholder="Irradiance (mW/cm^2)">
+            {% elif ("Tip" in parameter) or ("Tilt" in parameter) or ("Rotate" in parameter) %}
             <input class="form-control {{ parameter | replace(' ', '-') }}-cntrl-txt" type="text" id="{{ parameter | replace(' ', '-') }}-txt"
                 placeholder="Position (mrad)">
             {% else %}
