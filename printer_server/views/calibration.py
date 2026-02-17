@@ -129,6 +129,7 @@ def create_calibration_data():
                 add_to_dict([f"irradiance_target_{light_engine}_{wavelength}"])
                 add_to_dict([f"irradiance_target_grayscale_{light_engine}_{wavelength}"])
 
+    log.info(f"Calibration data: {calibration_data}")
     return calibration_data
 
 
