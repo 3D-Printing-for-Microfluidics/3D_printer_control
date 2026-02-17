@@ -53,14 +53,14 @@ class LightMeasurementControl(PrintControl):
         super().pre_print_tasks()
         if not self.printing_paused.is_set():
             try:
-                self.measure_light("preprint")
+                self.measure_light("preprint", adjust_normalization_factor=True)
             except Exception as ex:
                 log.warning("Error occured during light measurement (%s)", ex, exc_info=True)
 
     def post_print_tasks(self):
         if not (self.printing_stopped.is_set() or self.printing_paused.is_set()):
             try:
-                self.measure_light("postprint")
+                self.measure_light("postprint", adjust_normalization_factor=False)
             except Exception as ex:
                 log.warning("Error occured during light measurement (%s)", ex, exc_info=True)
         super().post_print_tasks()
@@ -107,7 +107,7 @@ class LightMeasurementControl(PrintControl):
         light_engine_driver.config_dict[key][led_num] = new_value
         config_dict[light_engine][key][led_num] = new_value
 
-    def measure_light(self, path_prefix):
+    def measure_light(self, path_prefix, adjust_normalization_factor=False):
         for light_engine in config_dict["light_engines"]:
             
             # Move x/y/focus to spectrometer location
@@ -134,8 +134,11 @@ class LightMeasurementControl(PrintControl):
                 num_avg = config_dict["spectrometer"]["default_number_of_averages"]
                 integration_time = None
                 spectrum = None
-                irr1 = None
-                irr2 = None
+                irr = None
+                irr_adj = None
+                irr_gray = None
+                irr_gray_adj = None
+                target = self._get_irradiance_target(light_engine, wavelength)
 
                 try:
                     self.screen.setCorrectionEnable(False, light_engine=light_engine)
@@ -183,15 +186,14 @@ class LightMeasurementControl(PrintControl):
                 except:
                     log.warning("Unable to measure spectra")
                 try:
-                    irr1 = self.measure_irradiance(wavelength)
+                    irr = self.measure_irradiance(wavelength)
                 except:
                     log.warning("Unable to measure irradiance")
 
-                if "photodiode" in config_dict and irr1 is not None:
-                    target = self._get_irradiance_target(light_engine, wavelength)
-                    if target is not None and target > 0 and irr1 > 0:
+                if adjust_normalization_factor and "photodiode" in config_dict and irr is not None:
+                    if target is not None and target > 0 and irr > 0:
                         current = light_engine_driver.config_dict.get("normalization_factor", [1.0])[i]
-                        updated = round(current * (target / irr1), 2)
+                        updated = round(current * (target / irr), 2)
                         self._update_normalization_factor(
                             light_engine_driver, light_engine, i, updated, is_grayscale=False
                         )
@@ -201,8 +203,12 @@ class LightMeasurementControl(PrintControl):
                             wavelength,
                             updated,
                             target,
-                            irr1,
+                            irr,
                         )
+                        try:
+                            irr_adj = self.measure_irradiance(wavelength)
+                        except:
+                            log.warning("Unable to measure adjusted irradiance")
 
                 # Turn off light engine
                 light_engine_driver.stop_sequencer()
@@ -238,18 +244,17 @@ class LightMeasurementControl(PrintControl):
                 )
 
                 try:
-                    irr2 = self.measure_irradiance(wavelength)
+                    irr_gray = self.measure_irradiance(wavelength)
                 except:
                     log.warning("Unable to measure irradiance")  
 
-                if "photodiode" in config_dict and irr2 is not None:
-                    target = self._get_irradiance_target(light_engine, wavelength)
-                    if target is not None and target > 0 and irr2 > 0:
+                if adjust_normalization_factor and "photodiode" in config_dict and irr_gray is not None:
+                    if target is not None and target > 0 and irr_gray > 0:
                         current_gray = light_engine_driver.config_dict.get(
                             "grayscale_normalization_factor",
                             light_engine_driver.config_dict.get("normalization_factor", [1.0]),
                         )[i]
-                        updated_gray = round(current_gray * (target / irr2), 2)
+                        updated_gray = round(current_gray * (target / irr_gray), 2)
                         self._update_normalization_factor(
                             light_engine_driver, light_engine, i, updated_gray, is_grayscale=True
                         )
@@ -259,8 +264,12 @@ class LightMeasurementControl(PrintControl):
                             wavelength,
                             updated_gray,
                             target,
-                            irr2,
+                            irr_gray,
                         )
+                        try:                            
+                            irr_gray_adj = self.measure_irradiance(wavelength)
+                        except:
+                            log.warning("Unable to measure adjusted irradiance")
 
                 # Turn off light engine
                 light_engine_driver.stop_sequencer()
@@ -269,19 +278,9 @@ class LightMeasurementControl(PrintControl):
                 # Save spectrum to file
                 spectra_path = str(self.current_job / "logs" / f"{path_prefix}_spectra_{light_engine}_{wavelength}_nm.csv")
                 async_file_hander.write(spectra_path, f"Wavelength: {wavelength} (nm)\n")
-                async_file_hander.write(spectra_path, f"Irradiance: {irr1} mW/cm^2\n")     
-                async_file_hander.write(spectra_path, f"Irradiance (grayscale corrected): {irr2} mW/cm^2\n")   
-                if "photodiode" in config_dict:
-                    target = self._get_irradiance_target(light_engine, wavelength)
-                    async_file_hander.write(spectra_path, f"Irradiance target: {target} mW/cm^2\n")
-                    async_file_hander.write(
-                        spectra_path,
-                        f"Normalization factor: {light_engine_driver.config_dict.get('normalization_factor', [None])[i]}\n",
-                    )
-                    async_file_hander.write(
-                        spectra_path,
-                        f"Normalization factor (grayscale): {light_engine_driver.config_dict.get('grayscale_normalization_factor', light_engine_driver.config_dict.get('normalization_factor', [None]))[i]}\n",
-                    )            
+                async_file_hander.write(spectra_path, f"Irradiance target: {target} mW/cm^2\n")
+                async_file_hander.write(spectra_path, f"Irradiance: {irr_adj} mW/cm^2\n")     
+                async_file_hander.write(spectra_path, f"Irradiance (grayscale corrected): {irr_gray_adj} mW/cm^2\n")           
                 async_file_hander.write(spectra_path, f"Integration time: {integration_time} ms\n")
                 async_file_hander.write(spectra_path, f"Number of Averages: {num_avg}\n")
                 async_file_hander.write(spectra_path, "\n")
