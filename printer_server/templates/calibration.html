@@ -38,7 +38,7 @@
             </h5>
         </div>
         <div class="col-7">
-            {% if item.group == "irradiance_targets" %}
+            {% if item.group == "Irradiance Targets" %}
             <input class="form-control {{ item.machine_name }}-cntrl-txt" type="text"
                 id="{{ item.machine_name }}-txt" placeholder="Irradiance (mW/cm^2)">
             {% elif ("Tip" in item.human_name) or ("Tilt" in item.human_name) or ("Rotate" in item.human_name) %}
@@ -71,8 +71,8 @@
 </div>
 {% endmacro %}
 
-{% for group_key, group_label in calibration_groups.items() %}
-    {% set items = calibration_data | selectattr('group', 'equalto', group_key) | list %}
+{% for group_label in calibration_data | map(attribute='group') | unique | list %}
+    {% set items = calibration_data | selectattr('group', 'equalto', group_label) | list %}
     {% if items %}
     <div class="container">
         <div class="row">

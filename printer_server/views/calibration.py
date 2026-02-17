@@ -33,13 +33,11 @@ conversion_dict = {
     "Wintech Y Shift per mm Y": "yy_shift",
 }
 
-group_labels = {
-    "focus_offsets": "Active Focus Offsets",
-    "tip_tilt_offsets": "Tip/Tilt Offsets",
-    "hexapod_parameters": "Hexapod Parameters",
-    "alignment_adjustments": "Alignment Adjustments",
-    "irradiance_targets": "Irradiance Targets",
-}
+GROUP_FOCUS_OFFSETS = "Active Focus Offsets"
+GROUP_TIP_TILT_OFFSETS = "Tip/Tilt Offsets"
+GROUP_HEXAPOD_PARAMETERS = "Hexapod Parameters"
+GROUP_ALIGNMENT_ADJUSTMENTS = "Alignment Adjustments"
+GROUP_IRRADIANCE_TARGETS = "Irradiance Targets"
 
 def register_irradiance_targets():
     if "photodiode" not in config_dict:
@@ -124,22 +122,22 @@ def create_calibration_data():
             if setting not in conversion_dict.values():
                 conversion_dict[f"{sensor.capitalize()} Focus"] = setting
             keyence_sensors.append(setting)
-        add_to_list(keyence_sensors, "focus_offsets")
+        add_to_list(keyence_sensors, GROUP_FOCUS_OFFSETS)
     else:
-        add_to_list(["focus"], "focus_offsets")
+        add_to_list(["focus"], GROUP_FOCUS_OFFSETS)
 
     # Add TTR axis (if hexapod also add pivot)
     if "hexapod" in config_dict.keys():
-        add_to_list(["tip", "tilt"], "tip_tilt_offsets")
-        add_to_list(["rotate", "pivot_x", "pivot_y", "pivot_z"], "hexapod_parameters")
+        add_to_list(["tip", "tilt"], GROUP_TIP_TILT_OFFSETS)
+        add_to_list(["rotate", "pivot_x", "pivot_y", "pivot_z"], GROUP_HEXAPOD_PARAMETERS)
     else:
-        add_to_list(["tip", "tilt"], "tip_tilt_offsets")
+        add_to_list(["tip", "tilt"], GROUP_TIP_TILT_OFFSETS)
     
     # Add wintech correction
     if "wintech" in config_dict.keys():
         add_to_list(
             ["x_drift", "y_drift", "xy_shift", "yx_shift", "xx_shift", "yy_shift"],
-            "alignment_adjustments",
+            GROUP_ALIGNMENT_ADJUSTMENTS,
         )
 
     if "photodiode" in config_dict:
@@ -147,7 +145,7 @@ def create_calibration_data():
             for wavelength in config_dict.get(light_engine, {}).get("leds_nm", []):
                 add_to_list(
                     [f"irradiance_target_{light_engine}_{wavelength}"],
-                    "irradiance_targets",
+                    GROUP_IRRADIANCE_TARGETS,
                 )
 
     return calibration_data
@@ -163,7 +161,6 @@ def index():
         initialized=initialized,
         hostname=Config.HOSTNAME,
         calibration_data=create_calibration_data(),
-        calibration_groups=group_labels,
     )
 
 @socketio.on("set", namespace="/calibration")
@@ -175,7 +172,7 @@ def set(message):
     group = message.get("group", None)
     last_positions = get_last_calibration_positions_from_logs()
     round_precision = 1
-    if group == "irradiance_targets":
+    if group == GROUP_IRRADIANCE_TARGETS:
         round_precision = 2
     if mode == "absolute":
         last_positions[human_to_machine(parameter)] = round(distance, round_precision)
