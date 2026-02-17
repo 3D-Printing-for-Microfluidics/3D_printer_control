@@ -82,6 +82,15 @@ def human_to_machine(human_string):
     # Convert to machine-readable string
     return conversion_dict.get(normalized)
 
+
+def resolve_machine_name(value):
+    if value in conversion_dict.values():
+        return value
+    machine = human_to_machine(value)
+    if machine is not None:
+        return machine
+    return value
+
 def machine_to_human(machine_string):
     # Reverse lookup in the dictionary
     for human, machine in conversion_dict.items():
@@ -171,13 +180,16 @@ def set(message):
     parameter = message.get("parameter", None)
     group = message.get("group", None)
     last_positions = get_last_calibration_positions_from_logs()
+    machine_name = resolve_machine_name(parameter)
     round_precision = 1
     if group == GROUP_IRRADIANCE_TARGETS:
         round_precision = 2
     if mode == "absolute":
-        last_positions[human_to_machine(parameter)] = round(distance, round_precision)
+        last_positions[machine_name] = round(distance, round_precision)
     elif mode == "relative":
-        last_positions[human_to_machine(parameter)] = round(distance + last_positions.get(human_to_machine(parameter),0.0), round_precision)
+        last_positions[machine_name] = round(
+            distance + last_positions.get(machine_name, 0.0), round_precision
+        )
     write_to_position_log(last_positions)
     socketio.emit(
         "set_done", create_calibration_data(), namespace="/calibration"
