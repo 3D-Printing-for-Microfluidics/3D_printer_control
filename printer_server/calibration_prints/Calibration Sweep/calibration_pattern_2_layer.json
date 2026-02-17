@@ -11,7 +11,7 @@
         "Date": "2026-02-16"
     },
     "Variables": {
-        "Comment": "{'bulk_exp': 'Bulk Exposure (ms)', 'sweep_step_um': 'Focus sweep step (um)'}",
+        "Comment": "{\"bulk_exp\": \"Bulk Exposure (ms)\", \"sweep_step_um\": \"Focus sweep step (um)\"}",
         "bulk_exp": 300,
         "sweep_step_um": 20
     },
