@@ -50,6 +50,21 @@ conversion_dict = {
     "Wintech Y Shift per mm Y": "yy_shift",
 }
 
+GROUP_NON_ACTIVE_OFFSETS = "Tip/Tilt/Focus Settings"
+GROUP_ACTIVE_OFFSETS = "Active Focus Offsets"
+GROUP_HEXAPOD_PARAMETERS = "Hexapod Parameters"
+GROUP_ALIGNMENT_ADJUSTMENTS = "Alignment Adjustments"
+GROUP_IRRADIANCE_TARGETS = "Irradiance Targets"
+
+def register_irradiance_targets():
+    if "photodiode" not in config_dict:
+        return
+    for light_engine in config_dict.get("light_engines", []):
+        for wavelength in config_dict.get(light_engine, {}).get("leds_nm", []):
+            human = f"{light_engine.capitalize()} {wavelength} nm"
+            machine = f"irradiance_target_{light_engine}_{wavelength}"
+            conversion_dict.setdefault(human, machine)
+
 position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
 CALIBRATION_PRINTS_ROOT = Path(Config.PRINT_SERVER_FOLDER) / "calibration_prints"
 
@@ -86,6 +101,14 @@ def human_to_machine(human_string):
     # Convert to machine-readable string
     return conversion_dict.get(normalized)
 
+
+def resolve_machine_name(value):
+    if value in conversion_dict.values():
+        return value
+    machine = human_to_machine(value)
+    if machine is not None:
+        return machine
+    return value
 
 def machine_to_human(machine_string):
     # Reverse lookup in the dictionary
@@ -224,12 +247,20 @@ def create_calibration_data():
     from printer_server.hardware_configuration.hardware_configuration import (
         driver_handles,
     )
-    calibration_data = {}
+    calibration_data = []
 
-    def add_to_dict(l):
-        for setting in l:
-            calibration_data[machine_to_human(setting)] = last_positions.get(setting, 0.0)
+    def add_to_list(settings, group):
+        for setting in settings:
+            calibration_data.append(
+                {
+                    "machine_name": setting,
+                    "human_name": machine_to_human(setting),
+                    "group": group,
+                    "value": last_positions.get(setting, 0.0),
+                }
+            )
 
+    register_irradiance_targets()
     last_positions = get_last_calibration_positions_from_logs()
     if driver_handles.ttr_stage.config_dict.get("auto_tip_tilt", False):
         settings_list = []
@@ -237,28 +268,37 @@ def create_calibration_data():
             for axis in ["tip", "tilt"]:
                 # settings_list.append(f"_{le}_{axis}") # Don't show on Calibration page
                 settings_list.append(f"active_{le}_{axis}")
-        add_to_dict(settings_list)
+        add_to_list(settings_list, GROUP_ACTIVE_OFFSETS)
     else:
-        add_to_dict(["tip", "tilt"])
+        add_to_list(["tip", "tilt"], GROUP_NON_ACTIVE_OFFSETS)
 
     if driver_handles.focus_stage.config_dict.get("auto_focus_with_keyence", False) or driver_handles.focus_stage.config_dict.get("auto_focus_with_photodiode", False):
         settings_list = []
         for le in config_dict["light_engines"]:
             # settings_list.append(f"_{le}_focus") # Don't show on Calibration page
             settings_list.append(f"active_{le}_focus")
-        add_to_dict(settings_list)
+        add_to_list(settings_list, GROUP_ACTIVE_OFFSETS)
     else:
-        add_to_dict(["focus"])
+        add_to_list(["focus"], GROUP_NON_ACTIVE_OFFSETS)
 
     # Add TTR axis (if hexapod also add pivot)
     if "hexapod" in config_dict.keys():
-        add_to_dict(["rotate", "pivot_x", "pivot_y", "pivot_z"])
-
+        add_to_list(["rotate", "pivot_x", "pivot_y", "pivot_z"], GROUP_HEXAPOD_PARAMETERS)
+    
     # Add wintech correction
     if "wintech" in config_dict.keys():
-        add_to_dict(
-            ["x_drift", "y_drift", "xy_shift", "yx_shift", "xx_shift", "yy_shift"]
+        add_to_list(
+            ["x_drift", "y_drift", "xy_shift", "yx_shift", "xx_shift", "yy_shift"],
+            GROUP_ALIGNMENT_ADJUSTMENTS,
         )
+
+    if "photodiode" in config_dict:
+        for light_engine in config_dict.get("light_engines", []):
+            for wavelength in config_dict.get(light_engine, {}).get("leds_nm", []):
+                add_to_list(
+                    [f"irradiance_target_{light_engine}_{wavelength}"],
+                    GROUP_IRRADIANCE_TARGETS,
+                )
 
     return calibration_data
 
@@ -380,15 +420,21 @@ def calibration_prints_add_to_queue(message):
 
 @socketio.on("set", namespace="/calibration")
 def set(message):
+    register_irradiance_targets()
     mode = message["mode"]
     distance = float(message["distance"])
     parameter = message.get("parameter", None)
+    group = message.get("group", None)
     last_positions = get_last_calibration_positions_from_logs()
+    machine_name = resolve_machine_name(parameter)
+    round_precision = 1
+    if group == GROUP_IRRADIANCE_TARGETS:
+        round_precision = 2
     if mode == "absolute":
-        last_positions[human_to_machine(parameter)] = round(distance, 1)
+        last_positions[machine_name] = round(distance, round_precision)
     elif mode == "relative":
-        last_positions[human_to_machine(parameter)] = round(
-            distance + last_positions.get(human_to_machine(parameter), 0.0), 1
+        last_positions[machine_name] = round(
+            distance + last_positions.get(machine_name, 0.0), round_precision
         )
     write_to_position_log(last_positions)
     socketio.emit("set_done", create_calibration_data(), namespace="/calibration")
