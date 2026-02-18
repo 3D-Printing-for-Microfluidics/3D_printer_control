@@ -1,16 +1,22 @@
 """Control view."""
 import json
-from pathlib import Path
-from datetime import datetime
-from os.path import exists
-from flask import request, Blueprint, render_template
 import logging
+import re
+import shutil
+import tempfile
+from datetime import datetime
+from pathlib import Path
+
+from flask import Blueprint, render_template, request, send_from_directory
+from markdown2 import markdown
 
 from printer_server.extensions import socketio
 from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 import printer_server.views.home
 from printer_server.hardware_configuration.hardware_configuration import config_dict
+from printer_server.models import PrintQueue
+from printer_server.print_file_validator import validate_schema, validate_printer_compatibility
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -34,6 +40,7 @@ conversion_dict = {
 }
 
 position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
+CALIBRATION_PRINTS_ROOT = Path(Config.PRINT_SERVER_FOLDER) / "calibration_prints"
 
 def write_to_position_log(message):
     with open(position_log_file, "a") as f:
@@ -74,6 +81,118 @@ def machine_to_human(machine_string):
             return human
     return None
 
+
+def _safe_calibration_print_path(relative_path):
+    root = CALIBRATION_PRINTS_ROOT.resolve()
+    candidate = (CALIBRATION_PRINTS_ROOT / relative_path).resolve()
+    if not str(candidate).startswith(str(root)):
+        raise ValueError("Invalid calibration print path")
+    return candidate
+
+
+def _rewrite_relative_links(html, base_url):
+    def replacer(match):
+        attr = match.group(1)
+        quote = match.group(2)
+        url = match.group(3)
+        return f"{attr}={quote}{base_url}/{url}{quote}"
+
+    pattern = r"(src|href)=(['\"])(?![a-zA-Z]+:|/)([^'\"]+)\2"
+    return re.sub(pattern, replacer, html)
+
+
+def _render_readme(readme_path, folder_rel):
+    raw = readme_path.read_text(encoding="utf-8")
+    html = markdown(raw, extras=["fenced-code-blocks", "tables"])
+    base_url = f"/calibration_prints/{folder_rel}"
+    return _rewrite_relative_links(html, base_url)
+
+
+def list_calibration_prints():
+    prints = []
+    if not CALIBRATION_PRINTS_ROOT.exists():
+        return prints
+    allowed = config_dict.get("calibration_prints")
+    allowed_set = None
+    if isinstance(allowed, list):
+        allowed_set = {name.strip() for name in allowed if isinstance(name, str)}
+    for subdir in sorted(CALIBRATION_PRINTS_ROOT.iterdir()):
+        if not subdir.is_dir():
+            continue
+        if allowed_set is not None and subdir.name not in allowed_set:
+            continue
+        json_files = sorted(subdir.glob("*.json"))
+        if not json_files:
+            continue
+        json_file = json_files[0]
+        rel = json_file.relative_to(CALIBRATION_PRINTS_ROOT).as_posix()
+        prints.append({"id": rel, "name": subdir.name})
+    return prints
+
+
+def get_calibration_print_details(print_id):
+    print_path = _safe_calibration_print_path(print_id)
+    if not print_path.exists() or print_path.suffix.lower() != ".json":
+        raise ValueError("Calibration print not found")
+    print_settings = json.loads(print_path.read_text(encoding="utf-8"))
+    variables = print_settings.get("Variables", {})
+    translation = variables.get("Comment", {})
+    if isinstance(translation, str):
+        try:
+            translation = json.loads(translation)
+        except json.JSONDecodeError:
+            translation = {}
+    if not isinstance(translation, dict):
+        translation = {}
+    variable_items = []
+    for key, value in variables.items():
+        if key == "Comment":
+            continue
+        variable_items.append(
+            {"key": key, "label": translation.get(key, key), "value": value}
+        )
+    header = print_settings.get("Header", {})
+    readme_html = ""
+    readme_path = print_path.parent / "README.md"
+    if readme_path.exists():
+        folder_rel = print_path.parent.relative_to(CALIBRATION_PRINTS_ROOT).as_posix()
+        readme_html = _render_readme(readme_path, folder_rel)
+    return {
+        "id": print_id,
+        "name": print_path.parent.name,
+        "variables": variable_items,
+        "readme_html": readme_html,
+    }
+
+
+def _coerce_variable_value(raw_value, original_value):
+    if raw_value is None or str(raw_value).strip() == "":
+        return original_value
+    if isinstance(original_value, bool):
+        val = str(raw_value).strip().lower()
+        if val in {"true", "1", "yes", "on"}:
+            return True
+        if val in {"false", "0", "no", "off"}:
+            return False
+        return original_value
+    if isinstance(original_value, int) and not isinstance(original_value, bool):
+        try:
+            return int(raw_value)
+        except (ValueError, TypeError):
+            try:
+                return int(float(raw_value))
+            except (ValueError, TypeError):
+                return original_value
+    if isinstance(original_value, float):
+        try:
+            return float(raw_value)
+        except (ValueError, TypeError):
+            return original_value
+    try:
+        return json.loads(raw_value)
+    except (ValueError, TypeError):
+        return raw_value
+
 # Create bluprint
 blueprint = Blueprint(
     "calibration",
@@ -82,6 +201,11 @@ blueprint = Blueprint(
     template_folder="../drivers",
     static_folder="../drivers",
 )
+
+
+@blueprint.route("/calibration_prints/<path:filename>")
+def calibration_prints_file(filename):
+    return send_from_directory(CALIBRATION_PRINTS_ROOT, filename)
 
 def create_calibration_data():
     calibration_data = {}
@@ -127,6 +251,109 @@ def index():
         hostname=Config.HOSTNAME,
         calibration_data=create_calibration_data(),
     )
+
+
+@socketio.on("calibration_prints_list", namespace="/calibration")
+def calibration_prints_list():
+    socketio.emit(
+        "calibration_prints_list_done",
+        {"prints": list_calibration_prints()},
+        namespace="/calibration",
+    )
+
+
+@socketio.on("calibration_prints_details", namespace="/calibration")
+def calibration_prints_details(message):
+    try:
+        print_id = (message or {}).get("id")
+        details = get_calibration_print_details(print_id)
+        socketio.emit(
+            "calibration_prints_details_done", details, namespace="/calibration"
+        )
+    except (ValueError, FileNotFoundError, json.JSONDecodeError) as ex:
+        socketio.emit(
+            "calibration_prints_flash",
+            {"category": "warning", "text": str(ex)},
+            namespace="/calibration",
+        )
+
+
+@socketio.on("calibration_prints_add_to_queue", namespace="/calibration")
+def calibration_prints_add_to_queue(message):
+    try:
+        payload = message or {}
+        print_id = payload.get("id")
+        override_vars = payload.get("variables", {})
+        print_path = _safe_calibration_print_path(print_id)
+        if not print_path.exists() or print_path.suffix.lower() != ".json":
+            raise ValueError("Calibration print not found")
+
+        print_settings = json.loads(print_path.read_text(encoding="utf-8"))
+        variables = print_settings.get("Variables", {})
+        for key, value in override_vars.items():
+            if key in variables and key != "Comment":
+                variables[key] = _coerce_variable_value(value, variables.get(key))
+        print_settings["Variables"] = variables
+
+        upload_time = datetime.now()
+        zip_path = (
+            Path(Config.UPLOAD_FOLDER)
+            / "queue"
+            / f"{upload_time.strftime('job-%Y-%m-%d_%H-%M-%S.%f')}.zip"
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            for item in print_path.parent.iterdir():
+                if item.is_file():
+                    if item.suffix.lower() == ".json" and item.name != print_path.name:
+                        continue
+                    shutil.copy2(item, temp_root / item.name)
+                elif item.is_dir():
+                    shutil.copytree(item, temp_root / item.name)
+
+            (temp_root / print_path.name).write_text(
+                json.dumps(print_settings, indent=4), encoding="utf-8"
+            )
+
+            base_name = str(zip_path)[: -len(".zip")]
+            shutil.make_archive(base_name, "zip", temp_root)
+
+        print_settings, schema_ver = validate_schema(zip_path)
+        if schema_ver not in config_dict["valid_schema_versions"]:
+            raise ValueError(f"Printer does not support {schema_ver} JSON format")
+        validate_printer_compatibility(print_settings)
+
+        display_name = print_path.parent.name
+        print_job = PrintQueue(
+            original_filename=display_name,
+            upload_time=upload_time,
+            upload_ip=request.remote_addr,
+        ).save()
+
+        socketio.emit(
+            "job uploaded",
+            {
+                "id": print_job.id,
+                "name": display_name,
+                "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "upload_ip": request.remote_addr,
+            },
+            namespace="/printing",
+        )
+        socketio.emit(
+            "calibration_prints_add_done",
+            {"text": f"{display_name} added to queue."},
+            namespace="/calibration",
+        )
+    except (ValueError, FileNotFoundError, json.JSONDecodeError) as ex:
+        if "zip_path" in locals() and Path(zip_path).exists():
+            Path(zip_path).unlink(missing_ok=True)
+        socketio.emit(
+            "calibration_prints_flash",
+            {"category": "warning", "text": str(ex)},
+            namespace="/calibration",
+        )
 
 @socketio.on("set", namespace="/calibration")
 def set(message):

@@ -78,6 +78,36 @@
 </div>
 {% endif %}
 
+<hr class="bg-secondary">
+
+<div class="container calibration-prints">
+    <div class="row">
+        <div class="col-12">
+            <h4>Calibration Prints</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-4">
+            <div id="calibration-print-list" class="list-group calibration-print-list"></div>
+        </div>
+        <div class="col-8">
+            <div id="calibration-print-empty" class="text-muted">Select a calibration print to view details.</div>
+            <div id="calibration-print-details" class="d-none">
+                <div id="calibration-print-alerts" class="top-buffer"></div>
+                <h5 id="calibration-print-name" class="top-buffer"></h5>
+                <div id="calibration-print-variables"></div>
+                <div class="row">
+                    <div class="col-12 text-right">
+                        <button type="button" class="btn btn-outline-info" id="calibration-print-add">Add to queue</button>
+                    </div>
+                </div>
+                <h5>Description</h5>
+                <div id="calibration-print-readme" class="calibration-print-readme"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
