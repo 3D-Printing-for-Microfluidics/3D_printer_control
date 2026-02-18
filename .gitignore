@@ -12,7 +12,6 @@ _build/
 migrations/
 .vscode/
 env2/
-slices/
 error.txt
 upload/current_job/
 upload/print_history/

@@ -5,6 +5,10 @@
         "v4",
         "v5"
     ],
+    "calibration_prints": [
+        "Focus Sweep Print",
+        "Uniform Focus Print"
+    ],
     "external_control": {},
     "coord_systems": {
         "global": {

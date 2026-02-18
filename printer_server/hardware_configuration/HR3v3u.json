@@ -3,6 +3,10 @@
         "v2",
         "v5"
     ],
+    "calibration_prints": [
+        "Focus Sweep Print",
+        "Uniform Focus Print"
+    ],
     "external_control": {},
     "stages": {
         "bp_stage": "galil",
