@@ -7,9 +7,14 @@ var enable_all_buttons = function () {
 }
 
 var update_parameters = function (message) {
-    for (let parameter in calibration_data) {
-        if (!$.isEmptyObject(message)) {
-            document.getElementById(`${parameter.replaceAll(' ', '-')}-state`).innerHTML = message[parameter];
+    if ($.isEmptyObject(message)) {
+        return;
+    }
+    for (let i = 0; i < message.length; i++) {
+        let item = message[i];
+        let el = document.getElementById(`${item.machine_name}-state`);
+        if (el) {
+            el.innerHTML = item.value;
         }
     }
 }
@@ -85,23 +90,27 @@ $(document).ready(function () {
         socket.emit("goto");
     });
 
-    for (let parameter in calibration_data) {
-        parameter = parameter.replaceAll(' ', '-');
+    for (let i = 0; i < calibration_data.length; i++) {
+        let item = calibration_data[i];
+        let machine = item.machine_name;
+        let group = item.group;
         // text inputs for absolute changes
-        $(`.${parameter}-cntrl-txt`).on('change', function () {
+        $(`.${machine}-cntrl-txt`).on('change', function () {
             // Parse button content and construct message
             let distance = $(this).val();
             let p = $(this).closest(".container").attr('aria-label');
-            let message = { "mode": "absolute", "distance": distance, "parameter": p };
+            let g = $(this).closest(".container").data('group');
+            let message = { "mode": "absolute", "distance": distance, "parameter": p, "group": g || group };
             socket.emit("set", message);
         });
 
         // buttons for relative changes
-        $(`.${parameter}-cntrl-btn`).click(function () {
+        $(`.${machine}-cntrl-btn`).click(function () {
             // Parse button content and construct message
             let distance = $(this).text();
             let p = $(this).closest(".container").attr('aria-label');
-            let message = { "mode": "relative", "distance": distance, "parameter": p };
+            let g = $(this).closest(".container").data('group');
+            let message = { "mode": "relative", "distance": distance, "parameter": p, "group": g || group };
             socket.emit("set", message);
         });
     }
