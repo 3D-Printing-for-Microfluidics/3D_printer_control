@@ -159,7 +159,7 @@ def get_calibration_print_details(print_id):
         readme_html = _render_readme(readme_path, folder_rel)
     return {
         "id": print_id,
-        "name": print_path.stem,
+        "name": print_path.parent.name,
         "variables": variable_items,
         "readme_html": readme_html,
     }
