@@ -35,6 +35,7 @@ var reset_calibration_print_details = function () {
     $("#calibration-print-alerts").empty();
     $("#calibration-print-variables").empty();
     $("#calibration-print-readme").empty();
+    $("#calibration-print-name").text("");
     $("#calibration-print-add").prop("disabled", true);
 }
 
@@ -125,6 +126,7 @@ $(document).ready(function () {
 
     socket.on("calibration_prints_details_done", function (details) {
         render_calibration_print_variables(details.variables);
+        $("#calibration-print-name").text(details.name || "");
         $("#calibration-print-readme").html(details.readme_html || "");
         $("#calibration-print-add").prop("disabled", false).data("id", details.id);
         show_calibration_print_details();

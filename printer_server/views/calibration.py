@@ -112,8 +112,14 @@ def list_calibration_prints():
     prints = []
     if not CALIBRATION_PRINTS_ROOT.exists():
         return prints
+    allowed = config_dict.get("calibration_prints")
+    allowed_set = None
+    if isinstance(allowed, list):
+        allowed_set = {name.strip() for name in allowed if isinstance(name, str)}
     for subdir in sorted(CALIBRATION_PRINTS_ROOT.iterdir()):
         if not subdir.is_dir():
+            continue
+        if allowed_set is not None and subdir.name not in allowed_set:
             continue
         json_files = sorted(subdir.glob("*.json"))
         if not json_files:
