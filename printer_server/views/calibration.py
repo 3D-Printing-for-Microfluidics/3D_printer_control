@@ -33,8 +33,8 @@ conversion_dict = {
     "Wintech Y Shift per mm Y": "yy_shift",
 }
 
-GROUP_FOCUS_OFFSETS = "Active Focus Offsets"
-GROUP_TIP_TILT_OFFSETS = "Tip/Tilt Offsets"
+GROUP_NON_ACTIVE_OFFSETS = "Tip/Tilt/Focus Settings"
+GROUP_ACTIVE_OFFSETS = "Active Focus Offsets"
 GROUP_HEXAPOD_PARAMETERS = "Hexapod Parameters"
 GROUP_ALIGNMENT_ADJUSTMENTS = "Alignment Adjustments"
 GROUP_IRRADIANCE_TARGETS = "Irradiance Targets"
@@ -131,16 +131,16 @@ def create_calibration_data():
             if setting not in conversion_dict.values():
                 conversion_dict[f"{sensor.capitalize()} Focus"] = setting
             keyence_sensors.append(setting)
-        add_to_list(keyence_sensors, GROUP_FOCUS_OFFSETS)
+        add_to_list(keyence_sensors, GROUP_ACTIVE_OFFSETS)
     else:
-        add_to_list(["focus"], GROUP_FOCUS_OFFSETS)
+        add_to_list(["focus"], GROUP_NON_ACTIVE_OFFSETS)
 
     # Add TTR axis (if hexapod also add pivot)
     if "hexapod" in config_dict.keys():
-        add_to_list(["tip", "tilt"], GROUP_TIP_TILT_OFFSETS)
+        add_to_list(["tip", "tilt"], GROUP_NON_ACTIVE_OFFSETS)
         add_to_list(["rotate", "pivot_x", "pivot_y", "pivot_z"], GROUP_HEXAPOD_PARAMETERS)
     else:
-        add_to_list(["tip", "tilt"], GROUP_TIP_TILT_OFFSETS)
+        add_to_list(["tip", "tilt"], GROUP_NON_ACTIVE_OFFSETS)
     
     # Add wintech correction
     if "wintech" in config_dict.keys():
