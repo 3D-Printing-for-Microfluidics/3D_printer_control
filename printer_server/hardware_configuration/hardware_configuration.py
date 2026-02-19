@@ -182,6 +182,12 @@ class Printer3D:
                     log_level=default_log_level,
                     dual_led=config_dict["visitech"]["dual_led"],)
             else:
+                if "light_engines" in config_dict and "hdmi_output" not in config_dict["visitech"]:
+                    try:
+                        hdmi_index = config_dict["light_engines"].index("visitech") + 1
+                        config_dict["visitech"]["hdmi_output"] = hdmi_index
+                    except ValueError:
+                        pass
                 self.visitech = Visitech(
                     config_dict=config_dict["visitech"],
                     log_level=default_log_level,
