@@ -8,6 +8,8 @@ import json
 import atexit
 import socket
 import logging
+import os
+import subprocess
 from datetime import datetime
 
 from printer_server.drivers.generic_drivers import EthernetSerial, LightEngineDriver
@@ -90,6 +92,11 @@ class Visitech(EthernetSerial, LightEngineDriver):
         self.dual_led = config_dict["dual_led"]
         self.leds = config_dict["leds_nm"]
         self.suppress_ocp_error = False
+        self.hdmi_output = config_dict.get("hdmi_output", 1)
+        self.hdmi_reset_script = config_dict.get(
+            "hdmi_reset_script",
+            "/home/pi/3D_printer_control/rpi/reset_hdmi.sh",
+        )
 
     def initialize(self):
         # set default state for light engine and clear previous errors
@@ -451,6 +458,34 @@ class Visitech(EthernetSerial, LightEngineDriver):
         """
         return json.loads(self.send("GET DMD STATUS").replace("\n    ", ""))
 
+    def _wait_for_video_lock(self, timeout=30.0):
+        start_time = time.time()
+        while (time.time() - start_time) < timeout:
+            dmd_status = self.get_dmd_status()
+            if dmd_status.get("external_video_source_locked"):
+                return True
+            time.sleep(0.1)
+        return False
+
+    def _reset_hdmi(self):
+        if not self.hdmi_reset_script:
+            return False
+        if not os.path.exists(self.hdmi_reset_script):
+            self.log.warning("HDMI reset script not found: %s", self.hdmi_reset_script)
+            return False
+        try:
+            self.log.info("Video lock failed; resetting HDMI-%s and retrying.", self.hdmi_output)
+            subprocess.run(
+                [self.hdmi_reset_script, str(self.hdmi_output)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            return True
+        except (OSError, subprocess.CalledProcessError) as ex:
+            self.log.warning("Failed to reset HDMI: %s", ex)
+            return False
+
     def set_dmd_operation_mode(self, mode):
         """
         Set the operation mode of the DMD.
@@ -465,20 +500,18 @@ class Visitech(EthernetSerial, LightEngineDriver):
         Return type +OK
         """
         if mode == "VIDEO_PATTERN_MODE":
-            start_time = time.time()
-            timeout = 30.0 # must wait for at least 5 seconds to read or write operation mode
-            while (time.time() - start_time) < timeout:
-                dmd_status = self.get_dmd_status()    
-                if dmd_status["external_video_source_locked"]:
-                    return self.send(f"SET OPERATION MODE {mode}")
-                time.sleep(0.1)
+            timeout = 30.0  # must wait for at least 5 seconds to read or write operation mode
+            if self._wait_for_video_lock(timeout=timeout):
+                return self.send(f"SET OPERATION MODE {mode}")
+            if self._reset_hdmi() and self._wait_for_video_lock(timeout=timeout):
+                return self.send(f"SET OPERATION MODE {mode}")
         else:
             return self.send(f"SET OPERATION MODE {mode}")
 
         # usually caused by one of 2 things:
         # - bad hdmi config
         # - screen blanking not disabled
-        raise RuntimeError(f"Light engine failed to get video lock. Check HDMI connection or try rebooting pi and hardware.")
+        raise RuntimeError(f"Light engine failed to get video lock. Check HDMI connection, xrandr videomode, and try rebooting pi and hardware.")
 
     def get_dmd_operation_mode(self):
         """
