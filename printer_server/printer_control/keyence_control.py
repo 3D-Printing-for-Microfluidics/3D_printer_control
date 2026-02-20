@@ -380,6 +380,7 @@ class KeyenceControl(PrintControl):
             f"{self.x_offset}, {self.y_offset}"
         ]
 
+        self.previous_defocus = self.defocus_um
         self.defocus_um = (defocus_um + keyence_measurement)
         if light_engine == "wintech":
             self.defocus_um += self.wintech_thermal_drift
