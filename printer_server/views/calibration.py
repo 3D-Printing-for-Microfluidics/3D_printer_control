@@ -217,6 +217,27 @@ def _coerce_variable_value(raw_value, original_value):
     except (ValueError, TypeError):
         return raw_value
 
+
+def _sanitize_filename_part(value):
+    text = str(value)
+    text = text.replace("/", "-").replace("\\", "-")
+    text = re.sub(r"[^A-Za-z0-9 _.,:()\-]", "", text)
+    return text.strip()
+
+
+def _format_calibration_vars_for_filename(variables):
+    items = []
+    for key in sorted(variables.keys()):
+        if key == "Comment":
+            continue
+        items.append(f"{_sanitize_filename_part(key)}:{_sanitize_filename_part(variables[key])}")
+    if not items:
+        return ""
+    joined = ", ".join(items)
+    if len(joined) > 120:
+        joined = joined[:117] + "..."
+    return f" ({joined})"
+
 # Create bluprint
 blueprint = Blueprint(
     "calibration",
@@ -368,7 +389,8 @@ def calibration_prints_add_to_queue(message):
             raise ValueError(f"Printer does not support {schema_ver} JSON format")
         validate_printer_compatibility(print_settings)
 
-        display_name = print_path.parent.name
+        params_suffix = _format_calibration_vars_for_filename(variables)
+        display_name = f"{print_path.parent.name}{params_suffix}.zip"
         print_job = PrintQueue(
             original_filename=display_name,
             upload_time=upload_time,
