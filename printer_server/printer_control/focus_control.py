@@ -1,3 +1,4 @@
+import time
 import logging
 import numpy as np
 from PIL import Image
@@ -130,6 +131,7 @@ class FocusControl(PrintControl):
         
         if self.defocus_um != self.previous_defocus:
             self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focus + self.defocus_um/1000, join=False)
+            time.sleep(0.1)
         return super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, light_engine):
