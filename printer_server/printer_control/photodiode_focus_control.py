@@ -465,6 +465,7 @@ class PhotodiodeFocusControl(PrintControl):
         last_positions = get_last_calibration_positions_from_logs()
         self.focus = (last_positions.get(f"_{screen_light_engine}_focus",0) + last_positions.get(f"active_{screen_light_engine}_focus",0))/1000
 
+        self.previous_defocus = self.defocus_um
         self.defocus_um = settings["Relative focus position (um)"]
             
     def post_print_tasks(self):
