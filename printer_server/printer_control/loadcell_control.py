@@ -74,7 +74,7 @@ class LoadcellControl(PrintControl):
         self.bp_stage.absMoveBP(mm=self.print_position, speed=50, acceleration=5)
 
     def move_bp_to_force(
-        self, target_force, speed, acceleration=100, error_threshold=None
+        self, target_force, speed, acceleration=100, error_threshold=None, timeout=10
     ):
         """Move the build platform until the target force is achieved.
 
@@ -85,10 +85,16 @@ class LoadcellControl(PrintControl):
         forces = []
         count = 0
         if (speed < 0 and force > target_force) or (speed > 0 and force < target_force):
+            start_time = time.time()
             self.bp_stage.startBPJog(speed=speed, acceleration=acceleration)
             while (speed < 0 and force > target_force) or (
                 speed > 0 and force < target_force
             ):
+                if time.time() - start_time > timeout:
+                    log.warning("Timeout while moving to force.")
+                    self.bp_stage.stopBPJog()
+                    time.sleep(0.02)
+                    return None
                 time.sleep(0.01)
                 force = self.loadcell.get_current_force()
                 log.debug("Loadcell force: %.4f", force)
