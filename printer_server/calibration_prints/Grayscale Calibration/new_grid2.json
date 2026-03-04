@@ -1,0 +1,21 @@
+{
+    "Header": {
+        "Schema version": "999.0.0",
+        "Image directory": "images",
+        "Comment": "Photodiode scan test"
+    },
+    "Functions": [
+        {
+            "name": "setup_tests"
+        },
+        {
+            "name": "capture_and_process_grayscale_correction",
+            "kwargs": {
+                "fine": true
+            }
+        },
+        {
+            "name": "cleanup_tests"
+        }
+    ]
+}
