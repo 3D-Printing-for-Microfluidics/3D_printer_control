@@ -57,6 +57,9 @@
     "calibration_print_burnin_2": {
       "Layer exposure time (ms)": 2500.0
     },
+    "calibration_print.pillar_origin_2_2": {
+      "Layer exposure time (ms)": "${bulk_exp * 1.5}"
+    },
     "calibration_print.pillar_right_0_0": {
       "Layer exposure time (ms)": "${bulk_exp * 1.5}",
       "Relative focus position (um)": "${tt_sweep_step_um * -12}"
@@ -104,6 +107,54 @@
     "calibration_print.pillar_right_1_2": {
       "Using named image settings": "calibration_print.pillar_right_0_0",
       "Relative focus position (um)": "${tt_sweep_step_um * -1}"
+    },
+    "calibration_print.pillar_right_3_2": {
+      "Using named image settings": "calibration_print.pillar_right_0_0",
+      "Relative focus position (um)": "${tt_sweep_step_um * 1}"
+    },
+    "calibration_print.pillar_right_4_2": {
+      "Using named image settings": "calibration_print.pillar_right_0_0",
+      "Relative focus position (um)": "${tt_sweep_step_um * 2}"
+    },
+    "calibration_print.pillar_right_0_3": {
+      "Using named image settings": "calibration_print.pillar_right_0_0",
+      "Relative focus position (um)": "${tt_sweep_step_um * 3}"
+    },
+    "calibration_print.pillar_right_1_3": {
+      "Using named image settings": "calibration_print.pillar_right_0_0",
+      "Relative focus position (um)": "${tt_sweep_step_um * 4}"
+    },
+    "calibration_print.pillar_right_2_3": {
+      "Using named image settings": "calibration_print.pillar_right_0_0",
+      "Relative focus position (um)": "${tt_sweep_step_um * 5}"
+    },
+    "calibration_print.pillar_right_3_3": {
+      "Using named image settings": "calibration_print.pillar_right_0_0",
+      "Relative focus position (um)": "${tt_sweep_step_um * 6}"
+    },
+    "calibration_print.pillar_right_4_3": {
+      "Using named image settings": "calibration_print.pillar_right_0_0",
+      "Relative focus position (um)": "${tt_sweep_step_um * 7}"
+    },
+    "calibration_print.pillar_right_0_4": {
+      "Using named image settings": "calibration_print.pillar_right_0_0",
+      "Relative focus position (um)": "${tt_sweep_step_um * 8}"
+    },
+    "calibration_print.pillar_right_1_4": {
+      "Using named image settings": "calibration_print.pillar_right_0_0",
+      "Relative focus position (um)": "${tt_sweep_step_um * 9}"
+    },
+    "calibration_print.pillar_right_2_4": {
+      "Using named image settings": "calibration_print.pillar_right_0_0",
+      "Relative focus position (um)": "${tt_sweep_step_um * 10}"
+    },
+    "calibration_print.pillar_right_3_4": {
+      "Using named image settings": "calibration_print.pillar_right_0_0",
+      "Relative focus position (um)": "${tt_sweep_step_um * 11}"
+    },
+    "calibration_print.pillar_right_4_4": {
+      "Using named image settings": "calibration_print.pillar_right_0_0",
+      "Relative focus position (um)": "${tt_sweep_step_um * 12}"
     },
     "calibration_print.pillar_origin_0_0": {
       "Using named image settings": "calibration_print.pillar_right_0_0",
@@ -153,9 +204,6 @@
       "Using named image settings": "calibration_print.pillar_right_0_0",
       "Relative focus position (um)": "${focus_sweep_step_um * -1}"
     },
-    "calibration_print.pillar_origin_2_2": {
-      "Layer exposure time (ms)": "${bulk_exp * 1.5}"
-    },
     "calibration_print.pillar_origin_3_2": {
       "Using named image settings": "calibration_print.pillar_right_0_0",
       "Relative focus position (um)": "${focus_sweep_step_um * 1}"
@@ -203,54 +251,6 @@
     "calibration_print.pillar_origin_4_4": {
       "Using named image settings": "calibration_print.pillar_right_0_0",
       "Relative focus position (um)": "${focus_sweep_step_um * 12}"
-    },
-    "calibration_print.pillar_right_3_2": {
-      "Using named image settings": "calibration_print.pillar_right_0_0",
-      "Relative focus position (um)": "${tt_sweep_step_um * 1}"
-    },
-    "calibration_print.pillar_right_4_2": {
-      "Using named image settings": "calibration_print.pillar_right_0_0",
-      "Relative focus position (um)": "${tt_sweep_step_um * 2}"
-    },
-    "calibration_print.pillar_right_0_3": {
-      "Using named image settings": "calibration_print.pillar_right_0_0",
-      "Relative focus position (um)": "${tt_sweep_step_um * 3}"
-    },
-    "calibration_print.pillar_right_1_3": {
-      "Using named image settings": "calibration_print.pillar_right_0_0",
-      "Relative focus position (um)": "${tt_sweep_step_um * 4}"
-    },
-    "calibration_print.pillar_right_2_3": {
-      "Using named image settings": "calibration_print.pillar_right_0_0",
-      "Relative focus position (um)": "${tt_sweep_step_um * 5}"
-    },
-    "calibration_print.pillar_right_3_3": {
-      "Using named image settings": "calibration_print.pillar_right_0_0",
-      "Relative focus position (um)": "${tt_sweep_step_um * 6}"
-    },
-    "calibration_print.pillar_right_4_3": {
-      "Using named image settings": "calibration_print.pillar_right_0_0",
-      "Relative focus position (um)": "${tt_sweep_step_um * 7}"
-    },
-    "calibration_print.pillar_right_0_4": {
-      "Using named image settings": "calibration_print.pillar_right_0_0",
-      "Relative focus position (um)": "${tt_sweep_step_um * 8}"
-    },
-    "calibration_print.pillar_right_1_4": {
-      "Using named image settings": "calibration_print.pillar_right_0_0",
-      "Relative focus position (um)": "${tt_sweep_step_um * 9}"
-    },
-    "calibration_print.pillar_right_2_4": {
-      "Using named image settings": "calibration_print.pillar_right_0_0",
-      "Relative focus position (um)": "${tt_sweep_step_um * 10}"
-    },
-    "calibration_print.pillar_right_3_4": {
-      "Using named image settings": "calibration_print.pillar_right_0_0",
-      "Relative focus position (um)": "${tt_sweep_step_um * 11}"
-    },
-    "calibration_print.pillar_right_4_4": {
-      "Using named image settings": "calibration_print.pillar_right_0_0",
-      "Relative focus position (um)": "${tt_sweep_step_um * 12}"
     }
   },
   "Named layer groups": {},
@@ -339,6 +339,10 @@
           "Image file": "190.0_11.png"
         },
         {
+          "Using named image settings": "calibration_print.pillar_origin_2_2",
+          "Image file": "190.0_12a.png"
+        },
+        {
           "Using named image settings": "calibration_print.pillar_right_3_2",
           "Image file": "190.0_37.png"
         },
@@ -387,10 +391,6 @@
           "Image file": "190.0_48.png"
         },
         {
-          "Using named image settings": "calibration_print.pillar_origin_2_2",
-          "Image file": "190.0_24.png"
-        },
-        {
           "Using named image settings": "calibration_print.pillar_origin_0_0",
           "Image file": "190.0_12.png"
         },
@@ -437,6 +437,10 @@
         {
           "Using named image settings": "calibration_print.pillar_origin_1_2",
           "Image file": "190.0_23.png"
+        },
+        {
+          "Using named image settings": "calibration_print.pillar_origin_2_2",
+          "Image file": "190.0_12b.png"
         },
         {
           "Using named image settings": "calibration_print.pillar_origin_3_2",
