@@ -26,6 +26,7 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
         self.config_dict = config_dict
         self.axes_common_names = self.apt_controller.axes_common_names
         self.target_focus = 0.0
+        self.linked_y_stage = None
 
     def mm_to_rad(self, mm, axis):
         """Convert mm to radians (of image NOT mirror rotation) based on the mount length."""
@@ -78,15 +79,22 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
         self.target_focus = mm
+        # cur = self.getFocusPosition()
+        # if abs(mm - cur) <= 0.025:
+        #     self.apt_controller.absMove(
+        #         mm-0.1, speed=speed, acceleration=acceleration, axis="Focus"
+        #     )
         self.apt_controller.absMove(
             mm, speed=speed, acceleration=acceleration, axis="Focus"
         )
 
     def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        self.target_focus += mm
-        self.apt_controller.relMove(
-            mm, speed=speed, acceleration=acceleration, axis="Focus"
-        )
+        cur = self.getFocusPosition()
+        self.absMoveFocus(cur + mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling)
+        # self.target_focus += mm
+        # self.apt_controller.relMove(
+        #     mm, speed=speed, acceleration=acceleration, axis="Focus"
+        # )
 
     def startFocusJog(self, speed=None, acceleration=None):
         self.apt_controller.startJog(speed=speed, acceleration=acceleration, axis="Focus")
@@ -105,10 +113,17 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
         return self.mm_to_rad(self.apt_controller.getPosition(axis=axis), axis)
 
     def absMoveTTR(self, rad=None, axis=None):
-        self.apt_controller.absMove(self.rad_to_mm(rad, axis), axis=axis)
+        mm = self.rad_to_mm(rad, axis)
+        # cur = self.apt_controller.getPosition(axis=axis)
+        # if abs(mm - cur) <= 0.025:
+        #     self.apt_controller.absMove(mm-0.1, axis=axis)
+        self.apt_controller.absMove(mm, axis=axis)
+        # self.apt_controller.absMove(self.rad_to_mm(rad, axis), axis=axis)
 
     def relMoveTTR(self, rad=None, axis=None):
-        self.apt_controller.relMove(self.rad_to_mm(rad, axis), axis=axis)
+        cur = self.getTTRPosition(axis=axis)
+        self.absMoveTTR(rad=cur+rad, axis=axis)
+        # self.apt_controller.relMove(self.rad_to_mm(rad, axis), axis=axis)
 
     def getTTRLimits(self, axis=None):
         """Get the limits for the TTR stage (in mm or mrad)."""

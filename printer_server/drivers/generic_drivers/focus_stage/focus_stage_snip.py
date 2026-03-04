@@ -1,3 +1,4 @@
+import time
 import logging
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration.hardware_configuration import (
@@ -5,8 +6,6 @@ from printer_server.hardware_configuration.hardware_configuration import (
     config_dict,
 )
 import printer_server.views.manual_controls
-
-import time
 
 focus_stage = driver_handles.focus_stage
 if "coord_systems" in config_dict:
@@ -54,6 +53,8 @@ def focus_move(message):
             "acceleration", focus_stage.getDefaultFocusAcceleration()
         )
         wait_for_settling = message.get("wait_for_settling", True)
+        if focus_stage.config_dict.get("link_focus_and_y_movement", False):
+            y_pos = focus_stage.linked_y_stage.getXYPosition(axis="Y")
         if mode == "absolute":
             if coord_systems_control is not None:
                 coord_system_name, coord_system = (
@@ -74,6 +75,9 @@ def focus_move(message):
                 acceleration=acceleration,
                 wait_for_settling=wait_for_settling,
             )
+        if focus_stage.config_dict.get("link_focus_and_y_movement", False):
+            time.sleep(0.05)
+            focus_stage.linked_y_stage.absMoveXY(y_pos, axis="Y")
         socketio.emit("focus_done", focus_get_position(notify=False), namespace="/manual")
     except Exception as ex:
         log.warn("Focus stage manual control failed (%s)", ex, exc_info=True)

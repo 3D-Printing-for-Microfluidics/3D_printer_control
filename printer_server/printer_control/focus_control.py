@@ -86,8 +86,8 @@ class FocusControl(PrintControl):
     def get_focus(self):
         """Return 'Focus' axis position in um"""
         try:
-            return int(
-                self.focus_stage.getFocusPosition() * 1000
+            return round(
+                self.focus_stage.getFocusPosition() * 1000, 1
             )
         except Exception as ex:
             log.critical("Unable to communicate with focus stage (%s)", ex, exc_info=True)

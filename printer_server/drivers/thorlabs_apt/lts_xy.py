@@ -52,25 +52,25 @@ class LTS_XY(XYStageDriver):
         self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None
     ):
         cur = self.getXYPosition(axis=axis)
-        # self.log.info(f"{axis} {mm}, {cur}, {self.apt_controller.getPosition(axis=axis)}, {self.linked_focus_stage.target_focus}, {abs(mm - cur)}")
-        # if abs(mm - cur) < 0.025:
-        #     self.absMoveXY(cur+0.1, speed=speed, acceleration=acceleration, axis=axis)
-
         if axis == "Y" and self.linked_focus_stage is not None:
             mm -= self.linked_focus_stage.target_focus
-
+            # cur -= self.linked_focus_stage.target_focus
         if mm < 0:
             mm = 0
-
+        # if cur < 0:
+        #     cur = 0
+        # if abs(mm - cur) <= 0.025:
+        #     self.apt_controller.absMove(mm-0.1, speed=speed, acceleration=acceleration, axis=axis)
         self.apt_controller.absMove(mm, speed=speed, acceleration=acceleration, axis=axis)
 
     def relMoveXY(
         self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None
     ):
-        self.log.info(f"{axis} {mm}")
+        cur = self.getXYPosition(axis=axis)
+        self.absMoveXY(mm=cur + mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
         # if abs(mm) < 0.025:
-        #     self.relMove(+0.1, speed=speed, acceleration=acceleration, axis=axis)
-        self.apt_controller.relMove(mm, speed=speed, acceleration=acceleration, axis=axis)
+        #     self.relMove(-0.1, speed=speed, acceleration=acceleration, axis=axis)
+        # self.apt_controller.relMove(mm+0.1, speed=speed, acceleration=acceleration, axis=axis)
 
     def startXYJog(self, speed=None, acceleration=None, axis=None):
         self.apt_controller.startJog(speed=speed, acceleration=acceleration, axis=axis)

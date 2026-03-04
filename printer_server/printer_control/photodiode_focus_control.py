@@ -107,8 +107,8 @@ class PhotodiodeFocusControl(PrintControl):
                 #     f"active_{le}_focus", 0
                 # )
 
-                photodiode_reading = int(
-                    self.focus_stage.getFocusPosition() * 1000
+                photodiode_reading = round(
+                    self.focus_stage.getFocusPosition() * 1000, 1
                 )
                 async_file_hander.write(
                     self.photodiode_focus_log,

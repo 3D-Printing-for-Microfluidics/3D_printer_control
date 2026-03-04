@@ -115,6 +115,7 @@ class TestControl(PrintControl):
         self._update_progress(0, 1, progress)
 
         self.focus_stage.absMoveFocus(mm=10.00)
+        time.sleep(0.05)
         self.xy_stage.threadedXYMove(log, 96.4, 81.8, join=True)
 
         self.light_engines[self.light_engine].setup_exposure(1000, led_power=200, repeat=0, is_grayscale_corrected=False, led_num=self.led_num)
