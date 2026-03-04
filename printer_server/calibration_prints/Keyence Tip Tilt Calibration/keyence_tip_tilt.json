@@ -1,0 +1,69 @@
+{
+    "Header": {
+        "Schema version": "999.0.0",
+        "Image directory": "slices",
+        "Comment": "do the keyence tip/tilt on OS1v0"
+    },
+    "Functions": [
+        {
+            "name": "setup_tests"
+        },
+        {
+            "name": "keyence_tip_tilt_correction",
+            "kwargs": {
+                "axis": "Tip",
+                "iterations": 1,
+                "check": true,
+                "rough_pass": true
+            }
+        },
+        {
+            "name": "keyence_tip_tilt_correction",
+            "kwargs": {
+                "axis": "Tilt",
+                "iterations": 1,
+                "check": true,
+                "rough_pass": true
+            }
+        },
+        {
+            "name": "keyence_tip_tilt_correction",
+            "kwargs": {
+                "axis": "Tip",
+                "iterations": 1,
+                "check": true,
+                "rough_pass": true
+            }
+        },
+        {
+            "name": "keyence_tip_tilt_correction",
+            "kwargs": {
+                "axis": "Tilt",
+                "iterations": 1,
+                "check": true,
+                "rough_pass": true
+            }
+        },
+        {
+            "name": "keyence_tip_tilt_correction",
+            "kwargs": {
+                "axis": "Tip",
+                "iterations": 1,
+                "check": true,
+                "rough_pass": true
+            }
+        },
+        {
+            "name": "keyence_tip_tilt_correction",
+            "kwargs": {
+                "axis": "Tilt",
+                "iterations": 1,
+                "check": true,
+                "rough_pass": true
+            }
+        },
+        {
+            "name": "cleanup_tests"
+        }
+    ]
+}
