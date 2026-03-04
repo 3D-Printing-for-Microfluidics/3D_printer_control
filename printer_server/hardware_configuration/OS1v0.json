@@ -5,6 +5,12 @@
     "v5",
     "v999"
   ],
+  "calibration_prints": [
+    "Focus Sweep Print",
+    "Uniform Focus Print",
+    "Keyence Tip Tilt Calibration",
+    "Tip Tilt Focus Sweep Print"
+  ],
   "external_control": {},
   "coord_systems": {
     "global": {
