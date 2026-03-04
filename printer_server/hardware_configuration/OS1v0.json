@@ -7,9 +7,10 @@
   ],
   "calibration_prints": [
     "Focus Sweep Print",
-    "Uniform Focus Print",
+    "Grayscale Calibration",
     "Keyence Tip Tilt Calibration",
-    "Tip Tilt Focus Sweep Print"
+    "Tip Tilt Focus Sweep Print",
+    "Uniform Focus Print"
   ],
   "external_control": {},
   "coord_systems": {
