@@ -30,7 +30,7 @@
       "Do grayscale correction": true,
       "Image x offset (um)": 0.0,
       "Image y offset (um)": 0.0,
-      "Layer exposure time (ms)": 350.0,
+      "Layer exposure time (ms)": "${bulk_exp}",
       "Light engine": "visitech",
       "Light engine power setting": 100,
       "Light engine wavelength (nm)": 365,
@@ -58,7 +58,7 @@
       "Layer exposure time (ms)": 2500.0
     },
     "calibration_print.pillar_right_0_0": {
-      "Layer exposure time (ms)": 700.0,
+      "Layer exposure time (ms)": "${bulk_exp * 1.5}",
       "Relative focus position (um)": "${tt_sweep_step_um * -12}"
     },
     "calibration_print.pillar_right_1_0": {
@@ -154,7 +154,7 @@
       "Relative focus position (um)": "${focus_sweep_step_um * -1}"
     },
     "calibration_print.pillar_origin_2_2": {
-      "Layer exposure time (ms)": 700.0
+      "Layer exposure time (ms)": "${bulk_exp * 1.5}"
     },
     "calibration_print.pillar_origin_3_2": {
       "Using named image settings": "calibration_print.pillar_right_0_0",
@@ -291,10 +291,6 @@
       "Number of duplications": 1,
       "Image settings list": [
         {
-          "Using named image settings": "calibration_print.pillar_origin_2_2",
-          "Image file": "190.0_24.png"
-        },
-        {
           "Using named image settings": "calibration_print.pillar_right_0_0",
           "Image file": "190.0.png"
         },
@@ -389,6 +385,10 @@
         {
           "Using named image settings": "calibration_print.pillar_right_4_4",
           "Image file": "190.0_48.png"
+        },
+        {
+          "Using named image settings": "calibration_print.pillar_origin_2_2",
+          "Image file": "190.0_24.png"
         },
         {
           "Using named image settings": "calibration_print.pillar_origin_0_0",
