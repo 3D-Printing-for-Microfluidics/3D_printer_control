@@ -69,6 +69,52 @@ position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
 CALIBRATION_PRINTS_ROOT = Path(Config.PRINT_SERVER_FOLDER) / "calibration_prints"
 
 
+def _latest_mtime_in_dir(root_dir):
+    latest = root_dir.stat().st_mtime
+    for path in root_dir.rglob("*"):
+        try:
+            latest = max(latest, path.stat().st_mtime)
+        except FileNotFoundError:
+            continue
+    return latest
+
+
+def extract_calibration_print_archives():
+    if not CALIBRATION_PRINTS_ROOT.exists():
+        return
+    allowed = config_dict.get("calibration_prints")
+    allowed_set = None
+    if isinstance(allowed, list):
+        allowed_set = {name.strip() for name in allowed if isinstance(name, str)}
+    for zip_path in sorted(CALIBRATION_PRINTS_ROOT.glob("*.zip")):
+        if not zip_path.is_file():
+            continue
+        if allowed_set is not None and zip_path.stem not in allowed_set:
+            continue
+        target_dir = CALIBRATION_PRINTS_ROOT / zip_path.stem
+        try:
+            zip_mtime = zip_path.stat().st_mtime
+        except FileNotFoundError:
+            continue
+
+        if target_dir.exists() and target_dir.is_dir():
+            try:
+                latest_mtime = _latest_mtime_in_dir(target_dir)
+            except FileNotFoundError:
+                latest_mtime = 0
+            if zip_mtime <= latest_mtime:
+                continue
+            shutil.rmtree(target_dir, ignore_errors=True)
+
+        target_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            shutil.unpack_archive(str(zip_path), str(target_dir))
+            log.info("Extracted calibration print archive: %s", zip_path.name)
+        except (shutil.ReadError, ValueError) as ex:
+            log.warning("Failed to extract %s: %s", zip_path.name, ex)
+            shutil.rmtree(target_dir, ignore_errors=True)
+
+
 def write_to_position_log(message):
     with open(position_log_file, "a") as f:
         f.write(
