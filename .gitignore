@@ -25,3 +25,4 @@ logs/
 .idea/
 printer_server/drivers/loadcell/firmware/loadcell/build/
 printer_server/drivers/planarization/firmware/planarization/build/
+printer_server/calibration_prints/*/
