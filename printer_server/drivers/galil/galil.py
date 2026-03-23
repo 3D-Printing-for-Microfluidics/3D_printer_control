@@ -351,6 +351,8 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             a = self.convertAxis()
             self.setSpeed(10)
             self.motorOn()
+            self.setLowerLimit(-self.max_travel_mm[a], axis=a)
+            self.setUpperLimit(self.max_travel_mm[a], axis=a)
             self.startJog(speed=-15, acceleration=50)
             self.motionPlanningComplete(axis=a)
             self.stopJog()
