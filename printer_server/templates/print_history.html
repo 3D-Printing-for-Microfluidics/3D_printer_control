@@ -15,12 +15,118 @@
 
 
 <container>
-    <div class="row justify-content-center">
+    <div class="row justify-content-center filter-row">
+        <label class="mr-2">Search</label>
+        <input type="text" name="search" id="search-text" placeholder="Search filename" value="{{ search }}">
+        <input type="text" name="design_user" id="design-user" list="design-user-options" placeholder="User" value="{{ design_user }}">
+    </div>
+    <div class="row justify-content-center filter-row">
         <label>Filter by Start Time</label>
         <input type="date" name="start_time" id="start-date" value="{{ start_date }}">
         <input type="date" name="start_time" id="end-date" value="{{ end_date }}">
-        <button type="button" class="btn btn-outline-info" id="apply_button">Apply</button>
+        <button type="button" class="btn btn-outline-info ml-2" id="advanced_toggle">Advanced filters</button>
     </div>
+    <div class="advanced-filters advanced-section">
+        <div class="row justify-content-center advanced-row">
+            <span class="mr-2 section-label">Advanced search</span>
+        </div>
+        <div class="row justify-content-center advanced-row advanced-search-inputs">
+            <select id="completed-filter" name="completed">
+                <option value="all" {% if completed_filter == 'all' %}selected{% endif %}>All</option>
+                <option value="yes" {% if completed_filter == 'yes' %}selected{% endif %}>Completed</option>
+                <option value="no" {% if completed_filter == 'no' %}selected{% endif %}>Not completed</option>
+            </select>
+            <input type="text" name="design_purpose" id="design-purpose" placeholder="Purpose" value="{{ design_purpose }}">
+            <input type="text" name="design_description" id="design-description" placeholder="Description" value="{{ design_description }}">
+            <input type="text" name="design_resin" id="design-resin" list="design-resin-options" placeholder="Resin" value="{{ design_resin }}">
+            <input type="text" name="design_printer" id="design-printer" list="design-printer-options" placeholder="3D printer" value="{{ design_printer }}">
+            <input type="text" name="design_slicer" id="design-slicer" list="design-slicer-options" placeholder="Slicer" value="{{ design_slicer }}">
+            <input type="text" name="design_slice_date" id="design-slice-date" placeholder="Slice date" value="{{ design_slice_date }}">
+        </div>
+    </div>
+    <div class="advanced-filters advanced-section">
+        <div class="row justify-content-center advanced-row">
+            <span class="mr-2 section-label">Columns</span>
+        </div>
+        <div class="row justify-content-center advanced-row form-group columns-grid">
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-name-toggle" data-column="col-name" checked>
+                <label class="form-check-label" for="col-name-toggle">Name</label>
+            </div>
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-start-time-toggle" data-column="col-start-time" checked>
+                <label class="form-check-label" for="col-start-time-toggle">Start Time</label>
+            </div>
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-end-time-toggle" data-column="col-end-time">
+                <label class="form-check-label" for="col-end-time-toggle">End Time</label>
+            </div>
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-upload-time-toggle" data-column="col-upload-time">
+                <label class="form-check-label" for="col-upload-time-toggle">Upload Time</label>
+            </div>
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-print-time-toggle" data-column="col-print-time" checked>
+                <label class="form-check-label" for="col-print-time-toggle">Print Time</label>
+            </div>
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-completed-toggle" data-column="col-completed" checked>
+                <label class="form-check-label" for="col-completed-toggle">Completed</label>
+            </div>
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-design-user-toggle" data-column="col-design-user">
+                <label class="form-check-label" for="col-design-user-toggle">Design User</label>
+            </div>
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-design-purpose-toggle" data-column="col-design-purpose">
+                <label class="form-check-label" for="col-design-purpose-toggle">Purpose</label>
+            </div>
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-design-description-toggle" data-column="col-design-description">
+                <label class="form-check-label" for="col-design-description-toggle">Description</label>
+            </div>
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-design-resin-toggle" data-column="col-design-resin">
+                <label class="form-check-label" for="col-design-resin-toggle">Resin</label>
+            </div>
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-design-printer-toggle" data-column="col-design-printer">
+                <label class="form-check-label" for="col-design-printer-toggle">3D Printer</label>
+            </div>
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-design-slicer-toggle" data-column="col-design-slicer">
+                <label class="form-check-label" for="col-design-slicer-toggle">Slicer</label>
+            </div>
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-design-slice-date-toggle" data-column="col-design-slice-date">
+                <label class="form-check-label" for="col-design-slice-date-toggle">Slice Date</label>
+            </div>
+            <div class="form-check text-center">
+                <input class="form-check-input column-toggle" type="checkbox" id="col-reprint-toggle" data-column="col-reprint" checked>
+                <label class="form-check-label" for="col-reprint-toggle">Reprint</label>
+            </div>
+        </div>
+    </div>
+    <datalist id="design-user-options">
+        {% for value in design_user_options %}
+        <option value="{{ value }}"></option>
+        {% endfor %}
+    </datalist>
+    <datalist id="design-resin-options">
+        {% for value in design_resin_options %}
+        <option value="{{ value }}"></option>
+        {% endfor %}
+    </datalist>
+    <datalist id="design-printer-options">
+        {% for value in design_printer_options %}
+        <option value="{{ value }}"></option>
+        {% endfor %}
+    </datalist>
+    <datalist id="design-slicer-options">
+        {% for value in design_slicer_options %}
+        <option value="{{ value }}"></option>
+        {% endfor %}
+    </datalist>
 </container>
 
 <hr>
@@ -30,34 +136,113 @@
 <table class="table table-sm table-bordered">
     <thead>
         <tr>
-            <th scope="col" class="justify-center">Name</th>
-            <th scope="col" class="justify-center">Start Time</th>
-            <th scope="col" class="justify-center">End Time</th>
-            <th scope="col" class="justify-center">Upload Time</th>
-            <th scope="col" class="justify-center">Print Time</th>
-            <th scope="col" class="justify-center">Completed</th>
-            <th scope="col" class="justify-center">Reprint</th>
+            <th scope="col" class="justify-center col-name">
+                <a href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort='name', dir='asc' if sort_by != 'name' or sort_dir == 'desc' else 'desc') }}">
+                    Name
+                    {% if sort_by == 'name' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                </a>
+            </th>
+            <th scope="col" class="justify-center col-design-user">
+                <a href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort='design_user', dir='asc' if sort_by != 'design_user' or sort_dir == 'desc' else 'desc') }}">
+                    Design User
+                    {% if sort_by == 'design_user' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                </a>
+            </th>
+            <th scope="col" class="justify-center col-design-purpose">
+                <a href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort='design_purpose', dir='asc' if sort_by != 'design_purpose' or sort_dir == 'desc' else 'desc') }}">
+                    Purpose
+                    {% if sort_by == 'design_purpose' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                </a>
+            </th>
+            <th scope="col" class="justify-center col-design-description">
+                <a href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort='design_description', dir='asc' if sort_by != 'design_description' or sort_dir == 'desc' else 'desc') }}">
+                    Description
+                    {% if sort_by == 'design_description' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                </a>
+            </th>
+            <th scope="col" class="justify-center col-design-resin">
+                <a href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort='design_resin', dir='asc' if sort_by != 'design_resin' or sort_dir == 'desc' else 'desc') }}">
+                    Resin
+                    {% if sort_by == 'design_resin' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                </a>
+            </th>
+            <th scope="col" class="justify-center col-design-printer">
+                <a href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort='design_printer', dir='asc' if sort_by != 'design_printer' or sort_dir == 'desc' else 'desc') }}">
+                    3D Printer
+                    {% if sort_by == 'design_printer' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                </a>
+            </th>
+            <th scope="col" class="justify-center col-design-slicer">
+                <a href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort='design_slicer', dir='asc' if sort_by != 'design_slicer' or sort_dir == 'desc' else 'desc') }}">
+                    Slicer
+                    {% if sort_by == 'design_slicer' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                </a>
+            </th>
+            <th scope="col" class="justify-center col-design-slice-date">
+                <a href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort='design_slice_date', dir='asc' if sort_by != 'design_slice_date' or sort_dir == 'desc' else 'desc') }}">
+                    Slice Date
+                    {% if sort_by == 'design_slice_date' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                </a>
+            </th>
+            <th scope="col" class="justify-center col-start-time">
+                <a href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort='start_time', dir='asc' if sort_by != 'start_time' or sort_dir == 'desc' else 'desc') }}">
+                    Start Time
+                    {% if sort_by == 'start_time' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                </a>
+            </th>
+            <th scope="col" class="justify-center col-end-time">
+                <a href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort='end_time', dir='asc' if sort_by != 'end_time' or sort_dir == 'desc' else 'desc') }}">
+                    End Time
+                    {% if sort_by == 'end_time' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                </a>
+            </th>
+            <th scope="col" class="justify-center col-upload-time">
+                <a href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort='upload_time', dir='asc' if sort_by != 'upload_time' or sort_dir == 'desc' else 'desc') }}">
+                    Upload Time
+                    {% if sort_by == 'upload_time' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                </a>
+            </th>
+            <th scope="col" class="justify-center col-print-time">
+                <a href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort='print_time', dir='asc' if sort_by != 'print_time' or sort_dir == 'desc' else 'desc') }}">
+                    Print Time
+                    {% if sort_by == 'print_time' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                </a>
+            </th>
+            <th scope="col" class="justify-center col-completed">
+                <a href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort='completed', dir='asc' if sort_by != 'completed' or sort_dir == 'desc' else 'desc') }}">
+                    Completed
+                    {% if sort_by == 'completed' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                </a>
+            </th>
+            <th scope="col" class="justify-center col-reprint">Reprint</th>
         </tr>
     </thead>
     <tbody>
         {% for rec in print_records.items %}
         <tr id="row-{{ rec.id }}">
-            <td class="align-middle"><a href="{{ url_for('print_history.download', job_id=rec.id) }}">{{
+                <td class="align-middle col-name"><a href="{{ url_for('print_history.download', job_id=rec.id) }}">{{
                     rec.original_filename }}</a></td>
-            <td class="align-middle justify-center">{{ rec.start_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+                <td class="align-middle justify-center col-design-user">{{ rec.design_user or '' }}</td>
+                <td class="align-middle justify-center col-design-purpose">{{ rec.design_purpose or '' }}</td>
+                <td class="align-middle justify-center col-design-description">{{ rec.design_description or '' }}</td>
+                <td class="align-middle justify-center col-design-resin">{{ rec.design_resin or '' }}</td>
+                <td class="align-middle justify-center col-design-printer">{{ rec.design_printer or '' }}</td>
+                <td class="align-middle justify-center col-design-slicer">{{ rec.design_slicer or '' }}</td>
+                <td class="align-middle justify-center col-design-slice-date">{{ rec.design_slice_date or '' }}</td>
+                <td class="align-middle justify-center col-start-time">{{ rec.start_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
             {% if rec.end_time %}
-            <td class="align-middle justify-center">{{ rec.end_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
-            <td class="align-middle justify-center">{{ rec.upload_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
-            <td class="align-middle justify-center">{{ '%02d:%02d:%02d' % ((rec.end_time -
+                <td class="align-middle justify-center col-end-time">{{ rec.end_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+                <td class="align-middle justify-center col-upload-time">{{ rec.upload_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+                <td class="align-middle justify-center col-print-time">{{ '%02d:%02d:%02d' % ((rec.end_time -
                 rec.start_time).total_seconds() // 3600, ((rec.end_time - rec.start_time).total_seconds() % 3600) // 60,
                 (rec.end_time - rec.start_time).total_seconds() % 60) }}</td>
             {% else %}
-            <td class="align-middle justify-center"></td>
-            <td class="align-middle justify-center">{{ rec.upload_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
-            <td class="align-middle justify-center"></td>
+                <td class="align-middle justify-center col-end-time"></td>
+                <td class="align-middle justify-center col-upload-time">{{ rec.upload_time.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+                <td class="align-middle justify-center col-print-time"></td>
             {% endif %}
-            <td class="align-middle justify-center">{{ 'Yes' if rec.completed else 'No' }}</td>
-            <td class="align-middle justify-center"><button type="button" class="btn btn-outline-info btn-sm">Add to
+                <td class="align-middle justify-center col-completed">{{ 'Yes' if rec.completed else 'No' }}</td>
+                <td class="align-middle justify-center col-reprint"><button type="button" class="btn btn-outline-info btn-sm">Add to
                     queue</button>
             </td>
         </tr>
@@ -75,7 +260,7 @@
         <li class="page-item disabled">
             {% endif %}
             <a class="page-link"
-                href="{{ url_for('print_history.index', current_page=print_records.prev_num, start=start_date, end=end_date) }}"
+                href="{{ url_for('print_history.index', current_page=print_records.prev_num, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort=sort_by, dir=sort_dir) }}"
                 aria-label="Previous">
                 <span aria-hidden="true">&laquo;</span>
                 <span class="sr-only">Previous</span>
@@ -85,13 +270,13 @@
         {% if boundaries[0] %}
         <li class="page-item">
             <a class="page-link"
-                href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date) }}">
+                href="{{ url_for('print_history.index', current_page=1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort=sort_by, dir=sort_dir) }}">
                 1
             </a>
         </li>
         <li class="page-item">
             <a class="page-link"
-                href="{{ url_for('print_history.index', current_page=2, start=start_date, end=end_date) }}">
+                href="{{ url_for('print_history.index', current_page=2, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort=sort_by, dir=sort_dir) }}">
                 2
             </a>
         </li>
@@ -107,7 +292,7 @@
         <li class="page-item">
             {% endif %}
             <a class="page-link"
-                href="{{ url_for('print_history.index', current_page=i, start=start_date, end=end_date) }}">{{ i }}</a>
+                href="{{ url_for('print_history.index', current_page=i, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort=sort_by, dir=sort_dir) }}">{{ i }}</a>
         </li>
         {% endfor %}
 
@@ -117,13 +302,13 @@
         </li>
         <li class="page-item">
             <a class="page-link"
-                href="{{ url_for('print_history.index', current_page=print_records.pages-1, start=start_date, end=end_date) }}">
+                href="{{ url_for('print_history.index', current_page=print_records.pages-1, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort=sort_by, dir=sort_dir) }}">
                 {{ print_records.pages-1 }}
             </a>
         </li>
         <li class="page-item">
             <a class="page-link"
-                href="{{ url_for('print_history.index', current_page=print_records.pages, start=start_date, end=end_date) }}">
+                href="{{ url_for('print_history.index', current_page=print_records.pages, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort=sort_by, dir=sort_dir) }}">
                 {{ print_records.pages }}
             </a>
         </li>
@@ -136,7 +321,7 @@
         <li class="page-item disabled">
             {% endif %}
             <a class="page-link"
-                href="{{ url_for('print_history.index', current_page=print_records.next_num, start=start_date, end=end_date) }}"
+                href="{{ url_for('print_history.index', current_page=print_records.next_num, start=start_date, end=end_date, search=search, design_user=design_user, design_purpose=design_purpose, design_description=design_description, design_resin=design_resin, design_printer=design_printer, design_slicer=design_slicer, design_slice_date=design_slice_date, completed=completed_filter, sort=sort_by, dir=sort_dir) }}"
                 aria-label="Next">
                 <span aria-hidden="true">&raquo;</span>
                 <span class="sr-only">Next</span>
@@ -152,6 +337,10 @@
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='lib/ajax-socket.io-4.7.5.min.js') }}"></script>
-<script> var print_history_url = "{{ url_for('print_history.index') }}" </script>
+<script>
+    var print_history_url = "{{ url_for('print_history.index') }}";
+    var print_history_sort = "{{ sort_by }}";
+    var print_history_dir = "{{ sort_dir }}";
+</script>
 <script src="{{ url_for('static', filename='print_history.js') }}"></script>
 {% endblock %}

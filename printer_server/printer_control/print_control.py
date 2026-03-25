@@ -199,17 +199,38 @@ class PrintControl:
         os.rename(zipped_job_file, self.print_history / Path(job.zip_filename))
 
         # save job to Print History table in database
+        design_metadata = self._get_design_metadata()
         print_history_entry = PrintRecord(
             original_filename=job.original_filename,
             upload_time=job.upload_time,
             upload_ip=job.upload_ip,
             start_time=datetime.now(),
             start_ip=request.remote_addr,
+            **design_metadata,
         )
         print_history_entry.save(commit=False)
 
         # tell frontend to remove the job from the table and delete it from the database
         self.delete_job({"job": job_id}, delete_on_disk=False)
+
+    def _get_design_metadata(self):
+        try:
+            json_path = next(self.current_job.rglob("*.json"))
+            print_settings = read_json(json_path)
+        except (StopIteration, FileNotFoundError, json.JSONDecodeError, OSError) as ex:
+            log.info("Failed to read design metadata: %s", ex)
+            return {}
+
+        design = print_settings.get("Design") or {}
+        return {
+            "design_user": design.get("User"),
+            "design_purpose": design.get("Purpose"),
+            "design_description": design.get("Description"),
+            "design_resin": design.get("Resin"),
+            "design_printer": design.get("3D Printer"),
+            "design_slicer": design.get("Slicer"),
+            "design_slice_date": design.get("Date"),
+        }
 
     def create_logs(self):
         # create logs and overwrite any pre-existing data
