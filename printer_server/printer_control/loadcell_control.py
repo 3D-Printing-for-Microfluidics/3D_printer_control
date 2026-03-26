@@ -57,10 +57,22 @@ class LoadcellControl(PrintControl):
         squeeze_target = force_squeeze_settings["Squeeze force (N)"]
         squeeze_wait = force_squeeze_settings.get("Squeeze time (ms)", force_squeeze_settings.get("Squeeze wait (ms)", 0)) / 1000
 
+        count = 0
         first_count = self.move_bp_to_force(squeeze_target - 5, speed=0.5)
-        second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
-        third_count = self.move_bp_to_force(squeeze_target, speed=0.005)
-        count = first_count + second_count + third_count
+        if first_count is None:
+            log.warning(f"Squeeze failed to reach target ({squeeze_target - 5})")
+        else:
+            count += first_count
+            second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
+            if second_count is None:
+                log.warning(f"Squeeze failed to reach target ({squeeze_target - 0.5})")
+            else:
+                count += second_count
+                third_count = self.move_bp_to_force(squeeze_target, speed=0.005)
+                if third_count is None:
+                    log.warning(f"Squeeze failed to reach target ({squeeze_target})")
+                else:
+                    count += third_count
 
         log.info("Squeeze force reached %s steps", count)
         log.info("Squeeze force: %.4f", self.loadcell.get_current_force())
@@ -183,7 +195,13 @@ class LoadcellControl(PrintControl):
                 log.error("Loadcell planarization failed. Check build platform screw.")
                 return
             second_count = self.move_bp_to_force(target_force + 0.5, speed=-0.05)
+            if second_count is None:
+                log.error("Loadcell planarization failed. Check build platform screw.")
+                return
             third_count = self.move_bp_to_force(target_force, speed=-0.005)
+            if third_count is None:
+                log.error("Loadcell planarization failed. Check build platform screw.")
+                return
             count = first_count + second_count + third_count
 
             self.planarized_position = self.bp_stage.getBPPosition()
