@@ -24,20 +24,20 @@ log.setLevel(logging.INFO)
 
 conversion_dict = {
     "Focus": "focus",
-    "Visitech Focus": "_visitech_focus",
-    "Wintech Focus": "_wintech_focus",
-    "Visitech Focus Offset": "active_visitech_focus",
-    "Wintech Focus Offset": "active_wintech_focus",
+    "Visitech Focus": "visitech_focus_base",
+    "Wintech Focus": "wintech_focus_base",
+    "Visitech Focus Offset": "visitech_focus_offset",
+    "Wintech Focus Offset": "wintech_focus_offset",
     "Tip": "tip",
     "Tilt": "tilt",
-    "Visitech Tip": "_visitech_tip",
-    "Visitech Tilt": "_visitech_tilt",
-    "Visitech Tip Offset": "active_visitech_tip",
-    "Visitech Tilt Offset": "active_visitech_tilt",
-    "Wintech Tip": "_wintech_tip",
-    "Wintech Tilt": "_wintech_tilt",
-    "Wintech Tip Offset": "active_wintech_tip",
-    "Wintech Tilt Offset": "active_wintech_tilt",
+    "Visitech Tip": "visitech_tip_base",
+    "Visitech Tilt": "visitech_tilt_base",
+    "Visitech Tip Offset": "visitech_tip_offset",
+    "Visitech Tilt Offset": "visitech_tilt_offset",
+    "Wintech Tip": "wintech_tip_base",
+    "Wintech Tilt": "wintech_tilt_base",
+    "Wintech Tip Offset": "wintech_tip_offset",
+    "Wintech Tilt Offset": "wintech_tilt_offset",
     "Rotate": "rotate",
     "Pivot X": "pivot_x",
     "Pivot Y": "pivot_y",
@@ -333,8 +333,8 @@ def create_calibration_data():
         settings_list = []
         for le in config_dict["light_engines"]:
             for axis in ["tip", "tilt"]:
-                # settings_list.append(f"_{le}_{axis}") # Don't show on Calibration page
-                settings_list.append(f"active_{le}_{axis}")
+                # settings_list.append(f"{le}_{axis}_base") # Don't show on Calibration page
+                settings_list.append(f"{le}_{axis}_offset")
         add_to_list(settings_list, GROUP_ACTIVE_OFFSETS)
     else:
         add_to_list(["tip", "tilt"], GROUP_NON_ACTIVE_OFFSETS)
@@ -342,8 +342,8 @@ def create_calibration_data():
     if driver_handles.focus_stage.config_dict.get("auto_focus_with_keyence", False) or driver_handles.focus_stage.config_dict.get("auto_focus_with_photodiode", False):
         settings_list = []
         for le in config_dict["light_engines"]:
-            # settings_list.append(f"_{le}_focus") # Don't show on Calibration page
-            settings_list.append(f"active_{le}_focus")
+            # settings_list.append(f"{le}_focus_base") # Don't show on Calibration page
+            settings_list.append(f"{le}_focus_offset")
         add_to_list(settings_list, GROUP_ACTIVE_OFFSETS)
     else:
         add_to_list(["focus"], GROUP_NON_ACTIVE_OFFSETS)

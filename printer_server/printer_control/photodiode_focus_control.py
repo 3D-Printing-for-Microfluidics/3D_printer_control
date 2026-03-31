@@ -104,7 +104,7 @@ class PhotodiodeFocusControl(PrintControl):
 
                 # c. calculate focus drift and move focus stage
                 # target_focus = self.calibration_positions.get(
-                #     f"active_{le}_focus", 0
+                #     f"{le}_focus_offset", 0
                 # )
 
                 photodiode_reading = round(
@@ -140,7 +140,7 @@ class PhotodiodeFocusControl(PrintControl):
                 le_position = coord_diff + fiber_position
 
                 last_positions = get_last_calibration_positions_from_logs()
-                last_positions[f"_{le}_focus"] = float(f"{le_position:.1f}")
+                last_positions[f"{le}_focus_base"] = float(f"{le_position:.1f}")
                 write_to_position_log(last_positions)
             
         except Exception as ex:
@@ -463,7 +463,7 @@ class PhotodiodeFocusControl(PrintControl):
     def get_exposure_defocus(self, settings, light_engine):
         screen_light_engine = self.convert_le_to_screen_le(light_engine)
         last_positions = get_last_calibration_positions_from_logs()
-        self.focus = (last_positions.get(f"_{screen_light_engine}_focus",0) + last_positions.get(f"active_{screen_light_engine}_focus",0))/1000
+        self.focus = (last_positions.get(f"{screen_light_engine}_focus_base",0) + last_positions.get(f"{screen_light_engine}_focus_offset",0))/1000
 
         self.previous_defocus = self.defocus_um
         self.defocus_um = settings["Relative focus position (um)"]

@@ -1227,9 +1227,9 @@ class TestControl(PrintControl):
                     raise PrintingException()
 
         last_positions = get_last_calibration_positions_from_logs()
-        last_positions[f"_{self.light_engine}_focus"] = float(f"{(self.focus_stage.getFocusPosition())*1000:.1f}")
-        last_positions[f"_{self.light_engine}_tip"] = float(f"{(self.ttr_stage.getTTRPosition('Tip'))*1000:.1f}")
-        last_positions[f"_{self.light_engine}_tilt"] = float(f"{(self.ttr_stage.getTTRPosition('Tilt'))*1000:.1f}")   
+        last_positions[f"{self.light_engine}_focus_base"] = float(f"{(self.focus_stage.getFocusPosition())*1000:.1f}")
+        last_positions[f"{self.light_engine}_tip_base"] = float(f"{(self.ttr_stage.getTTRPosition('Tip'))*1000:.1f}")
+        last_positions[f"{self.light_engine}_tilt_base"] = float(f"{(self.ttr_stage.getTTRPosition('Tilt'))*1000:.1f}")   
         write_to_position_log(last_positions)
     
     def keyence_tip_tilt_correction(self, axis="", iterations=4, check=True, rough_pass=True, measurement_distance=10000.0, progress=(0,100)):
@@ -1291,14 +1291,14 @@ class TestControl(PrintControl):
             # add difference to tilt stage position
             if not(check and i == iterations - 1):
                 last_positions = get_last_calibration_positions_from_logs()
-                curOffset = last_positions.get(f"_{self.light_engine}_{axis.lower()}",0)/1000
+                curOffset = last_positions.get(f"{self.light_engine}_{axis.lower()}_base",0)/1000
                 log.info(f"curOffset: {curOffset}")
                 async_file_hander.write(self.test_log, f"curOffset: {curOffset}\n")
                 log.info(f"New {axis} offset: {curOffset - offset}")
                 async_file_hander.write(self.test_log, f"New {axis} offset: {curOffset - offset}\n")
                 self.ttr_stage.absMoveTTR(rad=curOffset - offset, axis=axis)
 
-                last_positions[f"_{self.light_engine}_{axis.lower()}"] = float(f"{(curOffset - offset)*1000:.1f}")
+                last_positions[f"{self.light_engine}_{axis.lower()}_base"] = float(f"{(curOffset - offset)*1000:.1f}")
                 write_to_position_log(last_positions)
         async_file_hander.write(self.test_log, f"\n")
 
@@ -1411,12 +1411,12 @@ class TestControl(PrintControl):
             if not(check and i == iterations - 1):
                 # add difference to tilt stage position
                 last_positions = get_last_calibration_positions_from_logs()
-                curOffset = last_positions.get(f"_{self.light_engine}_{axis.lower()}",0)/1000
+                curOffset = last_positions.get(f"{self.light_engine}_{axis.lower()}_base",0)/1000
                 log.info(f"curOffset: {curOffset}")
                 async_file_hander.write(self.test_log, f"curOffset: {curOffset}\n")
                 log.info(f"New {axis} offset: {curOffset - offset}")
                 async_file_hander.write(self.test_log, f"New {axis} offset: {curOffset - offset}\n")
                 self.ttr_stage.absMoveTTR(rad=curOffset - offset, axis=axis)
 
-                last_positions[f"_{self.light_engine}_{axis.lower()}"] = float(f"{(curOffset - offset)*1000:.1f}")
+                last_positions[f"{self.light_engine}_{axis.lower()}_base"] = float(f"{(curOffset - offset)*1000:.1f}")
                 write_to_position_log(last_positions)

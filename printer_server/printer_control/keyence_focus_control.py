@@ -255,7 +255,7 @@ class KeyenceFocusControl(PrintControl):
                 le_position = coord_diff + keyence_position
 
                 last_positions = get_last_calibration_positions_from_logs()
-                last_positions[f"_{light_engine}_focus"] = float(f"{le_position:.1f}")
+                last_positions[f"{light_engine}_focus_base"] = float(f"{le_position:.1f}")
                 write_to_position_log(last_positions)
 
                 # Step 6f: Get measurements at each unique x,y offset position
@@ -411,7 +411,7 @@ class KeyenceFocusControl(PrintControl):
 
                 # Measure and set thermal drift
                 origin_target = self.calibration_positions.get(
-                    f"active_{light_engine}_focus", 0
+                    f"{light_engine}_focus_offset", 0
                 )
                 keyence_reading = self.keyence.read_sensor(light_engine)
                 self.wintech_thermal_drift = origin_target - keyence_reading
@@ -468,7 +468,7 @@ class KeyenceFocusControl(PrintControl):
         screen_light_engine = self.convert_le_to_screen_le(light_engine)
 
         last_positions = get_last_calibration_positions_from_logs()
-        self.focus = (last_positions.get(f"_{screen_light_engine}_focus",0) + last_positions.get(f"active_{screen_light_engine}_focus",0))/1000
+        self.focus = (last_positions.get(f"{screen_light_engine}_focus_base",0) + last_positions.get(f"{screen_light_engine}_focus_offset",0))/1000
 
         defocus_um = settings["Relative focus position (um)"]
 

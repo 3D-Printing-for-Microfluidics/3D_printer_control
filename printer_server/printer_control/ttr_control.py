@@ -35,10 +35,13 @@ class TTRControl(PrintControl):
             self.failed_hardware["TTR stage"] = self.ttr_stage
 
     def initialize_hardware(self):
+        self.tip = None
+        self.tilt = None
         last_positions = get_last_calibration_positions_from_logs()
-        matching_keys = [key for key in last_positions if "_tip" in str(key)]
+
+        matching_keys = [key for key in last_positions if "_tip_base" in str(key) or "_tilt_base" in str(key)]
         if len(matching_keys) > 0:
-            self.tip = last_positions.get(matching_keys[0],None)
+            self.tip = last_positions.get(matching_keys[0].replace("tilt", "tip"),None)
             self.tilt = last_positions.get(matching_keys[0].replace("tip", "tilt"),None)
         if self.tip is None:
             self.tip = last_positions.get("tip",None)
@@ -64,26 +67,30 @@ class TTRControl(PrintControl):
 
     def pre_exposure_tasks(self, settings, light_engine):
         if self.ttr_stage.config_dict.get("auto_repositioning", True):
+            self.tip = None
+            self.tilt = None
+
             last_positions = get_last_calibration_positions_from_logs()
-            matching_keys = [key for key in last_positions if "_tip" in str(key)]
-            if len(matching_keys) > 0:
-                self.tip = last_positions.get(matching_keys[0],None)
-                self.tilt = last_positions.get(matching_keys[0].replace("tip", "tilt"),None)
-            else:
+            matching_keys = [key for key in last_positions if "_tip" in str(key) or "_tilt" in str(key)]
+            if len(matching_keys) == 0:
                 self.tip = last_positions.get("tip",None)
                 self.tilt = last_positions.get("tilt",None)
             self.rotate = last_positions.get(f"rotate",None)
 
-            if self.tip is not None:
-                self.tip += last_positions.get(f"active_{light_engine}_tip",0)
-            if self.tilt is not None:
-                self.tilt += last_positions.get(f"active_{light_engine}_tilt",0)
+            if self.tip is None:
+                self.tip = last_positions.get(f"{light_engine}_tip_base",0)
+                self.tip += last_positions.get(f"{light_engine}_tip_offset",0)
+            if self.tilt is None:
+                self.tilt = last_positions.get(f"{light_engine}_tilt_base",0)
+                self.tilt += last_positions.get(f"{light_engine}_tilt_offset",0)
+
             if self.tip is not None:
                 self.tip /= 1000
             if self.tilt is not None:
                 self.tilt /= 1000
             if self.rotate is not None:
                 self.rotate /= 1000
+
             if self.tip != self.previous_tip or self.tilt != self.previous_tilt:
                 self.ttr_threads = self.ttr_stage.threadedTTRMove(log, self.tip, self.tilt, self.rotate, join=False)
         return super().pre_exposure_tasks(settings, light_engine)
