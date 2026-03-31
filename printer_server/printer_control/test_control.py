@@ -108,82 +108,6 @@ class TestControl(PrintControl):
         # Reset photodiode averages
         self.photodiode.set_num_averages(self.photodiode.defaultAverages)
 
-    def ultrafast_photodiode_tests(self, progress=(0,100)):
-        from printer_server.drivers.generic_drivers.usb_serial import USBSerial
-        from printer_server.threading_wrapper import Thread
-
-        self._update_progress(0, 1, progress)
-
-        self.focus_stage.absMoveFocus(mm=10.00)
-        time.sleep(0.05)
-        self.xy_stage.threadedXYMove(log, 96.4, 81.8, join=True)
-
-        self.light_engines[self.light_engine].setup_exposure(1000, led_power=200, repeat=0, is_grayscale_corrected=False, led_num=self.led_num)
-        self.light_engines[self.light_engine].perform_exposure()
-
-        u = USBSerial("Fast photodiode", vid=5824, pid=1155, sn="16040530", multiline=True)
-        u.connect()
-
-        images = [
-            "image_with_grayscale_0", 
-            "image_with_grayscale_1", 
-            "image_with_grayscale_2", 
-            "image_with_grayscale_4", 
-            "image_with_grayscale_8", 
-            "image_with_grayscale_16", 
-            "image_with_grayscale_32", 
-            "image_with_grayscale_64", 
-            "image_with_grayscale_128", 
-            "image_with_grayscale_254", 
-            "image_with_grayscale_255"
-        ]
-
-        # repeat tests
-        for i, image_name in enumerate(images):
-            self.screen.draw(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / f"{image_name}.png", light_engine=self.light_engine, led_num=self.led_num)
-            time.sleep(0.1)
-            log.info("Starting test")
-            result = u.send("c")
-            log.info("Writing data")
-            log_name = str(self.current_job / "logs" / f"{image_name}_repeat.csv")
-            async_file_hander.write(log_name, result)
-            log.info("Test done")
-
-            self._update_progress(i+1, (len(images)*2), progress)
-
-            if self.printing_stopped.is_set():
-                return
-
-        # 500ms tests
-        for i, image_name in enumerate(images):
-            self.screen.draw(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / f"{image_name}.png", light_engine=self.light_engine, led_num=self.led_num)
-            self.light_engines[self.light_engine].stop_sequencer()
-            self.light_engines[self.light_engine].setup_exposure(300, led_power=200, repeat=1, is_grayscale_corrected=False, led_num=self.led_num)
-            time.sleep(0.1)
-            log.info("Starting test")
-            thread = Thread(
-                log, 
-                name=f"visitech_setup_thread",
-                target=self.light_engines[self.light_engine].perform_exposure,
-            )
-            thread.start()
-            result = u.send("c")
-            thread.join()
-            log.info("Writing data")
-            log_name = str(self.current_job / "logs" / f"{image_name}_500ms.csv")
-            async_file_hander.write(log_name, result)
-            log.info("Test done")
-
-            self._update_progress(i+1+len(images), len(images)*2, progress)
-
-            if self.printing_stopped.is_set():
-                return
-        u.disconnect()
-
-        self.light_engines[self.light_engine].stop_sequencer()
-
-        self.focus_stage.absMoveFocus(mm=0.00)
-
     def measure_keyence_line(self, step_size=0.15, scan_length_mm=25, number_of_scans=3, scan_spacing_mm=2.0, y_offset_mm=0.0, progress=(0,100)):
         if self.printing_stopped.is_set():
             return
@@ -277,7 +201,7 @@ class TestControl(PrintControl):
                 orders=["X", "Y", "X", "Y"], 
                 step_sizes=[0.01, 0.01, 0.0025, 0.0025], 
                 step_counts=[20, 20, 20, 20], 
-                images=[["v_4px_edges.png"], ["v_4px_edges.png"], ["v_4px_edges.png"], ["v_4px_edges.png"]], 
+                images=[["v_4px.png"], ["v_4px.png"], ["v_4px.png"], ["v_4px.png"]], 
                 use_find_peaks=[False, False, False, False], 
                 use_fits=[False, False, True, True], 
                 adjust_coords=[False, False, False, False], 
@@ -652,7 +576,7 @@ class TestControl(PrintControl):
        
     # Measures the irradiance in a grid of every 150 or 15 px 
     # Should run find_photodiode_position_and_focus and _find_px_size first
-    def _measure_irradiance_grid(self, fine=True, save_name = "test_data.csv", correction_path="", progress=(0,100)):
+    def _measure_irradiance_grid(self, fine=True, save_name = "test_data.csv", correction_path="", test=False, progress=(0,100)):
         if self.printing_stopped.is_set():
             return
 
@@ -697,8 +621,10 @@ class TestControl(PrintControl):
         self.light_engines[self.light_engine].setup_exposure(1000, led_power=100, repeat=0, is_grayscale_corrected=(correction_path != ""), led_num=self.led_num)
         self.light_engines[self.light_engine].perform_exposure()
         
-        # image = Image.open(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / "demarked.png") # Used to check orientation
-        image = Image.open(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / "white.png")
+        if test:
+            image = Image.open(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / "demarked.png") # Used to check orientation
+        else:
+            image = Image.open(Path(Config.PRINT_SERVER_FOLDER) / "drivers" / self.light_engine / "images" / "white.png")
 
         if correction_path != "":
             mask = image
@@ -1037,7 +963,7 @@ class TestControl(PrintControl):
 
         return fit_data
 
-    def capture_and_process_grayscale_correction(self, fine=True, progress=(0,100)):
+    def capture_and_process_grayscale_correction(self, fine=True, save_results=True, orientation_test=False, find_focus=True, progress=(0,100)):
         x_pos = self.coord_systems["fiber_visitech"]["X"]
         y_pos = self.coord_systems["fiber_visitech"]["Y"]
         z_pos = self.tmp_photodiode_focus
@@ -1053,39 +979,47 @@ class TestControl(PrintControl):
             focus_thread.join()
             focus_thread = None
 
+        # Find the center and focus of the photodiode
         self._update_progress(0, 4, progress)
         # self.x_px_size = 0.00756
         # self.y_px_size =  0.00756
-        self.find_photodiode_position_and_focus(progress=self._subdivide_progress(0,4,progress))
+        if find_focus:
+            self.find_photodiode_position_and_focus(progress=self._subdivide_progress(0,6,progress))
         if self.printing_stopped.is_set():
             return
-        self._find_px_size(progress=self._subdivide_progress(1,4,progress))
+        self._find_px_size(progress=self._subdivide_progress(1,6,progress))
 
+        # Measure the irradiance grid without correction to use as the basis for the correction image
         filename = "uncorrected_test_data.csv"
-        self._measure_irradiance_grid(fine=fine, save_name=filename, progress=self._subdivide_progress(2,4,progress))
+        self._measure_irradiance_grid(fine=fine, save_name=filename, test=orientation_test, progress=self._subdivide_progress(2,6,progress))
         if self.printing_stopped.is_set():
             return
         save_directory_name = "uncorrected"
         irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
 
-        if "grayscale_normalization_factor" not in self.light_engines[self.light_engine].config_dict.keys():
-            self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"] = self.light_engines[self.light_engine].config_dict["normalization_factor"].copy()
-        else:
-            self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num] = self.light_engines[self.light_engine].config_dict["normalization_factor"][self.led_num]
-        filename = "corrected_nonnormalized_test_data.csv"
-        self._measure_irradiance_grid(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'))
-        save_directory_name = "corrected_nonnormalized"
-        nonnormalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
-        self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num] = round(self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num]*np.mean(irradiance_map)/np.mean(nonnormalized_irradiance_map),3)
-        filename = "corrected_normalized_test_data.csv"
-        self._measure_irradiance_grid(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'))
-        save_directory_name = "corrected_normalized"
-        normalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
-        log.info("Pre mean irradiance: %s, Post mean irradiance: %s, Updated to: %s", np.mean(irradiance_map), np.mean(nonnormalized_irradiance_map), np.mean(normalized_irradiance_map))
+        if not orientation_test:
+            # Measure the grid with/without normalization to calculate the visitech normalization factor
+            old_grayscale_normalization_factors = self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"].copy() if "grayscale_normalization_factor" in self.light_engines[self.light_engine].config_dict.keys() else None
 
+            if "grayscale_normalization_factor" not in self.light_engines[self.light_engine].config_dict.keys():
+                self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"] = self.light_engines[self.light_engine].config_dict["normalization_factor"].copy()
+            else:
+                self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num] = self.light_engines[self.light_engine].config_dict["normalization_factor"][self.led_num]
+            filename = "corrected_nonnormalized_test_data.csv"
+            self._measure_irradiance_grid(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'), progress=self._subdivide_progress(3,6,progress))
+            save_directory_name = "corrected_nonnormalized"
+            nonnormalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
+            self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num] = round(self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num]*np.mean(irradiance_map)/np.mean(nonnormalized_irradiance_map),3)
+            filename = "corrected_normalized_test_data.csv"
+            self._measure_irradiance_grid(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'), progress=self._subdivide_progress(4,6,progress))
+            save_directory_name = "corrected_normalized"
+            normalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
+            log.info("Pre mean irradiance: %s, Post mean irradiance: %s, Updated to: %s", np.mean(irradiance_map), np.mean(nonnormalized_irradiance_map), np.mean(normalized_irradiance_map))
+
+        # Now measure the grid with the correction to see the improvement
         filename = "corrected_test_data.csv"
         correction_img = self.current_job / "logs/uncorrected/correction_image.png"
-        self._measure_irradiance_grid(fine=fine, save_name=filename, correction_path=str(correction_img), progress=self._subdivide_progress(3,4,progress))
+        self._measure_irradiance_grid(fine=fine, save_name=filename, correction_path=str(correction_img), test=orientation_test, progress=self._subdivide_progress(5,6,progress))
         if self.printing_stopped.is_set():
             return
         scale_factor = 1.0  # used if normalization factor was changed...
@@ -1164,40 +1098,47 @@ class TestControl(PrintControl):
 
         shutil.copy(self.current_job / 'logs/uncorrected/correction_image.png', self.current_job / 'logs/correction_image.png')
 
-        # --- persist the corrected correction image with a single timestamp used everywhere ---
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        dest_dir = Path(Config.PRINT_SERVER_FOLDER) / "grayscale_correction_data"
-        correction_image_name = f"{Config.HOSTNAME}_corrected_{ts}.png"
+        if not save_results and not orientation_test:
+            # restore previous normalization factor if we aren't saving results
+            if old_grayscale_normalization_factors is not None:
+                self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"] = old_grayscale_normalization_factors
+            else:
+                del self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"]
+        if save_results:
+            # --- persist the corrected correction image with a single timestamp used everywhere ---
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            dest_dir = Path(Config.PRINT_SERVER_FOLDER) / "grayscale_correction_data"
+            correction_image_name = f"{Config.HOSTNAME}_corrected_{ts}.png"
 
-        shutil.copy(correction_img, dest_dir / correction_image_name)
+            shutil.copy(correction_img, dest_dir / correction_image_name)
 
-        # --- update hardware configuration JSON with the grayscale correction path ---
-        # locate the host-specific config JSON
-        cfg_path = next(
-            (Path(Config.PRINT_SERVER_FOLDER) / "hardware_configuration").rglob(f"{Config.HOSTNAME}.json")
-        )
-        stat_info = cfg_path.stat()
-        uid, gid = stat_info.st_uid, stat_info.st_gid
-        mode = stat_info.st_mode
+            # --- update hardware configuration JSON with the grayscale correction path ---
+            # locate the host-specific config JSON
+            cfg_path = next(
+                (Path(Config.PRINT_SERVER_FOLDER) / "hardware_configuration").rglob(f"{Config.HOSTNAME}.json")
+            )
+            stat_info = cfg_path.stat()
+            uid, gid = stat_info.st_uid, stat_info.st_gid
+            mode = stat_info.st_mode
 
-        # load, update the known field, and atomically write back
-        with open(cfg_path, "r", encoding="utf-8") as fh:
-            cfg = json.load(fh)
+            # load, update the known field, and atomically write back
+            with open(cfg_path, "r", encoding="utf-8") as fh:
+                cfg = json.load(fh)
 
-        # do we do this with multiple leds? if so, we need to add all of them, if not, we need to make sure the path is added at the right index
-        cfg[self.light_engine]["light_grayscale_correction_image"] = [str(correction_image_name)]
-        self.light_engines[self.light_engine].config_dict["light_grayscale_correction_image"] = str(correction_image_name)
-        self.screen.config_dict[self.light_engine]["light_grayscale_correction_image"] = str(correction_image_name)
+            # do we do this with multiple leds? if so, we need to add all of them, if not, we need to make sure the path is added at the right index
+            cfg[self.light_engine]["light_grayscale_correction_image"] = [str(correction_image_name)]
+            self.light_engines[self.light_engine].config_dict["light_grayscale_correction_image"] = str(correction_image_name)
+            self.screen.config_dict[self.light_engine]["light_grayscale_correction_image"] = str(correction_image_name)
 
-        tmp = cfg_path.with_suffix(cfg_path.suffix + ".tmp")
-        with open(tmp, "w", encoding="utf-8") as fh:
-            json.dump(cfg, fh, indent=2)
-            fh.flush()
-            os.fsync(fh.fileno())
-        os.replace(tmp, cfg_path)
-        os.chown(cfg_path, uid, gid)
-        os.chmod(cfg_path, stat.S_IMODE(mode))
-        log.info(f"Updated {cfg_path} with grayscale correction path: {correction_image_name}")
+            tmp = cfg_path.with_suffix(cfg_path.suffix + ".tmp")
+            with open(tmp, "w", encoding="utf-8") as fh:
+                json.dump(cfg, fh, indent=2)
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(tmp, cfg_path)
+            os.chown(cfg_path, uid, gid)
+            os.chmod(cfg_path, stat.S_IMODE(mode))
+            log.info(f"Updated {cfg_path} with grayscale correction path: {correction_image_name}")
 
     # note update normalization and grayscale normalization
 
