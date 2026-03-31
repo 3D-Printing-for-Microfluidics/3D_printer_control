@@ -431,6 +431,17 @@ class Visitech(EthernetSerial, LightEngineDriver):
         """
         return self.send("SET SEQ PAUSE")
 
+    def set_short_axis_flip(self, enable):
+        """
+        Flip the image on the short axis. This is the horizontal axis for
+        the Visitech.
+
+        Return type +OK
+        """
+        cmd = "SET SHORT AXIS IMAGE FLIP"
+        cmd += " 1" if enable else " 0"
+        return self.send(cmd)
+
     def get_dmd_status(self):
         """
         Get overview of DMD states. Such as sequencer running state.
