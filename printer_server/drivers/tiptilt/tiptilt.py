@@ -58,10 +58,8 @@ class TipTilt(USBSerial, TTRStageDriver):
         a = self.convertAxis(axis)
         if limits is None:
             limits = self.limits[a]
-        if limits[0] is not None:
-            self.setLowerLimit(limits[0], axis=axis)
-        if limits[1] is not None:
-            self.setUpperLimit(limits[1], axis=axis)
+        self.setLowerLimit(limits[0], axis=axis)
+        self.setUpperLimit(limits[1], axis=axis)
 
     def write_to_disk(self, *args):
         """Write data to disk using the async file handler class.
@@ -163,10 +161,12 @@ class TipTilt(USBSerial, TTRStageDriver):
         return (ll, ul)
 
     def setLowerLimit(self, limit, axis=None):
-        self.log.warn("Setting limits not implemented")
+        if limit is not None:
+            self.log.warn("Setting limits not implemented")
 
     def setUpperLimit(self, limit, axis=None):
-        self.log.warn("Setting limits not implemented")
+        if limit is not None:
+            self.log.warn("Setting limits not implemented")
 
     # returns an int
     def get_acceleration(self, axis):

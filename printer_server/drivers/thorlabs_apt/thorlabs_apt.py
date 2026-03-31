@@ -643,6 +643,8 @@ class ThorlabsAPT(USBSerial):
 
     def setLowerLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
+        if limit is None:
+            limit = 0
         self.limit_array[a][3] = self.mmToCnts(limit, axis=a)
         self.limit_array[a][4] = 0x02  # enable limits
         self.long_write_to_APT(
@@ -651,6 +653,8 @@ class ThorlabsAPT(USBSerial):
 
     def setUpperLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
+        if limit is None:
+            limit = self.max_travel_mm[a]
         self.limit_array[a][2] = self.mmToCnts(limit, axis=a)
         self.limit_array[a][4] = 0x02  # enable limits
         self.long_write_to_APT(
@@ -674,10 +678,8 @@ class ThorlabsAPT(USBSerial):
         a = self.convertAxis(axis)
         if limits is None:
             limits = self.limits[a]
-        if limits[0] is not None:
-            self.setLowerLimit(limits[0], axis=a)
-        if limits[1] is not None:
-            self.setUpperLimit(limits[1], axis=a)
+        self.setLowerLimit(limits[0], axis=a)
+        self.setUpperLimit(limits[1], axis=a)
         time.sleep(0.25)
         self.write_to_APT(a, LIMITS_GET, self.channel, 0x00)
 

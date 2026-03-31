@@ -71,9 +71,6 @@ class BPStageDriver:
     def setBPLimits(self, limits=None):
         log.warning("Function not implemented. Using abstract BPStageDriver class")
 
-    def setUpperLimit(self, limit):
-        log.warning("Function not implemented. Using abstract BPStageDriver class")
-
     def initialize_and_positionBP(self, pos, external_control_enabled):
         if self.initialized is None:
             self.initialized = False

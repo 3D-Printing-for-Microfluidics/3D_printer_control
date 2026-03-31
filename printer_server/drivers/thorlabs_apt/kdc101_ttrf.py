@@ -135,13 +135,6 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
 
     def setTTRLimits(self, limits=None, axis=None):
         """Set the limits for the TTR stage (in mm)."""
-        if limits is None:
-            limits = self.config_dict["limits"][axis]
-
         # note: We set the limits in mm as that is how the stage is defined. 
         #       The tip/tilt multiplier can mess with it otherwise...
-
-        # if axis in ["Tip", "Tilt"]:
-        #     # Convert limits from radians to mm
-        #     limits = [self.rad_to_mm(limits[0], axis), self.rad_to_mm(limits[1], axis)]
         self.apt_controller.setLimits(limits=limits, axis=axis)

@@ -171,10 +171,14 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
     
     def setLowerLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
+        if limit is None:
+            limit = -self.max_travel_mm[a]
         self.send(f"SLLIMIT({a}) = {limit}")
 
     def setUpperLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
+        if limit is None:
+            limit = self.max_travel_mm[a]
         self.send(f"SRLIMIT({a}) = {limit}")
             
     def checkLimits(self, axis=None):
@@ -303,10 +307,8 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         a = self.convertAxis(axis)
         if limits is None:
             limits = self.limits[a]
-        if limits[0] is not None:
-            self.setLowerLimit(limits[0], axis=a)
-        if limits[1] is not None:
-            self.setUpperLimit(limits[1], axis=a)
+        self.setLowerLimit(limits[0], axis=a)
+        self.setUpperLimit(limits[1], axis=a)
 
     def getBPPosition(self, notify=True):
         return self.getPosition(axis="Build Platform", notify=notify)
@@ -342,10 +344,8 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
             limits = self.limits[a]
         elif limits == "calibration":
             limits = self.calibration_limits[a]
-        if limits[0] is not None:
-            self.setLowerLimit(limits[0], axis=a)
-        if limits[1] is not None:
-            self.setUpperLimit(limits[1], axis=a)
+        self.setLowerLimit(limits[0], axis=a)
+        self.setUpperLimit(limits[1], axis=a)
 
     ################################# End parent class functions #######################################
 

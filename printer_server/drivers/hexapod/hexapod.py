@@ -146,10 +146,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         a = self.convertAxis(axis)
         if limits is None:
             limits = self.limits[a]
-        if limits[0] is not None:
-            self.setLowerLimit(limits[0], axis=a)
-        if limits[1] is not None:
-            self.setUpperLimit(limits[1], axis=a)
+        self.setLowerLimit(limits[0], axis=a)
+        self.setUpperLimit(limits[1], axis=a)
 
     def write_to_disk(self, *args):
         """Write data to disk using the async file handler class.
@@ -241,10 +239,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         a = self.convertAxis("Focus")
         if limits is None:
             limits = self.limits[a]
-        if limits[0] is not None:
-            self.setLowerLimit(limits[0], axis=a)
-        if limits[1] is not None:
-            self.setUpperLimit(limits[1], axis=a)
+        self.setLowerLimit(limits[0], axis=a)
+        self.setUpperLimit(limits[1], axis=a)
 
     ################################# End parent class functions #######################################
         
@@ -491,11 +487,15 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
     def setLowerLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
         with self.gateway.sendLock:
+            if limit is None:
+                limit = self.controller.qTMN(a)[a]
             self.controller.NLM({a: limit})
 
     def setUpperLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
         with self.gateway.sendLock:
+            if limit is None:
+                limit = self.controller.qTMX(a)[a]
             self.controller.PLM({a: limit})
 
     def get_simple_dynamic_range(self, target_axis:str):
