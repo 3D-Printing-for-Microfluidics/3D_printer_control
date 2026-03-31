@@ -36,8 +36,20 @@ class ScreenControl(PrintControl):
         )
         self.screen.setCorrectionEnable(corrected, light_engine=le)
 
+        mirror_short = settings.get("Mirror image short axis", False)
+        mirror_long = settings.get("Mirror image long axis", False)
+
         self.screen_thread = Thread(
-            log, name="screen_control_draw_thread", target=self.screen.draw, args=[self.image], kwargs={"light_engine": le, "led_num": led}
+            log, 
+            name="screen_control_draw_thread", 
+            target=self.screen.draw, 
+            args=[self.image], 
+            kwargs={
+                "light_engine": le, 
+                "led_num": led, 
+                "mirror_short": mirror_short, 
+                "mirror_long": mirror_long
+            }
         )
         self.screen_thread.start()
         super().pre_exposure_tasks(settings, light_engine)

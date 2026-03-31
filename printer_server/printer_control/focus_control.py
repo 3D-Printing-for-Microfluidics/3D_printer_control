@@ -127,7 +127,10 @@ class FocusControl(PrintControl):
 
         need_to_shift_image = self.focus_stage.config_dict.get("moving_shifts_image", False)
         if need_to_shift_image:
-            self.image = shift_image(self.image, x=um_to_px(self.defocus_um))
+            shift = um_to_px(self.defocus_um)
+            if settings.get("Mirror image long axis", False):
+                shift = -shift
+            self.image = shift_image(self.image, x=shift)
         
         if self.defocus_um != self.previous_defocus:
             self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focus + self.defocus_um/1000, join=False)
