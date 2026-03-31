@@ -171,6 +171,8 @@
         "normalization_factor": [
             1.0
         ],
-        "orientation": "Y"
+        "orientation": "Y",
+        "mirror_long_axis": true,
+        "mirror_short_axis": false
     }
 }

@@ -226,7 +226,9 @@
             2560,
             1600
         ],
-        "orientation": "X"
+        "orientation": "X",
+        "mirror_long_axis": false,
+        "mirror_short_axis": false
     },
     "wintech": {
         "dummy": false,
@@ -240,6 +242,8 @@
             1920,
             1080
         ],
-        "orientation": "X"
+        "orientation": "X",
+        "mirror_long_axis": false,
+        "mirror_short_axis": false
     }
 }

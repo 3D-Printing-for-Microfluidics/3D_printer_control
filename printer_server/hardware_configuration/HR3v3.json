@@ -178,6 +178,8 @@
         "grayscale_normalization_factor": [
             0.78
         ],
-        "orientation": "Y"
+        "orientation": "Y",
+        "mirror_long_axis": true,
+        "mirror_short_axis": false
     }
 }

@@ -278,6 +278,8 @@
             1600
         ],
         "orientation": "Y",
+        "mirror_long_axis": false,
+        "mirror_short_axis": false,
         "grayscale_correction_image": [
             "20241202-XU19030146.png"
         ],

@@ -14,7 +14,15 @@ from printer_server.threading_wrapper import Thread
 class Screen:
     """Create and manage a new Tk window."""
 
-    def __init__(self, resolution, correction_paths, screen_offset=0, log_level=logging.DEBUG):
+    def __init__(
+            self, 
+            resolution, 
+            correction_paths, 
+            screen_offset=0, 
+            mirror_short_axis=False, 
+            mirror_long_axis=False, 
+            log_level=logging.DEBUG
+        ):
         """Initialize a new screen object.
 
         resolution: The (width, height) resolution of the screen
@@ -26,6 +34,7 @@ class Screen:
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
         self.image = None
+        self.image_preview = None
         self.tk_image = None
         self.image_path = None
         self.led_num = 0
@@ -52,7 +61,10 @@ class Screen:
         self.canvas.configure(background="black")
         self.canvas_image = self.canvas.create_image(0, 0, anchor=tkinter.NW)
 
-    def draw(self, img_path, led_num=0):
+        self.mirror_short_axis = mirror_short_axis
+        self.mirror_long_axis = mirror_long_axis
+
+    def draw(self, img_path, led_num=0, mirror_short=False, mirror_long=False):
         """Draw image in the Tk canvas."""
         try:
             self.led_num = led_num
@@ -61,10 +73,23 @@ class Screen:
                 mask = self.image
                 correction = Image.open(self.correction_paths[led_num])
                 self.image = Image.composite(correction, mask, mask=mask)
+
+            # xor class and local variable
+            # we do this on a software rather then a hardware level, because not all le support mirroring long axis
+            _mirror_short = mirror_short != self.mirror_short_axis
+            _mirror_long = mirror_long != self.mirror_long_axis
+
+            self.image_preview = self.image.copy()
+            if _mirror_short and _mirror_long:
+                self.image = self.image.transpose(Image.ROTATE_180)
+            elif _mirror_short:
+                self.image = self.image.transpose(Image.FLIP_TOP_BOTTOM)
+            elif _mirror_long:
+                self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
             self.image_path = img_path
 
         except (OSError, FileNotFoundError):
-            self.log.warning("Image not found, drawing white")
+            self.log.warning("Image not found, drawing white (%s)", img_path)
             self.log.info("\t%s", img_path)
             self.image = Image.new(mode="L", size=self.resolution, color=255)
         self.tk_image = ImageTk.PhotoImage(self.image)
@@ -77,6 +102,7 @@ class Screen:
     def clear(self):
         """Clear the Tk window by drawing a black image."""
         self.image = Image.new(mode="L", size=self.resolution, color=0)
+        self.image_preview = self.image
         self.tk_image = ImageTk.PhotoImage(self.image)
         self.image_path = None
         self.canvas.itemconfig(self.canvas_image, image=self.tk_image)
@@ -87,8 +113,8 @@ class Screen:
 
     def fetch_preview(self, scale=1/20):
         new_size = (int(self.resolution[0] * scale), int(self.resolution[1] * scale))
-        if self.image is not None:
-            img = self.image.resize(new_size, Image.LANCZOS)
+        if self.image_preview is not None:
+            img = self.image_preview.resize(new_size, Image.LANCZOS)
         else:
             img = Image.new(mode="L", size=new_size, color=0)
         
@@ -139,7 +165,16 @@ class ScreenThread(Thread):
                     correction_paths.append(None)
             
             resolution = tuple(self.config_dict[le]["resolution"])
-            self.screens.append(Screen(resolution, correction_paths, screen_offset=self.total_offset, log_level=self.log_level))
+            self.screens.append(
+                Screen(
+                    resolution, 
+                    correction_paths, 
+                    screen_offset=self.total_offset, 
+                    mirror_short_axis=self.config_dict[le].get("mirror_short_axis", False), 
+                    mirror_long_axis=self.config_dict[le].get("mirror_long_axis", False), 
+                    log_level=self.log_level
+                )
+            )
             self.total_offset += resolution[0]
 
         atexit.register(self.stop)
@@ -175,7 +210,7 @@ class ScreenThread(Thread):
                 screen.window.quit()
             self.screens = None
 
-    def draw(self, img_path, light_engine="visitech", led_num=0):
+    def draw(self, img_path, light_engine="visitech", led_num=0, mirror_short=False, mirror_long=False):
         """Draw an image to the specified screen."""
         screen = self._getScreenIndex(light_engine)
         self.log.info("Drawing %s to %s (screen %s)", Path(img_path).name, light_engine, screen)
@@ -188,7 +223,7 @@ class ScreenThread(Thread):
         trys = 3 # very occationally the screen will fail to find the image. Not sure why, but hopefully this will fix it
         for i in range(trys):
             try:
-                self.screens[screen].draw(img_path, led_num=led_num)
+                self.screens[screen].draw(img_path, led_num=led_num, mirror_short=mirror_short, mirror_long=mirror_long)
                 break
             except IndexError:
                 if i != trys - 1:
