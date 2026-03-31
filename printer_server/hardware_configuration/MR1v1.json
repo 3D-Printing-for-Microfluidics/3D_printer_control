@@ -205,7 +205,12 @@
                 "invert_sign": false
             }
         },
-        "auto_focus_with_keyence": true
+        "auto_focus_with_keyence": true,
+        "direct_focal_measurement": true,
+        "thermal_drift_measurement": {
+            "wintech": true,
+            "visitech": false
+        }
     },
     "screen": {},
     "light_engines": [

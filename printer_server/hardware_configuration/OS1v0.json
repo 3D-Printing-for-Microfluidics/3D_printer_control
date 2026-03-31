@@ -305,7 +305,8 @@
         "invert_sign": true
       }
     },
-    "auto_focus_with_keyence": true
+    "auto_focus_with_keyence": true,
+    "direct_focal_measurement": false
   },
   "photodiode": {
     "dummy": false,
