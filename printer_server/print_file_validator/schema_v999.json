@@ -29,6 +29,33 @@
                 "Schema version"
             ]
         },
+        "Design": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Comment": {
+                    "$ref": "#/$defs/COMMON_PROPS/COMMENT"
+                },
+                "User": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Name of person who designed this device."
+                },
+                "Purpose": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Information about what purpose the device is intended for."
+                },
+                "Description": {
+                    "type": "string",
+                    "default": "",
+                    "description": "More detailed explanation of the structure of the device."
+                },
+                "Date": {
+                    "type": "string"
+                }
+            }
+        },
         "Functions": {
             "type": "array",
             "additionalProperties": true
