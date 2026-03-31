@@ -92,13 +92,19 @@
             "Focus": 263.8443072
         },
         "axes_speed": {
-            "Focus": 1.0
+            "Focus": 2.777
         },
         "axes_acceleration": {
-            "Focus": 1.0
+            "Focus": 1.486
         },
         "axes_homing_speed": {
             "Focus": 1.0
+        },
+        "axes_homing_timeout": {
+            "Focus": 60.0
+        },
+        "axes_timeout": {
+            "Focus": 20.0
         },
         "mirroring": {
             "Focus": true
