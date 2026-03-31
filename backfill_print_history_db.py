@@ -1,5 +1,6 @@
 """Create a new database and backfill design metadata for Print History."""
 import argparse
+import json
 import logging
 import os
 import sqlite3
@@ -13,9 +14,6 @@ from flask import Flask
 from printer_server.extensions import db
 from printer_server.models import PrintRecord
 from printer_server.settings import Config
-from printer_server.print_file_validator.print_file_validator import (
-    check_for_unique_print_settings,
-)
 
 
 log = logging.getLogger("print_history_backfill")
@@ -54,7 +52,10 @@ def extract_design_metadata(zip_path):
                 if (".csv" in name) or (".log" in name) or ("exposure_data" in name):
                     namelist.remove(name)
             zip_file_handle.extractall(temp_dir, members=namelist)
-            print_settings = check_for_unique_print_settings(temp_dir)
+            json_files = list(temp_dir.glob("*.json"))
+            with open(json_files[0], "r") as file_handle:
+                print_settings = json.load(file_handle)
+
     except (BadZipFile, FileNotFoundError, ValueError, OSError) as ex:
         log.info("Skipping metadata for %s: %s", zip_path, ex)
         return {}
@@ -81,8 +82,10 @@ def copy_table(conn_src, conn_tgt, table_name, transform=None):
     tgt_cols = get_table_columns(conn_tgt, table_name)
     common_cols = [col for col in src_cols if col in tgt_cols]
 
+    log.info("Copying table: %s", table_name)
+
     if not common_cols:
-        log.info("Skipping %s (no common columns)", table_name)
+        log.info("\tSkipping %s (no common columns)", table_name)
         return
 
     quoted_cols = ", ".join([f'"{c}"' for c in common_cols])
