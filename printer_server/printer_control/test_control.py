@@ -788,13 +788,11 @@ class TestControl(PrintControl):
                 pixel_data[0, :] = (pixel_data[0, :] + physical_width/2 - x_offset) / _x_pixel_pitch
                 pixel_data[1, :] = (pixel_data[1, :] + physical_height/2 - y_offset) / _y_pixel_pitch
 
-            
-
-            # Mirror x axis
-            # HR5
-            # pixel_data[1, :] = (-pixel_data[1, :] + y_pixels)
-            # OS1
-            pixel_data[0, :] = (-pixel_data[0, :] + x_pixels)
+            # Mirror axis if needed
+            if self.light_engine_alignment == "Y": # HR5/HR3v3
+                pixel_data[1, :] = (-pixel_data[1, :] + y_pixels)
+            else: # MR1/OS1
+                pass
 
             return pixel_data
         
