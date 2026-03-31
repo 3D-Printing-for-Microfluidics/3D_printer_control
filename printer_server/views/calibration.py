@@ -329,23 +329,34 @@ def create_calibration_data():
 
     register_irradiance_targets()
     last_positions = get_last_calibration_positions_from_logs()
-    if driver_handles.ttr_stage.config_dict.get("auto_tip_tilt", False):
+    if "photodiode" in config_dict:
+        for light_engine in config_dict.get("light_engines", []):
+            for wavelength in config_dict.get(light_engine, {}).get("leds_nm", []):
+                add_to_list(
+                    [f"irradiance_target_{light_engine}_{wavelength}"],
+                    GROUP_IRRADIANCE_TARGETS,
+                )
+    auto_tip_tilt = driver_handles.ttr_stage.config_dict.get("auto_tip_tilt", False)
+    if auto_tip_tilt:
         settings_list = []
         for le in config_dict["light_engines"]:
             for axis in ["tip", "tilt"]:
                 # settings_list.append(f"{le}_{axis}_base") # Don't show on Calibration page
                 settings_list.append(f"{le}_{axis}_offset")
         add_to_list(settings_list, GROUP_ACTIVE_OFFSETS)
-    else:
-        add_to_list(["tip", "tilt"], GROUP_NON_ACTIVE_OFFSETS)
 
-    if driver_handles.focus_stage.config_dict.get("auto_focus_with_keyence", False) or driver_handles.focus_stage.config_dict.get("auto_focus_with_photodiode", False):
+    auto_focus = ("keyence" in config_dict and config_dict["keyence"].get("auto_focus_with_keyence")) or ("photodiode" in config_dict and config_dict["photodiode"].get("auto_focus_with_photodiode"))
+    if auto_focus:
         settings_list = []
         for le in config_dict["light_engines"]:
             # settings_list.append(f"{le}_focus_base") # Don't show on Calibration page
             settings_list.append(f"{le}_focus_offset")
         add_to_list(settings_list, GROUP_ACTIVE_OFFSETS)
-    else:
+
+    if not auto_tip_tilt:
+        add_to_list(["tip", "tilt"], GROUP_NON_ACTIVE_OFFSETS)
+
+    if not auto_focus:
         add_to_list(["focus"], GROUP_NON_ACTIVE_OFFSETS)
 
     # Add TTR axis (if hexapod also add pivot)
@@ -358,14 +369,6 @@ def create_calibration_data():
             ["x_drift", "y_drift", "xy_shift", "yx_shift", "xx_shift", "yy_shift"],
             GROUP_ALIGNMENT_ADJUSTMENTS,
         )
-
-    if "photodiode" in config_dict:
-        for light_engine in config_dict.get("light_engines", []):
-            for wavelength in config_dict.get(light_engine, {}).get("leds_nm", []):
-                add_to_list(
-                    [f"irradiance_target_{light_engine}_{wavelength}"],
-                    GROUP_IRRADIANCE_TARGETS,
-                )
 
     return calibration_data
 
