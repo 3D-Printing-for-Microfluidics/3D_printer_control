@@ -74,6 +74,7 @@ class ThorlabsAPT(USBSerial):
         self.ctspmmss = config_dict["axes_ctspmmss"]
         self.default_speed = config_dict["axes_speed"]
         self.default_acceleration = config_dict["axes_acceleration"]
+        self.mirroring = config_dict["mirroring"]
         self.limits = config_dict["limits"]
         self.homing_timeout = config_dict.get("axes_homing_timeout", 60.0)
         self.move_timeout = config_dict.get("axes_timeout", 60.0)
@@ -603,38 +604,43 @@ class ThorlabsAPT(USBSerial):
                     pos = self.current_position[ax]
                     if self.axes_homed[ax] is True:
                         if (
-                            self.limits[ax][0] is not None
-                            and pos < self.limits[ax][0]
-                            and self.moving_dir[ax] == "neg"
+                            self.moving_dir[ax] == "neg"
                         ):
-                            self.log.warning(
-                                "%s - %s - %s position %s below lower limit %s",
-                                self.driver_name,
-                                ax,
-                                source,
-                                pos,
-                                self.limits[ax][0],
-                            )
-                            self.fullstop(axis=ax)
+                            if ((not self.mirroring[ax] and self.limits[ax][0] is not None and pos < self.limits[ax][0]) 
+                                or (self.mirroring[ax] and self.limits[ax][1] is not None and pos < -self.limits[ax][1])):
+                                self.log.warning(
+                                    "%s - %s - %s position %s below lower limit %s",
+                                    self.driver_name,
+                                    ax,
+                                    source,
+                                    pos,
+                                    self.limits[ax][0],
+                                )
+                                self.fullstop(axis=ax)
                         elif (
-                            self.limits[ax][1] is not None
-                            and pos > self.limits[ax][1]
-                            and self.moving_dir[ax] == "pos"
+                            self.moving_dir[ax] == "pos"
                         ):
-                            self.log.warning(
-                                "%s - %s - %s position %s above upper limit %s",
-                                self.driver_name,
-                                ax,
-                                source,
-                                pos,
-                                self.limits[ax][1],
-                            )
-                            self.fullstop(axis=ax)
+                            if ((not self.mirroring[ax] and self.limits[ax][1] is not None and pos > self.limits[ax][1])
+                                or (self.mirroring[ax] and self.limits[ax][0] is not None and pos > -self.limits[ax][0])):
+                                self.log.warning(
+                                    "%s - %s - %s position %s above upper limit %s",
+                                    self.driver_name,
+                                    ax,
+                                    source,
+                                    pos,
+                                    self.limits[ax][1],
+                                )
+                                self.fullstop(axis=ax)
 
     def getSoftwareLimits(self, axis=None):
         a = self.convertAxis(axis)
         if len(self.limit_array[a]) == 5:
             if self.limit_array[a][4] != 0:
+                if self.mirroring[a]:
+                    return (
+                        self.cntsToMm(-self.limit_array[a][2], axis=axis),
+                        self.cntsToMm(-self.limit_array[a][3], axis=axis),
+                    )
                 return (
                     self.cntsToMm(self.limit_array[a][3], axis=axis),
                     self.cntsToMm(self.limit_array[a][2], axis=axis),
@@ -645,8 +651,12 @@ class ThorlabsAPT(USBSerial):
         a = self.convertAxis(axis)
         if limit is None:
             limit = 0
-        self.limit_array[a][3] = self.mmToCnts(limit, axis=a)
-        self.limit_array[a][4] = 0x02  # enable limits
+        if self.mirroring[a]:
+            self.limit_array[a][2] = self.mmToCnts(-limit, axis=a)
+            self.limit_array[a][4] = 0x02  # enable limits
+        else:
+            self.limit_array[a][3] = self.mmToCnts(limit, axis=a)
+            self.limit_array[a][4] = 0x02  # enable limits
         self.long_write_to_APT(
             a, LIMITS_SET, "HHHiiH", [self.channel, *self.limit_array[a]], 16
         )
@@ -655,8 +665,12 @@ class ThorlabsAPT(USBSerial):
         a = self.convertAxis(axis)
         if limit is None:
             limit = self.max_travel_mm[a]
-        self.limit_array[a][2] = self.mmToCnts(limit, axis=a)
-        self.limit_array[a][4] = 0x02  # enable limits
+        if self.mirroring[a]:
+            self.limit_array[a][3] = self.mmToCnts(-limit, axis=a)
+            self.limit_array[a][4] = 0x02  # enable limits
+        else:
+            self.limit_array[a][2] = self.mmToCnts(limit, axis=a)
+            self.limit_array[a][4] = 0x02  # enable limits
         self.long_write_to_APT(
             a, LIMITS_SET, "HHHiiH", [self.channel, *self.limit_array[a]], 16
         )
@@ -686,6 +700,8 @@ class ThorlabsAPT(USBSerial):
     def getPosition(self, axis=None, notify=True):
         """Return the position of the specified encoder."""
         a = self.convertAxis(axis)
+        if self.mirroring[a]:
+            return float(-self.current_position[a])
         return float(self.current_position[a])
 
     def motorOn(self, axis=None):
@@ -787,6 +803,8 @@ class ThorlabsAPT(USBSerial):
 
         start_position = self.getPosition(axis=a)
         self.log.info("Move axis %s to relative position %s", a, mm)
+        if self.mirroring[a]:
+            mm = -mm
         self.long_write_to_APT(
             a, MOV_REL_CMD, "Hi", [self.channel, self.mmToCnts(mm, axis=a)], 6
         )
@@ -835,6 +853,8 @@ class ThorlabsAPT(USBSerial):
             self.setAcceleration(acceleration, axis=a)
 
         self.log.info("Move axis %s to absolute position %s", a, mm)
+        if self.mirroring[a]:
+            mm = -mm
         self.long_write_to_APT(
             a, MOV_ABS_CMD, "Hi", [self.channel, self.mmToCnts(mm, axis=a)], 6
         )
@@ -881,7 +901,10 @@ class ThorlabsAPT(USBSerial):
                 axis=a
             )  # save the acceleration before jogging begins
         self.jogging[a] = True
-        self.moving_dir[ax] = "pos" if speed > 0 else "neg" if speed < 0 else None
+
+        if self.mirroring[a]:
+            speed = -speed if speed is not None else None
+        self.moving_dir[a] = "pos" if speed > 0 else "neg" if speed < 0 else None
 
         self.setSpeed(abs(speed))
         self.setAcceleration(acceleration)
@@ -894,7 +917,7 @@ class ThorlabsAPT(USBSerial):
         self.log.info("Stop jog on axis %s", a)
         self.write_to_APT(a, MOV_STOP_CMD, self.channel, 0x01)
         self.jogging[a] = False
-        self.moving_dir[ax] = None
+        self.moving_dir[a] = None
         self.setSpeed(self.pre_jog_speed[a])
         self.setAcceleration(self.pre_jog_acceleration[a])
 

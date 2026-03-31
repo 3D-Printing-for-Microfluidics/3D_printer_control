@@ -101,6 +101,12 @@
             "C": 50,
             "D": 50
         },
+        "mirroring": {
+            "A": false,
+            "B": false,
+            "C": false,
+            "D": true
+        },
         "limits": {
             "A": [
                 null,
@@ -115,8 +121,8 @@
                 null
             ],
             "D": [
-                null,
-                50.000
+                -50.000,
+                null
             ]
         },
         "calibration_limits": {
@@ -133,13 +139,13 @@
                 null
             ],
             "D": [
-                null,
-                46.2148438
+                -46.2148438,
+                null
             ]
         },
-        "calibration_position": 45.2148438,
-        "bottom_position": 43.875,
-        "top_position": -50
+        "top_position": 50,
+        "calibration_position": -45.2148438,
+        "bottom_position": -43.875
     },
     "tiptilt": {
         "dummy": false,
@@ -157,6 +163,10 @@
             "Tip",
             "Tilt"
         ],
+        "mirroring": {
+            "1": false,
+            "2": false
+        },
         "limits": {
             "1": [
                 null,

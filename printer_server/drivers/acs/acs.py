@@ -36,6 +36,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         self.max_travel_mm = config_dict["axes_travel"]
         self.default_speed = config_dict["axes_speed"]
         self.default_acceleration = config_dict["axes_acceleration"]
+        self.mirroring = config_dict["mirroring"]
         self.limits = config_dict["limits"]
         self.calibration_limits = config_dict["calibration_limits"]
         self.calibration_position = config_dict["calibration_position"]
@@ -105,18 +106,6 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         #     self.motorOn(axis)
         self.log.info("Initialized ACS")
 
-    def goToBPcalibration(self):
-        self.absMove(mm=self.calibration_position, axis="Build Platform")
-        return self.getPosition()
-
-    def goToBPtop(self):
-        self.absMove(mm=self.top_position, axis="Build Platform")
-        return self.getPosition()
-
-    def goToBPbottom(self):
-        self.absMove(mm=self.bottom_position, axis="Build Platform")
-        return self.getPosition()
-
     def connect(self):
         """Find the first ACS controller and connect to it."""
         ret = super().connect()
@@ -167,19 +156,27 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         a = self.convertAxis(axis)
         ll = self.send(f"?SLLIMIT({a})")
         ul = self.send(f"?SRLIMIT({a})")
+        if self.mirroring[a]:
+            return (-float(ul), -float(ll))
         return (float(ll), float(ul))
     
     def setLowerLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
         if limit is None:
             limit = -self.max_travel_mm[a]
-        self.send(f"SLLIMIT({a}) = {limit}")
+        if self.mirroring[a]:
+            self.send(f"SRLIMIT({a}) = {-limit}")
+        else:
+            self.send(f"SLLIMIT({a}) = {limit}")
 
     def setUpperLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
         if limit is None:
             limit = self.max_travel_mm[a]
-        self.send(f"SRLIMIT({a}) = {limit}")
+        if self.mirroring[a]:
+            self.send(f"SLLIMIT({a}) = {-limit}")
+        else:
+            self.send(f"SRLIMIT({a}) = {limit}")
             
     def checkLimits(self, axis=None):
         """Return a tuple the state of the limit switches for the
@@ -188,6 +185,8 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         a = self.convertAxis(axis)
         lr = float(self.send(f"?FAULT{a}.#SRL")) # SRL is software limit RL is hardware
         ll = float(self.send(f"?FAULT{a}.#SLL")) # SLL is software limit LL is hardware
+        if self.mirroring[a]:
+            return bool(ll), bool(lr)
         return bool(lr), bool(ll)
 
     def getPosition(self, axis=None, notify=True):
@@ -195,6 +194,8 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         a = self.convertAxis(axis)
         pos = self.send(f"?FPOS{a}", notify=notify)
         pos = round(float(pos), 4)
+        if self.mirroring[a]:
+            return -float(pos)
         return float(pos)
 
     def motorOn(self, axis=None):
@@ -258,6 +259,18 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
 
     ################################# Parent class functions #######################################
             
+    def goToBPcalibration(self):
+        self.absMove(mm=self.calibration_position, axis="Build Platform")
+        return self.getPosition()
+
+    def goToBPtop(self):
+        self.absMove(mm=self.top_position, axis="Build Platform")
+        return self.getPosition()
+
+    def goToBPbottom(self):
+        self.absMove(mm=self.bottom_position, axis="Build Platform")
+        return self.getPosition()
+
     def getDefaultBPSpeed(self):
         return self.getDefaultSpeed("Build Platform")
 
@@ -386,7 +399,10 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         if mm is not None:
             start_position = self.getPosition(axis=a)
             self.log.info("Move axis %s to relative position %.4f", a, mm)
-            self.send(f"PTP/r {a}, {mm}")
+            if self.mirroring[a]:
+                self.send(f"PTP/r {a}, {-mm}")
+            else:
+                self.send(f"PTP/r {a}, {mm}")
             self.logging_move_status[a] = 0
             self.waitForMotionComplete(start_position + mm, wait_for_settling=wait_for_settling, axis=a)
         if speed is not None:
@@ -425,7 +441,10 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
             self.setAcceleration(acceleration, axis=a)
         if mm is not None:
             self.log.info("Move axis %s to absolute position %.4f", a, mm)
-            self.send(f"PTP {a}, {mm}")
+            if self.mirroring[a]:
+                self.send(f"PTP {a}, {-mm}")
+            else:
+                self.send(f"PTP {a}, {mm}")
             self.logging_move_status[a] = 0
             self.waitForMotionComplete(mm, wait_for_settling=wait_for_settling, axis=a)
         if speed is not None:
@@ -448,6 +467,8 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
 
         self.setAcceleration(acceleration)
         self.log.info("Start jog on axis %s at speed %s mm/sec", a, speed)
+        if self.mirroring[a]:
+            speed = -speed
         self.send(f"JOG/v {a}, {speed}, +")
         self.logging_move_status[a] = 0
 

@@ -83,6 +83,11 @@
             "1": 50,
             "2": 50
         },
+        "mirroring": {
+            "0": false,
+            "1": false,
+            "2": true
+        },
         "limits": {
             "0": [
                 null,
@@ -93,8 +98,8 @@
                 85
             ],
             "2": [
-                null,
-                34
+                -34,
+                null
             ]
         },
         "calibration_limits": {
@@ -107,13 +112,13 @@
                 null
             ],
             "2": [
-                null,
-                26.000
+                -26.000,
+                null
             ]
         },
+        "top_position": 50,
         "calibration_position": 0,
-        "bottom_position": 27.5,
-        "top_position": -50
+        "bottom_position": -27.5
     },
     "hexapod": {
         "dummy": false,
@@ -131,6 +136,12 @@
             "Tilt",
             "Rotate"
         ],
+        "mirroring": {
+            "Z": false,
+            "U": false,
+            "V": false,
+            "W": false
+        },
         "limits": {
             "Z": [
                 null,

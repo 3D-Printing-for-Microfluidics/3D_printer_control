@@ -21,27 +21,27 @@
       "Build Platform": 0
     },
     "parked": {
-      "X": 66.088,
-      "Y": 160.0,
-      "Focus": 5.0,
+      "X": -66.088,
+      "Y": -160.0,
+      "Focus": -5.0,
       "Build Platform": 0
     },
     "visitech": {
-      "X": 68.088,
-      "Y": 269.9,
-      "Focus": 3.0,
+      "X": -68.088,
+      "Y": -269.9,
+      "Focus": -3.0,
       "Build Platform": 0
     },
     "keyence_visitech": {
-      "X": 73.088,
-      "Y": 77.5,
-      "Focus": 2.0,
+      "X": -73.088,
+      "Y": -77.5,
+      "Focus": -2.0,
       "Build Platform": 0
     },
     "fiber_visitech": {
-      "X": 68.158,
-      "Y": 189.000,
-      "Focus": 4.0,
+      "X": -68.158,
+      "Y": -189.000,
+      "Focus": -4.0,
       "Build Platform": 0
     }
   },
@@ -77,21 +77,24 @@
     "axes_acceleration": {
       "D": 50
     },
+    "mirroring": {
+      "D": true
+    },
     "limits": {
       "D": [
-        null,
-        47.0
+        -47.0,
+        null
       ]
     },
     "calibration_limits": {
       "D": [
-        null,
-        0
+        0,
+        null
       ]
     },
+    "top_position": 50,
     "calibration_position": 0,
-    "bottom_position": 34.3,
-    "top_position": -50
+    "bottom_position": -34.3
   },
   "lts_xy": {
     "dummy": false,
@@ -156,14 +159,18 @@
       "X": 40.0,
       "Y": 40.0
     },
+    "mirroring": {
+      "X": true,
+      "Y": true
+    },
     "limits": {
       "X": [
-        0.0,
-        90.0
+        -90.0,
+        0
       ],
       "Y": [
-        0.0,
-        285.0
+        -285.0,
+        0
       ]
     }
   },
@@ -245,6 +252,11 @@
       "Tilt": 20.0,
       "Focus": 20.0
     },
+    "mirroring": {
+      "Tip": false,
+      "Tilt": false,
+      "Focus": true
+    },
     "limits": {
       "Tip": [
         0,
@@ -255,8 +267,8 @@
         6.55
       ],
       "Focus": [
-        0,
-        10.0
+        -10.0,
+        0
       ]
     },
     "moving_shifts_image": false,
@@ -302,7 +314,7 @@
     "sensors": {
       "visitech": {
         "measurement_index": 0,
-        "invert_sign": true
+        "invert_sign": false
       }
     },
     "auto_focus_with_keyence": true,

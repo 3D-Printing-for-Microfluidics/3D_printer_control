@@ -39,21 +39,24 @@
         "axes_acceleration": {
             "A": 50
         },
+        "mirroring": {
+            "A": true
+        },
         "limits": {
             "A": [
-                null,
-                49.0
+                -49.0,
+                null
             ]
         },
         "calibration_limits": {
             "A": [
-                null,
-                3.9
+                -3.9,
+                null
             ]
         },
-        "calibration_position": 2.9,
-        "bottom_position": 40.489125,
-        "top_position": -50
+        "top_position": 50,
+        "calibration_position": -2.9,
+        "bottom_position": -40.489125
     },
     "kdc101_ttrf": {
         "dummy": false,
@@ -97,10 +100,13 @@
         "axes_homing_speed": {
             "Focus": 1.0
         },
+        "mirroring": {
+            "Focus": true
+        },
         "limits": {
             "Focus": [
-                0,
-                15.0
+                -15.0,
+                0
             ]
         },
         "moving_shifts_image": true
@@ -121,6 +127,10 @@
             "Tip",
             "Tilt"
         ],
+        "mirroring": {
+            "1": false,
+            "2": false
+        },
         "limits": {
             "1": [
                 null,

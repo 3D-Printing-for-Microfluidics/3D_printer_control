@@ -63,7 +63,7 @@ class BPControl(PrintControl):
             self.write_to_event_log("Start Up Movement")
             self.bp_stage.threadedBPMove(
                 logger=log,
-                mm=self.print_position - up_distance,
+                mm=self.print_position + up_distance,
                 speed=up_speed,
                 acceleration=up_acceleration,
                 wait_for_settling=False,
@@ -109,7 +109,7 @@ class BPControl(PrintControl):
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
             self.move_build_platform_up(position_settings)
             super().move_build_platform(position_settings, layer)
-            self.print_position -= layer_thickness
+            self.print_position += layer_thickness
             self.move_build_platform_down(position_settings)
 
             force_squeeze_settings = self.get_force_squeeze_settings(position_settings)
@@ -195,7 +195,7 @@ class BPControl(PrintControl):
 
             self.bp_stage.threadedBPMove(
                 logger=log,
-                mm=self.print_position-layer_thickness,
+                mm=self.print_position+layer_thickness,
                 join=True
             )
             self.bp_stage.threadedBPMove(

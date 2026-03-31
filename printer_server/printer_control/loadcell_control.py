@@ -104,7 +104,7 @@ class LoadcellControl(PrintControl):
         count = 0
         if (speed < 0 and force > target_force) or (speed > 0 and force < target_force):
             start_time = time.time()
-            self.bp_stage.startBPJog(speed=speed, acceleration=acceleration)
+            self.bp_stage.startBPJog(speed=-speed, acceleration=acceleration)
             while (speed < 0 and force > target_force) or (
                 speed > 0 and force < target_force
             ):
@@ -167,8 +167,8 @@ class LoadcellControl(PrintControl):
                     )
                     log.info("Loadcell position (post-step 1): %.4f", self.bp_stage.getBPPosition())
                 else:
-                    # estimate a 2mm movement for planarization
-                    self.bp_stage.relMoveBP(mm=2.0, speed=2.5)
+                    # estimate a -2mm movement for planarization
+                    self.bp_stage.relMoveBP(mm=-2.0, speed=2.5)
             except Exception as ex:
                 log.critical("Critical error occured during planarization (%s)", ex, exc_info=True)
                 self.failed_hardware["Loadcell or Build Platform"] = None

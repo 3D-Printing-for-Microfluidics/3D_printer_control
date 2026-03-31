@@ -53,11 +53,11 @@ class LTS_XY(XYStageDriver):
     def absMoveXY(
         self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None
     ):
-        cur = self.getXYPosition(axis=axis)
         if axis == "Y" and self.linked_focus_stage is not None:
             mm -= self.linked_focus_stage.target_focus
-            # cur -= self.linked_focus_stage.target_focus
-        if mm < 0:
+        if mm < 0 and not self.config_dict["mirroring"][axis]:
+            mm = 0
+        elif mm > 0 and self.config_dict["mirroring"][axis]:
             mm = 0
         mm = round(mm, 4)
         if axis == "Y":
