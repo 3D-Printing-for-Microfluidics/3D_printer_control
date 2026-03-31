@@ -196,29 +196,6 @@ class KeyenceFocusControl(PrintControl):
             for light_engine in config_dict["light_engines"]:
                 self.update_measurement_progress()
 
-                # Step 6a: Get keyence target position
-                # target_position = self.calibration_positions.get(
-                #     f"active_{light_engine}_focus", 0
-                # )
-                # log.debug("Keyence target position for %s: %s", light_engine, target_position)
-                # target_tip = self.calibration_positions.get(
-                #     f"active_{light_engine}_tip", 0
-                # )
-                # log.debug("Keyence target tip for %s: %s", light_engine, target_tip)
-                # target_tilt = self.calibration_positions.get(
-                #     f"active_{light_engine}_tilt", 0
-                # )
-                # log.debug("Keyence target tilt for %s: %s", light_engine, target_tilt)
-
-                # async_file_hander.write(
-                #     self.keyence_focus_log,
-                #     f"{datetime.now().strftime(ts)},{light_engine.capitalize()} Target Position,{target_position},{light_engine.capitalize()} Target Tip,{target_tip},{light_engine.capitalize()} Target Tilt,{target_tilt}\n",
-                # )
-                # async_file_hander.write(
-                #     self.keyence_focus_log,
-                #     f"{datetime.now().strftime(ts)},{light_engine.capitalize()} Target Position,{target_position}\n",
-                # )
-
                 # Step 6b: Move to origin measurement position (0,0 or default x/y)
                 self.move_xyf_stages(
                     self.default_x_offset,
@@ -235,7 +212,7 @@ class KeyenceFocusControl(PrintControl):
                 keyence_reading = self.keyence.read_sensor(light_engine)
                 async_file_hander.write(
                     self.keyence_focus_log,
-                    f"{datetime.now().strftime(ts)},{light_engine.capitalize()} Measured Position {i},{keyence_reading}\n",
+                    f"{datetime.now().strftime(ts)},{light_engine.capitalize()} Measured Position,{keyence_reading}\n",
                 )
                 self.update_measurement_progress()
                 focus_drift = - keyence_reading
@@ -258,12 +235,6 @@ class KeyenceFocusControl(PrintControl):
                     self.keyence_focus_log,
                     f"{datetime.now().strftime(ts)},{light_engine.capitalize()} Drift,{focus_drift}\n",
                 )
-
-                # Step 6e: Update coordinate systems with new focus positions
-                # self.coord_systems[f"keyence_{light_engine}"]["Focus"] += (
-                #     focus_drift / 1000
-                # )
-                # self.coord_systems[light_engine]["Focus"] += focus_drift / 1000
 
                 keyence_position = self.coord_systems[f"keyence_{light_engine}"]["Focus"]*1000 + focus_drift
                 coord_diff = (self.coord_systems[f"{light_engine}"]["Focus"] - self.coord_systems[f"keyence_{light_engine}"]["Focus"])*1000
