@@ -335,7 +335,7 @@ class PhotodiodeFocusControl(PrintControl):
                 # Step stage
                 pos += step_size
                 if stage in ["X", "Y"]:
-                    self.xy_stage.absMoveXY(mm=pos, axis=stage)
+                    self.xy_stage.threadedXYMove(log, pos if stage == "X" else None, pos if stage == "Y" else None, join=True)
                 else:
                     focus_thread = self.focus_stage.threadedFocusMove(log, mm=pos, join=False)
                     time.sleep(0.05)

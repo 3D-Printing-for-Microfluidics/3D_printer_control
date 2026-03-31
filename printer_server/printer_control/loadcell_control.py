@@ -83,7 +83,13 @@ class LoadcellControl(PrintControl):
 
         time.sleep(squeeze_wait)
 
-        self.bp_stage.absMoveBP(mm=self.print_position, speed=50, acceleration=5)
+        self.bp_stage.threadedBPMove(
+            logger=log,
+            mm=self.print_position,
+            speed=50,
+            acceleration=5,
+            join=True
+        )
 
     def move_bp_to_force(
         self, target_force, speed, acceleration=100, error_threshold=None, timeout=10

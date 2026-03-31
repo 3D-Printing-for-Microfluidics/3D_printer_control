@@ -94,7 +94,8 @@ class BPStageDriver:
         mm,
         join=True,
         speed=None,
-        acceleration=None
+        acceleration=None,
+        wait_for_settling=True
     ):
         """
         Starts threaded movement on bp axis. If any axis is set to none, it will not move.
@@ -109,7 +110,8 @@ class BPStageDriver:
                 kwargs={
                     "mm": mm,
                     "speed": speed,
-                    "acceleration": acceleration
+                    "acceleration": acceleration,
+                    "wait_for_settling": wait_for_settling
                 },
             )
             thread.start()

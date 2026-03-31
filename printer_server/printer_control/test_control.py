@@ -379,7 +379,7 @@ class TestControl(PrintControl):
                 # Step stage
                 pos += step_size
                 if stage in ["X", "Y"]:
-                    self.xy_stage.absMoveXY(mm=pos, axis=stage)
+                    self.xy_stage.threadedXYMove(log, pos if stage == "X" else None, pos if stage == "Y" else None, join=True)
                 else:
                     focus_thread = self.focus_stage.threadedFocusMove(log, mm=pos, join=False)
                     time.sleep(0.05)
@@ -1237,8 +1237,12 @@ class TestControl(PrintControl):
                 async_file_hander.write(self.test_log, f"curOffset: {curOffset}\n")
                 log.info(f"New {axis} offset: {curOffset - offset}")
                 async_file_hander.write(self.test_log, f"New {axis} offset: {curOffset - offset}\n")
-                self.ttr_stage.absMoveTTR(rad=curOffset - offset, axis=axis)
-
+                self.ttr_stage.threadedTTRMove(log, 
+                                               curOffset - offset if axis == "Tip" else None,
+                                               curOffset - offset if axis == "Tilt" else None,
+                                               curOffset - offset if axis == "Rotate" else None,
+                                               join=True)
+                
                 last_positions[f"{self.light_engine}_{axis.lower()}_base"] = float(f"{(curOffset - offset)*1000:.1f}")
                 write_to_position_log(last_positions)
         async_file_hander.write(self.test_log, f"\n")
@@ -1304,7 +1308,7 @@ class TestControl(PrintControl):
             ]:
                 focus_thread = self.focus_stage.threadedFocusMove(log, mm=z_pos, join=False)
                 time.sleep(0.05)
-                xy_threads = self.xy_stage.threadedXYMove(log, x_pos+X, y_pos+Y, join=False)
+                xy_threads = self.xy_stage.threadedXYMove(log, x_pos-X, y_pos-Y, join=False)
                 for thread in xy_threads:
                     if thread is not None:
                         thread.join()
@@ -1357,7 +1361,11 @@ class TestControl(PrintControl):
                 async_file_hander.write(self.test_log, f"curOffset: {curOffset}\n")
                 log.info(f"New {axis} offset: {curOffset - offset}")
                 async_file_hander.write(self.test_log, f"New {axis} offset: {curOffset - offset}\n")
-                self.ttr_stage.absMoveTTR(rad=curOffset - offset, axis=axis)
+                self.ttr_stage.threadedTTRMove(log, 
+                                               curOffset - offset if axis == "Tip" else None,
+                                               curOffset - offset if axis == "Tilt" else None,
+                                               curOffset - offset if axis == "Rotate" else None,
+                                               join=True)
 
                 last_positions[f"{self.light_engine}_{axis.lower()}_base"] = float(f"{(curOffset - offset)*1000:.1f}")
                 write_to_position_log(last_positions)
