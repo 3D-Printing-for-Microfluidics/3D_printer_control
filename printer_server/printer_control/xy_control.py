@@ -69,12 +69,17 @@ class XYControl(PrintControl):
         """Move X, Y, and Focus stages to exposure positions"""
         defaults_layer_settings = self.print_settings.get("Default layer settings")
         default_image_settings = defaults_layer_settings.get("Image settings")
-        self.default_x_offset = default_image_settings.get("Image x offset (um)", 0)
-        self.default_y_offset = default_image_settings.get("Image y offset (um)", 0)
+        self.default_raw_x_offset = default_image_settings.get("Image x offset (um)", 0)
+        self.default_raw_y_offset = default_image_settings.get("Image y offset (um)", 0)
 
+        _x_offset = float(settings.get("Image x offset (um)", self.default_raw_x_offset))
+        _y_offset = float(settings.get("Image y offset (um)", self.default_raw_y_offset))
+        x_offset, y_offset = self._rotate_offsets(
+            _x_offset, 
+            _y_offset, 
+            config_dict[light_engine].get("orientation", "X"),
+        )
 
-        x_offset = float(settings.get("Image x offset (um)", self.default_x_offset))
-        y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
         screen_light_engine = self.convert_le_to_screen_le(light_engine)
 
         if screen_light_engine == "wintech":

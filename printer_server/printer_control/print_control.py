@@ -326,6 +326,11 @@ class PrintControl:
         for i, layer in enumerate(self.layer_map):
             count += self.exposures_in_layer(layer)
         return count
+    
+    def _rotate_offsets(self, x_offset, y_offset, orientation):
+        if orientation == "X":
+            return x_offset, y_offset
+        return -y_offset, x_offset
 
     def write_to_event_log(self, msg):
         async_file_hander.write(

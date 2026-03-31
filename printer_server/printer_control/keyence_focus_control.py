@@ -43,6 +43,8 @@ class KeyenceFocusControl(PrintControl):
         self.default_x_offset = None
         self.default_y_offset = None
         self.default_light_engine = None
+        self.default_raw_x_offset = None
+        self.default_raw_y_offset = None
         self.x_offset = None
         self.y_offset = None
 
@@ -119,10 +121,16 @@ class KeyenceFocusControl(PrintControl):
             self.default_position_settings = defaults_layer_settings.get(
                 "Position settings"
             )
-            self.default_x_offset = default_image_settings.get("Image x offset (um)", 0)
-            self.default_y_offset = default_image_settings.get("Image y offset (um)", 0)
             self.default_light_engine = default_image_settings.get(
                 "Light engine", config_dict["light_engines"][0]
+            )
+
+            self.default_raw_x_offset = default_image_settings.get("Image x offset (um)", 0)
+            self.default_raw_y_offset = default_image_settings.get("Image y offset (um)", 0)
+            self.default_x_offset, self.default_y_offset = self._rotate_offsets(
+                self.default_raw_x_offset,
+                self.default_raw_y_offset,
+                config_dict[self.default_light_engine].get("orientation", "X"),
             )
 
             # Step 3: Initialize measurement tracking variables
@@ -142,12 +150,19 @@ class KeyenceFocusControl(PrintControl):
                             self.print_settings["Layers"][layer[0]]
                         )
                         for j, settings in enumerate(image_settings_list):
-                            x_offset = float(
-                                settings.get("Image x offset (um)", self.default_x_offset)
+                            _x_offset = float(
+                                settings.get("Image x offset (um)", self.default_raw_x_offset)
                             )
-                            y_offset = float(
-                                settings.get("Image y offset (um)", self.default_y_offset)
+                            _y_offset = float(
+                                settings.get("Image y offset (um)", self.default_raw_y_offset)
                             )
+                            x_offset, y_offset = self._rotate_offsets(
+                                _x_offset,
+                                _y_offset,
+                                config_dict[light_engine].get("orientation", "X"),
+                            )
+
+
                             layer_light_engine = settings.get(
                                 "Light engine", self.default_light_engine
                             )
@@ -389,8 +404,13 @@ class KeyenceFocusControl(PrintControl):
         remeasure the thermal drift at keyence wintech origin
         """
 
-        self.x_offset = float(settings.get("Image x offset (um)", self.default_x_offset))
-        self.y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
+        _x_offset = float(settings.get("Image x offset (um)", self.default_raw_x_offset))
+        _y_offset = float(settings.get("Image y offset (um)", self.default_raw_y_offset))
+        self.x_offset, self.y_offset = self._rotate_offsets(
+            _x_offset, 
+            _y_offset, 
+            config_dict[light_engine].get("orientation", "X"),
+        )
 
         if self.thermal_drift_measurement.get(light_engine, False) and light_engine != self.last_exposure_le:
             if self.need_origin_keyence_measurement or (
