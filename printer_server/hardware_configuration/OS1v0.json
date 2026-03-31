@@ -262,8 +262,6 @@
     "moving_shifts_image": false,
     "auto_repositioning": true,
     "auto_tip_tilt": true,
-    "auto_focus_with_keyence": true,
-    "auto_focus_with_photodiode": false,
     "link_focus_and_y_movement": true
   },
   "gpio": {
@@ -306,7 +304,8 @@
         "measurement_index": 0,
         "invert_sign": true
       }
-    }
+    },
+    "auto_focus_with_keyence": true
   },
   "photodiode": {
     "dummy": false,

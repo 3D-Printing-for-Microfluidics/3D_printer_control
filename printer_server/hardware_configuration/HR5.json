@@ -113,10 +113,7 @@
         },
         "calibration_position": 0,
         "bottom_position": 27.5,
-        "top_position": -50,
-        "auto_tip_tilt": false,
-        "auto_focus_with_keyence": true,
-        "auto_focus_with_photodiode": false
+        "top_position": -50
     },
     "hexapod": {
         "dummy": false,
@@ -152,7 +149,8 @@
                 null
             ]
         },
-        "auto_repositioning": true
+        "auto_repositioning": true,
+        "auto_tip_tilt": false
     },
     "mks": {
         "dummy": false,
@@ -225,7 +223,8 @@
                 "measurement_index": 0,
                 "invert_sign": false
             }
-        }
+        },
+        "auto_focus_with_keyence": true
     },
     "photodiode": {
         "dummy": false,

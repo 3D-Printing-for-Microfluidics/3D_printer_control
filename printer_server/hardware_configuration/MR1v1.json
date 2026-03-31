@@ -139,10 +139,7 @@
         },
         "calibration_position": 45.2148438,
         "bottom_position": 43.875,
-        "top_position": -50,
-        "auto_tip_tilt": false,
-        "auto_focus_with_keyence": true,
-        "auto_focus_with_photodiode": false
+        "top_position": -50
     },
     "tiptilt": {
         "dummy": false,
@@ -170,7 +167,8 @@
                 null
             ]
         },
-        "auto_repositioning": false
+        "auto_repositioning": false,
+        "auto_tip_tilt": false
     },
     "gpio": {
         "dummy": false,
@@ -206,7 +204,8 @@
                 "measurement_index": 0,
                 "invert_sign": false
             }
-        }
+        },
+        "auto_focus_with_keyence": true
     },
     "screen": {},
     "light_engines": [
