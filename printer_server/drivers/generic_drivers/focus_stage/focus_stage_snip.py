@@ -54,7 +54,7 @@ def focus_move(message):
         )
         wait_for_settling = message.get("wait_for_settling", True)
         if focus_stage.config_dict.get("link_focus_and_y_movement", False):
-            y_pos = focus_stage.linked_y_stage.getXYPosition(axis="Y")
+            y_pos = focus_stage.linked_y_stage.curr_y_position
         if mode == "absolute":
             if coord_systems_control is not None:
                 coord_system_name, coord_system = (

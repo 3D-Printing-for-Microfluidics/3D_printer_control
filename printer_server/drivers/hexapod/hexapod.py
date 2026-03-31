@@ -120,13 +120,27 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         # pipython.pidevice.gcserror.GCSError
 
     def getTTRPosition(self, axis=None, notify=True):
-        return self.get_pose(self.convertAxis(axis))
+        return round(self.get_pose(self.convertAxis(axis)), 4)
 
     def absMoveTTR(self, rad=None, axis=None):
+        rad = round(rad, 4)
         self.move_to_angle_axis(axis, rad)
+        if axis == "Tip":
+            self.prev_tip_position = rad
+        elif axis == "Tilt":
+            self.prev_tilt_position = rad
+        elif axis == "Rotate":
+            self.prev_rotate_position = rad
 
     def relMoveTTR(self, rad=None, axis=None):
+        rad = round(rad, 4)
         self.step_axis(self.convertAxis(axis), rad)
+        if axis == "Tip" and self.prev_tip_position is not None:
+            self.prev_tip_position += rad
+        elif axis == "Tilt" and self.prev_tilt_position is not None:
+            self.prev_tilt_position += rad
+        elif axis == "Rotate" and self.prev_rotate_position is not None:
+            self.prev_rotate_position += rad
 
     def getTTRLimits(self, axis=None):
         a = self.convertAxis(axis)
@@ -207,13 +221,18 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         return 0
 
     def getFocusPosition(self, notify=True):
-        return self.get_pose("Focus")
+        return round(self.get_pose("Focus"), 4)
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
         self.move_to_position_axis("Focus", mm)
+        self.prev_focus_position = mm
 
     def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
         self.step_axis("Focus", mm)
+        if self.prev_focus_position is not None:
+            self.prev_focus_position += mm
 
     def startFocusJog(self, speed=None, acceleration=None):
         self.log.error("Hexapod Jogging not implemented")
@@ -400,7 +419,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             with self.gateway.sendLock:
                 positions_raw = self.controller.qPOS(axis)
             if axis == "U" or axis == "V" or axis == "W":
-                position = round(degrees_to_radians(positions_raw[axis]),5)
+                position = round(degrees_to_radians(positions_raw[axis]),4)
                 self.log.debug("Get %s pos: %.5f", axis, position)
             else:
                 position = round(positions_raw[axis], 4)

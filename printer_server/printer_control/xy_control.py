@@ -14,10 +14,6 @@ class XYControl(PrintControl):
     def __init__(self):
         super().__init__()
         self.xy_stage = driver_handles.xy_stage
-        self.previous_x = None
-        self.previous_y = None
-        self.current_x = None
-        self.current_y = None
 
     def create_logs(self):
         super().create_logs()
@@ -76,8 +72,6 @@ class XYControl(PrintControl):
         self.default_x_offset = default_image_settings.get("Image x offset (um)", 0)
         self.default_y_offset = default_image_settings.get("Image y offset (um)", 0)
 
-        self.previous_x = round(self.xy_stage.getXYPosition("X"), 3)
-        self.previous_y = round(self.xy_stage.getXYPosition("Y"), 3)
 
         x_offset = float(settings.get("Image x offset (um)", self.default_x_offset))
         y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
@@ -92,13 +86,6 @@ class XYControl(PrintControl):
         else:
             x_pos = x_offset/1000 + self.coord_systems[screen_light_engine]["X"]
             y_pos =  y_offset/1000 + self.coord_systems[screen_light_engine]["Y"]
-        self.current_x = round(x_pos, 3) 
-        self.current_y = round(y_pos, 3)
-        if self.current_x == self.previous_x:
-            x_pos = None
-        if self.current_y == self.previous_y:
-            y_pos = None
-        log.info(f"X {self.previous_y}, {self.current_y}, {y_pos}")
         if x_pos is not None or y_pos is not None:
             self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
 
@@ -106,14 +93,13 @@ class XYControl(PrintControl):
 
     def pre_exposure_joins(self, light_engine):
         """Join X, Y, and Focus threads"""
-        if self.current_x != self.previous_x or self.current_y != self.previous_y:
-            for thread in self.xy_threads:
-                if thread is not None:
-                    thread.join()
-                    if thread.exception is not None:
-                        log.critical("Unable to move xy stage")
-                        self.failed_hardware["XY Stage"] = self.xy_stage
-                        raise PrintingException()
+        for thread in self.xy_threads:
+            if thread is not None:
+                thread.join()
+                if thread.exception is not None:
+                    log.critical("Unable to move xy stage")
+                    self.failed_hardware["XY Stage"] = self.xy_stage
+                    raise PrintingException()
         return super().pre_exposure_joins(light_engine)
 
     def post_print_tasks(self):

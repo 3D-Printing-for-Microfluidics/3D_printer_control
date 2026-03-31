@@ -46,10 +46,24 @@ class TipTilt(USBSerial, TTRStageDriver):
             return pos
 
     def absMoveTTR(self, rad=None, axis=None):
+        rad = round(rad, 4)
         self.move_absolute(axis, rad, fast=True)
+        if axis == "Tip":
+            self.prev_tip_position = rad
+        elif axis == "Tilt":
+            self.prev_tilt_position = rad
+        elif axis == "Rotate":
+            self.prev_rotate_position = rad
 
     def relMoveTTR(self, rad=None, axis=None):
+        rad = round(rad, 4)
         self.move_relative(axis, rad, fast=True)
+        if axis == "Tip" and self.prev_tip_position is not None:
+            self.prev_tip_position += rad
+        elif axis == "Tilt" and self.prev_tilt_position is not None:
+            self.prev_tilt_position += rad
+        elif axis == "Rotate" and self.prev_rotate_position is not None:
+            self.prev_rotate_position += rad
 
     def getTTRLimits(self, axis=None):
         return self.getSoftwareLimits(axis)

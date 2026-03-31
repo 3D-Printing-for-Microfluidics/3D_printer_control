@@ -13,6 +13,7 @@ class BPStageDriver:
         self.calibration_position = None
         self.bottom_position = None
         self.top_position = None
+        self.prev_bp_position = None
 
     def setup_log_file(self, filename):
         log.warning("Function not implemented. Using abstract BPStageDriver class")
@@ -103,18 +104,20 @@ class BPStageDriver:
         """
         thread = None
         if mm is not None:
-            thread = Thread(
-                logger, 
-                name="bp_stage_driver_thread",
-                target=self.absMoveBP,
-                kwargs={
-                    "mm": mm,
-                    "speed": speed,
-                    "acceleration": acceleration,
-                    "wait_for_settling": wait_for_settling
-                },
-            )
-            thread.start()
+            current_pos = round(mm, 4)
+            if current_pos != self.prev_bp_position:
+                thread = Thread(
+                    logger, 
+                    name="bp_stage_driver_thread",
+                    target=self.absMoveBP,
+                    kwargs={
+                        "mm": mm,
+                        "speed": speed,
+                        "acceleration": acceleration,
+                        "wait_for_settling": wait_for_settling
+                    },
+                )
+                thread.start()
             if join:
                 if thread is not None:
                     thread.join()

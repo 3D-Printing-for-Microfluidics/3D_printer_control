@@ -194,6 +194,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         """Return the position of the specified encoder."""
         a = self.convertAxis(axis)
         pos = self.send(f"?FPOS{a}", notify=notify)
+        pos = round(float(pos), 4)
         return float(pos)
 
     def motorOn(self, axis=None):
@@ -278,11 +279,23 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
     def getXYPosition(self, axis=None, notify=True):
         return self.getPosition(axis=axis, notify=notify)
 
-    def absMoveXY( self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+    def absMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+        mm = round(mm, 4)
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
+        if axis == "X":
+            self.prev_x_position = mm
+        elif axis == "Y":
+            self.prev_y_position = mm
 
     def relMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+        mm = round(mm, 4)
         self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
+        if axis == "X":
+            if self.prev_x_position is not None:
+                self.prev_x_position += mm
+        elif axis == "Y":
+            if self.prev_y_position is not None:
+                self.prev_y_position += mm
 
     def startXYJog(self, speed=None, acceleration=None, axis=None):
         self.startJog(speed=speed, acceleration=acceleration, axis=axis)
@@ -314,10 +327,15 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         return self.getPosition(axis="Build Platform", notify=notify)
 
     def absMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Build Platform")
+        self.prev_bp_position = mm
 
     def relMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
         self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Build Platform")
+        if self.prev_bp_position is not None:
+            self.prev_bp_position += mm
 
     def startBPJog(self, speed=None, acceleration=None):
         self.startJog(speed=speed, acceleration=acceleration, axis="Build Platform")

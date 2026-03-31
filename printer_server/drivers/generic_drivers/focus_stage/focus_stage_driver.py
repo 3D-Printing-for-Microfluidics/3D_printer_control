@@ -13,6 +13,7 @@ class FocusStageDriver:
         super().__init__()
         self.initialized = None
         self.connected = None
+        self.prev_focus_position = None
 
     def setup_log_file(self, filename):
         log.warning("Function not implemented. Using abstract FocusStageDriver class")
@@ -87,17 +88,19 @@ class FocusStageDriver:
         """
         thread = None
         if mm is not None:
-            thread = Thread(
-                logger, 
-                name="focus_stage_driver_thread",
-                target=self.absMoveFocus,
-                kwargs={
-                    "mm": mm,
-                    "speed": speed,
-                    "acceleration": acceleration
-                },
-            )
-            thread.start()
+            current_pos = round(mm, 4)
+            if current_pos != self.prev_focus_position:
+                thread = Thread(
+                    logger, 
+                    name="focus_stage_driver_thread",
+                    target=self.absMoveFocus,
+                    kwargs={
+                        "mm": mm,
+                        "speed": speed,
+                        "acceleration": acceleration
+                    },
+                )
+                thread.start()
             if join:
                 if thread is not None:
                     thread.join()

@@ -17,6 +17,8 @@ class LTS_XY(XYStageDriver):
         self.config_dict = config_dict
         self.axes_common_names = self.apt_controller.axes_common_names
         self.linked_focus_stage = None
+        self.prev_x_position = None
+        self.prev_y_position = None
 
     def setup_log_file(self, filename):
         self.apt_controller.setup_log_file(filename)
@@ -44,9 +46,9 @@ class LTS_XY(XYStageDriver):
 
     def getXYPosition(self, axis=None, notify=True):
         if axis == "Y" and self.linked_focus_stage is not None:
-            return self.apt_controller.getPosition(axis=axis) + self.linked_focus_stage.target_focus
+            return round(self.apt_controller.getPosition(axis=axis) + self.linked_focus_stage.target_focus, 4)
         else:
-            return self.apt_controller.getPosition(axis=axis)
+            return round(self.apt_controller.getPosition(axis=axis), 4)
 
     def absMoveXY(
         self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None
@@ -57,20 +59,17 @@ class LTS_XY(XYStageDriver):
             # cur -= self.linked_focus_stage.target_focus
         if mm < 0:
             mm = 0
-        # if cur < 0:
-        #     cur = 0
-        # if abs(mm - cur) <= 0.025:
-        #     self.apt_controller.absMove(mm-0.1, speed=speed, acceleration=acceleration, axis=axis)
+        mm = round(mm, 4)
+        if axis == "Y":
+            self.prev_y_position = mm
+        elif axis == "X":
+            self.prev_x_position = mm
         self.apt_controller.absMove(mm, speed=speed, acceleration=acceleration, axis=axis)
 
     def relMoveXY(
         self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None
     ):
-        cur = self.getXYPosition(axis=axis)
-        self.absMoveXY(mm=cur + mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
-        # if abs(mm) < 0.025:
-        #     self.relMove(-0.1, speed=speed, acceleration=acceleration, axis=axis)
-        # self.apt_controller.relMove(mm+0.1, speed=speed, acceleration=acceleration, axis=axis)
+        self.absMoveXY(mm=self.getXYPosition(axis=axis) + mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
 
     def startXYJog(self, speed=None, acceleration=None, axis=None):
         self.apt_controller.startJog(speed=speed, acceleration=acceleration, axis=axis)

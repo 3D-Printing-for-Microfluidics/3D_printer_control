@@ -288,11 +288,12 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def getPosition(self, in_mm, axis=None, notify=True):
         """Return the position of the specified encoder."""
         if type(axis) is not list:
-            pos = self.send(f"TP{self.convertAxis(axis)}", notify=notify)
+            a = self.convertAxis(axis)
+            pos = self.send(f"TP{a}", notify=notify)
             if not in_mm:
                 return int(pos)
             else:
-                return self.cntsToMm(int(pos), axis=axis)
+                return round(self.cntsToMm(int(pos), axis=axis), 4)
         else:
             parsed_axis = ""
             for a in axis:
@@ -305,7 +306,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
                 if not in_mm:
                     ret_dict[a] = int(pos[i])
                 else:
-                    ret_dict[a] = self.cntsToMm(int(pos[i]), axis=a)
+                    ret_dict[a] = round(self.cntsToMm(int(pos[i]), axis=a), 4)
             return ret_dict
 
     def motorOn(self, axis=None):
@@ -407,11 +408,23 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def getXYPosition(self, axis=None, notify=True):
         return self.getPosition(in_mm=True, axis=axis)
 
-    def absMoveXY( self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+    def absMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+        mm = round(mm, 4)
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
+        if axis == "X":
+            self.prev_x_position = mm
+        elif axis == "Y":
+            self.prev_y_position = mm
 
     def relMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+        mm = round(mm, 4)
         self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
+        if axis == "X":
+            if self.prev_x_position is not None:
+                self.prev_x_position += mm
+        elif axis == "Y":
+            if self.prev_y_position is not None:
+                self.prev_y_position += mm
 
     def startXYJog(self, speed=None, acceleration=None, axis=None):
         self.startJog(speed=speed, acceleration=acceleration, axis=axis)
@@ -443,12 +456,19 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         return self.getPosition(in_mm=True, axis="Focus")
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
         if mm < self.getPosition(in_mm=True, axis="Focus"):
             self.absMove(mm=mm-0.25, speed=speed, acceleration=acceleration, wait_for_settling=False, axis="Focus")
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
+        self.prev_focus_position = mm
 
     def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
+        if mm < 0:
+            self.relMove(mm=mm-0.25, speed=speed, acceleration=acceleration, wait_for_settling=False, axis="Focus")
         self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
+        if self.prev_focus_position is not None:
+            self.prev_focus_position += mm
 
     def startFocusJog(self, speed=None, acceleration=None):
         self.startJog(speed=speed, acceleration=acceleration, axis="Focus")
@@ -480,10 +500,15 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         return self.getPosition(in_mm=True, axis="Build Platform")
 
     def absMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Build Platform")
+        self.prev_bp_position = mm
 
     def relMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
         self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Build Platform")
+        if self.prev_bp_position is not None:
+            self.prev_bp_position += mm
 
     def startBPJog(self, speed=None, acceleration=None):
         self.startJog(speed=speed, acceleration=acceleration, axis="Build Platform")

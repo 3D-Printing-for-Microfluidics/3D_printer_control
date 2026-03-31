@@ -10,6 +10,10 @@ class XYStageDriver:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         super().__init__()
         self.initialized = None
+        self.prev_x_position = None
+        self.prev_y_position = None
+        self.curr_x_position = None
+        self.curr_y_position = None
 
     def setup_log_file(self, filename):
         log.warning("Function not implemented. Using abstract XYStageDriver class")
@@ -90,31 +94,38 @@ class XYStageDriver:
         """
         threads = [None, None]
         if x is not None:
-            threads[0] = Thread(
-                logger, 
-                name="xy_stage_driver_x_thread",
-                target=self.absMoveXY,
-                kwargs={
-                    "mm": x,
-                    "speed": speed_x,
-                    "acceleration": acceleration_x,
-                    "axis": "X",
-                },
-            )
-            threads[0].start()
+            self.curr_x_position = round(x, 4)
+            if self.curr_x_position != self.prev_x_position:
+                threads[0] = Thread(
+                    logger, 
+                    name="xy_stage_driver_x_thread",
+                    target=self.absMoveXY,
+                    kwargs={
+                        "mm": x,
+                        "speed": speed_x,
+                        "acceleration": acceleration_x,
+                        "axis": "X",
+                    },
+                )
+                threads[0].start()
         if y is not None:
-            threads[1] = Thread(
-                logger, 
-                name="xy_stage_driver_y_thread",
-                target=self.absMoveXY,
-                kwargs={
-                    "mm": y,
-                    "speed": speed_y,
-                    "acceleration": acceleration_y,
-                    "axis": "Y",
-                },
-            )
-            threads[1].start()
+            if hasattr(self, 'linked_focus_stage') and self.linked_focus_stage is not None:
+                self.curr_y_position = round(y - self.linked_focus_stage.target_focus, 4)
+            else:
+                self.curr_y_position = round(y, 4)
+            if self.curr_y_position != self.prev_y_position:
+                threads[1] = Thread(
+                    logger, 
+                    name="xy_stage_driver_y_thread",
+                    target=self.absMoveXY,
+                    kwargs={
+                        "mm": y,
+                        "speed": speed_y,
+                        "acceleration": acceleration_y,
+                        "axis": "Y",
+                    },
+                )
+                threads[1].start()
         if join:
             for thread in threads:
                 if thread is not None:
