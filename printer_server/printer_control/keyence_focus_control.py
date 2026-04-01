@@ -138,10 +138,12 @@ class KeyenceFocusControl(PrintControl):
             self.measurement_index = 0
             self.measurement_count = 0
 
+            for light_engine in config_dict["light_engines"]:
+                self.measurement_count += 3
+
             # Step 4: Build list of measurement positions
             if self.direct_focal_measurement:
                 for light_engine in config_dict["light_engines"]:
-                    self.measurement_count += 3
                     self.keyence_offset_targets[f"active_{light_engine}"] = {}
                     if self.thermal_drift_measurement.get(light_engine, False):
                         self.keyence_offset_targets[light_engine] = {}
