@@ -17,32 +17,27 @@
     "global": {
       "X": 0,
       "Y": 0,
-      "Focus": 0,
-      "Build Platform": 0
+      "Focus": 0
     },
     "parked": {
       "X": -66.088,
       "Y": -160.0,
-      "Focus": -5.0,
-      "Build Platform": 0
+      "Focus": -5.0
     },
     "visitech": {
       "X": -68.088,
       "Y": -269.9,
-      "Focus": -3.0,
-      "Build Platform": 0
+      "Focus": -3.0
     },
     "keyence_visitech": {
       "X": -73.088,
       "Y": -77.5,
-      "Focus": -2.0,
-      "Build Platform": 0
+      "Focus": -2.0
     },
     "fiber_visitech": {
       "X": -68.158,
       "Y": -189.000,
-      "Focus": -4.0,
-      "Build Platform": 0
+      "Focus": -4.0
     }
   },
   "stages": {

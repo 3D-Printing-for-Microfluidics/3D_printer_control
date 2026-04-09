@@ -7,39 +7,35 @@
     ],
     "calibration_prints": [
         "Focus Sweep Print",
-        "Uniform Focus Print"
+        "Uniform Focus Print",
+        "Stitching Alignment Print"
     ],
     "external_control": {},
     "coord_systems": {
         "global": {
             "X": 0,
             "Y": 0,
-            "Focus": 0,
-            "Build Platform": 0
+            "Focus": 0
         },
         "parked": {
             "X": 100,
             "Y": 85,
-            "Focus": 0,
-            "Build Platform": 0
+            "Focus": 0
         },
         "visitech": {
             "X": -0.4,
             "Y": 1.06,
-            "Focus": 2.893,
-            "Build Platform": 0
+            "Focus": 2.893
         },
         "keyence_visitech": {
             "X": -1.705,
             "Y": -36.204,
-            "Focus": 2.300,
-            "Build Platform": 0
+            "Focus": 2.300
         },
         "fiber_visitech": {
             "X": -86.492,
             "Y": 68.282,
-            "Focus": -0.025,
-            "Build Platform": 0
+            "Focus": -0.025
         }
     },
     "stages": {

@@ -15,9 +15,9 @@ Specifies which schema versions are supported by the configuration.
 ### 2. Coordinate Systems
 ```json
 "coord_systems": {
-    "global": { "X": 0, "Y": 0, "Focus": 0, "Build Platform": 0 },
-    "parked": { "X": 100, "Y": 85, "Focus": 0, "Build Platform": 0 },
-    "visitech": { "X": -0.4, "Y": 1.06, "Focus": 2.893, "Build Platform": 0 }
+    "global": { "X": 0, "Y": 0, "Focus": 0 },
+    "parked": { "X": 100, "Y": 85, "Focus": 0 },
+    "visitech": { "X": -0.4, "Y": 1.06, "Focus": 2.893}
 }
 ```
 Defines different coordinate systems for various components and positions.
@@ -71,7 +71,7 @@ Here's a simplified example of a configuration file:
 {
     "valid_schema_versions": ["v3", "v2"],
     "coord_systems": {
-        "global": { "X": 0, "Y": 0, "Focus": 0, "Build Platform": 0 }
+        "global": { "X": 0, "Y": 0, "Focus": 0 }
     },
     "stages": {
         "bp_stage": "acs",

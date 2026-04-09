@@ -9,30 +9,12 @@ import printer_server.views.manual_controls
 import time
 
 bp_stage = driver_handles.bp_stage
-if "coord_systems" in config_dict:
-    from printer_server.drivers.coord_systems.coord_systems_snip import (
-        coord_systems_control,
-    )
-else:
-    coord_systems_control = None
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 start_time = 0
 stop_time = 0
-
-
-@socketio.on("bp_set_coodinate_system", namespace="/manual")
-def bp_set_coodinate_system(message):
-    "Set coordinate system offsets"
-    try:
-        global coord_system
-        coord_system = config_dict["coord_systems"][message]
-        socketio.emit("bp_done", bp_get_position(notify=False), namespace="/manual")
-    except Exception as ex:
-        log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
-        socketio.emit("hardware_failure", "bp", namespace="/manual")
 
 
 @socketio.on("bp_go_to_top", namespace="/manual")
@@ -78,12 +60,6 @@ def bp_move(message):
             bp_stage.logging_start()
         start_time = time.time()
         if mode == "absolute":
-            if coord_systems_control is not None:
-                coord_system_name, coord_system = (
-                    coord_systems_control.get_coodinate_system()
-                )
-                distance += coord_system["Build Platform"]
-
             bp_stage.absMoveBP(
                 mm=distance,
                 speed=speed,
@@ -142,13 +118,6 @@ def bp_get_position(return_timing=False, notify=True):
     try:
         position = bp_stage.getBPPosition()
         limits = bp_stage.getBPLimits()
-        if coord_systems_control is not None:
-            coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
-            position -= coord_system["Build Platform"]
-            limits = [
-                limits[0] - coord_system["Build Platform"],
-                limits[1] - coord_system["Build Platform"],
-            ]
         ret_dict = {
             "position": f"{position*1000:.1f}",
             "limits": f"{limits[0]*1000:.1f}, {limits[1]*1000:.1f}",

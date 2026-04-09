@@ -13,20 +13,17 @@
         "global": {
             "X": 0,
             "Y": 0,
-            "Focus": 0,
-            "Build Platform": 0
+            "Focus": 0
         },
         "visitech": {
             "X": 0,
             "Y": 8.000,
-            "Focus": 2.189,
-            "Build Platform": 0
+            "Focus": 2.189
         },
         "keyence_visitech": {
             "X": 0.047,
             "Y": -24.424,
-            "Focus": -0.211,
-            "Build Platform": 0
+            "Focus": -0.211
         }
     },
     "stages": {
