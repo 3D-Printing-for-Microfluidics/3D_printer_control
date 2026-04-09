@@ -100,8 +100,9 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
         self.apt_controller.startJog(speed=speed, acceleration=acceleration, axis="Focus")
 
     def stopFocusJog(self):
-        self.target_focus = self.getFocusPosition()
         self.apt_controller.stopJog(axis="Focus")
+        self.target_focus = self.getFocusPosition()
+        super().stopFocusJog()
 
     def getFocusLimits(self):
         return self.apt_controller.getLimits(axis="Focus")

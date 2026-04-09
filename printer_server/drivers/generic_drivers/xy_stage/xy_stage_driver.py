@@ -52,7 +52,10 @@ class XYStageDriver:
         log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def stopXYJog(self, axis=None):
-        log.warning("Function not implemented. Using abstract XYStageDriver class")
+        if axis == "X":
+            self.prev_x_position = round(self.getXYPosition(axis="X", notify=False), 4)
+        elif axis == "Y":
+            self.prev_y_position = round(self.getXYPosition(axis="Y", notify=False), 4)
 
     def getXYLimits(self, axis=None):
         log.warning("Function not implemented. Using abstract XYStageDriver class")

@@ -76,6 +76,7 @@ class LTS_XY(XYStageDriver):
 
     def stopXYJog(self, axis=None):
         self.apt_controller.stopJog(axis=axis)
+        super().stopXYJog(axis=axis)
 
     def getXYLimits(self, axis=None):
         return self.apt_controller.getLimits(axis=axis)

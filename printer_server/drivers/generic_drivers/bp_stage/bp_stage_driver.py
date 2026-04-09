@@ -55,7 +55,7 @@ class BPStageDriver:
         log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def stopBPJog(self):
-        log.warning("Function not implemented. Using abstract BPStageDriver class")
+        self.prev_bp_position = round(self.getBPPosition(notify=False), 4)
 
     def goToBPcalibration(self):
         log.warning("Function not implemented. Using abstract BPStageDriver class")

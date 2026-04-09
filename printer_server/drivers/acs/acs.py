@@ -315,6 +315,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
 
     def stopXYJog(self, axis=None):
         self.stopJog(axis=axis)
+        super().stopXYJog(axis=axis)
 
     def getXYLimits(self, axis=None):
         a = self.convertAxis(axis)
@@ -355,6 +356,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
 
     def stopBPJog(self):
         self.stopJog(axis="Build Platform")
+        super().stopBPJog()
 
     def getBPLimits(self):
         a = self.convertAxis("Build Platform")
