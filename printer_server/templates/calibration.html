@@ -20,19 +20,38 @@
 {% endif %}
 {% endfor %}
 
-{% if initialized and has_pivot %}
-<div class="container">
+<div class="container calibration-prints">
     <div class="row">
         <div class="col-12">
-            <button type="button" class="btn btn-outline-info btn-block" id="goto">Set new pivot position</button>
+            <h4>Calibration Prints</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-4">
+            <div id="calibration-print-list" class="list-group calibration-print-list"></div>
+        </div>
+        <div class="col-8">
+            <div id="calibration-print-empty" class="text-muted">Select a calibration print to view details.</div>
+            <div id="calibration-print-details" class="d-none">
+                <div id="calibration-print-alerts" class="top-buffer"></div>
+                <h4 id="calibration-print-name" class="top-buffer"></h4>
+                <div id="calibration-print-variables"></div>
+                <div class="row">
+                    <div class="col-12 text-right">
+                        <button type="button" class="btn btn-outline-info" id="calibration-print-add">Add to queue</button>
+                    </div>
+                </div>
+                <h5>Description</h5>
+                <div id="calibration-print-readme" class="calibration-print-readme"></div>
+            </div>
         </div>
     </div>
 </div>
+
 <hr class="bg-secondary">
-{% endif %}
 
 {% macro render_parameter(item) %}
-<div class="container" aria-label="{{ item.machine_name }}" data-group="{{ item.group }}">
+<div class="container" aria-label="{{ item.human_name }}" data-group="{{ item.group }}" data-machine-name="{{ item.machine_name }}">
     <div class="row">
         <div class="col-3">
             <h5>{{ item.human_name }}</h5>
@@ -85,14 +104,41 @@
             </div>
         </div>
     </div>
-    {% for item in items %}
-        {{ render_parameter(item) }}
-    {% endfor %}
+    {% set subgroup_labels = items | map(attribute='subgroup') | select | unique | list %}
+    {% if subgroup_labels and (subgroup_labels | length) > 0 %}
+        {% for subgroup_label in subgroup_labels %}
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <h5 class="text-muted">{{ subgroup_label }}</h5>
+                </div>
+            </div>
+        </div>
+            {% for item in items | selectattr('subgroup', 'equalto', subgroup_label) | list %}
+                {{ render_parameter(item) }}
+            {% endfor %}
+        {% endfor %}
+        {% for item in items | selectattr('subgroup', 'equalto', None) | list %}
+            {{ render_parameter(item) }}
+        {% endfor %}
+    {% else %}
+        {% for item in items %}
+            {{ render_parameter(item) }}
+        {% endfor %}
+    {% endif %}
     <hr class="bg-secondary">
     {% endif %}
 {% endfor %}
 
-{% if initialized %}
+{% if initialized and has_pivot %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <button type="button" class="btn btn-outline-info btn-block" id="goto">Set new pivot position</button>
+        </div>
+    </div>
+</div>
+<hr class="bg-secondary">
 <div class="container">
     <div class="row">
         <div class="col-12">
@@ -101,37 +147,6 @@
     </div>
 </div>
 {% endif %}
-
-<hr class="bg-secondary">
-
-<div class="container calibration-prints">
-    <div class="row">
-        <div class="col-12">
-            <h4>Calibration Prints</h4>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-4">
-            <div id="calibration-print-list" class="list-group calibration-print-list"></div>
-        </div>
-        <div class="col-8">
-            <div id="calibration-print-empty" class="text-muted">Select a calibration print to view details.</div>
-            <div id="calibration-print-details" class="d-none">
-                <div id="calibration-print-alerts" class="top-buffer"></div>
-                <h4 id="calibration-print-name" class="top-buffer"></h4>
-                <div id="calibration-print-variables"></div>
-                <div class="row">
-                    <div class="col-12 text-right">
-                        <button type="button" class="btn btn-outline-info" id="calibration-print-add">Add to queue</button>
-                    </div>
-                </div>
-                <h5>Description</h5>
-                <div id="calibration-print-readme" class="calibration-print-readme"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% endblock %}
 
 {% block scripts %}

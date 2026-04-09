@@ -98,7 +98,7 @@ $(document).ready(function () {
         $(`.${machine}-cntrl-txt`).on('change', function () {
             // Parse button content and construct message
             let distance = $(this).val();
-            let p = $(this).closest(".container").attr('aria-label');
+            let p = $(this).closest(".container").data('machine-name');
             let g = $(this).closest(".container").data('group');
             let message = { "mode": "absolute", "distance": distance, "parameter": p, "group": g || group };
             socket.emit("set", message);
@@ -108,7 +108,7 @@ $(document).ready(function () {
         $(`.${machine}-cntrl-btn`).click(function () {
             // Parse button content and construct message
             let distance = $(this).text();
-            let p = $(this).closest(".container").attr('aria-label');
+            let p = $(this).closest(".container").data('machine-name');
             let g = $(this).closest(".container").data('group');
             let message = { "mode": "relative", "distance": distance, "parameter": p, "group": g || group };
             socket.emit("set", message);
@@ -154,6 +154,12 @@ $(document).ready(function () {
     $("#calibration-print-list").on("click", ".list-group-item", function () {
         let id = $(this).data("id");
         if (!id) {
+            return;
+        }
+        if ($(this).hasClass("active")) {
+            $(this).removeClass("active");
+            $("#calibration-print-add").prop("disabled", true).data("id", null);
+            reset_calibration_print_details();
             return;
         }
         $("#calibration-print-list .list-group-item").removeClass("active");
