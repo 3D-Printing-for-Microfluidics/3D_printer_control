@@ -812,12 +812,6 @@ class ThorlabsAPT(USBSerial):
         self.moving_dir[a] = "pos" if mm > 0 else "neg" if mm < 0 else None
         time.sleep(0.25)
         finished_succeccfully = self.confirmMoveFinished(axis=a)
-        # if not finished_succeccfully:
-        #     self.log.warning("%s move failed. Going to position 0 and retrying", a)
-        #     self.absMove(0.0, speed=speed, acceleration=acceleration, axis=axis)
-        #     self.absMove(
-        #         start_position + mm, speed=speed, acceleration=acceleration, axis=axis
-        #     )
 
         if speed is not None:
             self.setSpeed(old_speed, axis=a)
@@ -866,10 +860,6 @@ class ThorlabsAPT(USBSerial):
         )
         time.sleep(0.25)
         finished_succeccfully = self.confirmMoveFinished(axis=a)
-        # if not finished_succeccfully:
-        #     self.log.warning("%s move failed. Going to position 0 and retrying", a)
-        #     self.absMove(0.0, speed=speed, acceleration=acceleration, axis=axis)
-        #     self.absMove(mm, speed=speed, acceleration=acceleration, axis=axis)
 
         if speed is not None:
             self.setSpeed(old_speed, axis=a)
@@ -962,68 +952,3 @@ class ThorlabsAPT(USBSerial):
         if self.logging_running:
             self.logging_running = False
             self.log.info("%s logging stopped", self.driver_name)
-
-
-# Legacy test code
-# if __name__ == "__main__":
-#     kdc = KDC101(
-#         config_dict={
-#             "dummy": False,
-#             "vendor_id": 1027,
-#             "product_id": 64240,
-#             "baudrate": 115200,
-#             "default_axis": "0x50",
-#             "axes": ["0x50"],
-#             "axes_common_names": ["Focus"],
-#             "axes_travel": {"0x50": 25.0},
-#             "axes_ctspmm": {"0x50": 34554.96},
-#             "axes_speed": {"0x50": 2.777},
-#             "axes_acceleration": {"0x50": 1.486},
-#             "limits": {"0x50": [None, None]},
-#             "moving_shifts_image": True,
-#         }
-#     )
-
-#     kdc.connect()
-#     kdc.initialize()
-#     kdc.home()
-
-#     # print("\nBay info")
-#     # kdc.write_to_APT(HUB_BAYUSED_GET, 0x00, 0x00, "0x50")
-
-#     for axis in kdc.axes:
-#         print(f"\n{axis}")
-#         a = kdc.convertAxis(axis)
-#         # print("\tIdent")
-#         # kdc.write_to_APT(MODULE_IDENT_CMD, kdc.channel, 0x00)
-#         kdc.absMove(1, axis=a)
-#         kdc.relMove(-0.5, axis=a)
-
-#         kdc.startJog(
-#             speed=kdc.getDefaultSpeed(axis=a),
-#             acceleration=kdc.getDefaultAcceleration(axis=a),
-#             axis=a,
-#         )
-#         time.sleep(1)
-#         kdc.stopJog(axis=a)
-#         # print("\tParam dump")
-#         # kdc.write_to_APT(0x0414, kdc.channel, 0x00)
-#         # time.sleep(0.5)
-#         # kdc.write_to_APT(0x0417, kdc.channel, 0x00)
-#         # time.sleep(0.5)
-#         # kdc.write_to_APT(0x043B, kdc.channel, 0x00)
-#         # time.sleep(0.5)
-#         # kdc.write_to_APT(0x0441, kdc.channel, 0x00)
-#         # time.sleep(0.5)
-#         # kdc.write_to_APT(0x0424, kdc.channel, 0x00)
-#         # time.sleep(0.5)
-#         # print("\tSet new limits")
-#         # kdc.limit_array[a][3] = kdc.mmToCnts(0, axis=a)
-#         # kdc.limit_array[a][2] = kdc.mmToCnts(25, axis=a)
-#         # kdc.limit_array[a][4] = 0x02 # enable limit
-#         # kdc.long_write_to_APT(LIMITS_SET, "HHHiiH", [kdc.channel, *kdc.limit_array[a]], 16)
-#         # time.sleep(0.25)
-#         # kdc.long_write_to_APT(0x04B9, "HH", [kdc.channel, LIMITS_SET], 4)
-
-#     time.sleep(1)
-#     kdc.disconnect()
