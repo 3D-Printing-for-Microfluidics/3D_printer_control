@@ -1168,7 +1168,7 @@ class TestControl(PrintControl):
         last_positions = get_last_calibration_positions_from_logs()
         last_positions[f"{self.light_engine}_focus_base"] = float(f"{(self.focus_stage.getFocusPosition())*1000:.1f}")
         last_positions[f"{self.light_engine}_tip_base"] = float(f"{(self.ttr_stage.getTTRPosition('Tip'))*1000:.1f}")
-        last_positions[f"{self.light_engine}_tilt_base"] = float(f"{(self.ttr_stage.getTTRPosition('Tilt'))*1000:.1f}")   
+        # last_positions[f"{self.light_engine}_tilt_base"] = float(f"{(self.ttr_stage.getTTRPosition('Tilt'))*1000:.1f}")   
         write_to_position_log(last_positions)
     
     def keyence_tip_tilt_correction(self, axis="", iterations=4, check=True, rough_pass=True, measurement_distance=10000.0, progress=(0,100)):
