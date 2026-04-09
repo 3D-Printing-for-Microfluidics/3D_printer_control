@@ -90,12 +90,12 @@ class PhotodiodeFocusControl(PrintControl):
                 self.led_num = 0
                 
                 # a. move to measurement position
-                self.move_xyf_stages(
-                    0,
-                    0,
-                    0,
-                    coord_system=f"fiber_{le}",
-                    is_wintech=("wintech" in le),
+                self.move_xyf_stages_in_coordinate_system(
+                    coord_system_name=f"fiber_{le}",
+                    x=0, 
+                    y=0,
+                    f=0,
+                    light_engine=le,
                 )
                 time.sleep(1.0)
 
@@ -115,12 +115,12 @@ class PhotodiodeFocusControl(PrintControl):
                     f"{datetime.now().strftime(ts)},{le.capitalize()} Measured Position {photodiode_reading}\n",
                 )
                 focus_drift = 0 - photodiode_reading
-                self.move_xyf_stages(
-                    None,
-                    None,
-                    focus_drift,
-                    coord_system=f"fiber_{le}",
-                    is_wintech=("wintech" in le),
+                self.move_xyf_stages_in_coordinate_system(
+                    coord_system_name=f"fiber_{le}",
+                    x=0, 
+                    y=0, 
+                    f=focus_drift/1000, 
+                    light_engine=le
                 )
                 time.sleep(1.0)
 
@@ -147,44 +147,6 @@ class PhotodiodeFocusControl(PrintControl):
             log.critical("Error occured in photodiode focus measurement (%s)", ex, exc_info=True)
             self.failed_hardware["Keyence Measurement"] = None
             raise PrintingException()
-
-    def move_xyf_stages(self, x_pos, y_pos, focus_pos, coord_system, is_wintech=False):
-        _x_pos = x_pos / 1000 + self.coord_systems[coord_system]["X"] if x_pos is not None else None
-        _y_pos = y_pos / 1000 + self.coord_systems[coord_system]["Y"] if y_pos is not None else None
-        _focus_pos = focus_pos / 1000 + self.coord_systems[coord_system]["Focus"] if focus_pos is not None else None
-        if is_wintech:
-            _x_pos += (
-                self.calibration_positions.get("x_drift", 0.0)
-                + self.calibration_positions.get("xy_shift", 0.0) * _y_pos / 1000
-                + self.calibration_positions.get("xx_shift", 0.0) * _x_pos / 1000
-            ) / 1000 if x_pos is not None else None
-            _y_pos += (
-                self.calibration_positions.get("y_drift", 0.0)
-                + self.calibration_positions.get("yx_shift", 0.0) * _x_pos / 1000
-                + self.calibration_positions.get("yy_shift", 0.0) * _y_pos / 1000
-            ) / 1000 if y_pos is not None else None
-
-        self.focus_thread = self.focus_stage.threadedFocusMove(
-            log, _focus_pos, join=False
-        )
-        time.sleep(0.05)
-        self.xy_threads = self.xy_stage.threadedXYMove(log, _x_pos, _y_pos, join=False)
-        
-
-        # Wait for moves to complete
-        for thread in self.xy_threads:
-            if thread is not None:
-                thread.join()
-                if thread.exception is not None:
-                    log.critical("Unable to move xy stage")
-                    self.failed_hardware["XY Stage"] = self.xy_stage
-                    raise PrintingException()
-        if self.focus_thread is not None:
-            self.focus_thread.join()
-            if self.focus_thread.exception is not None:
-                log.critical("Unable to move focus stage")
-                self.failed_hardware["Focus Stage"] = self.focus_stage
-                raise PrintingException()
 
     def find_photodiode_position_and_focus(self, position="center", rough_pass=True, log_file="xyz_test_data.csv", progress=(0,100)):
         r_img_1 = "v_150px_vert_cent.png"
@@ -465,7 +427,6 @@ class PhotodiodeFocusControl(PrintControl):
         last_positions = get_last_calibration_positions_from_logs()
         self.focus = (last_positions.get(f"{screen_light_engine}_focus_base",0) + last_positions.get(f"{screen_light_engine}_focus_offset",0))/1000
 
-        self.previous_defocus = self.defocus_um
         self.defocus_um = settings["Relative focus position (um)"]
             
     def post_print_tasks(self):

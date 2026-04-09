@@ -124,24 +124,13 @@ class LightMeasurementControl(PrintControl):
         for light_engine in config_dict["light_engines"]:
             
             # Move x/y/focus to spectrometer location
-            x_pos = self.coord_systems[f"fiber_{light_engine}"]["X"]
-            y_pos = self.coord_systems[f"fiber_{light_engine}"]["Y"]
-            focus_pos = self.coord_systems[f"fiber_{light_engine}"]["Focus"]
-            self.focus_thread = self.focus_stage.threadedFocusMove(log, focus_pos, join=False)
-            time.sleep(0.05)
-            self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
-            
-
-            # Join threads
-            for thread in self.xy_threads:
-                if thread is not None:
-                    thread.join()
-                    if thread.exception is not None:
-                        raise thread.exception
-            if self.focus_thread is not None:
-                self.focus_thread.join()
-                if self.focus_thread.exception is not None:
-                    raise self.focus_thread.exception
+            self.move_xyf_stages_in_coordinate_system(
+                coord_system_name=f"fiber_{light_engine}",
+                x=0,
+                y=0,
+                f=0,
+                light_engine=light_engine
+            )
 
             # Setup light engines
             for i, wavelength in enumerate(config_dict[light_engine]["leds_nm"]):

@@ -57,27 +57,36 @@ def focus_move(message):
             y_pos = focus_stage.linked_y_stage.curr_y_position
         if mode == "absolute":
             if coord_systems_control is not None:
-                coord_system_name, coord_system = (
+                _, coord_system = (
                     coord_systems_control.get_coodinate_system()
                 )
                 distance += coord_system["Focus"]
 
-            focus_stage.absMoveFocus(
-                mm=distance,
+            focus_stage.threadedFocusMove(
+                log,
+                distance,
                 speed=speed,
                 acceleration=acceleration,
                 wait_for_settling=wait_for_settling,
+                relative=False,
             )
         elif mode == "relative":
-            focus_stage.relMoveFocus(
-                mm=distance,
+            focus_stage.threadedFocusMove(
+                log,
+                distance,
                 speed=speed,
                 acceleration=acceleration,
                 wait_for_settling=wait_for_settling,
+                relative=True,
             )
         if focus_stage.config_dict.get("link_focus_and_y_movement", False):
             time.sleep(0.05)
-            focus_stage.linked_y_stage.absMoveXY(y_pos, axis="Y")
+            focus_stage.linked_y_stage.threadedYMove(
+                log,
+                None,
+                y_pos,
+                relative=False,
+            )
         socketio.emit("focus_done", focus_get_position(notify=False), namespace="/manual")
     except Exception as ex:
         log.warn("Focus stage manual control failed (%s)", ex, exc_info=True)
@@ -91,7 +100,7 @@ def focus_get_position(notify=True):
         position = focus_stage.getFocusPosition()
         limits = focus_stage.getFocusLimits()
         if coord_systems_control is not None:
-            coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
+            _, coord_system = coord_systems_control.get_coodinate_system()
             position -= coord_system["Focus"]
             limits = [
                 limits[0] - coord_system["Focus"],

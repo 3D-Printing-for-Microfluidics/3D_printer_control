@@ -21,7 +21,7 @@ from printer_server.views.calibration import (
 )
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
 ts = "%Y-%m-%d %H:%M:%S.%f"
 
 
@@ -30,21 +30,19 @@ class KeyenceFocusControl(PrintControl):
         super().__init__()
         self.keyence = driver_handles.keyence
         self.direct_focal_measurement = None
-        self.thermal_drift_measurement = None
+        self.do_thermal_drift_measurement = None
         self.calibration_positions = None
         self.keyence_offset_targets = None
         self.last_exposure_le = None
         self.need_origin_keyence_measurement = False
-        self.wintech_thermal_drift_readings = {}
+        self.thermal_drift_readings = {}
         self.failed_thermal_drift_readings = 0
-        self.wintech_thermal_drift = 0
+        self.thermal_drift = 0
 
         self.default_position_settings = None
         self.default_x_offset = None
         self.default_y_offset = None
         self.default_light_engine = None
-        self.default_raw_x_offset = None
-        self.default_raw_y_offset = None
         self.x_offset = None
         self.y_offset = None
 
@@ -62,7 +60,7 @@ class KeyenceFocusControl(PrintControl):
             self.failed_hardware["Keyence Sensor"] = self.keyence
 
         self.direct_focal_measurement = config_dict["keyence"].get("direct_focal_measurement", False)
-        self.thermal_drift_measurement = config_dict["keyence"].get("thermal_drift_measurement", {"wintech": False, "visitech": False})
+        self.do_thermal_drift_measurement = config_dict["keyence"].get("thermal_drift_measurement", {"wintech": False, "visitech": False})
 
     def update_measurement_progress(self):
         msg = {
@@ -125,13 +123,8 @@ class KeyenceFocusControl(PrintControl):
                 "Light engine", config_dict["light_engines"][0]
             )
 
-            self.default_raw_x_offset = default_image_settings.get("Image x offset (um)", 0)
-            self.default_raw_y_offset = default_image_settings.get("Image y offset (um)", 0)
-            self.default_x_offset, self.default_y_offset = self._rotate_offsets(
-                self.default_raw_x_offset,
-                self.default_raw_y_offset,
-                config_dict[self.default_light_engine].get("orientation", "X"),
-            )
+            self.default_x_offset = default_image_settings.get("Image x offset (um)", 0)
+            self.default_y_offset = default_image_settings.get("Image y offset (um)", 0)
 
             # Step 3: Initialize measurement tracking variables
             self.keyence_offset_targets = {}
@@ -145,25 +138,19 @@ class KeyenceFocusControl(PrintControl):
             if self.direct_focal_measurement:
                 for light_engine in config_dict["light_engines"]:
                     self.keyence_offset_targets[f"active_{light_engine}"] = {}
-                    if self.thermal_drift_measurement.get(light_engine, False):
+                    if self.do_thermal_drift_measurement.get(light_engine, False):
                         self.keyence_offset_targets[light_engine] = {}
                     for i, layer in enumerate(self.layer_map):
                         image_settings_list = self.get_image_settings(
                             self.print_settings["Layers"][layer[0]]
                         )
                         for j, settings in enumerate(image_settings_list):
-                            _x_offset = float(
-                                settings.get("Image x offset (um)", self.default_raw_x_offset)
+                            x_offset = float(
+                                settings.get("Image x offset (um)", self.default_x_offset)
                             )
-                            _y_offset = float(
-                                settings.get("Image y offset (um)", self.default_raw_y_offset)
+                            y_offset = float(
+                                settings.get("Image y offset (um)", self.default_y_offset)
                             )
-                            x_offset, y_offset = self._rotate_offsets(
-                                _x_offset,
-                                _y_offset,
-                                config_dict[light_engine].get("orientation", "X"),
-                            )
-
 
                             layer_light_engine = settings.get(
                                 "Light engine", self.default_light_engine
@@ -181,7 +168,7 @@ class KeyenceFocusControl(PrintControl):
                                         f"{x_offset}, {y_offset}"
                                     ] = None
                                     self.measurement_count += 1
-                                if self.thermal_drift_measurement.get(light_engine, False) and (
+                                if self.do_thermal_drift_measurement.get(light_engine, False) and (
                                     f"{x_offset}, {y_offset}"
                                     not in self.keyence_offset_targets[light_engine]
                                 ):
@@ -199,12 +186,12 @@ class KeyenceFocusControl(PrintControl):
                 self.update_measurement_progress()
 
                 # Step 6b: Move to origin measurement position (0,0 or default x/y)
-                self.move_xyf_stages(
-                    self.default_x_offset,
-                    self.default_y_offset,
-                    0,
-                    coord_system=f"keyence_{light_engine}",
-                    is_wintech=("wintech" in light_engine),
+                self.move_xyf_stages_in_coordinate_system(
+                    coord_system_name=f"keyence_{light_engine}",
+                    x=self.default_x_offset/1000,
+                    y=self.default_y_offset/1000,
+                    f=0,
+                    light_engine=light_engine
                 )
                 log.debug("Default x offset: %s, default y offset: %s",
                           self.default_x_offset, self.default_y_offset)
@@ -217,13 +204,13 @@ class KeyenceFocusControl(PrintControl):
                     f"{datetime.now().strftime(ts)},{light_engine.capitalize()} Measured Position,{keyence_reading}\n",
                 )
                 self.update_measurement_progress()
-                focus_drift = - keyence_reading
-                self.move_xyf_stages(
-                    None,
-                    None,
-                    focus_drift,
-                    coord_system=f"keyence_{light_engine}",
-                    is_wintech=("wintech" in light_engine),
+                focus_drift = -keyence_reading
+                self.move_xyf_stages_in_coordinate_system(
+                    coord_system_name=f"keyence_{light_engine}",
+                    x=self.default_x_offset/1000, 
+                    y=self.default_y_offset/1000, 
+                    f=focus_drift/1000, 
+                    light_engine=light_engine
                 )
                 time.sleep(1.0)
 
@@ -240,7 +227,11 @@ class KeyenceFocusControl(PrintControl):
 
                 keyence_position = self.coord_systems[f"keyence_{light_engine}"]["Focus"]*1000 + focus_drift
                 coord_diff = (self.coord_systems[f"{light_engine}"]["Focus"] - self.coord_systems[f"keyence_{light_engine}"]["Focus"])*1000
-                le_position = coord_diff + keyence_position
+                le_position = (self.coord_systems[f"{light_engine}"]["Focus"])*1000 + focus_drift
+
+                # update coordinate systems with new focus positions
+                self.coord_systems[f"keyence_{light_engine}"]["Focus"] += focus_drift/1000
+                self.coord_systems[f"{light_engine}"]["Focus"] += focus_drift/1000
 
                 last_positions = get_last_calibration_positions_from_logs()
                 last_positions[f"{light_engine}_focus_base"] = float(f"{le_position:.1f}")
@@ -256,12 +247,12 @@ class KeyenceFocusControl(PrintControl):
                         y_offset = float(measurement[1])
 
                         self.update_measurement_progress()
-                        self.move_xyf_stages(
-                            x_offset,
-                            y_offset,
-                            None,
-                            coord_system=f"keyence_{light_engine}",
-                            is_wintech=("wintech" in light_engine),
+                        self.move_xyf_stages_in_coordinate_system(
+                            coord_system_name=f"keyence_{light_engine}",
+                            x=x_offset/1000,
+                            y=y_offset/1000,
+                            f=0,
+                            light_engine=light_engine
                         )
                         time.sleep(1.0)
 
@@ -273,14 +264,14 @@ class KeyenceFocusControl(PrintControl):
                             f"{x_offset}, {y_offset}"
                         ] = keyence_reading
 
-                    if self.thermal_drift_measurement.get(light_engine, False):
+                    if self.do_thermal_drift_measurement.get(light_engine, False):
                         # Step 6g: Repeat f but for wintech instead of keyence_wintech
-                        self.move_xyf_stages(
-                            None,
-                            None,
-                            0,
-                            coord_system=light_engine,
-                            is_wintech=("wintech" in light_engine),
+                        self.move_xyf_stages_in_coordinate_system(
+                            coord_system_name=light_engine,
+                            x=x_offset/1000, 
+                            y=y_offset/1000, 
+                            f=0, 
+                            light_engine=light_engine
                         )
                         time.sleep(1.0)
                         for measurement in list(self.keyence_offset_targets[light_engine]):
@@ -290,12 +281,12 @@ class KeyenceFocusControl(PrintControl):
 
                             self.update_measurement_progress()
                             # Move to offset position
-                            self.move_xyf_stages(
-                                x_offset,
-                                y_offset,
-                                None,
-                                coord_system=light_engine,
-                                is_wintech=("wintech" in light_engine),
+                            self.move_xyf_stages_in_coordinate_system(
+                                coord_system_name=light_engine,
+                                x=x_offset/1000, 
+                                y=y_offset/1000, 
+                                f=0, 
+                                light_engine=light_engine
                             )
                             time.sleep(1.0)
 
@@ -333,85 +324,43 @@ class KeyenceFocusControl(PrintControl):
             self.failed_hardware["Keyence Measurement"] = None
             raise PrintingException()
 
-    def move_xyf_stages(self, x_pos, y_pos, focus_pos, coord_system, is_wintech=False):
-        _x_pos = x_pos / 1000 + self.coord_systems[coord_system]["X"] if x_pos is not None else None
-        _y_pos = y_pos / 1000 + self.coord_systems[coord_system]["Y"] if y_pos is not None else None
-        _focus_pos = focus_pos / 1000 + self.coord_systems[coord_system]["Focus"] if focus_pos is not None else None
-        if is_wintech:
-            _x_pos += (
-                self.calibration_positions.get("x_drift", 0.0)
-                + self.calibration_positions.get("xy_shift", 0.0) * _y_pos / 1000
-                + self.calibration_positions.get("xx_shift", 0.0) * _x_pos / 1000
-            ) / 1000 if x_pos is not None else None
-            _y_pos += (
-                self.calibration_positions.get("y_drift", 0.0)
-                + self.calibration_positions.get("yx_shift", 0.0) * _x_pos / 1000
-                + self.calibration_positions.get("yy_shift", 0.0) * _y_pos / 1000
-            ) / 1000 if y_pos is not None else None
-
-        self.focus_thread = self.focus_stage.threadedFocusMove(
-            log, _focus_pos, join=False
-        )
-        time.sleep(0.05)
-        self.xy_threads = self.xy_stage.threadedXYMove(log, _x_pos, _y_pos, join=False)
-        
-
-        # Wait for moves to complete
-        for thread in self.xy_threads:
-            if thread is not None:
-                thread.join()
-                if thread.exception is not None:
-                    log.critical("Unable to move xy stage")
-                    self.failed_hardware["XY Stage"] = self.xy_stage
-                    raise PrintingException()
-        if self.focus_thread is not None:
-            self.focus_thread.join()
-            if self.focus_thread.exception is not None:
-                log.critical("Unable to move focus stage")
-                self.failed_hardware["Focus Stage"] = self.focus_stage
-                raise PrintingException()
-
     def pre_exposure_tasks(self, settings, light_engine):
         """
         Setup for post exposure task, also after each non-wintech exposure,
         remeasure the thermal drift at keyence wintech origin
         """
 
-        _x_offset = float(settings.get("Image x offset (um)", self.default_raw_x_offset))
-        _y_offset = float(settings.get("Image y offset (um)", self.default_raw_y_offset))
-        self.x_offset, self.y_offset = self._rotate_offsets(
-            _x_offset, 
-            _y_offset, 
-            config_dict[light_engine].get("orientation", "X"),
-        )
+        self.x_offset = float(settings.get("Image x offset (um)", self.default_x_offset))
+        self.y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
 
-        if self.thermal_drift_measurement.get(light_engine, False) and light_engine != self.last_exposure_le:
+        if self.do_thermal_drift_measurement.get(light_engine, False) and light_engine != self.last_exposure_le:
             if self.need_origin_keyence_measurement or (
                 self.failed_thermal_drift_readings > 0
-                and len(self.wintech_thermal_drift_readings.values()) == 0
+                and len(self.thermal_drift_readings.values()) == 0
             ):
                 self.need_origin_keyence_measurement = False
                 self.failed_thermal_drift_readings = 0
 
-                self.move_xyf_stages(
-                    self.default_x_offset,
-                    self.default_y_offset,
-                    0,
-                    coord_system=f"keyence_{light_engine}",
-                    is_wintech=("wintech" in light_engine),
+                self.move_xyf_stages_in_coordinate_system(
+                    coord_system_name=f"keyence_{light_engine}",
+                    x=self.default_x_offset/1000, 
+                    y=self.default_y_offset/1000, 
+                    f=0, 
+                    light_engine=light_engine
                 )
                 time.sleep(1.0)
 
                 # Measure and set thermal drift
-                origin_target = self.calibration_positions.get(
-                    f"{light_engine}_focus_offset", 0
-                )
+                # origin_target = self.calibration_positions.get(
+                #     f"{light_engine}_focus_offset", 0
+                # )
+                origin_target = self.keyence_offset_targets[f"active_{light_engine}"][f"{self.default_x_offset}, {self.default_y_offset}"]
                 keyence_reading = self.keyence.read_sensor(light_engine)
-                self.wintech_thermal_drift = origin_target - keyence_reading
-
+                self.thermal_drift = origin_target - keyence_reading
+                
                 async_file_hander.write(
                     self.keyence_focus_log,
-                    f"{datetime.now().strftime(ts)},Wintech Thermal Drift,{self.wintech_thermal_drift}\n",
+                    f"{datetime.now().strftime(ts)},Wintech Thermal Drift,{self.thermal_drift}\n",
                 )
 
         return super().pre_exposure_tasks(settings, light_engine)
@@ -422,16 +371,16 @@ class KeyenceFocusControl(PrintControl):
         This lets us measure changing wintech focus (thermal drift) over the course of
         the print without needing to constantly return the wintech to the center.
         """
-        if self.thermal_drift_measurement.get(light_engine, False):
+        if self.do_thermal_drift_measurement.get(light_engine, False):
             keyence_reading = self.keyence.read_sensor(light_engine)
             if keyence_reading != -9999.99:
                 # calculate thermal drift
                 target_position = self.keyence_offset_targets[light_engine][
                     f"{self.x_offset}, {self.y_offset}"
-                ]
-                self.wintech_thermal_drift_readings[
+                ] + self.focus*1000 + self.defocus_um
+                self.thermal_drift_readings[
                     f"{self.x_offset}, {self.y_offset}"
-                ] = (target_position + self.defocus_um - keyence_reading)
+                ] = (target_position - keyence_reading)
             else:
                 self.failed_thermal_drift_readings += 1
         self.last_exposure_le = light_engine
@@ -443,14 +392,15 @@ class KeyenceFocusControl(PrintControl):
         Reset dictionary for next layer
         """
 
-        if len(self.wintech_thermal_drift_readings.values()) > 0:
-            self.wintech_thermal_drift = sum(
-                self.wintech_thermal_drift_readings.values()
-            ) / len(self.wintech_thermal_drift_readings.values())
-            self.wintech_thermal_drift_readings = {}
+        if len(self.thermal_drift_readings.values()) > 0:
+            self.thermal_drift = sum(
+                self.thermal_drift_readings.values()
+            ) / len(self.thermal_drift_readings.values())
+            self.thermal_drift_readings = {}
+            self.failed_thermal_drift_readings = 0
             async_file_hander.write(
                 self.keyence_focus_log,
-                f"{datetime.now().strftime(ts)},Wintech Thermal Drift,{self.wintech_thermal_drift}\n",
+                f"{datetime.now().strftime(ts)},Wintech Thermal Drift,{self.thermal_drift}\n",
             )
         elif self.failed_thermal_drift_readings > 0:
             self.failed_thermal_drift_readings = 0
@@ -461,7 +411,7 @@ class KeyenceFocusControl(PrintControl):
         screen_light_engine = self.convert_le_to_screen_le(light_engine)
 
         last_positions = get_last_calibration_positions_from_logs()
-        self.focus = (last_positions.get(f"{screen_light_engine}_focus_base",0) + last_positions.get(f"{screen_light_engine}_focus_offset",0))/1000
+        self.focus = last_positions.get(f"{screen_light_engine}_focus_offset",0)/1000
 
         defocus_um = settings["Relative focus position (um)"]
 
@@ -471,11 +421,11 @@ class KeyenceFocusControl(PrintControl):
         else:
             keyence_measurement = 0
 
-        self.previous_defocus = self.defocus_um
         self.defocus_um = defocus_um + keyence_measurement
-        if self.thermal_drift_measurement.get(light_engine, False):
-            self.defocus_um += self.wintech_thermal_drift
+        if self.do_thermal_drift_measurement.get(light_engine, False):
+            self.defocus_um += self.thermal_drift
 
+        
     def post_print_tasks(self):
         self.focus = self.coord_systems["parked"]["Focus"]
         super().post_print_tasks()

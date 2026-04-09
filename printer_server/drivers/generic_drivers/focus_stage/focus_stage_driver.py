@@ -42,11 +42,11 @@ class FocusStageDriver:
     def getFocusPosition(self, notify=True):
         log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
-    def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        log.warning("Function not implemented. Using abstract FocusStageDriver class")
+    # def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+    #     log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
-    def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        log.warning("Function not implemented. Using abstract FocusStageDriver class")
+    # def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+    #     log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def startFocusJog(self, speed=None, acceleration=None):
         log.warning("Function not implemented. Using abstract FocusStageDriver class")
@@ -78,9 +78,11 @@ class FocusStageDriver:
         self,
         logger,
         mm,
-        join=True,
+        relative=False, 
         speed=None,
-        acceleration=None
+        acceleration=None,
+        wait_for_settling=True,
+        join=True,
     ):
         """
         Starts threaded movement on focus axis. If any axis is set to none, it will not move.
@@ -88,16 +90,23 @@ class FocusStageDriver:
         """
         thread = None
         if mm is not None:
-            current_pos = round(mm, 4)
+            if relative:
+                current_pos = round(self.prev_focus_position + mm, 4)
+                target = self.relMoveFocus
+            else:
+                current_pos = round(mm, 4)
+                target = self.absMoveFocus
+
             if current_pos != self.prev_focus_position:
                 thread = Thread(
                     logger, 
                     name="focus_stage_driver_thread",
-                    target=self.absMoveFocus,
+                    target=target,
                     kwargs={
-                        "mm": mm,
+                        "mm": round(mm, 4),
                         "speed": speed,
-                        "acceleration": acceleration
+                        "acceleration": acceleration,
+                        "wait_for_settling": wait_for_settling,
                     },
                 )
                 thread.start()

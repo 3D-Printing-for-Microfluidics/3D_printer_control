@@ -72,27 +72,19 @@ class XYControl(PrintControl):
         self.default_raw_x_offset = default_image_settings.get("Image x offset (um)", 0)
         self.default_raw_y_offset = default_image_settings.get("Image y offset (um)", 0)
 
-        _x_offset = float(settings.get("Image x offset (um)", self.default_raw_x_offset))
-        _y_offset = float(settings.get("Image y offset (um)", self.default_raw_y_offset))
-        x_offset, y_offset = self._rotate_offsets(
-            _x_offset, 
-            _y_offset, 
-            config_dict[light_engine].get("orientation", "X"),
-        )
+        x_offset = float(settings.get("Image x offset (um)", self.default_raw_x_offset))
+        y_offset = float(settings.get("Image y offset (um)", self.default_raw_y_offset))
 
         screen_light_engine = self.convert_le_to_screen_le(light_engine)
-
-        if screen_light_engine == "wintech":
-            calibration_positions = get_last_calibration_positions_from_logs()
-            x_adj = calibration_positions.get("x_drift",0.0) + calibration_positions.get("xy_shift",0.0)*y_offset/1000 + calibration_positions.get("xx_shift",0.0)*x_offset/1000
-            y_adj = calibration_positions.get("y_drift",0.0) + calibration_positions.get("yx_shift",0.0)*x_offset/1000 + calibration_positions.get("yy_shift",0.0)*y_offset/1000
-            x_pos = x_offset/1000 + self.coord_systems[screen_light_engine]["X"] + x_adj/1000
-            y_pos =  y_offset/1000 + self.coord_systems[screen_light_engine]["Y"] + y_adj/1000
-        else:
-            x_pos = x_offset/1000 + self.coord_systems[screen_light_engine]["X"]
-            y_pos =  y_offset/1000 + self.coord_systems[screen_light_engine]["Y"]
-        if x_pos is not None or y_pos is not None:
-            self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
+        self.xy_threads = self.move_xyf_stages_in_coordinate_system(
+            coord_system_name=screen_light_engine,
+            x=x_offset/1000,
+            y=y_offset/1000,
+            f=0,
+            light_engine=screen_light_engine,
+            move_focus=False,
+            join=False
+        )
 
         super().pre_exposure_tasks(settings, light_engine)
 

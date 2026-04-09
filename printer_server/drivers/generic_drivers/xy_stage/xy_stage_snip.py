@@ -57,44 +57,33 @@ def xy_move(message):
         wait_for_settling = message.get("wait_for_settling", True)
         if mode == "absolute":
             if coord_systems_control is not None:
-                coord_system_name, coord_system = (
+                _, coord_system = (
                     coord_systems_control.get_coodinate_system()
                 )
-                calibration_positions = get_last_calibration_positions_from_logs()
-                if "wintech" in coord_system_name:
-                    distance += coord_system[axis]
+                distance += coord_system[axis]
 
-                    x_distance = xy_stage.getXYPosition(axis="X") - coord_system["X"]
-                    y_distance = xy_stage.getXYPosition(axis="Y") - coord_system["Y"]
-                    if axis == "X":
-                        distance += (
-                            calibration_positions.get("x_drift", 0) / 1000
-                            + calibration_positions.get("xy_shift", 0) * y_distance / 1000
-                            + calibration_positions.get("xx_shift", 0) * x_distance / 1000
-                        )
-                    if axis == "Y":
-                        distance += (
-                            calibration_positions.get("y_drift", 0) / 1000
-                            + calibration_positions.get("yx_shift", 0) * x_distance / 1000
-                            + calibration_positions.get("yy_shift", 0) * y_distance / 1000
-                        )
-                else:
-                    distance += coord_system[axis]
-
-            xy_stage.absMoveXY(
-                mm=distance,
-                speed=speed,
-                acceleration=acceleration,
+            xy_stage.threadedXYMove(
+                log,
+                distance if axis == "X" else None,
+                distance if axis == "Y" else None,
+                speed_x=speed,
+                speed_y=speed,
+                acceleration_x=acceleration,
+                acceleration_y=acceleration,
                 wait_for_settling=wait_for_settling,
-                axis=axis,
+                relative=False
             )
         elif mode == "relative":
-            xy_stage.relMoveXY(
-                mm=distance,
-                speed=speed,
-                acceleration=acceleration,
+            xy_stage.threadedXYMove(
+                log,
+                distance if axis == "X" else None,
+                distance if axis == "Y" else None,
+                speed_x=speed,
+                speed_y=speed,
+                acceleration_x=acceleration,
+                acceleration_y=acceleration,
                 wait_for_settling=wait_for_settling,
-                axis=axis,
+                relative=True
             )
         socketio.emit("xy_done", xy_get_position(notify=False), namespace="/manual")
     except Exception as ex:
@@ -120,59 +109,15 @@ def xy_get_position(notify=True):
                 position = xy_stage.getXYPosition(axis=axis)
                 limits = xy_stage.getXYLimits(axis=axis)
                 if coord_systems_control is not None:
-                    coord_system_name, coord_system = (
+                    _, coord_system = (
                         coord_systems_control.get_coodinate_system()
                     )
-                    calibration_positions = get_last_calibration_positions_from_logs()
-                    if "wintech" in coord_system_name:
-                        position -= coord_system[axis]
-                        limits = [
-                            limits[0] - coord_system[axis],
-                            limits[1] - coord_system[axis],
-                        ]
-                        position *= 1000
-
-                        x_position = xy_stage.getXYPosition(axis="X") - coord_system["X"]
-                        y_position = xy_stage.getXYPosition(axis="Y") - coord_system["Y"]
-                        if axis == "X":
-                            position -= (
-                                calibration_positions.get("x_drift", 0.0)
-                                + calibration_positions.get("xy_shift", 0.0) * y_position
-                                + calibration_positions.get("xx_shift", 0.0) * x_position
-                            )
-                            limits = [
-                                limits[0]
-                                - calibration_positions.get("x_drift", 0.0)
-                                + calibration_positions.get("xy_shift", 0.0) * y_position
-                                + calibration_positions.get("xx_shift", 0.0) * x_position,
-                                limits[1]
-                                - calibration_positions.get("x_drift", 0.0)
-                                + calibration_positions.get("xy_shift", 0.0) * y_position
-                                + calibration_positions.get("xx_shift", 0.0) * x_position,
-                            ]
-                        if axis == "Y":
-                            position -= (
-                                calibration_positions.get("y_drift", 0.0)
-                                + calibration_positions.get("yx_shift", 0.0) * x_position
-                                + calibration_positions.get("yy_shift", 0.0) * y_position
-                            )
-                            limits = [
-                                limits[0]
-                                - calibration_positions.get("y_drift", 0.0)
-                                + calibration_positions.get("yx_shift", 0.0) * x_position
-                                + calibration_positions.get("yy_shift", 0.0) * y_position,
-                                limits[1]
-                                - calibration_positions.get("y_drift", 0.0)
-                                + calibration_positions.get("yx_shift", 0.0) * x_position
-                                + calibration_positions.get("yy_shift", 0.0) * y_position,
-                            ]
-                    else:
-                        position -= coord_system[axis]
-                        limits = [
-                            limits[0] - coord_system[axis],
-                            limits[1] - coord_system[axis],
-                        ]
-                        position *= 1000
+                    position -= coord_system[axis]
+                    limits = [
+                        limits[0] - coord_system[axis],
+                        limits[1] - coord_system[axis],
+                    ]
+                    position *= 1000
                 positions[axis] = {
                     "position": f"{position:.1f}",
                     "limits": f"{limits[0]*1000:.1f}, {limits[1]*1000:.1f}",

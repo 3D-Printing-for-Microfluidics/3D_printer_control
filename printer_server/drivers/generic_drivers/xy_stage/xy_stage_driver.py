@@ -42,11 +42,11 @@ class XYStageDriver:
     def getXYPosition(self, axis=None, notify=True):
         log.warning("Function not implemented. Using abstract XYStageDriver class")
 
-    def absMoveXY( self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
-        log.warning("Function not implemented. Using abstract XYStageDriver class")
+    # def absMoveXY( self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+    #     log.warning("Function not implemented. Using abstract XYStageDriver class")
 
-    def relMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
-        log.warning("Function not implemented. Using abstract XYStageDriver class")
+    # def relMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+    #     log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def startXYJog(self, speed=None, acceleration=None, axis=None):
         log.warning("Function not implemented. Using abstract XYStageDriver class")
@@ -85,11 +85,13 @@ class XYStageDriver:
         logger,
         x,
         y,
-        join=True,
+        relative=False,
         speed_x=None,
         speed_y=None,
         acceleration_x=None,
         acceleration_y=None,
+        wait_for_settling=True,
+        join=True,
     ):
         """
         Starts multithreaded movement on both of the x/y axes. If any axis is set to none, it will not move.
@@ -97,35 +99,54 @@ class XYStageDriver:
         """
         threads = [None, None]
         if x is not None:
-            self.curr_x_position = round(x, 4)
+            if relative:
+                if x != 0:
+                    self.curr_x_position = round(self.prev_x_position + x, 4)
+                    target = self.relMoveXY
+            else:
+                self.curr_x_position = round(x, 4)
+                target = self.absMoveXY
+
             if self.curr_x_position != self.prev_x_position:
                 threads[0] = Thread(
                     logger, 
                     name="xy_stage_driver_x_thread",
-                    target=self.absMoveXY,
+                    target=target,
                     kwargs={
-                        "mm": x,
+                        "mm": round(x, 4),
                         "speed": speed_x,
                         "acceleration": acceleration_x,
                         "axis": "X",
+                        "wait_for_settling": wait_for_settling,
                     },
                 )
                 threads[0].start()
+
         if y is not None:
-            if hasattr(self, 'linked_focus_stage') and self.linked_focus_stage is not None:
-                self.curr_y_position = round(y - self.linked_focus_stage.target_focus, 4)
+            if relative:
+                if hasattr(self, 'linked_focus_stage') and self.linked_focus_stage is not None:
+                    self.curr_y_position = round(self.prev_y_position + y - self.linked_focus_stage.target_focus, 4)
+                else:
+                    self.curr_y_position = round(self.prev_y_position + y, 4)
+                target = self.relMoveXY
             else:
-                self.curr_y_position = round(y, 4)
+                if hasattr(self, 'linked_focus_stage') and self.linked_focus_stage is not None:
+                    self.curr_y_position = round(y - self.linked_focus_stage.target_focus, 4)
+                else:
+                    self.curr_y_position = round(y, 4)
+                target = self.absMoveXY
+
             if self.curr_y_position != self.prev_y_position:
                 threads[1] = Thread(
                     logger, 
                     name="xy_stage_driver_y_thread",
-                    target=self.absMoveXY,
+                    target=target,
                     kwargs={
-                        "mm": y,
+                        "mm": round(y, 4),
                         "speed": speed_y,
                         "acceleration": acceleration_y,
                         "axis": "Y",
+                        "wait_for_settling": wait_for_settling,
                     },
                 )
                 threads[1].start()

@@ -60,18 +60,22 @@ def bp_move(message):
             bp_stage.logging_start()
         start_time = time.time()
         if mode == "absolute":
-            bp_stage.absMoveBP(
-                mm=distance,
+            bp_stage.threadedBPMove(
+                log,
+                distance,
                 speed=speed,
                 acceleration=acceleration,
                 wait_for_settling=wait_for_settling,
+                relative=False,
             )
         elif mode == "relative":
-            bp_stage.relMoveBP(
-                mm=distance,
+            bp_stage.threadedBPMove(
+                log,
+                distance,
                 speed=speed,
                 acceleration=acceleration,
                 wait_for_settling=wait_for_settling,
+                relative=True,
             )
         stop_time = time.time()
         if return_timing:

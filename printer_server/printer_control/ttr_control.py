@@ -17,8 +17,6 @@ class TTRControl(PrintControl):
 
         # hardware handles
         self.ttr_stage = driver_handles.ttr_stage
-        self.previous_tip = None
-        self.previous_tilt = None
         self.ttr_threads = None
 
     def create_logs(self):
@@ -59,8 +57,6 @@ class TTRControl(PrintControl):
         self.ttr_thread.start()
         super().initialize_hardware()
         self.ttr_thread.join()
-        self.previous_tip = self.tip
-        self.previous_tilt = self.tilt
         if self.ttr_thread.exception is not None:
             log.error("TTR stage failed to initialize!")
             self.failed_hardware["TTR stage"] = self.ttr_stage
@@ -91,8 +87,7 @@ class TTRControl(PrintControl):
             if self.rotate is not None:
                 self.rotate /= 1000
 
-            if self.tip != self.previous_tip or self.tilt != self.previous_tilt:
-                self.ttr_threads = self.ttr_stage.threadedTTRMove(log, self.tip, self.tilt, self.rotate, join=False)
+            self.ttr_threads = self.ttr_stage.threadedTTRMove(log, self.tip, self.tilt, self.rotate, join=False)
         return super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, light_engine):
@@ -106,8 +101,6 @@ class TTRControl(PrintControl):
                         self.failed_hardware["TTR Stage"] = self.ttr_stage
                         raise PrintingException()
             self.ttr_threads = None
-        self.previous_tip = self.tip
-        self.previous_tilt = self.tilt
         return super().pre_exposure_joins(light_engine)
 
     @run_in_thread("planarizing", "Planarization Step 1")

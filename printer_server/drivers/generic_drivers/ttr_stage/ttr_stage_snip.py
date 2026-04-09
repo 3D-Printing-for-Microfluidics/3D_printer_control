@@ -28,9 +28,21 @@ def ttr_move(message):
         distance = float(message["distance"])/1000
         axis = message.get("axis",None)
         if mode == "absolute":      
-            ttr_stage.absMoveTTR(rad=distance, axis=axis)
+            ttr_stage.threadedTTRMove(
+                log,
+                distance if axis == "Tip" else None,
+                distance if axis == "Tilt" else None,
+                distance if axis == "Rotate" else None,
+                relative=False,
+            )
         elif mode == "relative":
-            ttr_stage.relMoveTTR(rad=distance, axis=axis)  
+            ttr_stage.threadedTTRMove(
+                log,
+                distance if axis == "Tip" else None,
+                distance if axis == "Tilt" else None,
+                distance if axis == "Rotate" else None,
+                relative=True,
+            )
         socketio.emit(
             "ttr_done", ttr_get_position(notify=False), namespace="/manual"
         )
