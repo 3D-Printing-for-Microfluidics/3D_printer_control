@@ -69,10 +69,6 @@ class Screen:
         try:
             self.led_num = led_num
             self.image = Image.open(img_path)
-            if self.do_correction and self.correction_paths[led_num] is not None:
-                mask = self.image
-                correction = Image.open(self.correction_paths[led_num])
-                self.image = Image.composite(correction, mask, mask=mask)
 
             # xor class and local variable
             # we do this on a software rather then a hardware level, because not all le support mirroring long axis
@@ -87,6 +83,11 @@ class Screen:
             elif _mirror_long:
                 self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
             self.image_path = img_path
+
+            if self.do_correction and self.correction_paths[led_num] is not None:
+                mask = self.image
+                correction = Image.open(self.correction_paths[led_num])
+                self.image = Image.composite(correction, mask, mask=mask)
 
         except (OSError, FileNotFoundError):
             self.log.warning("Image not found, drawing white (%s)", img_path)
