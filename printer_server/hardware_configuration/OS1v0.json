@@ -10,7 +10,8 @@
     "Grayscale Calibration",
     "Keyence Tip Tilt Calibration",
     "Tip Tilt Focus Sweep Print",
-    "Uniform Focus Print"
+    "Uniform Focus Print",
+    "Stitching Alignment Print"
   ],
   "external_control": {},
   "coord_systems": {
