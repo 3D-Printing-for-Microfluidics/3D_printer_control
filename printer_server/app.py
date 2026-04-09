@@ -22,17 +22,18 @@ def create_app(config_object=ProdConfig):
     app.wsgi_app = ProxyFix(app.wsgi_app)
     register_extensions(app)
     register_blueprints(app)
+    register_errorhandlers(app)
+    register_shellcontext(app)
+    register_commands(app)
+    register_hardware(app)
+    register_logger(app)
+
     try:
         calibration.extract_calibration_print_archives()
     except Exception as ex:
         logging.getLogger(__name__).warning(
             "Failed to extract calibration print archives on startup: %s", ex
         )
-    register_errorhandlers(app)
-    register_shellcontext(app)
-    register_commands(app)
-    register_hardware(app)
-    register_logger(app)
 
     try:
         with app.app_context():
