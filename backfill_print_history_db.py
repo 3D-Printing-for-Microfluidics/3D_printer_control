@@ -3,6 +3,7 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -186,7 +187,10 @@ def parse_args():
 
 def main():
     args = parse_args()
+    source_path = Path(args.source_db)
     target_path = Path(args.target_db)
+    if source_path.resolve() == target_path.resolve():
+        raise SystemExit("Target DB must be different from source DB.")
     if target_path.exists():
         if not args.overwrite:
             raise SystemExit(
@@ -195,7 +199,21 @@ def main():
         target_path.unlink()
 
     backfill_print_history(args.source_db, args.target_db, args.print_history_dir)
-    log.info("Backfill complete: %s", target_path)
+    backup_path = None
+    if source_path.exists():
+        backup_path = source_path.with_suffix(source_path.suffix + ".backup")
+        if backup_path.exists():
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_path = source_path.with_suffix(
+                source_path.suffix + f".backup.{timestamp}"
+            )
+        shutil.move(str(source_path), str(backup_path))
+    shutil.move(str(target_path), str(source_path))
+    log.info(
+        "Backfill complete. Replaced %s (backup: %s)",
+        source_path,
+        backup_path if backup_path else "none",
+    )
 
 
 if __name__ == "__main__":
