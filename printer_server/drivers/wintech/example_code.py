@@ -80,7 +80,7 @@ p.dmd_controller.get_hardware_configuration_and_firmware_tag()
 # Example of how to draw images to Visitech and Wintech virtual screens
 s.draw(light_engine="wintech", img_path="printer_server/drivers/wintech/images/1.png")
 # s.draw(light_engine="wintech", img_path="printer_server/drivers/wintech/images/white.png")
-s.draw(light_engine="visitech", img_path="printer_server/drivers/visitech/images/visitech_1.png")
+s.draw(light_engine="visitech", img_path="printer_server/drivers/visitech/images/1.png")
 # s.draw(light_engine="visitech", img_path="printer_server/drivers/visitech/images/white.png")
 
 # Some test code to run a number of projections and report some class data

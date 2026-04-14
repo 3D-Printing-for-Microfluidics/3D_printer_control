@@ -4,6 +4,7 @@ import atexit
 import base64
 import tkinter
 import logging
+import threading
 from io import BytesIO
 from pathlib import Path
 from PIL import Image, ImageTk
@@ -39,6 +40,8 @@ class Screen:
         self.image_path = None
         self.led_num = 0
         self.do_correction = False
+        self.mirror_short = False
+        self.mirror_long = False
         self.correction_paths = correction_paths
         self.resolution = resolution
         self.window = tkinter.Toplevel()
@@ -61,19 +64,22 @@ class Screen:
         self.canvas.configure(background="black")
         self.canvas_image = self.canvas.create_image(0, 0, anchor=tkinter.NW)
 
-        self.mirror_short_axis = mirror_short_axis
-        self.mirror_long_axis = mirror_long_axis
+        self.config_mirror_short_axis = mirror_short_axis
+        self.config_mirror_long_axis = mirror_long_axis
 
     def draw(self, img_path, led_num=0, mirror_short=False, mirror_long=False):
         """Draw image in the Tk canvas."""
         try:
+            self.image_path = img_path
             self.led_num = led_num
+            self.mirror_short = mirror_short
+            self.mirror_long = mirror_long
             self.image = Image.open(img_path)
 
             # xor class and local variable
             # we do this on a software rather then a hardware level, because not all le support mirroring long axis
-            _mirror_short = mirror_short != self.mirror_short_axis
-            _mirror_long = mirror_long != self.mirror_long_axis
+            _mirror_short = mirror_short != self.config_mirror_short_axis
+            _mirror_long = mirror_long != self.config_mirror_long_axis
 
             self.image_preview = self.image.copy()
             if _mirror_short and _mirror_long:
@@ -82,7 +88,6 @@ class Screen:
                 self.image = self.image.transpose(Image.FLIP_TOP_BOTTOM)
             elif _mirror_long:
                 self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
-            self.image_path = img_path
 
             if self.do_correction and self.correction_paths[led_num] is not None:
                 mask = self.image
@@ -141,7 +146,10 @@ class ScreenThread(Thread):
         self.light_engines = config_dict["light_engines"]
         self.total_offset = None
         self.screens = None
+        self.screen_draw_info = None
         self.log_level = log_level
+        self._stop_requested = threading.Event()
+        self._reset_requested = threading.Event()
 
     def _getScreenIndex(self, light_engine):
         if light_engine in self.light_engines:
@@ -152,34 +160,46 @@ class ScreenThread(Thread):
     def run(self):
         """Create a Tk window and run it."""
         self.log.info("Starting screen thread")
-
-        self.screens = []
-        self.total_offset = 0
-        for le in self.light_engines:
-            correction_paths = []
-            for led in range(len(self.config_dict[le]["leds_nm"])):
-                correction_directory= Path(Config.PRINT_SERVER_FOLDER) / Path("grayscale_correction_data")
-                try:
-                    correction_image = Path(self.config_dict[le]["grayscale_correction_image"][led])
-                    correction_paths.append(correction_directory / correction_image)
-                except:
-                    correction_paths.append(None)
-            
-            resolution = tuple(self.config_dict[le]["resolution"])
-            self.screens.append(
-                Screen(
-                    resolution, 
-                    correction_paths, 
-                    screen_offset=self.total_offset, 
-                    mirror_short_axis=self.config_dict[le].get("mirror_short_axis", False), 
-                    mirror_long_axis=self.config_dict[le].get("mirror_long_axis", False), 
-                    log_level=self.log_level
-                )
-            )
-            self.total_offset += resolution[0]
-
         atexit.register(self.stop)
-        tkinter.mainloop()
+        self._stop_requested.clear()
+        self._reset_requested.clear()
+
+        while True:
+            self.screens = []
+            self.total_offset = 0
+            for le in self.light_engines:
+                correction_paths = []
+                for led in range(len(self.config_dict[le]["leds_nm"])):
+                    correction_directory= Path(Config.PRINT_SERVER_FOLDER) / Path("grayscale_correction_data")
+                    try:
+                        correction_image = Path(self.config_dict[le]["grayscale_correction_image"][led])
+                        correction_paths.append(correction_directory / correction_image)
+                    except:
+                        correction_paths.append(None)
+                
+                resolution = tuple(self.config_dict[le]["resolution"])
+                self.screens.append(
+                    Screen(
+                        resolution, 
+                        correction_paths, 
+                        screen_offset=self.total_offset, 
+                        mirror_short_axis=self.config_dict[le].get("mirror_short_axis", False), 
+                        mirror_long_axis=self.config_dict[le].get("mirror_long_axis", False), 
+                        log_level=self.log_level
+                    )
+                )
+                self.total_offset += resolution[0]
+            if self.screen_draw_info is not None:
+                for screen, (img_path, led_num, mirror_short, mirror_long) in zip(self.screens, self.screen_draw_info):
+                    screen.draw(img_path, led_num=led_num, mirror_short=mirror_short, mirror_long=mirror_long)
+
+            tkinter.mainloop()
+
+            if self._reset_requested.is_set() and not self._stop_requested.is_set():
+                self._reset_requested.clear()
+                continue
+            break
+
         self.log.info("Screen thread closed")
 
     def setCorrectionEnable(self, enable, light_engine="visitech"):
@@ -203,12 +223,21 @@ class ScreenThread(Thread):
             return False
         
 
-    def stop(self):
+    def stop(self, restart=False):
         """Stop the thread."""
         if self.screens is not None:
             self.log.info("Stopping screen thread")
+            if restart:
+                self._reset_requested.set()
+                self.screen_draw_info = []
+                for screen in self.screens:
+                    self.screen_draw_info.append((screen.image_path, screen.led_num, screen.mirror_short, screen.mirror_long))
+            else:
+                self._stop_requested.set()
             for screen in self.screens:
-                screen.window.quit()
+                screen.window.destroy()
+            root = tkinter._default_root
+            root.after(10, root.destroy)
             self.screens = None
 
     def draw(self, img_path, light_engine="visitech", led_num=0, mirror_short=False, mirror_long=False):

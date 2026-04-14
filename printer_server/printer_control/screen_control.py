@@ -24,6 +24,15 @@ class ScreenControl(PrintControl):
         if self.screen_thread.exception is not None:
             log.error("Virtual Screen failed to connect!")
             self.failed_hardware["Virtual Screen"] = self.screen
+        # else:
+        #     import os
+        #     from printer_server.settings import Config
+        #     print_server = Config.PRINT_SERVER_FOLDER
+        #     for i, light_engine in enumerate(self.screen.light_engines):
+        #         imagePath = os.path.join(
+        #             print_server, "drivers", light_engine, "images", f"{light_engine}_{i+1}.png"
+        #         )
+        #         self.screen.draw(imagePath, light_engine=light_engine, led_num=0)
 
     def pre_exposure_tasks(self, settings, light_engine):
         from printer_server.printer_control.light_engine_control import parseJSONLightEngine

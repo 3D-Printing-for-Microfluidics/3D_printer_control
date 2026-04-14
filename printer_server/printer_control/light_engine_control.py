@@ -1,3 +1,4 @@
+import time
 import logging
 
 from printer_server.threading_wrapper import Thread
@@ -28,6 +29,7 @@ class LightEngineControl(ScreenControl):
     def __init__(self):
         super().__init__()
         self.light_engines = driver_handles.light_engines
+        self.screen = driver_handles.screen
         self.light_engine_threads = {}
 
     def connect_hardware(self):
@@ -51,6 +53,11 @@ class LightEngineControl(ScreenControl):
         super().initialize_hardware()
         for light_engine, thread in self.light_engine_threads.items():
             thread.join()
+            light_engine_driver = self.light_engines[light_engine]
+            if light_engine_driver.hdmi_reset:
+                time.sleep(1)  # wait for light engine to come back after HDMI reset
+                self.screen.stop(restart=True)
+                light_engine_driver.hdmi_reset = False
             if thread.exception is not None:
                 log.error("%s failed to initialize!", light_engine.capitalize())
                 self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = self.light_engines[light_engine]
