@@ -116,6 +116,9 @@ if "loadcell" in config_dict.keys():
     on_load_f_init.append(
         printer_server.drivers.loadcell.loadcell_snip.get_graph_mode
     )
+    on_load_f_init.append(
+        printer_server.drivers.loadcell.loadcell_snip.get_loadcell_state
+    )
 
 if "mks" in config_dict.keys() and "mks_teensy" in config_dict.keys():
     import printer_server.drivers.mks.mks_snip  
