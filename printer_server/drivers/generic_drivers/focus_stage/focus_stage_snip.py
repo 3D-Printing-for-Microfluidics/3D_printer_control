@@ -81,7 +81,7 @@ def focus_move(message):
             )
         if focus_stage.config_dict.get("link_focus_and_y_movement", False):
             time.sleep(0.05)
-            focus_stage.linked_y_stage.threadedYMove(
+            focus_stage.linked_y_stage.threadedXYMove(
                 log,
                 None,
                 y_pos,
