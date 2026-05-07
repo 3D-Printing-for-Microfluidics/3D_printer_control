@@ -57,10 +57,22 @@ class LoadcellControl(PrintControl):
         squeeze_target = force_squeeze_settings["Squeeze force (N)"]
         squeeze_wait = force_squeeze_settings.get("Squeeze time (ms)", force_squeeze_settings.get("Squeeze wait (ms)", 0)) / 1000
 
+        count = 0
         first_count = self.move_bp_to_force(squeeze_target - 5, speed=0.5)
-        second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
-        third_count = self.move_bp_to_force(squeeze_target, speed=0.005)
-        count = first_count + second_count + third_count
+        if first_count is None:
+            log.warning(f"Squeeze failed to reach target ({squeeze_target - 5})")
+        else:
+            count += first_count
+            second_count = self.move_bp_to_force(squeeze_target - 0.5, speed=0.05)
+            if second_count is None:
+                log.warning(f"Squeeze failed to reach target ({squeeze_target - 0.5})")
+            else:
+                count += second_count
+                third_count = self.move_bp_to_force(squeeze_target, speed=0.005)
+                if third_count is None:
+                    log.warning(f"Squeeze failed to reach target ({squeeze_target})")
+                else:
+                    count += third_count
 
         log.info("Squeeze force reached %s steps", count)
         log.info("Squeeze force: %.4f", self.loadcell.get_current_force())
@@ -71,7 +83,13 @@ class LoadcellControl(PrintControl):
 
         time.sleep(squeeze_wait)
 
-        self.bp_stage.absMoveBP(mm=self.print_position, speed=50, acceleration=5)
+        self.bp_stage.threadedBPMove(
+            logger=log,
+            mm=self.print_position,
+            speed=50,
+            acceleration=5,
+            join=True
+        )
 
     def move_bp_to_force(
         self, target_force, speed, acceleration=100, error_threshold=None, timeout=10
@@ -86,7 +104,7 @@ class LoadcellControl(PrintControl):
         count = 0
         if (speed < 0 and force > target_force) or (speed > 0 and force < target_force):
             start_time = time.time()
-            self.bp_stage.startBPJog(speed=speed, acceleration=acceleration)
+            self.bp_stage.startBPJog(speed=-speed, acceleration=acceleration)
             while (speed < 0 and force > target_force) or (
                 speed > 0 and force < target_force
             ):
@@ -149,8 +167,15 @@ class LoadcellControl(PrintControl):
                     )
                     log.info("Loadcell position (post-step 1): %.4f", self.bp_stage.getBPPosition())
                 else:
-                    # estimate a 2mm movement for planarization
-                    self.bp_stage.relMoveBP(mm=2.0, speed=2.5)
+                    # estimate a -2mm movement for planarization
+                    self.bp_stage.threadedBPMove(
+                        logger=log,
+                        mm=-2.0,
+                        speed=2.5,
+                        wait_for_settling=True,
+                        join=True,
+                        relative=True
+                    )
             except Exception as ex:
                 log.critical("Critical error occured during planarization (%s)", ex, exc_info=True)
                 self.failed_hardware["Loadcell or Build Platform"] = None
@@ -183,7 +208,13 @@ class LoadcellControl(PrintControl):
                 log.error("Loadcell planarization failed. Check build platform screw.")
                 return
             second_count = self.move_bp_to_force(target_force + 0.5, speed=-0.05)
+            if second_count is None:
+                log.error("Loadcell planarization failed. Check build platform screw.")
+                return
             third_count = self.move_bp_to_force(target_force, speed=-0.005)
+            if third_count is None:
+                log.error("Loadcell planarization failed. Check build platform screw.")
+                return
             count = first_count + second_count + third_count
 
             self.planarized_position = self.bp_stage.getBPPosition()
@@ -197,6 +228,22 @@ class LoadcellControl(PrintControl):
             log.critical("Critical error occured during planarization (%s)", ex, exc_info=True)
             self.failed_hardware["Loadcell or Build Platform"] = self.loadcell
             raise PrintingException()
+
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+        try:
+            self.loadcell.set_log_file(None)
+            self.loadcell.stop()   
+            time.sleep(0.5)
+            if self.loadcell_thread is not None:
+                self.loadcell_thread.join()
+                self.loadcell_thread = None
+                home.clear_loadcell_graph()
+        except Exception as ex:
+            log.critical("Critical error occured during planarization (%s)", ex, exc_info=True)
+            self.failed_hardware["Loadcell"] = self.loadcell
+            raise PrintingException()
+        super().cancel_planarization()
 
     def connect_hardware(self):
         loadcell_t = Thread(log, name="loadcell_control_connect_thread", target=self.loadcell.connect)

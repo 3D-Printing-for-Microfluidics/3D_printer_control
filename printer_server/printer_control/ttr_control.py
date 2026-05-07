@@ -17,6 +17,7 @@ class TTRControl(PrintControl):
 
         # hardware handles
         self.ttr_stage = driver_handles.ttr_stage
+        self.ttr_threads = None
 
     def create_logs(self):
         super().create_logs()
@@ -32,9 +33,20 @@ class TTRControl(PrintControl):
             self.failed_hardware["TTR stage"] = self.ttr_stage
 
     def initialize_hardware(self):
-        self.tip = get_last_calibration_positions_from_logs().get("tip",None)
-        self.tilt = get_last_calibration_positions_from_logs().get("tilt",None)
-        self.rotate = get_last_calibration_positions_from_logs().get("rotate",None)
+        self.tip = None
+        self.tilt = None
+        last_positions = get_last_calibration_positions_from_logs()
+
+        matching_keys = [key for key in last_positions if "_tip_base" in str(key) or "_tilt_base" in str(key)]
+        if len(matching_keys) > 0:
+            self.tip = last_positions.get(matching_keys[0].replace("tilt", "tip"),None)
+            self.tilt = last_positions.get(matching_keys[0].replace("tip", "tilt"),None)
+        if self.tip is None:
+            self.tip = last_positions.get("tip",None)
+        if self.tilt is None:
+            self.tilt = last_positions.get("tilt",None)
+        self.rotate = last_positions.get(f"rotate",None)
+
         if self.tip is not None:
             self.tip /= 1000
         if self.tilt is not None:
@@ -49,29 +61,47 @@ class TTRControl(PrintControl):
             log.error("TTR stage failed to initialize!")
             self.failed_hardware["TTR stage"] = self.ttr_stage
 
-
-    def pre_print_tasks(self):
+    def pre_exposure_tasks(self, settings, light_engine):
         if self.ttr_stage.config_dict.get("auto_repositioning", True):
-            self.tip = get_last_calibration_positions_from_logs().get("tip",None)
-            self.tilt = get_last_calibration_positions_from_logs().get("tilt",None)
-            self.rotate = get_last_calibration_positions_from_logs().get("rotate",None)
+            self.tip = None
+            self.tilt = None
+
+            last_positions = get_last_calibration_positions_from_logs()
+            matching_keys = [key for key in last_positions if "_tip" in str(key) or "_tilt" in str(key)]
+            if len(matching_keys) == 0:
+                self.tip = last_positions.get("tip",None)
+                self.tilt = last_positions.get("tilt",None)
+            self.rotate = last_positions.get(f"rotate",None)
+
+            if self.tip is None:
+                self.tip = last_positions.get(f"{light_engine}_tip_base",0)
+                self.tip += last_positions.get(f"{light_engine}_tip_offset",0)
+            if self.tilt is None:
+                self.tilt = last_positions.get(f"{light_engine}_tilt_base",0)
+                self.tilt += last_positions.get(f"{light_engine}_tilt_offset",0)
+
             if self.tip is not None:
                 self.tip /= 1000
             if self.tilt is not None:
                 self.tilt /= 1000
             if self.rotate is not None:
                 self.rotate /= 1000
-            self.ttr_threads = self.ttr_stage.threadedTTRMove(log, self.tip, self.tilt, self.rotate, join=False)
-        super().pre_print_tasks()
 
-    def pre_print_joins(self):
-        if self.ttr_stage.config_dict.get("auto_repositioning", True):
-            if self.ttr_threads is not None:
-                for thread in self.ttr_threads:
+            self.ttr_threads = self.ttr_stage.threadedTTRMove(log, self.tip, self.tilt, self.rotate, join=False)
+        return super().pre_exposure_tasks(settings, light_engine)
+
+    def pre_exposure_joins(self, light_engine):
+        """Join Focus threads"""
+        if self.ttr_threads is not None:
+            for thread in self.ttr_threads:
+                if thread is not None:
                     thread.join()
                     if thread.exception is not None:
                         log.warning("Unable to move TTR stage")
-        super().pre_print_joins()
+                        self.failed_hardware["TTR Stage"] = self.ttr_stage
+                        raise PrintingException()
+            self.ttr_threads = None
+        return super().pre_exposure_joins(light_engine)
 
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarization_step_1(self):
@@ -83,6 +113,16 @@ class TTRControl(PrintControl):
                 self.failed_hardware["TTR Stage"] = self.ttr_stage
                 raise PrintingException()
             super().planarization_step_1()
+
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+            try:
+                self.ttr_stage.logging_stop()
+            except Exception as ex:
+                log.critical("Unable to communicate with ttr stage (%s)", ex, exc_info=True)
+                self.failed_hardware["TTR Stage"] = self.ttr_stage
+                raise PrintingException()
+            super().cancel_planarization()
         
     def finish_print(self):
         try:

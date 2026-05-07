@@ -10,6 +10,10 @@ class XYStageDriver:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         super().__init__()
         self.initialized = None
+        self.prev_x_position = None
+        self.prev_y_position = None
+        self.curr_x_position = None
+        self.curr_y_position = None
 
     def setup_log_file(self, filename):
         log.warning("Function not implemented. Using abstract XYStageDriver class")
@@ -38,22 +42,25 @@ class XYStageDriver:
     def getXYPosition(self, axis=None, notify=True):
         log.warning("Function not implemented. Using abstract XYStageDriver class")
 
-    def absMoveXY( self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
-        log.warning("Function not implemented. Using abstract XYStageDriver class")
+    # def absMoveXY( self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+    #     log.warning("Function not implemented. Using abstract XYStageDriver class")
 
-    def relMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
-        log.warning("Function not implemented. Using abstract XYStageDriver class")
+    # def relMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+    #     log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def startXYJog(self, speed=None, acceleration=None, axis=None):
         log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def stopXYJog(self, axis=None):
-        log.warning("Function not implemented. Using abstract XYStageDriver class")
+        if axis == "X":
+            self.prev_x_position = round(self.getXYPosition(axis="X", notify=False), 4)
+        elif axis == "Y":
+            self.prev_y_position = round(self.getXYPosition(axis="Y", notify=False), 4)
 
     def getXYLimits(self, axis=None):
         log.warning("Function not implemented. Using abstract XYStageDriver class")
 
-    def setXYLimits(self, limits, axis=None):
+    def setXYLimits(self, limits=None, axis=None):
         log.warning("Function not implemented. Using abstract XYStageDriver class")
 
     def initialize_and_positionXY(self, x, y):
@@ -66,6 +73,8 @@ class XYStageDriver:
         while not self.initialized:
             time.sleep(0.1)
 
+        time.sleep(0.25)
+
         for a in ["X", "Y"]:
             self.setXYLimits(axis=a)
 
@@ -76,11 +85,13 @@ class XYStageDriver:
         logger,
         x,
         y,
-        join=True,
+        relative=False,
         speed_x=None,
         speed_y=None,
         acceleration_x=None,
         acceleration_y=None,
+        wait_for_settling=True,
+        join=True,
     ):
         """
         Starts multithreaded movement on both of the x/y axes. If any axis is set to none, it will not move.
@@ -88,31 +99,57 @@ class XYStageDriver:
         """
         threads = [None, None]
         if x is not None:
-            threads[0] = Thread(
-                logger, 
-                name="xy_stage_driver_x_thread",
-                target=self.absMoveXY,
-                kwargs={
-                    "mm": x,
-                    "speed": speed_x,
-                    "acceleration": acceleration_x,
-                    "axis": "X",
-                },
-            )
-            threads[0].start()
+            if relative:
+                if x != 0:
+                    self.curr_x_position = round(self.prev_x_position + x, 4)
+                    target = self.relMoveXY
+            else:
+                self.curr_x_position = round(x, 4)
+                target = self.absMoveXY
+
+            if self.curr_x_position != self.prev_x_position:
+                threads[0] = Thread(
+                    logger, 
+                    name="xy_stage_driver_x_thread",
+                    target=target,
+                    kwargs={
+                        "mm": round(x, 4),
+                        "speed": speed_x,
+                        "acceleration": acceleration_x,
+                        "axis": "X",
+                        "wait_for_settling": wait_for_settling,
+                    },
+                )
+                threads[0].start()
+
         if y is not None:
-            threads[1] = Thread(
-                logger, 
-                name="xy_stage_driver_y_thread",
-                target=self.absMoveXY,
-                kwargs={
-                    "mm": y,
-                    "speed": speed_y,
-                    "acceleration": acceleration_y,
-                    "axis": "Y",
-                },
-            )
-            threads[1].start()
+            if relative:
+                if hasattr(self, 'linked_focus_stage') and self.linked_focus_stage is not None:
+                    self.curr_y_position = round(self.prev_y_position + y - self.linked_focus_stage.target_focus, 4)
+                else:
+                    self.curr_y_position = round(self.prev_y_position + y, 4)
+                target = self.relMoveXY
+            else:
+                if hasattr(self, 'linked_focus_stage') and self.linked_focus_stage is not None:
+                    self.curr_y_position = round(y - self.linked_focus_stage.target_focus, 4)
+                else:
+                    self.curr_y_position = round(y, 4)
+                target = self.absMoveXY
+
+            if self.curr_y_position != self.prev_y_position:
+                threads[1] = Thread(
+                    logger, 
+                    name="xy_stage_driver_y_thread",
+                    target=target,
+                    kwargs={
+                        "mm": round(y, 4),
+                        "speed": speed_y,
+                        "acceleration": acceleration_y,
+                        "axis": "Y",
+                        "wait_for_settling": wait_for_settling,
+                    },
+                )
+                threads[1].start()
         if join:
             for thread in threads:
                 if thread is not None:

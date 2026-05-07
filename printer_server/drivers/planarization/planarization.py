@@ -1,0 +1,158 @@
+# Raspberry Pi driver for Teensy-based planarization motor
+# Protocol (line-based, '\n'-terminated):
+#   "t" / "u"          : start tighten / untighten
+#   "e"                : stop
+#   "s <kgmm>"         : set torque target (kg·mm)
+# Telemetry while running:
+#   "torque <kgmm>"    : current (filtered) torque reading
+#   "start" | "stop" | "done" | "timeout"
+
+import time
+import datetime
+import logging
+from serial import SerialException
+from printer_server.threading_wrapper import Thread
+from printer_server.drivers.generic_drivers import USBSerial
+from printer_server.async_file_handler import async_file_hander
+from printer_server.hardware_configuration.hardware_configuration import config_dict
+
+
+class Planarization(USBSerial):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG):
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
+
+        super().__init__(
+            "Planarization",
+            vid=config_dict["vendor_id"],
+            pid=config_dict["product_id"],
+            sn=config_dict["serial_number"],
+            baudrate=config_dict["baudrate"],
+            timeout=0.1,
+            line_ending="\n",
+            multiline=True,
+            logger=self.log,
+        )
+
+        self.config_dict = config_dict
+        self.running = False
+        self.thread = Thread(self.log, name="planarization_loop_thread", target=self.loop)
+        self.log_file = None
+        self.start_time = 0
+
+        # Torque targets in kg·mm (preferred)
+        self.default_torque_target_kgmm = float(self.config_dict.get("target_torque_kgmm", 40.0))
+        self.torque_target_kgmm = self.default_torque_target_kgmm
+
+    def start(self, direction: str = "tighten", torque_kgmm: float | None = None):
+        """
+        Start motor operation. If torque_kgmm is given, set it before motion.
+        direction: "tighten" | "untighten"
+        """
+        if self.thread is None:
+            self.thread = Thread(self.log, name="planarization_loop_thread", target=self.loop)
+        if not self.thread.is_alive():
+            if torque_kgmm is None:
+                if direction == "tighten":
+                    torque_kgmm = self.default_torque_target_kgmm
+                else:
+                    torque_kgmm = 0.0
+            self.set_torque_target_kgmm(torque_kgmm)
+
+            self.running = True
+            cmd = "t" if direction == "tighten" else "u"
+            self.send(cmd, recieve=False)
+            time.sleep(0.1)
+            self.thread.start()
+
+    def stop(self):
+        """Stop motor and the receiver thread."""
+        if self.running:
+            self.running = False
+            self.thread.join()
+            self.thread = Thread(self.log, name="planarization_loop_thread", target=self.loop)
+            self.send("e", recieve=False)
+            self.start_time = 0
+
+    def set_log_file(self, filename: str | None):
+        """
+        Log torque readings to CSV if filename is provided.
+        CSV header: system_time,torque_kgmm
+        """
+        self.log_file = filename
+        if self.log_file:
+            async_file_hander.write(self.log_file, "system_time,motor_time,torque_kgmm\n")
+
+    def set_torque_target_kgmm(self, kgmm: float):
+        """Send torque target (kg·mm) to Teensy."""
+        if kgmm < 0:
+            self.log.warning("Invalid torque (kg·mm) target: %s", kgmm)
+            return
+        self.torque_target_kgmm = float(kgmm)
+        self.send(f"s {self.torque_target_kgmm:.3f}", recieve=False)
+        self.log.info("Set torque target to %.3f kg·mm", self.torque_target_kgmm)
+
+    # ---------- background receive loop ----------
+
+    def loop(self):
+        """
+        Receive lines from Teensy while running.
+        Expected lines:
+        - 'torque <value>'
+        - 'done' / 'timeout' / 'start' / 'stop'
+        """
+        try:
+            while self.running:
+                raw = self.readline()
+                if not raw:
+                    continue
+
+                # Ensure we are working with str (USBSerial returns bytes in some drivers)
+                if isinstance(raw, (bytes, bytearray)):
+                    line = raw.decode("utf-8", errors="ignore")
+                else:
+                    line = raw
+                line = line.strip()
+                if not line:
+                    continue
+
+                if "torque" in line:
+                    try:
+                        vals = (line.split(" ", 1)[1]).split(" @ ")
+                        force = float(vals[0])
+                        milliseconds = int(vals[1][:-3])
+                        if self.log_file:
+                            sys_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                            time = self.start_time + datetime.timedelta(
+                                milliseconds=float(milliseconds)
+                            )
+                            motor_time = time.strftime("%Y-%m-%d %H:%M:%S.%f")
+
+                            async_file_hander.write(self.log_file, f"{sys_time},{motor_time},{force:.3f}\n")
+                    except ValueError:
+                        self.log.debug("Parse error for torque line: %r", line)
+                        continue
+
+                elif line == "done" or line == "timeout":
+                    self.running = False
+                    self.log.info("Planarization motor reported: %s", line)
+                    self.thread = None
+                    break
+
+                elif "start" in line or line == "stop":
+                    self.log.debug("Motor: %s", line)
+                    if "start" in line:
+                        vals = (line.split(" ", 1)[1]).split(" @ ")
+                        milliseconds = int(vals[1][:-3])
+                        if self.start_time == 0:
+                            self.start_time = datetime.datetime.now() - datetime.timedelta(
+                                milliseconds=milliseconds
+                            )
+
+                # Optional: debug any unexpected lines
+                else:
+                    self.log.debug("Unrecognized line: %r", line)
+
+        except SerialException as ex:
+            self.log.warning("Planarization serial failed (%s)", ex)
+            self.running = False

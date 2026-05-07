@@ -1,10 +1,11 @@
+import time
 import logging
 import numpy as np
 from PIL import Image
 from pathlib import Path
 
 from printer_server.threading_wrapper import Thread
-from printer_server.hardware_configuration.hardware_configuration import driver_handles
+from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 from printer_server.views.calibration import (
     get_last_calibration_positions_from_logs,
@@ -54,7 +55,6 @@ class FocusControl(PrintControl):
         super().__init__()
         self.focus_stage = driver_handles.focus_stage
         self.defocus_um = None
-        self.previous_defocus = None
 
     def create_logs(self):
         super().create_logs()
@@ -85,9 +85,7 @@ class FocusControl(PrintControl):
     def get_focus(self):
         """Return 'Focus' axis position in um"""
         try:
-            return int(
-                self.focus_stage.getFocusPosition() * 1000
-            )
+            return self.focus_stage.getFocusPosition() * 1000
         except Exception as ex:
             log.critical("Unable to communicate with focus stage (%s)", ex, exc_info=True)
             self.failed_hardware["Focus Stage"] = self.focus_stage
@@ -104,10 +102,20 @@ class FocusControl(PrintControl):
                 self.failed_hardware["Focus Stage"] = self.focus_stage
                 raise PrintingException()
             super().planarization_step_1()
-            
+
+
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+            try:
+                self.focus_stage.logging_stop()
+            except Exception as ex:
+                log.critical("Unable to communicate with focus stage (%s)", ex, exc_info=True)
+                self.failed_hardware["Focus Stage"] = self.focus_stage
+                raise PrintingException()
+            super().cancel_planarization()
 
     def get_exposure_defocus(self, settings, light_engine):
-        self.previous_defocus = self.defocus_um
+        self.focus = get_last_calibration_positions_from_logs().get(f"focus",0)/1000
         self.defocus_um = settings["Relative focus position (um)"]
 
     def pre_exposure_tasks(self, settings, light_engine):
@@ -115,21 +123,44 @@ class FocusControl(PrintControl):
 
         need_to_shift_image = self.focus_stage.config_dict.get("moving_shifts_image", False)
         if need_to_shift_image:
-            self.image = shift_image(self.image, x=um_to_px(self.defocus_um))
+            shift = um_to_px(self.defocus_um)
+            if settings.get("Mirror image long axis", False):
+                shift = -shift
+            self.image = shift_image(self.image, x=shift)
         
-        if self.defocus_um != self.previous_defocus:
+        if "coord_systems" in config_dict.keys():
+            # fetch x/y offsets to pass to coordinate system transformation function
+            defaults_layer_settings = self.print_settings.get("Default layer settings")
+            default_image_settings = defaults_layer_settings.get("Image settings")
+            self.default_raw_x_offset = default_image_settings.get("Image x offset (um)", 0)
+            self.default_raw_y_offset = default_image_settings.get("Image y offset (um)", 0)
+
+            x_offset = float(settings.get("Image x offset (um)", self.default_raw_x_offset))
+            y_offset = float(settings.get("Image y offset (um)", self.default_raw_y_offset))
+
+            screen_light_engine = self.convert_le_to_screen_le(light_engine)
+            self.focus_thread = self.move_xyf_stages_in_coordinate_system(
+                coord_system_name=screen_light_engine,
+                x=x_offset/1000,
+                y=y_offset/1000,
+                f=self.focus + self.defocus_um/1000,
+                light_engine=screen_light_engine,
+                move_xy=False,
+                join=False
+            )
+        else:
             self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focus + self.defocus_um/1000, join=False)
+        time.sleep(0.1)
         return super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, light_engine):
         """Join Focus threads"""
-        if self.defocus_um != self.previous_defocus:
-            if self.focus_thread is not None:
-                self.focus_thread.join()
-                if self.focus_thread.exception is not None:
-                    log.critical("Unable to move focus stage")
-                    self.failed_hardware["Focus Stage"] = self.focus_stage
-                    raise PrintingException()
+        if self.focus_thread is not None:
+            self.focus_thread.join()
+            if self.focus_thread.exception is not None:
+                log.critical("Unable to move focus stage")
+                self.failed_hardware["Focus Stage"] = self.focus_stage
+                raise PrintingException()
         return super().pre_exposure_joins(light_engine)
 
     def post_print_tasks(self):

@@ -13,20 +13,17 @@
         "global": {
             "X": 0,
             "Y": 0,
-            "Focus": 0,
-            "Build Platform": 0
+            "Focus": 0
         },
         "visitech": {
             "X": 0,
             "Y": 8.000,
-            "Focus": 2.189,
-            "Build Platform": 0
+            "Focus": 2.189
         },
         "keyence_visitech": {
             "X": 0.047,
             "Y": -24.424,
-            "Focus": -0.211,
-            "Build Platform": 0
+            "Focus": -0.211
         }
     },
     "stages": {
@@ -34,7 +31,7 @@
         "focus_stage": "galil",
         "xy_stage": "galil",
         "ttr_stage": "tiptilt"
-    },    
+    },
     "galil": {
         "dummy": false,
         "controller_name": "DMC4040",
@@ -83,16 +80,40 @@
             "D": 50
         },
         "limits": {
-            "A": [null,null],
-            "B": [null,null],
-            "C": [null,null],
-            "D": [null,44.6390039]
+            "A": [
+                null,
+                null
+            ],
+            "B": [
+                null,
+                null
+            ],
+            "C": [
+                null,
+                null
+            ],
+            "D": [
+                null,
+                44.6390039
+            ]
         },
         "calibration_limits": {
-            "A": [null,null],
-            "B": [null,null],
-            "C": [null,null],
-            "D": [null,30.1375391]
+            "A": [
+                null,
+                null
+            ],
+            "B": [
+                null,
+                null
+            ],
+            "C": [
+                null,
+                null
+            ],
+            "D": [
+                null,
+                30.1375391
+            ]
         },
         "calibration_position": 29.1375391,
         "bottom_position": 43.6390039,
@@ -113,8 +134,14 @@
             "Tilt"
         ],
         "limits": {
-            "1": [null,null],
-            "2": [null,null]
+            "1": [
+                null,
+                null
+            ],
+            "2": [
+                null,
+                null
+            ]
         },
         "auto_repositioning": false
     },

@@ -13,6 +13,7 @@ class BPStageDriver:
         self.calibration_position = None
         self.bottom_position = None
         self.top_position = None
+        self.prev_bp_position = None
 
     def setup_log_file(self, filename):
         log.warning("Function not implemented. Using abstract BPStageDriver class")
@@ -44,17 +45,17 @@ class BPStageDriver:
     def getBPPosition(self, notify=True):
         log.warning("Function not implemented. Using abstract BPStageDriver class")
 
-    def absMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        log.warning("Function not implemented. Using abstract BPStageDriver class")
+    # def absMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+    #     log.warning("Function not implemented. Using abstract BPStageDriver class")
 
-    def relMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        log.warning("Function not implemented. Using abstract BPStageDriver class")
+    # def relMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+    #     log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def startBPJog(self, speed=None, acceleration=None):
         log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def stopBPJog(self):
-        log.warning("Function not implemented. Using abstract BPStageDriver class")
+        self.prev_bp_position = round(self.getBPPosition(notify=False), 4)
 
     def goToBPcalibration(self):
         log.warning("Function not implemented. Using abstract BPStageDriver class")
@@ -68,10 +69,7 @@ class BPStageDriver:
     def getBPLimits(self):
         log.warning("Function not implemented. Using abstract BPStageDriver class")
 
-    def setBPLimits(self, limits):
-        log.warning("Function not implemented. Using abstract BPStageDriver class")
-
-    def setUpperLimit(self, limit):
+    def setBPLimits(self, limits=None):
         log.warning("Function not implemented. Using abstract BPStageDriver class")
 
     def initialize_and_positionBP(self, pos, external_control_enabled):
@@ -95,9 +93,11 @@ class BPStageDriver:
         self,
         logger,
         mm,
-        join=True,
+        relative=False,
         speed=None,
-        acceleration=None
+        acceleration=None,
+        wait_for_settling=True,
+        join=True,
     ):
         """
         Starts threaded movement on bp axis. If any axis is set to none, it will not move.
@@ -105,17 +105,26 @@ class BPStageDriver:
         """
         thread = None
         if mm is not None:
-            thread = Thread(
-                logger, 
-                name="bp_stage_driver_thread",
-                target=self.absMoveBP,
-                kwargs={
-                    "mm": mm,
-                    "speed": speed,
-                    "acceleration": acceleration
-                },
-            )
-            thread.start()
+            if relative:
+                current_pos = round(self.prev_bp_position + mm, 4)
+                target = self.relMoveBP
+            else:
+                current_pos = round(mm, 4)
+                target = self.absMoveBP
+
+            if current_pos != self.prev_bp_position:
+                thread = Thread(
+                    logger, 
+                    name="bp_stage_driver_thread",
+                    target=target,
+                    kwargs={
+                        "mm": round(mm, 4),
+                        "speed": speed,
+                        "acceleration": acceleration,
+                        "wait_for_settling": wait_for_settling
+                    },
+                )
+                thread.start()
             if join:
                 if thread is not None:
                     thread.join()

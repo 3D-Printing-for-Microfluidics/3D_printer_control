@@ -214,7 +214,7 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
 
     @dummy_log
     def get_pose(self, axis=None):
-        """ Get the current pose (translation and rotation) of the coordiante system corresponding to the current pivot point of the system
+        """ Get the current pose (translation and rotation) of the coordinate system corresponding to the current pivot point of the system
 
         Returns:
             list: values of the translational and rotational axes of the hexapod
@@ -244,9 +244,9 @@ class Hexapod_dummy(TTRStageDriver, FocusStageDriver):
         """ Set the value of the pivot point about which the rotational commands are executed
 
         Args:
-            r (float): 'R' axis target position (corresponding to the equivalent new coordiante system's 'X' axis)
-            s (float): 'S' axis target position (corresponding to the equivalent new coordiante system's 'Y' axis)
-            t (float): 'T' axis target position (corresponding to the equivalent new coordiante system's 'Z' axis)
+            r (float): 'R' axis target position (corresponding to the equivalent new coordinate system's 'X' axis)
+            s (float): 'S' axis target position (corresponding to the equivalent new coordinate system's 'Y' axis)
+            t (float): 'T' axis target position (corresponding to the equivalent new coordinate system's 'Z' axis)
 
         Returns:
             bool: successful change of pivot point

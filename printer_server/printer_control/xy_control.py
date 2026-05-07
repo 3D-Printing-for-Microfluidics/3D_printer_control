@@ -29,6 +29,9 @@ class XYControl(PrintControl):
             self.failed_hardware["XY Stage"] = self.xy_stage
 
     def initialize_hardware(self):
+        if driver_handles.focus_stage.config_dict.get("link_focus_and_y_movement", False):
+            self.xy_stage.linked_focus_stage = driver_handles.focus_stage
+            self.focus_stage.linked_y_stage = self.xy_stage
         x_pos = self.coord_systems["parked"]["X"]
         y_pos = self.coord_systems["parked"]["Y"]
         self.xy_thread = Thread(log, name="xy_control_init_thread", target=self.xy_stage.initialize_and_positionXY, args=[x_pos, y_pos])
@@ -52,27 +55,36 @@ class XYControl(PrintControl):
                 raise PrintingException()
             super().planarization_step_1()
 
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+            try:
+                self.xy_stage.logging_stop()
+            except Exception as ex:
+                log.critical("Unable to communicate with xy stage (%s)", ex, exc_info=True)
+                self.failed_hardware["XY Stage"] = self.xy_stage
+                raise PrintingException()
+            super().cancel_planarization()
+
     def pre_exposure_tasks(self, settings, light_engine):
         """Move X, Y, and Focus stages to exposure positions"""
         defaults_layer_settings = self.print_settings.get("Default layer settings")
         default_image_settings = defaults_layer_settings.get("Image settings")
-        self.default_x_offset = default_image_settings.get("Image x offset (um)", 0)
-        self.default_y_offset = default_image_settings.get("Image y offset (um)", 0)
+        self.default_raw_x_offset = default_image_settings.get("Image x offset (um)", 0)
+        self.default_raw_y_offset = default_image_settings.get("Image y offset (um)", 0)
 
-        x_offset = float(settings.get("Image x offset (um)", self.default_x_offset))
-        y_offset = float(settings.get("Image y offset (um)", self.default_y_offset))
+        x_offset = float(settings.get("Image x offset (um)", self.default_raw_x_offset))
+        y_offset = float(settings.get("Image y offset (um)", self.default_raw_y_offset))
+
         screen_light_engine = self.convert_le_to_screen_le(light_engine)
-
-        if screen_light_engine == "wintech":
-            calibration_positions = get_last_calibration_positions_from_logs()
-            x_adj = calibration_positions.get("x_drift",0.0) + calibration_positions.get("xy_shift",0.0)*y_offset/1000 + calibration_positions.get("xx_shift",0.0)*x_offset/1000
-            y_adj = calibration_positions.get("y_drift",0.0) + calibration_positions.get("yx_shift",0.0)*x_offset/1000 + calibration_positions.get("yy_shift",0.0)*y_offset/1000
-            x_pos = x_offset/1000 + self.coord_systems[screen_light_engine]["X"] + x_adj/1000
-            y_pos =  y_offset/1000 + self.coord_systems[screen_light_engine]["Y"] + y_adj/1000
-        else:
-            x_pos = x_offset/1000 + self.coord_systems[screen_light_engine]["X"]
-            y_pos =  y_offset/1000 + self.coord_systems[screen_light_engine]["Y"]
-        self.xy_threads = self.xy_stage.threadedXYMove(log, x_pos, y_pos, join=False)
+        self.xy_threads = self.move_xyf_stages_in_coordinate_system(
+            coord_system_name=screen_light_engine,
+            x=x_offset/1000,
+            y=y_offset/1000,
+            f=0,
+            light_engine=screen_light_engine,
+            move_focus=False,
+            join=False
+        )
 
         super().pre_exposure_tasks(settings, light_engine)
 

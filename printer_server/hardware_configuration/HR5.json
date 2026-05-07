@@ -7,39 +7,35 @@
     ],
     "calibration_prints": [
         "Focus Sweep Print",
-        "Uniform Focus Print"
+        "Uniform Focus Print",
+        "Stitching Alignment Print"
     ],
     "external_control": {},
     "coord_systems": {
         "global": {
             "X": 0,
             "Y": 0,
-            "Focus": 0,
-            "Build Platform": 0
+            "Focus": 0
         },
         "parked": {
             "X": 100,
             "Y": 85,
-            "Focus": 0,
-            "Build Platform": 0
+            "Focus": 0
         },
         "visitech": {
             "X": -0.4,
             "Y": 1.06,
-            "Focus": 2.893,
-            "Build Platform": 0
+            "Focus": 2.893
         },
         "keyence_visitech": {
             "X": -1.705,
             "Y": -36.204,
-            "Focus": 2.300,
-            "Build Platform": 0
+            "Focus": 2.300
         },
         "fiber_visitech": {
             "X": -86.492,
             "Y": 68.282,
-            "Focus": -0.025,
-            "Build Platform": 0
+            "Focus": -0.025
         }
     },
     "stages": {
@@ -83,6 +79,11 @@
             "1": 50,
             "2": 50
         },
+        "mirroring": {
+            "0": false,
+            "1": false,
+            "2": true
+        },
         "limits": {
             "0": [
                 null,
@@ -93,8 +94,8 @@
                 85
             ],
             "2": [
-                null,
-                34
+                -34,
+                null
             ]
         },
         "calibration_limits": {
@@ -107,13 +108,13 @@
                 null
             ],
             "2": [
-                null,
-                26.000
+                -26.000,
+                null
             ]
         },
+        "top_position": 50,
         "calibration_position": 0,
-        "bottom_position": 27.5,
-        "top_position": -50
+        "bottom_position": -27.5
     },
     "hexapod": {
         "dummy": false,
@@ -131,6 +132,12 @@
             "Tilt",
             "Rotate"
         ],
+        "mirroring": {
+            "Z": false,
+            "U": false,
+            "V": false,
+            "W": false
+        },
         "limits": {
             "Z": [
                 null,
@@ -149,7 +156,8 @@
                 null
             ]
         },
-        "auto_repositioning": true
+        "auto_repositioning": true,
+        "auto_tip_tilt": false
     },
     "mks": {
         "dummy": false,
@@ -219,9 +227,12 @@
         "port": 24685,
         "sensors": {
             "visitech": {
-                "measurement_index": 0
+                "measurement_index": 0,
+                "invert_sign": false
             }
-        }
+        },
+        "auto_focus_with_keyence": true,
+        "direct_focal_measurement": true
     },
     "photodiode": {
         "dummy": false,
@@ -273,6 +284,9 @@
             2560,
             1600
         ],
+        "orientation": "Y",
+        "mirror_long_axis": false,
+        "mirror_short_axis": false,
         "grayscale_correction_image": [
             "20260309-XU19030146.png"
         ],

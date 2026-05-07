@@ -47,6 +47,11 @@ if "loadcell" in config_dict:
     from printer_server.printer_control.loadcell_control import LoadcellControl
     parent_classes.append(LoadcellControl)
 
+# planarization must be before bp_stage and after loadcell
+if "planarization" in config_dict:
+    from printer_server.printer_control.planarization_control import PlanarizationControl
+    parent_classes.append(PlanarizationControl)
+
 if "bp_stage" in config_dict["stages"]:
     from printer_server.printer_control.bp_control import BPControl
     parent_classes.append(BPControl)
@@ -60,11 +65,14 @@ if "accelerometer" in config_dict:
     parent_classes.append(AccelerometerControl)
 
 # keyence needs to be before focus
-if "keyence" in config_dict:
-    from printer_server.printer_control.keyence_control import KeyenceControl
-    parent_classes.append(KeyenceControl)
-
 if "focus_stage" in config_dict["stages"]:
+    if "keyence" in config_dict and config_dict["keyence"].get("auto_focus_with_keyence"):
+        from printer_server.printer_control.keyence_focus_control import KeyenceFocusControl
+        parent_classes.append(KeyenceFocusControl)
+    elif "photodiode" in config_dict and config_dict["photodiode"].get("auto_focus_with_photodiode"):
+        from printer_server.printer_control.photodiode_focus_control import PhotodiodeFocusControl
+        parent_classes.append(PhotodiodeFocusControl)
+
     from printer_server.printer_control.focus_control import FocusControl
     parent_classes.append(FocusControl)
 
@@ -73,7 +81,7 @@ if "light_engines" in config_dict:
     from printer_server.printer_control.light_engine_control import LightEngineControl
     parent_classes.append(LightEngineControl)
 
-if "spectrometer" in config_dict and "photodiode" in config_dict:
+if "spectrometer" in config_dict or "photodiode" in config_dict:
     from printer_server.printer_control.light_measurement_control import LightMeasurementControl
     parent_classes.append(LightMeasurementControl)
 
@@ -86,7 +94,7 @@ if "xy_stage" in config_dict["stages"]:
     parent_classes.append(XYControl)
 
 
-class ParentPrintControl(*parent_classes):
+class BasePrintControl(*parent_classes):
     @run_in_thread("planarizing", "Planarization Step 1")
     def planarization_step_1(self):
         try:
@@ -100,6 +108,26 @@ class ParentPrintControl(*parent_classes):
     def planarization_step_2(self):
         try:
             super().planarization_step_2()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
+
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+        try:
+            super().cancel_planarization()
+        except PrintingException:
+            self.printing_stopped.set()
+            self.critical_error_handle("printing")    
+            return False
+
+    @run_in_thread("planarized", "Automatic Planarization")
+    def combined_planarization(self):
+        try:
+            self.planarization_step_1()
+            self.state = "planarizing"
+            self.planarization_step_2()
         except PrintingException:
             self.printing_stopped.set()
             self.critical_error_handle("printing")    
@@ -147,8 +175,7 @@ class ParentPrintControl(*parent_classes):
             self.critical_error_handle("printing")    
             return False
 
-print_control = ParentPrintControl()
-# print(ParentPrintControl.__mro__)
+print_control = BasePrintControl()
 
 @blueprint.route("/")
 def index():
@@ -210,6 +237,11 @@ def disconnect():
 @socketio.on("initialize", namespace="/printing")
 # pylint: disable=unused-argument
 def initialize(message):
+    # classes = ""
+    # for c in BasePrintControl.__mro__:
+    #     classes += c.__name__ + ", "
+    # classes = classes[:-2]
+    # log.warn(classes)
     print_control.initialize(critical_error, run_in_thread=False, top_level=True)
 
 
@@ -255,7 +287,10 @@ def critical_error_reply(message):
 @socketio.on("planarization step 1", namespace="/printing")
 # pylint: disable=unused-argument
 def planarization_step_1(message):
-    print_control.planarization_step_1(run_in_thread=True, top_level=True)
+    if "planarization" in config_dict:
+        print_control.combined_planarization(run_in_thread=True, top_level=True)
+    else:
+        print_control.planarization_step_1(run_in_thread=True, top_level=True)
 
 
 @socketio.on("planarization step 2", namespace="/printing")
@@ -263,6 +298,10 @@ def planarization_step_1(message):
 def planarization_step_2(message):
     print_control.planarization_step_2(run_in_thread=True, top_level=True)
 
+@socketio.on("cancel planarization", namespace="/printing")
+# pylint: disable=unused-argument
+def cancel_planarization(message):
+    print_control.cancel_planarization(run_in_thread=True, top_level=True)
 
 @socketio.on("start", namespace="/printing")
 # pylint: disable=unused-argument

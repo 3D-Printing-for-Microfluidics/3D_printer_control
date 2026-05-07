@@ -42,4 +42,7 @@ sleep 2
 # Turn back on using same mode
 xrandr --output "$OUTPUT" --mode "$MODE"
 
+# Re-assert layout: HDMI-1 left of HDMI-2, HDMI-1 primary
+xrandr --output HDMI-1 --primary --left-of HDMI-2
+
 echo "Done."

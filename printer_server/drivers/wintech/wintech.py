@@ -21,6 +21,7 @@ class Wintech(LightEngineDriver):
         self.exposure_time = 0
         self.led_on = False
         self.led = 0
+        self.hdmi_reset = False
 
         if dummy:
             self.dmd_controller = DLPC900_USB_Controller_dummy(log_level=self.log_level)

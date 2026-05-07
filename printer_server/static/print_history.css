@@ -108,3 +108,72 @@ pre {
     font-size: 1rem;
     margin-bottom: 0;
 }
+
+.advanced-filters {
+    display: none;
+}
+
+.advanced-section {
+    margin-top: 8px;
+}
+
+.section-label {
+    font-weight: 600;
+}
+
+.filter-row {
+    margin-bottom: 10px;
+}
+
+.advanced-row {
+    margin-bottom: 10px;
+}
+
+.advanced-search-inputs {
+    flex-wrap: wrap;
+    column-gap: 12px;
+    row-gap: 10px;
+}
+
+.columns-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 8px 18px;
+    align-items: center;
+}
+
+.columns-grid .form-check {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    column-gap: 6px;
+}
+
+.columns-grid .form-check-input {
+    margin-left: 0;
+    margin-right: 6px;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    position: static;
+}
+
+.columns-grid .form-check-label {
+    float: none;
+    margin-top: 0;
+    margin-left: 0;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.col-end-time,
+.col-upload-time,
+.col-design-purpose,
+.col-design-description,
+.col-design-resin,
+.col-design-printer,
+.col-design-slicer,
+.col-design-slice-date {
+    display: none;
+}

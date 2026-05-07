@@ -1,0 +1,41 @@
+<!-- Planarization Control -->
+<div class="container planar">
+  <div class="row top-buffer align-items-center">
+    <div class="col-6">
+      <h3>Planarization Motor</h3>
+      <div id="planar-status" style="color: gray;">Status: —</div>
+    </div>
+    <div class="col-6">
+      <div class="input-group">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Target torque</span>
+        </div>
+        <input type="number" step="0.1" min="0" class="form-control" id="planar-target"
+               placeholder="kg·mm" />
+        <div class="input-group-append">
+          <span class="input-group-text">kg·mm</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-3">
+    <div class="col-4">
+      <button type="button" class="btn btn-outline-success btn-block" id="planar-tighten-btn">
+        Tighten
+      </button>
+    </div>
+    <div class="col-4">
+      <button type="button" class="btn btn-outline-info btn-block" id="planar-loosen-btn">
+        Loosen
+      </button>
+    </div>
+    <div class="col-4">
+      <button type="button" class="btn btn-outline-danger btn-block" id="planar-stop-btn">
+        Stop
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('manual_controls.static', filename='planarization/planarization_snip.js') }}"></script>

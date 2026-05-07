@@ -1,4 +1,5 @@
 """Control view."""
+
 import json
 import logging
 import re
@@ -21,28 +22,33 @@ from printer_server.print_file_validator import validate_schema, validate_printe
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
+position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
+CALIBRATION_PRINTS_ROOT = Path(Config.PRINT_SERVER_FOLDER) / "calibration_prints"
+
+# Create bluprint
+blueprint = Blueprint(
+    "calibration",
+    __name__,
+    url_prefix="/",
+    template_folder="../drivers",
+    static_folder="../drivers",
+)
+
 conversion_dict = {
-    "Focus": "focus",
-    "Visitech Focus": "keyence_visitech",
-    "Wintech Focus": "keyence_wintech",
-    "Tip": "tip",
-    "Tilt": "tilt",
-    "Rotate": "rotate",
-    "Pivot X": "pivot_x",
-    "Pivot Y": "pivot_y",
-    "Pivot Z": "pivot_z",
-    "Wintech X drift": "x_drift",
-    "Wintech Y drift": "y_drift",
-    "Wintech X Shift per mm Y": "xy_shift",
-    "Wintech Y Shift per mm X": "yx_shift",
-    "Wintech X Shift per mm X": "xx_shift",
-    "Wintech Y Shift per mm Y": "yy_shift",
+    "focus": "Focus",
+    "tip": "Tip",
+    "tilt": "Tilt",
+    "rotate": "Rotate",
+    "pivot_x": "Pivot X",
+    "pivot_y": "Pivot Y",
+    "pivot_z": "Pivot Z",
 }
 
 GROUP_NON_ACTIVE_OFFSETS = "Tip/Tilt/Focus Settings"
 GROUP_ACTIVE_OFFSETS = "Active Focus Offsets"
 GROUP_HEXAPOD_PARAMETERS = "Hexapod Parameters"
 GROUP_ALIGNMENT_ADJUSTMENTS = "Alignment Adjustments"
+GROUP_STITCHING_ADJUSTMENTS = "Stitching Adjustments"
 GROUP_IRRADIANCE_TARGETS = "Irradiance Targets"
 
 def register_irradiance_targets():
@@ -52,23 +58,53 @@ def register_irradiance_targets():
         for wavelength in config_dict.get(light_engine, {}).get("leds_nm", []):
             human = f"{light_engine.capitalize()} {wavelength} nm"
             machine = f"irradiance_target_{light_engine}_{wavelength}"
-            conversion_dict.setdefault(human, machine)
+            conversion_dict.setdefault(machine, human)
 
-position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
-CALIBRATION_PRINTS_ROOT = Path(Config.PRINT_SERVER_FOLDER) / "calibration_prints"
 
-def write_to_position_log(message):
-    with open(position_log_file, "a") as f:
-        f.write(
-            "{} {}\n".format(
-                datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), json.dumps(message)
-            )
-        )
+def register_active_tt():
+    for light_engine in config_dict.get("light_engines", []):
+        for axis in ["tip", "tilt"]:
+            human = f"{light_engine.capitalize()} {axis.capitalize()}"
+            machine = f"{light_engine}_{axis}_base"
+            conversion_dict.setdefault(machine, human)
+
+            human_offset = f"{light_engine.capitalize()} {axis.capitalize()} Offset"
+            machine_offset = f"{light_engine}_{axis}_offset"
+            conversion_dict.setdefault(machine_offset, human_offset)
+
+
+def register_active_focus():
+    for light_engine in config_dict.get("light_engines", []):
+        human = f"{light_engine.capitalize()} Focus"
+        machine = f"{light_engine}_focus_base"
+        conversion_dict.setdefault(machine, human)
+
+        human_offset = f"{light_engine.capitalize()} Focus Offset"
+        machine_offset = f"{light_engine}_focus_offset"
+        conversion_dict.setdefault(machine_offset, human_offset)
+
+
+def register_light_engine_alignment():
+    for light_engine in config_dict.get("light_engines", []):
+        for axis in ["x", "y"]:
+            # human = f"{light_engine.capitalize()} {axis.upper()} Alignment"
+            human = axis.upper()
+            machine = f"{light_engine}_{axis}_alignment"
+            conversion_dict.setdefault(machine, human)
+
+
+def register_stitching_correction():
+    for light_engine in config_dict.get("light_engines", []):
+        for axis in ["x", "y"]:
+            for correction in ["x", "y", "focus"]:
+                # human = f"{light_engine.capitalize()} {correction.capitalize()} um per mm {axis.upper()}"
+                human = correction.capitalize()
+                machine = f"{light_engine}_{correction}_shift_{axis}"
+                conversion_dict.setdefault(machine, human)
 
 
 def get_last_calibration_positions_from_logs():
-    """Return the last focused position from the position log file.
-    """
+    """Return the last focused position from the position log file."""
     log_file = Path(Config.PROJECT_ROOT) / "logs" / "calibration_position_log.txt"
     last_line = None
     try:
@@ -82,28 +118,239 @@ def get_last_calibration_positions_from_logs():
         return temp
     except FileNotFoundError:
         return {}
+
+
+def create_calibration_data():
+    from printer_server.hardware_configuration.hardware_configuration import (
+        driver_handles,
+    )
+    calibration_data = []
+
+    def add_to_list(settings, group, subgroup=None):
+        for setting in settings:
+            calibration_data.append(
+                {
+                    "machine_name": setting,
+                    "human_name": conversion_dict.get(setting),
+                    "group": group,
+                    "subgroup": subgroup,
+                    "value": last_positions.get(setting, 0.0),
+                }
+            )
+
+    register_irradiance_targets()
+    register_active_focus()
+    register_active_tt()
+    register_light_engine_alignment()
+    register_stitching_correction()
+
+    last_positions = get_last_calibration_positions_from_logs()
+    if "photodiode" in config_dict:
+        for light_engine in config_dict.get("light_engines", []):
+            for wavelength in config_dict.get(light_engine, {}).get("leds_nm", []):
+                add_to_list(
+                    [f"irradiance_target_{light_engine}_{wavelength}"],
+                    GROUP_IRRADIANCE_TARGETS,
+                )
+    auto_tip_tilt = driver_handles.ttr_stage.config_dict.get("auto_tip_tilt", False)
+    if auto_tip_tilt:
+        settings_list = []
+        for le in config_dict["light_engines"]:
+            for axis in ["tip", "tilt"]:
+                # settings_list.append(f"{le}_{axis}_base") # Don't show on Calibration page
+                settings_list.append(f"{le}_{axis}_offset")
+        add_to_list(settings_list, GROUP_ACTIVE_OFFSETS)
+
+    auto_focus = ("keyence" in config_dict and config_dict["keyence"].get("auto_focus_with_keyence")) or ("photodiode" in config_dict and config_dict["photodiode"].get("auto_focus_with_photodiode"))
+    if auto_focus:
+        settings_list = []
+        for le in config_dict["light_engines"]:
+            # settings_list.append(f"{le}_focus_base") # Don't show on Calibration page
+            settings_list.append(f"{le}_focus_offset")
+        add_to_list(settings_list, GROUP_ACTIVE_OFFSETS)
+
+    if not auto_tip_tilt:
+        add_to_list(["tip", "tilt"], GROUP_NON_ACTIVE_OFFSETS)
+
+    if not auto_focus:
+        add_to_list(["focus"], GROUP_NON_ACTIVE_OFFSETS)
+
+    # Add TTR axis (if hexapod also add pivot)
+    if "hexapod" in config_dict.keys():
+        add_to_list(["rotate", "pivot_x", "pivot_y", "pivot_z"], GROUP_HEXAPOD_PARAMETERS)
     
-def human_to_machine(human_string):
-    # Normalize the input by replacing underscores with spaces
-    normalized = human_string.replace('-', ' ')
-    # Convert to machine-readable string
-    return conversion_dict.get(normalized)
+    if "coord_systems" in config_dict.keys():
+        for light_engine in config_dict.get("light_engines", []):
+            # Add light engine alignment (if xy stages present)
+            add_to_list(
+                [f"{light_engine}_x_alignment", f"{light_engine}_y_alignment"],
+                GROUP_ALIGNMENT_ADJUSTMENTS,
+                subgroup=light_engine.capitalize(),
+            )
+    
+            # Add stitching correction (if xy stages present)
+            for axis in ["x", "y"]:
+                _list = [
+                    f"{light_engine}_x_shift_{axis}",
+                    f"{light_engine}_y_shift_{axis}"
+                ]
+                keyence_dict = config_dict.get("keyence", {})
+                if not(keyence_dict.get("auto_focus_with_keyence", False) and keyence_dict.get("direct_focal_measurement", False)):
+                    _list.append(f"{light_engine}_focus_shift_{axis}")
+                add_to_list(
+                    _list,
+                    GROUP_STITCHING_ADJUSTMENTS,
+                    subgroup=f"{light_engine.capitalize()} (per mm {axis.upper()})",
+                )
+
+    return calibration_data
 
 
-def resolve_machine_name(value):
-    if value in conversion_dict.values():
-        return value
-    machine = human_to_machine(value)
-    if machine is not None:
-        return machine
-    return value
+# Decorator to handle navigation to calibration page
+@blueprint.route("/calibration")
+def index():
+    initialized = printer_server.views.home.print_control.state != "uninitialized"
 
-def machine_to_human(machine_string):
-    # Reverse lookup in the dictionary
-    for human, machine in conversion_dict.items():
-        if machine == machine_string:
-            return human
-    return None
+    return render_template(
+        "calibration.html",
+        initialized=initialized,
+        hostname=Config.HOSTNAME,
+        calibration_data=create_calibration_data(),
+    )
+
+
+def write_to_position_log(message):
+    with open(position_log_file, "a") as f:
+        f.write(
+            "{} {}\n".format(
+                datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), json.dumps(message)
+            )
+        )
+
+
+@socketio.on("set", namespace="/calibration")
+def set(message):
+    register_irradiance_targets()
+    mode = message["mode"]
+    distance = float(message["distance"])
+    parameter = message.get("parameter", None)
+    group = message.get("group", None)
+    last_positions = get_last_calibration_positions_from_logs()
+    machine_name = parameter
+    round_precision = 1
+    if group == GROUP_IRRADIANCE_TARGETS:
+        round_precision = 2
+    if mode == "absolute":
+        last_positions[machine_name] = round(distance, round_precision)
+    elif mode == "relative":
+        last_positions[machine_name] = round(
+            distance + last_positions.get(machine_name, 0.0), round_precision
+        )
+    write_to_position_log(last_positions)
+    socketio.emit("set_done", create_calibration_data(), namespace="/calibration")
+
+
+@socketio.on("goto", namespace="/calibration")
+def goto():
+    from printer_server.hardware_configuration.hardware_configuration import (
+        driver_handles,
+    )
+
+    calibration_positions = get_last_calibration_positions_from_logs()
+
+    focus = calibration_positions.get("focus", 0)
+    tip = calibration_positions.get("tip", 0)
+    tilt = calibration_positions.get("tilt", 0)
+    rotate = calibration_positions.get("rotate", 0)
+    pivot_x = calibration_positions.get("pivot_x", 0)
+    pivot_y = calibration_positions.get("pivot_y", 0)
+    pivot_z = calibration_positions.get("pivot_z", 0)
+
+    focus /= 1000
+    tip /= 1000
+    tilt /= 1000
+    rotate /= 1000
+
+    # set hexapod pivot
+    if "hexapod" in config_dict.keys():
+        # move tt to 0
+        driver_handles.ttr_stage.threadedTTRMove(log, 0, 0, 0)
+
+        x = pivot_x / 1000
+        y = pivot_y / 1000
+        z = pivot_z / 1000
+        driver_handles.hexapod.set_pivot_point(x, y, z)
+
+    # move ttr
+    ttr_threads = driver_handles.ttr_stage.threadedTTRMove(
+        log, tip, tilt, rotate, join=False
+    )
+
+    # move focus (if not dynamic)
+    focus_thread = driver_handles.focus_stage.threadedFocusMove(log, focus, join=False)
+
+    for thread in ttr_threads:
+        if thread is not None:
+            thread.join()
+            if thread.exception is not None:
+                raise thread.exception
+    focus_thread.join()
+    if focus_thread.exception is not None:
+        raise focus_thread.exception
+
+    socketio.emit("goto_done", create_calibration_data(), namespace="/calibration")
+
+
+@blueprint.route("/calibration_prints/<path:filename>")
+def calibration_prints_file(filename):
+    return send_from_directory(CALIBRATION_PRINTS_ROOT, filename)
+
+
+def _latest_mtime_in_dir(root_dir):
+    latest = root_dir.stat().st_mtime
+    for path in root_dir.rglob("*"):
+        try:
+            latest = max(latest, path.stat().st_mtime)
+        except FileNotFoundError:
+            continue
+    return latest
+
+
+def extract_calibration_print_archives():
+    if not CALIBRATION_PRINTS_ROOT.exists():
+        return
+    allowed = config_dict.get("calibration_prints")
+    allowed_set = None
+    if isinstance(allowed, list):
+        allowed_set = {name.strip() for name in allowed if isinstance(name, str)}
+    for zip_path in sorted(CALIBRATION_PRINTS_ROOT.glob("*.zip")):
+        if not zip_path.is_file():
+            continue
+        if allowed_set is not None and zip_path.stem not in allowed_set:
+            continue
+        target_dir = CALIBRATION_PRINTS_ROOT / zip_path.stem
+        try:
+            zip_mtime = zip_path.stat().st_mtime
+        except FileNotFoundError:
+            continue
+
+        if target_dir.exists() and target_dir.is_dir():
+            try:
+                latest_mtime = _latest_mtime_in_dir(target_dir)
+            except FileNotFoundError:
+                latest_mtime = 0
+            if zip_mtime <= latest_mtime:
+                continue
+            shutil.rmtree(target_dir, ignore_errors=True)
+
+        target_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            shutil.unpack_archive(str(zip_path), str(target_dir))
+            log.info("Extracted calibration print archive: %s", zip_path.name)
+        except (shutil.ReadError, ValueError) as ex:
+            log.warning("Failed to extract %s: %s", zip_path.name, ex)
+            shutil.rmtree(target_dir, ignore_errors=True)
+
 
 
 def _safe_calibration_print_path(relative_path):
@@ -238,85 +485,6 @@ def _format_calibration_vars_for_filename(variables):
         joined = joined[:117] + "..."
     return f" ({joined})"
 
-# Create bluprint
-blueprint = Blueprint(
-    "calibration",
-    __name__,
-    url_prefix="/",
-    template_folder="../drivers",
-    static_folder="../drivers",
-)
-
-
-@blueprint.route("/calibration_prints/<path:filename>")
-def calibration_prints_file(filename):
-    return send_from_directory(CALIBRATION_PRINTS_ROOT, filename)
-
-def create_calibration_data():
-    calibration_data = []
-
-    def add_to_list(settings, group):
-        for setting in settings:
-            calibration_data.append(
-                {
-                    "machine_name": setting,
-                    "human_name": machine_to_human(setting),
-                    "group": group,
-                    "value": last_positions.get(setting, 0.0),
-                }
-            )
-
-    register_irradiance_targets()
-    last_positions = get_last_calibration_positions_from_logs()
-    # Use dynamic focus if available
-    if "keyence" in config_dict.keys():
-        keyence_sensors = []
-        for sensor in config_dict["keyence"]["sensors"].keys():
-            setting = f"keyence_{sensor}"
-            if setting not in conversion_dict.values():
-                conversion_dict[f"{sensor.capitalize()} Focus"] = setting
-            keyence_sensors.append(setting)
-        add_to_list(keyence_sensors, GROUP_ACTIVE_OFFSETS)
-    else:
-        add_to_list(["focus"], GROUP_NON_ACTIVE_OFFSETS)
-
-    # Add TTR axis (if hexapod also add pivot)
-    if "hexapod" in config_dict.keys():
-        add_to_list(["tip", "tilt"], GROUP_NON_ACTIVE_OFFSETS)
-        add_to_list(["rotate", "pivot_x", "pivot_y", "pivot_z"], GROUP_HEXAPOD_PARAMETERS)
-    else:
-        add_to_list(["tip", "tilt"], GROUP_NON_ACTIVE_OFFSETS)
-    
-    # Add wintech correction
-    if "wintech" in config_dict.keys():
-        add_to_list(
-            ["x_drift", "y_drift", "xy_shift", "yx_shift", "xx_shift", "yy_shift"],
-            GROUP_ALIGNMENT_ADJUSTMENTS,
-        )
-
-    if "photodiode" in config_dict:
-        for light_engine in config_dict.get("light_engines", []):
-            for wavelength in config_dict.get(light_engine, {}).get("leds_nm", []):
-                add_to_list(
-                    [f"irradiance_target_{light_engine}_{wavelength}"],
-                    GROUP_IRRADIANCE_TARGETS,
-                )
-
-    return calibration_data
-
-
-# Decorator to handle navigation to calibration page
-@blueprint.route("/calibration")
-def index():
-    initialized = printer_server.views.home.print_control.state != "uninitialized"
-
-    return render_template(
-        "calibration.html",
-        initialized=initialized,
-        hostname=Config.HOSTNAME,
-        calibration_data=create_calibration_data(),
-    )
-
 
 @socketio.on("calibration_prints_list", namespace="/calibration")
 def calibration_prints_list():
@@ -420,74 +588,3 @@ def calibration_prints_add_to_queue(message):
             {"category": "warning", "text": str(ex)},
             namespace="/calibration",
         )
-
-@socketio.on("set", namespace="/calibration")
-def set(message):
-    register_irradiance_targets()
-    mode = message["mode"]
-    distance = float(message["distance"])
-    parameter = message.get("parameter", None)
-    group = message.get("group", None)
-    last_positions = get_last_calibration_positions_from_logs()
-    machine_name = resolve_machine_name(parameter)
-    round_precision = 1
-    if group == GROUP_IRRADIANCE_TARGETS:
-        round_precision = 2
-    if mode == "absolute":
-        last_positions[machine_name] = round(distance, round_precision)
-    elif mode == "relative":
-        last_positions[machine_name] = round(
-            distance + last_positions.get(machine_name, 0.0), round_precision
-        )
-    write_to_position_log(last_positions)
-    socketio.emit(
-        "set_done", create_calibration_data(), namespace="/calibration"
-    )
-
-@socketio.on("goto", namespace="/calibration")
-def goto():
-    from printer_server.hardware_configuration.hardware_configuration import driver_handles
-    calibration_positions = get_last_calibration_positions_from_logs()
-
-    focus = calibration_positions.get("focus",0)
-    tip = calibration_positions.get("tip",0)
-    tilt = calibration_positions.get("tilt",0)
-    rotate = calibration_positions.get("rotate",0)
-    pivot_x = calibration_positions.get("pivot_x",0)
-    pivot_y = calibration_positions.get("pivot_y",0)
-    pivot_z = calibration_positions.get("pivot_z",0)
-
-    focus /= 1000
-    tip /= 1000
-    tilt /= 1000
-    rotate /= 1000
-
-
-    # set hexapod pivot
-    if "hexapod" in config_dict.keys():
-        # move tt to 0
-        driver_handles.ttr_stage.threadedTTRMove(log, 0, 0, 0)
-
-        x = pivot_x/1000
-        y = pivot_y/1000
-        z = pivot_z/1000
-        driver_handles.hexapod.set_pivot_point(x,y,z)
-
-    # move ttr
-    ttr_threads = driver_handles.ttr_stage.threadedTTRMove(log, tip, tilt, rotate, join=False)
-
-    # move focus (if not dynamic)
-    focus_thread = driver_handles.focus_stage.threadedFocusMove(log, focus, join=False)
-
-    for thread in ttr_threads:
-        if thread is not None:
-            thread.join()
-            if thread.exception is not None:
-                raise thread.exception
-    focus_thread.join()
-    if focus_thread.exception is not None:
-        raise focus_thread.exception
-
-    socketio.emit(
-        "goto_done", create_calibration_data(), namespace="/calibration"
-    )

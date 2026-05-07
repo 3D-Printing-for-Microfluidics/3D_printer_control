@@ -46,10 +46,24 @@ class TipTilt(USBSerial, TTRStageDriver):
             return pos
 
     def absMoveTTR(self, rad=None, axis=None):
+        rad = round(rad, 4)
         self.move_absolute(axis, rad, fast=True)
+        if axis == "Tip":
+            self.prev_tip_position = rad
+        elif axis == "Tilt":
+            self.prev_tilt_position = rad
+        elif axis == "Rotate":
+            self.prev_rotate_position = rad
 
     def relMoveTTR(self, rad=None, axis=None):
+        rad = round(rad, 4)
         self.move_relative(axis, rad, fast=True)
+        if axis == "Tip" and self.prev_tip_position is not None:
+            self.prev_tip_position += rad
+        elif axis == "Tilt" and self.prev_tilt_position is not None:
+            self.prev_tilt_position += rad
+        elif axis == "Rotate" and self.prev_rotate_position is not None:
+            self.prev_rotate_position += rad
 
     def getTTRLimits(self, axis=None):
         return self.getSoftwareLimits(axis)
@@ -58,10 +72,8 @@ class TipTilt(USBSerial, TTRStageDriver):
         a = self.convertAxis(axis)
         if limits is None:
             limits = self.limits[a]
-        if limits[0] is not None:
-            self.setLowerLimit(limits[0], axis=axis)
-        if limits[1] is not None:
-            self.setUpperLimit(limits[1], axis=axis)
+        self.setLowerLimit(limits[0], axis=axis)
+        self.setUpperLimit(limits[1], axis=axis)
 
     def write_to_disk(self, *args):
         """Write data to disk using the async file handler class.
@@ -163,10 +175,12 @@ class TipTilt(USBSerial, TTRStageDriver):
         return (ll, ul)
 
     def setLowerLimit(self, limit, axis=None):
-        self.log.warn("Setting limits not implemented")
+        if limit is not None:
+            self.log.warn("Setting limits not implemented")
 
     def setUpperLimit(self, limit, axis=None):
-        self.log.warn("Setting limits not implemented")
+        if limit is not None:
+            self.log.warn("Setting limits not implemented")
 
     # returns an int
     def get_acceleration(self, axis):

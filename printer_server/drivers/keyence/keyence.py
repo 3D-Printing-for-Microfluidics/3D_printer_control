@@ -22,9 +22,12 @@ class Keyence(EthernetSerial):
         return data
     
     def read_sensor_at_index(self, index):
-        return float(self.read_all()[index])
+        return float(self.read_all()[index]) # not inverted
 
     def read_sensor(self, sensor):
-        return float(self.read_all()[
+        invert = 1
+        if self.config_dict["sensors"][sensor]["invert_sign"]:
+            invert = -1
+        return invert * float(self.read_all()[
             self.config_dict["sensors"][sensor]["measurement_index"]
         ])

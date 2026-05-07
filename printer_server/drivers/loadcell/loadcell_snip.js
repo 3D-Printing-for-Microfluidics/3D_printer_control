@@ -9,8 +9,28 @@ $(document).ready(function () {
             $(`#counts`).prop('checked', true).closest('label').addClass('active');
         }
     });
+
+    socket.on("loadcell_return_running", function (message) {
+        if(message == true){
+            $(`#loadcell-start`).prop('checked', true).closest('label').addClass('active');
+            $(`#loadcell-stop`).prop('checked', false).closest('label').removeClass('active');
+        }
+        else{
+            $(`#loadcell-start`).prop('checked', false).closest('label').removeClass('active');
+            $(`#loadcell-stop`).prop('checked', true).closest('label').addClass('active');
+        }
+    });
     
     $("#loadcell_graph_mode :input").change(function () {
         socket.emit("loadcell_set_graph_mode", $(this).parent().text());
+    });
+
+    $("#loadcell_run :input").change(function () {
+        var selection = $(this).parent().text().trim();
+        if (selection === "Start") {
+            socket.emit("loadcell_start");
+        } else {
+            socket.emit("loadcell_stop");
+        }
     });
 });

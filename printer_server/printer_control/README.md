@@ -70,7 +70,7 @@ The `PrintControl` class provides the foundation for all printer operations:
 9. **Accelerometer Control** (`accelerometer_control.py`)
    - Monitors vibration
 
-10. **Keyence Control** (`keyence_control.py`)
+10. **Keyence Focus Control** (`keyence_focus_control.py`)
     - Manages distance sensing
     - Switches focus to distance based measurement
     - Implements height logging

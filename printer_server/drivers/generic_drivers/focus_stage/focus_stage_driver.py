@@ -13,6 +13,7 @@ class FocusStageDriver:
         super().__init__()
         self.initialized = None
         self.connected = None
+        self.prev_focus_position = None
 
     def setup_log_file(self, filename):
         log.warning("Function not implemented. Using abstract FocusStageDriver class")
@@ -41,22 +42,22 @@ class FocusStageDriver:
     def getFocusPosition(self, notify=True):
         log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
-    def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        log.warning("Function not implemented. Using abstract FocusStageDriver class")
+    # def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+    #     log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
-    def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
-        log.warning("Function not implemented. Using abstract FocusStageDriver class")
+    # def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+    #     log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def startFocusJog(self, speed=None, acceleration=None):
         log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def stopFocusJog(self):
-        log.warning("Function not implemented. Using abstract FocusStageDriver class")
+        self.prev_focus_position = round(self.getFocusPosition(notify=False), 4)
 
     def getFocusLimits(self):
         log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
-    def setFocusLimits(self, limits):
+    def setFocusLimits(self, limits=None):
         log.warning("Function not implemented. Using abstract FocusStageDriver class")
 
     def initialize_and_positionFocus(self, pos):
@@ -77,9 +78,11 @@ class FocusStageDriver:
         self,
         logger,
         mm,
-        join=True,
+        relative=False, 
         speed=None,
-        acceleration=None
+        acceleration=None,
+        wait_for_settling=True,
+        join=True,
     ):
         """
         Starts threaded movement on focus axis. If any axis is set to none, it will not move.
@@ -87,17 +90,26 @@ class FocusStageDriver:
         """
         thread = None
         if mm is not None:
-            thread = Thread(
-                logger, 
-                name="focus_stage_driver_thread",
-                target=self.absMoveFocus,
-                kwargs={
-                    "mm": mm,
-                    "speed": speed,
-                    "acceleration": acceleration
-                },
-            )
-            thread.start()
+            if relative:
+                current_pos = round(self.prev_focus_position + mm, 4)
+                target = self.relMoveFocus
+            else:
+                current_pos = round(mm, 4)
+                target = self.absMoveFocus
+
+            if current_pos != self.prev_focus_position:
+                thread = Thread(
+                    logger, 
+                    name="focus_stage_driver_thread",
+                    target=target,
+                    kwargs={
+                        "mm": round(mm, 4),
+                        "speed": speed,
+                        "acceleration": acceleration,
+                        "wait_for_settling": wait_for_settling,
+                    },
+                )
+                thread.start()
             if join:
                 if thread is not None:
                     thread.join()

@@ -48,6 +48,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         self.connected = None
         self.axes = config_dict["axes"]
         self.axes_common_names = config_dict["axes_common_names"]
+        self.mirroring = config_dict["mirroring"]
         self.limits = config_dict["limits"]
         self.gateway = PISocket("Hexapod", host=self.config_dict["address"], port=self.config_dict["port"], logger=self.log)
 
@@ -120,13 +121,27 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         # pipython.pidevice.gcserror.GCSError
 
     def getTTRPosition(self, axis=None, notify=True):
-        return self.get_pose(self.convertAxis(axis))
+        return round(self.get_pose(self.convertAxis(axis)), 4)
 
     def absMoveTTR(self, rad=None, axis=None):
+        rad = round(rad, 4)
         self.move_to_angle_axis(axis, rad)
+        if axis == "Tip":
+            self.prev_tip_position = rad
+        elif axis == "Tilt":
+            self.prev_tilt_position = rad
+        elif axis == "Rotate":
+            self.prev_rotate_position = rad
 
     def relMoveTTR(self, rad=None, axis=None):
+        rad = round(rad, 4)
         self.step_axis(self.convertAxis(axis), rad)
+        if axis == "Tip" and self.prev_tip_position is not None:
+            self.prev_tip_position += rad
+        elif axis == "Tilt" and self.prev_tilt_position is not None:
+            self.prev_tilt_position += rad
+        elif axis == "Rotate" and self.prev_rotate_position is not None:
+            self.prev_rotate_position += rad
 
     def getTTRLimits(self, axis=None):
         a = self.convertAxis(axis)
@@ -146,10 +161,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         a = self.convertAxis(axis)
         if limits is None:
             limits = self.limits[a]
-        if limits[0] is not None:
-            self.setLowerLimit(limits[0], axis=a)
-        if limits[1] is not None:
-            self.setUpperLimit(limits[1], axis=a)
+        self.setLowerLimit(limits[0], axis=a)
+        self.setUpperLimit(limits[1], axis=a)
 
     def write_to_disk(self, *args):
         """Write data to disk using the async file handler class.
@@ -209,13 +222,18 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         return 0
 
     def getFocusPosition(self, notify=True):
-        return self.get_pose("Focus")
+        return round(self.get_pose("Focus"), 4)
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
         self.move_to_position_axis("Focus", mm)
+        self.prev_focus_position = mm
 
     def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
         self.step_axis("Focus", mm)
+        if self.prev_focus_position is not None:
+            self.prev_focus_position += mm
 
     def startFocusJog(self, speed=None, acceleration=None):
         self.log.error("Hexapod Jogging not implemented")
@@ -241,10 +259,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         a = self.convertAxis("Focus")
         if limits is None:
             limits = self.limits[a]
-        if limits[0] is not None:
-            self.setLowerLimit(limits[0], axis=a)
-        if limits[1] is not None:
-            self.setUpperLimit(limits[1], axis=a)
+        self.setLowerLimit(limits[0], axis=a)
+        self.setUpperLimit(limits[1], axis=a)
 
     ################################# End parent class functions #######################################
         
@@ -283,6 +299,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             value (float): target position in mm for the given axis
         """
         axis = self.convertAxis(axis)
+        if self.mirroring.get(axis, False):
+            value = -value
         self.log.info("Translating axis %s to %.4f [mm]", axis, value)
         with self.gateway.sendLock:
             self.controller.MOV(axis, value)
@@ -301,6 +319,13 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             if param == None:
                 self.log.warning("parameter provided is None. No motion performed")
                 return
+            
+        if self.mirroring.get("X", False):
+            x = -x
+        if self.mirroring.get("Y", False):
+            y = -y
+        if self.mirroring.get("Z", False):
+            z = -z
 
         self.log.info("Moving to position: (%.4f, %.4f, %.4f) mm", x, y, z)
         with self.gateway.sendLock:
@@ -315,6 +340,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             value (float): target position in radians for the given axis
         """
         axis = self.convertAxis(axis)
+        if self.mirroring.get(axis, False):
+            value = -value
         deg = radians_to_degrees(value)
         self.log.info("Rotating axis %s to %.5f [rad]", axis, value)
         with self.gateway.sendLock:
@@ -334,6 +361,13 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             if type(param) == None:
                 self.log.warning("parameter provided is None. No motion performed")
                 return
+            
+        if self.mirroring.get("U", False):
+            u = -u
+        if self.mirroring.get("V", False):
+            v = -v
+        if self.mirroring.get("W", False):
+            w = -w
             
         u_deg = radians_to_degrees(u)
         v_deg = radians_to_degrees(v)
@@ -359,6 +393,20 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         u_deg = radians_to_degrees(u)
         v_deg = radians_to_degrees(v)
         w_deg = radians_to_degrees(w)
+
+        if self.mirroring.get("X", False):
+            x = -x
+        if self.mirroring.get("Y", False):
+            y = -y
+        if self.mirroring.get("Z", False):
+            z = -z
+        if self.mirroring.get("U", False):
+            u = -u
+        if self.mirroring.get("V", False):
+            v = -v
+        if self.mirroring.get("W", False):
+            w = -w
+
         if not suppress_message:
             self.log.info("Concurrently adjusting the pose to: 'X': %.4f, 'Y': %.4f, 'Z': %.4f, [mm] 'U': %.5f, 'V': %.5f, 'W': %.5f [rad]", x, y, z, u, v, w)
         with self.gateway.sendLock:
@@ -374,6 +422,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             step_size (float): step size of the translation or rotation of the specified axis in microns or milliradians
         """
         axis = self.convertAxis(axis)
+        if self.mirroring.get(axis, False):
+            step_size = -step_size
         if axis == "U" or axis == "V" or axis == "W":
             deg = radians_to_degrees(step_size) 
             self.log.info("Stepping axis %s by %.5f rad", axis, step_size)
@@ -387,7 +437,7 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             self.gateway.waitontarget(self.controller)
 
     def get_pose(self, axis=None):
-        """ Get the current pose (translation and rotation) of the coordiante system corresponding to the current pivot point of the system
+        """ Get the current pose (translation and rotation) of the coordinate system corresponding to the current pivot point of the system
 
         Returns:
             list: values of the translational and rotational axes of the hexapod (converted radians)
@@ -398,17 +448,33 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             positions_raw["U"] = degrees_to_radians(positions_raw["U"])
             positions_raw["V"] = degrees_to_radians(positions_raw["V"])
             positions_raw["W"] = degrees_to_radians(positions_raw["W"])
+
+            if self.mirroring.get("X", False):
+                positions_raw["X"] = -positions_raw["X"]
+            if self.mirroring.get("Y", False):
+                positions_raw["Y"] = -positions_raw["Y"]
+            if self.mirroring.get("Z", False):
+                positions_raw["Z"] = -positions_raw["Z"]
+            if self.mirroring.get("U", False):
+                positions_raw["U"] = -positions_raw["U"]
+            if self.mirroring.get("V", False):
+                positions_raw["V"] = -positions_raw["V"]
+            if self.mirroring.get("W", False):
+                positions_raw["W"] = -positions_raw["W"]
+
             return positions_raw
         else:
             axis = self.convertAxis(axis)
             with self.gateway.sendLock:
                 positions_raw = self.controller.qPOS(axis)
             if axis == "U" or axis == "V" or axis == "W":
-                position = round(degrees_to_radians(positions_raw[axis]),5)
+                position = round(degrees_to_radians(positions_raw[axis]),4)
                 self.log.debug("Get %s pos: %.5f", axis, position)
             else:
                 position = round(positions_raw[axis], 4)
                 self.log.debug("Get %s pos: %.4f", axis, position)
+            if self.mirroring.get(axis, False):
+                position = -position
             return position
 
     def hard_stop(self):
@@ -425,15 +491,22 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             OrderedDict: dictionary containing the axes and values of the pivot point
         """
         with self.gateway.sendLock:
-            return self.controller.qSPI()
+            pivot = self.controller.qSPI()
+            if self.mirroring.get("X", False):
+                pivot["R"] = -pivot["R"]
+            if self.mirroring.get("Y", False):
+                pivot["S"] = -pivot["S"]
+            if self.mirroring.get("Z", False):
+                pivot["T"] = -pivot["T"]
+            return pivot
 
     def set_pivot_point(self, r, s, t):
         """ Set the value of the pivot point about which the rotational commands are executed
 
         Args:
-            r (float): 'R' axis target position (corresponding to the equivalent new coordiante system's 'X' axis)
-            s (float): 'S' axis target position (corresponding to the equivalent new coordiante system's 'Y' axis)
-            t (float): 'T' axis target position (corresponding to the equivalent new coordiante system's 'Z' axis)
+            r (float): 'R' axis target position (corresponding to the equivalent new coordinate system's 'X' axis)
+            s (float): 'S' axis target position (corresponding to the equivalent new coordinate system's 'Y' axis)
+            t (float): 'T' axis target position (corresponding to the equivalent new coordinate system's 'Z' axis)
 
         Returns:
             bool: successful change of pivot point
@@ -450,6 +523,12 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             if axis >= 0.000001:
                 all_rotational_axes_zero = False
         if all_rotational_axes_zero:
+            if self.mirroring.get("X", False):
+                r = -r
+            if self.mirroring.get("Y", False):
+                s = -s
+            if self.mirroring.get("Z", False):
+                t = -t
             self.log.info("Setting pivot point to: %.4f, %.4f, %.4f mm", r, s, t)
             with self.gateway.sendLock:
                 self.controller.SPI({'R': r, 'S': s, 'T': t})
@@ -469,6 +548,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         """
         current_pivot = self.get_pivot_point()
         new_pivot = current_pivot
+        if self.mirroring.get(axis, False):
+            step_size = -step_size
         if (axis == "R"):
             new_pivot["R"] += step_size
 
@@ -486,17 +567,34 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         with self.gateway.sendLock:
             ll = self.controller.qNLM(a)
             ul = self.controller.qPLM(a)
-        return (float(ll[a]), float(ul[a]))
+        if self.mirroring.get(a, False):
+            return (float(-ul[a]), float(-ll[a]))
+        else:
+            return (float(ll[a]), float(ul[a]))
 
     def setLowerLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
         with self.gateway.sendLock:
-            self.controller.NLM({a: limit})
+            if self.mirroring.get(a, False):
+                if limit is None:
+                    limit = -self.controller.qTMX(a)[a]
+                self.controller.PLM({a: -limit})
+            else:
+                if limit is None:
+                    limit = self.controller.qTMN(a)[a]
+                self.controller.NLM({a: limit})
 
     def setUpperLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
         with self.gateway.sendLock:
-            self.controller.PLM({a: limit})
+            if self.mirroring.get(a, False):
+                if limit is None:
+                    limit = -self.controller.qTMN(a)[a]
+                self.controller.NLM({a: -limit})
+            else:
+                if limit is None:
+                    limit = self.controller.qTMX(a)[a]
+                self.controller.PLM({a: limit})
 
     def get_simple_dynamic_range(self, target_axis:str):
         """ Get the range of motion of the requested axis. Due to the complexity of the hexapod joint configuration, dynamic ranges change if 
@@ -528,6 +626,8 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
             # self.log.info("Dynamic range queried for axis %s: %s", target_axis, dynamic_range)
         finally:
             # print(f"request: {request}. range: {dynamic_range}")
+            if self.mirroring.get(target_axis, False):
+                return (-dynamic_range[1], -dynamic_range[0])
             return dynamic_range
 
     def get_compound_dynamic_range(self, target_axes:list, target_pose:list):
@@ -567,6 +667,10 @@ class Hexapod(TTRStageDriver, FocusStageDriver):
         # else:
             # self.log.info("Dynamic range queried for compound pose %s: %s", params_dict, dynamic_range)
         finally:
+            if dynamic_range is not None:
+                for axis in target_axes:
+                    if self.mirroring.get(axis, False):
+                        dynamic_range[axis] = (-dynamic_range[axis][1], -dynamic_range[axis][0])
             return dynamic_range
 
 

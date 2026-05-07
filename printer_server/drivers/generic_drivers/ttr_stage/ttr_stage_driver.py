@@ -10,6 +10,9 @@ class TTRStageDriver:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         super().__init__()
         self.initialized = None
+        self.prev_tip_position = None
+        self.prev_tilt_position = None
+        self.prev_rotate_position = None
 
     def connect(self):
         log.warning("Function not implemented. Using abstract TTRStageDriver class")
@@ -23,16 +26,16 @@ class TTRStageDriver:
     def getTTRPosition(self, axis=None, notify=True):
         log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
-    def absMoveTTR(self, rad=None, axis=None):
-        log.warning("Function not implemented. Using abstract TTRStageDriver class")
+    # def absMoveTTR(self, rad=None, axis=None):
+    #     log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
-    def relMoveTTR(self, rad=None, axis=None):
-        log.warning("Function not implemented. Using abstract TTRStageDriver class")
+    # def relMoveTTR(self, rad=None, axis=None):
+    #     log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
     def getTTRLimits(self, axis=None):
         log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
-    def setTTRLimits(self, limits, axis=None):
+    def setTTRLimits(self, limits=None, axis=None):
         log.warning("Function not implemented. Using abstract TTRStageDriver class")
 
     def initialize_and_positionTTR(self, tip, tilt, rotate):
@@ -61,7 +64,8 @@ class TTRStageDriver:
         tip,
         tilt,
         rotate,
-        join=True
+        join=True,
+        relative=False,
     ):
         """
         Starts multithreaded movement on both of the x/y axes. If any axis is set to none, it will not move.
@@ -69,38 +73,62 @@ class TTRStageDriver:
         """
         threads = [None, None, None]
         if tip is not None and "Tip" in self.axes_common_names:
-            threads[0] = Thread(
-                logger, 
-                name="ttr_stage_driver_tip_thread",
-                target=self.absMoveTTR,
-                kwargs={
-                    "rad": tip,
-                    "axis": "Tip",
-                },
-            )
-            threads[0].start()
+            if relative:
+                current = round(self.prev_tip_position + tip, 4)
+                target = self.relMoveTTR
+            else:
+                current = round(tip, 4) 
+                target = self.absMoveTTR
+
+            if current != self.prev_tip_position:
+                threads[0] = Thread(
+                    logger, 
+                    name="ttr_stage_driver_tip_thread",
+                    target=target,
+                    kwargs={
+                        "rad": round(tip, 4),
+                        "axis": "Tip",
+                    },
+                )
+                threads[0].start()
         if tilt is not None and "Tilt" in self.axes_common_names:
-            threads[1] = Thread(
-                logger, 
-                name="ttr_stage_driver_tilt_thread",
-                target=self.absMoveTTR,
-                kwargs={
-                    "rad": tilt,
-                    "axis": "Tilt",
-                },
-            )
-            threads[1].start()
+            if relative:
+                current = round(self.prev_tilt_position + tilt, 4)
+                target = self.relMoveTTR
+            else:
+                current = round(tilt, 4) 
+                target = self.absMoveTTR
+
+            if current != self.prev_tilt_position:
+                threads[1] = Thread(
+                    logger, 
+                    name="ttr_stage_driver_tilt_thread",
+                    target=target,
+                    kwargs={
+                        "rad": round(tilt, 4),
+                        "axis": "Tilt",
+                    },
+                )
+                threads[1].start()
         if rotate is not None and "Rotate" in self.axes_common_names:
-            threads[2] = Thread(
-                logger, 
-                name="ttr_stage_driver_rotate_thread",
-                target=self.absMoveTTR,
-                kwargs={
-                    "rad": rotate,
-                    "axis": "Rotate",
-                },
-            )
-            threads[2].start()
+            if relative:
+                current = round(self.prev_rotate_position + rotate, 4)
+                target = self.relMoveTTR
+            else:
+                current = round(rotate, 4)
+                target = self.absMoveTTR
+
+            if current != self.prev_rotate_position:
+                threads[2] = Thread(
+                    logger, 
+                    name="ttr_stage_driver_rotate_thread",
+                    target=target,
+                    kwargs={
+                        "rad": round(rotate, 4),
+                        "axis": "Rotate",
+                    },
+                )
+                threads[2].start()
         if join:
             for thread in threads:
                 if thread is not None:

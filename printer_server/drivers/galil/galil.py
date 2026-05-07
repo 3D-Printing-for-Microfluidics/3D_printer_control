@@ -47,6 +47,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.ctspmm = config_dict["axes_ctspmm"]
         self.default_speed = config_dict["axes_speed"]
         self.default_acceleration = config_dict["axes_acceleration"]
+        self.mirroring = config_dict["mirroring"]
         self.limits = config_dict["limits"]
         self.calibration_limits = config_dict["calibration_limits"]
         self.calibration_position = config_dict["calibration_position"]
@@ -128,18 +129,6 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def initialize(self):
         for axis in self.axes:
             self.motorOn(axis)
-
-    def goToBPcalibration(self):
-        self.absMove(mm=self.calibration_position, axis="Build Platform")
-        return self.getPosition(in_mm=True)
-
-    def goToBPtop(self):
-        self.absMove(mm=self.top_position, axis="Build Platform")
-        return self.getPosition(in_mm=True)
-
-    def goToBPbottom(self):
-        self.absMove(mm=self.bottom_position, axis="Build Platform")
-        return self.getPosition(in_mm=True)
 
     def connect(self):
         """Find the first Galil controller and connect to it."""
@@ -254,15 +243,29 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         a = self.convertAxis(axis)
         ll = self.cntsToMm(int(self.send(f"BL{a}=?")), axis=axis)
         ul = self.cntsToMm(int(self.send(f"FL{a}=?")), axis=axis)
+        if self.mirroring[a]:
+            return (-ul, -ll)
         return (ll, ul)
     
     def setLowerLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
-        self.send(f"BL{a}={limit * self.ctspmm[a]}")
+        if limit is None:
+            limit = -self.max_travel_mm[a]
+        limit = limit * self.ctspmm[a]
+        if self.mirroring[a]:
+            self.send(f"FL{a}={-limit}")
+        else:
+            self.send(f"BL{a}={limit}")
 
     def setUpperLimit(self, limit, axis=None):
         a = self.convertAxis(axis)
-        self.send(f"FL{a}={limit * self.ctspmm[a]}")
+        if limit is None:
+            limit = self.max_travel_mm[a]
+        limit = limit * self.ctspmm[a]
+        if self.mirroring[a]:
+            self.send(f"BL{a}={-limit}")
+        else:
+            self.send(f"FL{a}={limit}")
 
     def checkLimits(self, axis=None):
         """Return a tuple the state of the limit switches for the
@@ -271,24 +274,23 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         a = self.convertAxis(axis)
         lf = self.send(f"MG _LF{a}", notify=False)
         lr = self.send(f"MG _LR{a}", notify=False)
+        if self.mirroring[a]:
+            return bool(lr == "0.0000"), bool(lf == "0.0000")
         return bool(lf == "0.0000"), bool(lr == "0.0000")
-
-    # def getPosition(self, in_mm, axis=None, notify=True):
-    #     """Return the position of the specified encoder."""
-    #     pos = self.send(f"TP{self.convertAxis(axis)}", notify=notify)
-    #     if not in_mm:
-    #         return int(pos)
-    #     else:
-    #         return self.cntsToMm(int(pos), axis=axis)
         
     def getPosition(self, in_mm, axis=None, notify=True):
         """Return the position of the specified encoder."""
         if type(axis) is not list:
-            pos = self.send(f"TP{self.convertAxis(axis)}", notify=notify)
+            a = self.convertAxis(axis)
+            pos = self.send(f"TP{a}", notify=notify)
             if not in_mm:
+                if self.mirroring[a]:
+                    return -int(pos)
                 return int(pos)
             else:
-                return self.cntsToMm(int(pos), axis=axis)
+                if self.mirroring[a]:
+                    return round(self.cntsToMm(-int(pos), axis=axis), 4)
+                return round(self.cntsToMm(int(pos), axis=axis), 4)
         else:
             parsed_axis = ""
             for a in axis:
@@ -299,9 +301,15 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             ret_dict = {}
             for i, a in enumerate(axis):
                 if not in_mm:
-                    ret_dict[a] = int(pos[i])
+                    if self.mirroring[self.convertAxis(a)]:
+                        ret_dict[a] = -int(pos[i])
+                    else:
+                        ret_dict[a] = int(pos[i])
                 else:
-                    ret_dict[a] = self.cntsToMm(int(pos[i]), axis=a)
+                    if self.mirroring[self.convertAxis(a)]:
+                        ret_dict[a] = round(self.cntsToMm(-int(pos[i]), axis=a), 4)
+                    else:
+                        ret_dict[a] = round(self.cntsToMm(int(pos[i]), axis=a), 4)
             return ret_dict
 
     def motorOn(self, axis=None):
@@ -351,7 +359,12 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             a = self.convertAxis()
             self.setSpeed(10)
             self.motorOn()
-            self.startJog(speed=-15, acceleration=50)
+            self.setLowerLimit(None)
+            self.setUpperLimit(None)
+            if self.mirroring[a]:
+                self.startJog(speed=15, acceleration=50)
+            else:
+                self.startJog(speed=-15, acceleration=50)
             self.motionPlanningComplete(axis=a)
             self.stopJog()
             self.motorOn()
@@ -364,10 +377,8 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
 
         elif "DMC4040" in self.controller_name:
             self.log.info("Start homing...")
-            self.send("XQ #HMA,0")
-            self.send("XQ #HMB,1")
-            self.send("XQ #HMC,2")
-            self.send("XQ #HMD,3")
+            for i, a in enumerate(self.axes):
+                self.send(f"XQ #HM{a},{i}")
 
             time.sleep(10)
 
@@ -382,6 +393,18 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
 
     ################################# Parent class functions #######################################
             
+    def goToBPcalibration(self):
+        self.absMove(mm=self.calibration_position, axis="Build Platform")
+        return self.getPosition(in_mm=True)
+
+    def goToBPtop(self):
+        self.absMove(mm=self.top_position, axis="Build Platform")
+        return self.getPosition(in_mm=True)
+
+    def goToBPbottom(self):
+        self.absMove(mm=self.bottom_position, axis="Build Platform")
+        return self.getPosition(in_mm=True)
+
     def getDefaultBPSpeed(self):
         return self.getDefaultSpeed("Build Platform")
 
@@ -403,17 +426,30 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
     def getXYPosition(self, axis=None, notify=True):
         return self.getPosition(in_mm=True, axis=axis)
 
-    def absMoveXY( self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+    def absMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+        mm = round(mm, 4)
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
+        if axis == "X":
+            self.prev_x_position = mm
+        elif axis == "Y":
+            self.prev_y_position = mm
 
     def relMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
+        mm = round(mm, 4)
         self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
+        if axis == "X":
+            if self.prev_x_position is not None:
+                self.prev_x_position += mm
+        elif axis == "Y":
+            if self.prev_y_position is not None:
+                self.prev_y_position += mm
 
     def startXYJog(self, speed=None, acceleration=None, axis=None):
         self.startJog(speed=speed, acceleration=acceleration, axis=axis)
 
     def stopXYJog(self, axis=None):
         self.stopJog(axis=axis)
+        super().stopXYJog(axis=axis)
 
     def getXYLimits(self, axis=None):
         a = self.convertAxis(axis)
@@ -432,27 +468,33 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         a = self.convertAxis(axis)
         if limits is None:
             limits = self.limits[a]
-        if limits[0] is not None:
-            self.setLowerLimit(limits[0], axis=a)
-        if limits[1] is not None:
-            self.setUpperLimit(limits[1], axis=a)
+        self.setLowerLimit(limits[0], axis=a)
+        self.setUpperLimit(limits[1], axis=a)
 
     def getFocusPosition(self, notify=True):
         return self.getPosition(in_mm=True, axis="Focus")
 
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
         if mm < self.getPosition(in_mm=True, axis="Focus"):
             self.absMove(mm=mm-0.25, speed=speed, acceleration=acceleration, wait_for_settling=False, axis="Focus")
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
+        self.prev_focus_position = mm
 
     def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
+        if mm < 0:
+            self.relMove(mm=mm-0.25, speed=speed, acceleration=acceleration, wait_for_settling=False, axis="Focus")
         self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
+        if self.prev_focus_position is not None:
+            self.prev_focus_position += mm
 
     def startFocusJog(self, speed=None, acceleration=None):
         self.startJog(speed=speed, acceleration=acceleration, axis="Focus")
 
     def stopFocusJog(self):
         self.stopJog(axis="Focus")
+        super().stopFocusJog()
 
     def getFocusLimits(self):
         a = self.convertAxis("Focus")
@@ -471,25 +513,29 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         a = self.convertAxis("Focus")
         if limits is None:
             limits = self.limits[a]
-        if limits[0] is not None:
-            self.setLowerLimit(limits[0], axis=a)
-        if limits[1] is not None:
-            self.setUpperLimit(limits[1], axis=a)
+        self.setLowerLimit(limits[0], axis=a)
+        self.setUpperLimit(limits[1], axis=a)
 
     def getBPPosition(self, notify=True):
         return self.getPosition(in_mm=True, axis="Build Platform")
 
     def absMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Build Platform")
+        self.prev_bp_position = mm
 
     def relMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
+        mm = round(mm, 4)
         self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Build Platform")
+        if self.prev_bp_position is not None:
+            self.prev_bp_position += mm
 
     def startBPJog(self, speed=None, acceleration=None):
         self.startJog(speed=speed, acceleration=acceleration, axis="Build Platform")
 
     def stopBPJog(self):
         self.stopJog(axis="Build Platform")
+        super().stopBPJog()
 
     def getBPLimits(self):
         a = self.convertAxis("Build Platform")
@@ -510,10 +556,8 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             limits = self.limits[a]
         elif limits == "calibration":
             limits = self.calibration_limits[a]
-        if limits[0] is not None:
-            self.setLowerLimit(limits[0], axis=a)
-        if limits[1] is not None:
-            self.setUpperLimit(limits[1], axis=a)
+        self.setLowerLimit(limits[0], axis=a)
+        self.setUpperLimit(limits[1], axis=a)
 
     ################################# End parent class functions #######################################
 
@@ -538,7 +582,10 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
         if cnts is not None:
             start_position = self.getPosition(in_mm=False, axis=a)
             self.log.info("Move axis %s to relative position %.4f", a, self.cntsToMm(cnts, axis=a))
-            self.send(f"PR{a}={cnts}")
+            if self.mirroring[a]:
+                self.send(f"PR{a}={-cnts}")
+            else:
+                self.send(f"PR{a}={cnts}")
             self.send(f"BG{a}")
             self.logging_move_status[a] = 0
             self.waitForMotionComplete(start_position + cnts, wait_for_settling=wait_for_settling, axis=a)
@@ -581,7 +628,10 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             cnts = self.mmToCnts(mm, axis=a)
         if cnts is not None:
             self.log.info("Move axis %s to absolute position %.4f", a, self.cntsToMm(cnts, axis=a))
-            self.send(f"PA{a}={cnts}")
+            if self.mirroring[a]:
+                self.send(f"PA{a}={-cnts}")
+            else:
+                self.send(f"PA{a}={cnts}")
             self.send(f"BG{a}")
             self.logging_move_status[a] = 0
             self.waitForMotionComplete(cnts, wait_for_settling=wait_for_settling, axis=a)
@@ -605,7 +655,10 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
 
         self.setAcceleration(acceleration)
         self.log.info("Start jog on axis %s at speed %s mm/sec", a, speed)
-        self.send(f"JG{a}={speed * self.ctspmm[a]}")
+        if self.mirroring[a]:
+            self.send(f"JG{a}={-speed * self.ctspmm[a]}")
+        else:
+            self.send(f"JG{a}={speed * self.ctspmm[a]}")
         self.send(f"BG{a}")
         self.logging_move_status[a] = 0
 

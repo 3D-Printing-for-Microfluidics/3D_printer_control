@@ -183,8 +183,7 @@ Note: A `"Comment"` tag can be put into any object and it will be ignored.
                 "Layer exposure time (ms)": "${base_exposure_ms}",
                 "Light engine": "visitech",
                 "Light engine wavelength (nm)": 365,
-                "Light engine power setting": 100,
-                "Do grayscale correction": true
+                "Light engine power setting": 100
                 "Relative focus position (um)": 0,
                 "Wait before exposure (ms)": 0,
                 "Wait after exposure (ms)": "${post_wait_ms}"
@@ -493,7 +492,7 @@ Each exposure can target a specific engine and wavelength:
         }
     ]
 
-### X/Y stages, stitching, and grayscale correction
+### X/Y stages, stitching, grayscale correction, and mirroring
 Use x/y offsets per exposure to enable stitching or scanning, and enable grayscale correction per image:
 
     "Image settings list": [
@@ -501,7 +500,9 @@ Use x/y offsets per exposure to enable stitching or scanning, and enable graysca
             "Image file": "0400.png",
             "Image x offset (um)": 0,
             "Image y offset (um)": 0,
-            "Do grayscale correction": true
+            "Do grayscale correction": true,
+            "Mirror image short axis": false,
+            "Mirror image long axis": false
         },
         {
             "Image file": "0400.png",

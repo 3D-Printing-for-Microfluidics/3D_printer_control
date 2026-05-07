@@ -61,11 +61,13 @@ class BPControl(PrintControl):
 
             time.sleep(initial_wait)
             self.write_to_event_log("Start Up Movement")
-            self.bp_stage.absMoveBP(
-                mm=self.print_position - up_distance,
+            self.bp_stage.threadedBPMove(
+                logger=log,
+                mm=self.print_position + up_distance,
                 speed=up_speed,
                 acceleration=up_acceleration,
-                wait_for_settling=False
+                wait_for_settling=False,
+                join=True
             )
             self.write_to_event_log("Finish Up Movement")
         except Exception as ex:
@@ -82,10 +84,12 @@ class BPControl(PrintControl):
 
             time.sleep(up_wait)
             self.write_to_event_log("Start Down Movement")
-            self.bp_stage.absMoveBP(
+            self.bp_stage.threadedBPMove(
+                logger=log,
                 mm=self.print_position,
                 speed=down_speed,
                 acceleration=down_acceleration,
+                join=True
             )
             self.write_to_event_log("Finish Down Movement")
         except Exception as ex:
@@ -105,7 +109,7 @@ class BPControl(PrintControl):
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
             self.move_build_platform_up(position_settings)
             super().move_build_platform(position_settings, layer)
-            self.print_position -= layer_thickness
+            self.print_position += layer_thickness
             self.move_build_platform_down(position_settings)
 
             force_squeeze_settings = self.get_force_squeeze_settings(position_settings)
@@ -136,9 +140,11 @@ class BPControl(PrintControl):
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             try:
                 self.bp_stage.logging_start()
-                self.bp_stage.absMoveBP(mm=self.bp_stage.bottom_position)
-                # self.bp_stage.absMoveBP(mm=self.bp_stage.bottom_position-12)
-                # self.bp_stage.absMoveBP(mm=self.bp_stage.bottom_position, speed=0.5)
+                self.bp_stage.threadedBPMove(
+                    logger=log,
+                    mm=self.bp_stage.bottom_position,
+                    join=True
+                )
             except Exception as ex:
                 log.critical("Unable to move build platform stage (%s)", ex, exc_info=True)
                 self.failed_hardware["Build Platform Stage"] = self.bp_stage
@@ -156,6 +162,22 @@ class BPControl(PrintControl):
         super().planarization_step_2()
 
     
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+        try:
+            self.bp_stage.logging_stop()
+            self.bp_stage.threadedBPMove(
+                logger=log,
+                mm=self.bp_stage.top_position,
+                join=True
+            )
+        except Exception as ex:
+            log.critical("Unable to move build platform stage (%s)", ex, exc_info=True)
+            self.failed_hardware["Build Platform Stage"] = self.bp_stage
+            raise PrintingException()
+        super().cancel_planarization()
+
+    
     def resume(self):
         """Resume a paused print."""
         if self.state != "paused":
@@ -171,11 +193,17 @@ class BPControl(PrintControl):
             self.print_position = self.paused_position
             self.paused_position = None
 
-            self.bp_stage.absMoveBP(mm=self.print_position-layer_thickness)
-            self.bp_stage.absMoveBP(
+            self.bp_stage.threadedBPMove(
+                logger=log,
+                mm=self.print_position+layer_thickness,
+                join=True
+            )
+            self.bp_stage.threadedBPMove(
+                logger=log,
                 mm=self.print_position,
                 speed=down_speed,
                 acceleration=down_acceleration,
+                join=True
             )
         except Exception as ex:
             log.critical("Unable to move build platform stage (%s)", ex, exc_info=True)
@@ -187,7 +215,11 @@ class BPControl(PrintControl):
         # move build platform to the starting position if this is the first layer
         if self.next_layer == 0:
             try:
-                self.bp_stage.absMoveBP(mm=self.planarized_position)
+                self.bp_stage.threadedBPMove(
+                    logger=log,
+                    mm=self.planarized_position,
+                    join=True
+                )
             except Exception as ex:
                 log.critical("Unable to move build platform stage (%s)", ex, exc_info=True)
                 self.failed_hardware["Build Platform Stage"] = self.bp_stage
@@ -203,8 +235,7 @@ class BPControl(PrintControl):
                 log.critical("Unable to communicate with build platform stage (%s)", ex, exc_info=True)
                 self.failed_hardware["Build Platform Stage"] = self.bp_stage
                 raise PrintingException()
-            
-        super().post_print_tasks()
+
         try:
             defaults_layer_settings = self.print_settings.get("Default layer settings")
             default_position_settings = defaults_layer_settings.get("Position settings")
@@ -215,6 +246,8 @@ class BPControl(PrintControl):
 
         bp_pos = self.bp_stage.top_position
         self.bp_thread = self.bp_stage.threadedBPMove(log, bp_pos, join=False, speed=None, acceleration=None)
+            
+        super().post_print_tasks()
               
     def post_print_joins(self):
         if self.bp_thread is not None:

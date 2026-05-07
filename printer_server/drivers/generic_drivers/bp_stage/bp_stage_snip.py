@@ -1,33 +1,21 @@
 import logging
 from printer_server.extensions import socketio
-from printer_server.hardware_configuration.hardware_configuration import driver_handles, config_dict
+from printer_server.hardware_configuration.hardware_configuration import (
+    driver_handles,
+    config_dict,
+)
 import printer_server.views.manual_controls
 
 import time
 
 bp_stage = driver_handles.bp_stage
-if "coord_systems" in config_dict:
-    from printer_server.drivers.coord_systems.coord_systems_snip import coord_systems_control
-else:
-    coord_systems_control = None
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 start_time = 0
 stop_time = 0
-@socketio.on("bp_set_coodinate_system", namespace="/manual")
-def bp_set_coodinate_system(message):
-    "Set coordinate system offsets"
-    try:
-        global coord_system
-        coord_system = config_dict["coord_systems"][message]
-        socketio.emit(
-            "bp_done", bp_get_position(notify=False), namespace="/manual"
-        )
-    except Exception as ex:
-        log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
-        socketio.emit("hardware_failure", "bp", namespace="/manual")
+
 
 @socketio.on("bp_go_to_top", namespace="/manual")
 def bp_go_to_top():
@@ -37,12 +25,11 @@ def bp_go_to_top():
         start_time = time.time()
         bp_stage.goToBPtop()
         stop_time = time.time()
-        socketio.emit(
-            "bp_done", bp_get_position(notify=False), namespace="/manual"
-        )
+        socketio.emit("bp_done", bp_get_position(notify=False), namespace="/manual")
     except Exception as ex:
         log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "bp", namespace="/manual")
+
 
 @socketio.on("bp_home", namespace="/manual")
 def bp_home():
@@ -52,12 +39,11 @@ def bp_home():
         start_time = time.time()
         bp_stage.home()
         stop_time = time.time()
-        socketio.emit(
-            "bp_done", bp_get_position(notify=False), namespace="/manual"
-        )
+        socketio.emit("bp_done", bp_get_position(notify=False), namespace="/manual")
     except Exception as ex:
         log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "bp", namespace="/manual")
+
 
 @socketio.on("bp_move", namespace="/manual")
 def bp_move(message):
@@ -68,24 +54,36 @@ def bp_move(message):
         distance = float(message["distance"]) / 1000
         speed = message.get("speed", bp_stage.getDefaultBPSpeed())
         acceleration = message.get("acceleration", bp_stage.getDefaultBPAcceleration())
-        wait_for_settling=message.get("wait_for_settling", True)
-        return_timing=message.get("return_timing",False)
+        wait_for_settling = message.get("wait_for_settling", True)
+        return_timing = message.get("return_timing", False)
         if return_timing:
             bp_stage.logging_start()
         start_time = time.time()
         if mode == "absolute":
-            if coord_systems_control is not None:
-                coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
-                distance += coord_system["Build Platform"]
-                
-            bp_stage.absMoveBP(mm=distance, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling)
+            bp_stage.threadedBPMove(
+                log,
+                distance,
+                speed=speed,
+                acceleration=acceleration,
+                wait_for_settling=wait_for_settling,
+                relative=False,
+            )
         elif mode == "relative":
-            bp_stage.relMoveBP(mm=distance, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling)
+            bp_stage.threadedBPMove(
+                log,
+                distance,
+                speed=speed,
+                acceleration=acceleration,
+                wait_for_settling=wait_for_settling,
+                relative=True,
+            )
         stop_time = time.time()
         if return_timing:
             bp_stage.logging_stop()
         socketio.emit(
-            "bp_done", bp_get_position(return_timing=return_timing, notify=False), namespace="/manual"
+            "bp_done",
+            bp_get_position(return_timing=return_timing, notify=False),
+            namespace="/manual",
         )
     except Exception as ex:
         log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
@@ -112,9 +110,7 @@ def bp_stop_jog():
         global stop_time
         bp_stage.stopBPJog()
         stop_time = time.time()
-        socketio.emit(
-            "bp_done", bp_get_position(notify=False), namespace="/manual"
-        )
+        socketio.emit("bp_done", bp_get_position(notify=False), namespace="/manual")
     except Exception as ex:
         log.warn("BP stage manual control failed (%s)", ex, exc_info=True)
         socketio.emit("hardware_failure", "bp", namespace="/manual")
@@ -126,12 +122,9 @@ def bp_get_position(return_timing=False, notify=True):
     try:
         position = bp_stage.getBPPosition()
         limits = bp_stage.getBPLimits()
-        if coord_systems_control is not None:
-            coord_system_name, coord_system = coord_systems_control.get_coodinate_system()
-            position -= coord_system["Build Platform"]
         ret_dict = {
-            "position":f"{position*1000:.1f}",
-            "limits": f"{limits[0]*1000:.1f}, {limits[1]*1000:.1f}"
+            "position": f"{position*1000:.1f}",
+            "limits": f"{limits[0]*1000:.1f}, {limits[1]*1000:.1f}",
         }
         if return_timing:
             times, positions = bp_stage.get_logging_results()

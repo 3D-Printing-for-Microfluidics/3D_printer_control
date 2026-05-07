@@ -92,6 +92,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
         self.dual_led = config_dict["dual_led"]
         self.leds = config_dict["leds_nm"]
         self.suppress_ocp_error = False
+        self.hdmi_reset = False
         self.hdmi_output = config_dict.get("hdmi_output", 1)
         self.hdmi_reset_script = config_dict.get(
             "hdmi_reset_script",
@@ -431,6 +432,17 @@ class Visitech(EthernetSerial, LightEngineDriver):
         """
         return self.send("SET SEQ PAUSE")
 
+    def set_short_axis_flip(self, enable):
+        """
+        Flip the image on the short axis. This is the horizontal axis for
+        the Visitech.
+
+        Return type +OK
+        """
+        cmd = "SET SHORT AXIS IMAGE FLIP"
+        cmd += " 1" if enable else " 0"
+        return self.send(cmd)
+
     def get_dmd_status(self):
         """
         Get overview of DMD states. Such as sequencer running state.
@@ -481,6 +493,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
                 capture_output=True,
                 text=True,
             )
+            self.hdmi_reset = True
             return True
         except (OSError, subprocess.CalledProcessError) as ex:
             self.log.warning("Failed to reset HDMI: %s", ex)

@@ -113,6 +113,9 @@ class PrintControl:
         self.image = None
         self.planarized_position = None
         self.focus = None
+        self.tip = None
+        self.tilt = None
+        self.rotate = None
         self.print_position = None
         self.print_settings = None
         self.exposure_time_ms = None
@@ -196,17 +199,38 @@ class PrintControl:
         os.rename(zipped_job_file, self.print_history / Path(job.zip_filename))
 
         # save job to Print History table in database
+        design_metadata = self._get_design_metadata()
         print_history_entry = PrintRecord(
             original_filename=job.original_filename,
             upload_time=job.upload_time,
             upload_ip=job.upload_ip,
             start_time=datetime.now(),
             start_ip=request.remote_addr,
+            **design_metadata,
         )
         print_history_entry.save(commit=False)
 
         # tell frontend to remove the job from the table and delete it from the database
         self.delete_job({"job": job_id}, delete_on_disk=False)
+
+    def _get_design_metadata(self):
+        try:
+            json_path = next(self.current_job.rglob("*.json"))
+            print_settings = read_json(json_path)
+        except (StopIteration, FileNotFoundError, json.JSONDecodeError, OSError) as ex:
+            log.info("Failed to read design metadata: %s", ex)
+            return {}
+
+        design = print_settings.get("Design") or {}
+        return {
+            "design_user": design.get("User"),
+            "design_purpose": design.get("Purpose"),
+            "design_description": design.get("Description"),
+            "design_resin": design.get("Resin"),
+            "design_printer": design.get("3D Printer"),
+            "design_slicer": design.get("Slicer"),
+            "design_slice_date": design.get("Date"),
+        }
 
     def create_logs(self):
         # create logs and overwrite any pre-existing data
@@ -302,6 +326,172 @@ class PrintControl:
         for i, layer in enumerate(self.layer_map):
             count += self.exposures_in_layer(layer)
         return count
+    
+    def _rotate_offsets(self, x_offset, y_offset, orientation):
+        if orientation == "X":
+            return x_offset, y_offset
+        return -y_offset, x_offset
+
+    def _rotate_offsets_inverse(self, x_offset, y_offset, orientation):
+        if orientation == "X":
+            return x_offset, y_offset
+        return y_offset, -x_offset
+    
+    def xyf_adjustments_from_coord_system(self, coord_system_name, x, y, f, light_engine=None):
+        '''
+        Adjusts the x, y, and f offsets based on the coordinate system. This includes:
+        1. Adjusting for alignment and stitching adjustments
+        2. Rotating the offsets based on the orientation of the light engine
+        3. Adding the coordinate system offsets
+
+        Note: Focus adjustments based on stitching are only applied if direct focal measurements 
+        are not available from the Keyence sensor, as determined by the config. This is because 
+        if direct focal measurements are available, they should be more accurate than the stitching-based 
+        adjustments.
+        '''
+
+        # validate coord_system_name
+        if coord_system_name not in self.coord_systems:
+            log.error("Invalid coordinate system name: '%s'", coord_system_name)
+            return x, y, f
+        
+        direct_focus = "keyence" in config_dict.keys() and config_dict.get("keyence", {}).get("direct_focal_measurement", False)
+
+        # adjust light engine coordinate system using le adjustments and stitching
+        if coord_system_name in config_dict["light_engines"] or (direct_focus and coord_system_name == f"keyence_{light_engine}"):
+            calibration_positions = get_last_calibration_positions_from_logs()
+            tx = calibration_positions.get(f"{light_engine}_x_alignment", 0) / 1000
+            ty = calibration_positions.get(f"{light_engine}_y_alignment", 0) / 1000
+            a = calibration_positions.get(f"{light_engine}_x_shift_x", 0) / 1000
+            b = calibration_positions.get(f"{light_engine}_x_shift_y", 0) / 1000
+            c = calibration_positions.get(f"{light_engine}_y_shift_x", 0) / 1000
+            d = calibration_positions.get(f"{light_engine}_y_shift_y", 0) / 1000
+            p = calibration_positions.get(f"{light_engine}_focus_shift_x", 0) / 1000
+            q = calibration_positions.get(f"{light_engine}_focus_shift_y", 0) / 1000
+
+            _x = (1+a)*x + b*y + tx
+            _y = c*x + (1+d)*y + ty
+
+            # only use focus adjustments if direct measurements are not available
+            if "keyence" not in config_dict.keys() or not config_dict.get("keyence", {}).get("direct_focal_measurement", True):
+                _f = f + p*x + q*y
+            else:
+                _f = f
+        else:
+            _x = x
+            _y = y
+            _f = f
+
+        _x, _y = self._rotate_offsets(
+            _x, 
+            _y, 
+            config_dict[light_engine].get("orientation", "X"),
+        )
+
+        _x = _x + self.coord_systems[coord_system_name]["X"]
+        _y = _y + self.coord_systems[coord_system_name]["Y"]
+        _f = _f + self.coord_systems[coord_system_name].get("Focus", 0)
+
+        return _x, _y, _f
+
+    def xyf_adjustments_to_coord_system(self, coord_system_name, x, y, f, light_engine=None):
+        '''
+        Adjusts the x, y, and f offsets based on the coordinate system. This includes:
+        1. Subtracting the coordinate system offsets
+        2. Unrotating the offsets based on the orientation of the light engine
+        3. Removing alignment and stitching adjustments
+        '''
+
+        # validate coord_system_name
+        if coord_system_name not in self.coord_systems:
+            log.error("Invalid coordinate system name: '%s'", coord_system_name)
+            return x, y, f
+        
+        # transform offsets based on coordinate system
+        _x = x - self.coord_systems[coord_system_name]["X"]
+        _y = y - self.coord_systems[coord_system_name]["Y"]
+        _f = f - self.coord_systems[coord_system_name].get("Focus", 0)
+
+        _x, _y = self._rotate_offsets_inverse(
+            _x, 
+            _y, 
+            config_dict[light_engine].get("orientation", "X"),
+        )
+
+        # if using direct focus, we also want to apply to f"keyence_{light_engine}" coord system
+        direct_focus = "keyence" in config_dict.keys() and config_dict.get("keyence", {}).get("direct_focal_measurement", False)
+
+        # adjust light engine coordinate system using le adjustments and stitching
+        if coord_system_name in config_dict["light_engines"] or (direct_focus and coord_system_name == f"keyence_{light_engine}"):
+            calibration_positions = get_last_calibration_positions_from_logs()
+            tx = calibration_positions.get(f"{light_engine}_x_alignment", 0) / 1000
+            ty = calibration_positions.get(f"{light_engine}_y_alignment", 0) / 1000
+            a = calibration_positions.get(f"{light_engine}_x_shift_x", 0) / 1000
+            b = calibration_positions.get(f"{light_engine}_x_shift_y", 0) / 1000
+            c = calibration_positions.get(f"{light_engine}_y_shift_x", 0) / 1000
+            d = calibration_positions.get(f"{light_engine}_y_shift_y", 0) / 1000
+            p = calibration_positions.get(f"{light_engine}_focus_shift_x", 0) / 1000
+            q = calibration_positions.get(f"{light_engine}_focus_shift_y", 0) / 1000
+            det = (1+a)*(1+d) - b*c
+
+            _x = ((1+d)*(_x - tx) - b*(_y - ty)) / det
+            _y = (-c*(_x - tx) + (1+a)*(_y - ty)) / det
+            if "keyence" not in config_dict.keys() or not config_dict.get("keyence", {}).get("direct_focal_measurement", True):
+                _f = _f - p*_x - q*_y
+        return _x, _y, _f
+
+    def move_xyf_stages_in_coordinate_system(
+            self, 
+            coord_system_name=None, 
+            x=None, 
+            y=None, 
+            f=None, 
+            light_engine=None, 
+            move_xy=True, 
+            move_focus=True, 
+            join=True
+        ):
+        '''Move the xy and focus stages based on the coordinate system adjustments. This includes:
+        1. Adjusting the input x, y, and f values based on the coordinate system using xyf_adjustments_from_coord_system
+        2. Moving the stages based on the adjusted values
+        3. Optionally joining the threads and checking for exceptions
+        '''
+        
+        _x, _y, _f = self.xyf_adjustments_from_coord_system(coord_system_name, x, y, f, light_engine=light_engine)
+
+        self.focus_thread = None
+        if move_focus:
+            log.debug("Moving focus stage to %s", _f)
+            self.focus_thread = self.focus_stage.threadedFocusMove(
+                log, _f, join=False
+            )
+            time.sleep(0.05)
+        self.xy_threads = [None, None]
+        if move_xy:
+            self.xy_threads = self.xy_stage.threadedXYMove(log, _x, _y, join=False)
+        
+        # Wait for moves to complete
+        if join:
+            for thread in self.xy_threads:
+                if thread is not None:
+                    thread.join()
+                    if thread.exception is not None:
+                        log.critical("Unable to move xy stage")
+                        self.failed_hardware["XY Stage"] = self.xy_stage
+                        raise PrintingException()
+            if self.focus_thread is not None:
+                self.focus_thread.join()
+                if self.focus_thread.exception is not None:
+                    log.critical("Unable to move focus stage")
+                    self.failed_hardware["Focus Stage"] = self.focus_stage
+                    raise PrintingException()
+        else:
+            return [self.focus_thread] + self.xy_threads
+            
+    def get_xyf_positions_in_coordinate_system(self, coord_system_name, light_engine=None):
+        x, y = self.xy_stage.getXYPosition()
+        f = self.focus_stage.getFocusPosition()
+        return self.xyf_adjustments_to_coord_system(x, y, f, coord_system_name, light_engine=light_engine)
 
     def write_to_event_log(self, msg):
         async_file_hander.write(
@@ -404,6 +594,10 @@ class PrintControl:
     def planarization_step_2(self):
         self.print_position = self.planarized_position
 
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+        async_file_hander.finish()
+
     def start(self, job_id):
         """Do all preparatory work for a print, then start the printing
         process in a separate thread.
@@ -432,10 +626,6 @@ class PrintControl:
         self.write_to_event_log(f"Calibration")
         for k, v in position.items():
             self.write_to_event_log(f"{k}: {v}")
-        self.focus = float(position.get("focus",0)) / 1000
-        self.tip = float(position.get("tip",0)) / 1000
-        self.tilt = float(position.get("tilt",0)) / 1000
-        self.rotate = float(position.get("rotate",0)) / 1000
 
         # update frontend progress bar
         self.state = "printing"

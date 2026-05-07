@@ -67,6 +67,14 @@ class VacuumControl(PrintControl):
                 log.warning("Unable to communicate with mks controller (%s)", ex, exc_info=True)
             super().planarization_step_1()
 
+    @run_in_thread("initialized", "Cancel Planarization")
+    def cancel_planarization(self):
+            try:
+                self.mks.logging_stop()
+            except Exception as ex:
+                log.warning("Unable to communicate with mks controller (%s)", ex, exc_info=True)
+            super().cancel_planarization()
+
     def pre_print_tasks(self):
         if self.next_layer == 0:
             vacuum_settings = self.get_vacuum_settings()

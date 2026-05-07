@@ -162,6 +162,13 @@ class PrintRecord(SurrogatePK, Model):
     start_time = Column(db.DateTime, nullable=False, default=datetime.now)
     end_time = Column(db.DateTime)
     completed = Column(db.Boolean, nullable=False, default=False)
+    design_user = Column(db.String(128), index=True)
+    design_purpose = Column(db.String(256))
+    design_description = Column(db.Text)
+    design_resin = Column(db.String(128), index=True)
+    design_printer = Column(db.String(128), index=True)
+    design_slicer = Column(db.String(128), index=True)
+    design_slice_date = Column(db.String(64))
 
     @property
     def zip_filename(self):

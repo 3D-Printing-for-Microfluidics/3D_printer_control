@@ -15,9 +15,9 @@ Specifies which schema versions are supported by the configuration.
 ### 2. Coordinate Systems
 ```json
 "coord_systems": {
-    "global": { "X": 0, "Y": 0, "Focus": 0, "Build Platform": 0 },
-    "parked": { "X": 100, "Y": 85, "Focus": 0, "Build Platform": 0 },
-    "visitech": { "X": -0.4, "Y": 1.06, "Focus": 2.893, "Build Platform": 0 }
+    "global": { "X": 0, "Y": 0, "Focus": 0 },
+    "parked": { "X": 100, "Y": 85, "Focus": 0 },
+    "visitech": { "X": -0.4, "Y": 1.06, "Focus": 2.893}
 }
 ```
 Defines different coordinate systems for various components and positions.
@@ -42,7 +42,8 @@ Each hardware component has its own configuration section with common fields:
 #### Motion Control
 - `acs/`: ACS motion controller settings
 - `galil/`: Galil motion controller settings
-- `kdc101/`: Thorlabs KDC101 settings
+- `kdc101_ttrf/`: Thorlabs KDC101 settings for Tip/Tilt/Focus stage
+- `lts_xy`: Thorlabs LTS settings for XY stage
 - `hexapod/`: Hexapod stage settings
 - `tiptilt/`: Tip-tilt stage settings
 
@@ -70,7 +71,7 @@ Here's a simplified example of a configuration file:
 {
     "valid_schema_versions": ["v3", "v2"],
     "coord_systems": {
-        "global": { "X": 0, "Y": 0, "Focus": 0, "Build Platform": 0 }
+        "global": { "X": 0, "Y": 0, "Focus": 0 }
     },
     "stages": {
         "bp_stage": "acs",

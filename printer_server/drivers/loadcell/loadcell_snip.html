@@ -19,6 +19,21 @@
             </div>
         </div>
     </div>
+    <div class="row">
+        <div class="col-6">
+            <h5>Loadcell Measurement</h5>
+        </div>
+        <div class="col-6">
+            <div id="loadcell_run" class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                <label
+                    class="btn btn-outline-info btn-fixed-width shadow-none">Start<input
+                        type="radio" id="loadcell-start"></label>
+                <label
+                    class="btn btn-outline-info btn-fixed-width shadow-none">Stop<input
+                        type="radio" id="loadcell-stop"></label>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="{{ url_for('manual_controls.static', filename='loadcell/loadcell_snip.js') }}"></script>

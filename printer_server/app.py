@@ -1,4 +1,5 @@
 """The app module, containing the app factory function."""
+import logging
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, render_template
 from printer_server.extensions import db, migrate, socketio
@@ -26,6 +27,13 @@ def create_app(config_object=ProdConfig):
     register_commands(app)
     register_hardware(app)
     register_logger(app)
+
+    try:
+        calibration.extract_calibration_print_archives()
+    except Exception as ex:
+        logging.getLogger(__name__).warning(
+            "Failed to extract calibration print archives on startup: %s", ex
+        )
 
     try:
         with app.app_context():
