@@ -186,6 +186,10 @@ class PrintControl:
         except FileNotFoundError:
             self.delete_job({"job": job_id})
             return False
+        except BadZipFile:
+            log.warning("The print job with ID '%s' has a bad zip file.", job_id)
+            self.delete_job({"job": job_id})
+            return False
         return True
 
     def move_job_to_print_history(self, job_id):
@@ -587,6 +591,10 @@ class PrintControl:
         if self.state in ["initialized", "planarized", "completed", "stopped"]:
             self.state = "busy"
 
+            # sometimes the current_job and logs folder can get deleted during the print process (e.g. if the printer is restarted or if there is an error and the printer tries to clean up), so we need to recreate them if they are missing
+            Path(self.current_job).mkdir(exist_ok=True)
+            Path(self.current_job / "logs").mkdir(exist_ok=True)
+            
             # Start async_file_handler
             async_file_hander.start()
 
