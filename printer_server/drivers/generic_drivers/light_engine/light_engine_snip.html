@@ -31,14 +31,14 @@
     <div class="row">
         <h5 class="col-3 text-left">LED Power</h5>
         <h5 class="col-1 text-left" id="{{ light_engine }}-led-power-label"></h5>
-        <div class="slidecontainer col-8"><input type="range" min="1" max="200" value="100" class="slider"
+        <div class="slidecontainer col-8"><input type="range" min="1" max="200" value="100" class="form-range"
                 id="{{ light_engine }}-led-power-slider"></div>
     </div>
 
     <!-- Repeat and Exposure Time -->
     <div class="row">
         <h5 class="col-4 text-left">Exposure</h5>
-        <div class="col-2 form-group text-center">
+        <div class="col-2 form-check text-center">
             <input class="form-check-input" type="checkbox" value="" id="{{ light_engine }}-repeat-chkbx">
             <label class="form-check-label" for="{{ light_engine }}-repeat-chkbx">Repeat</label>
         </div>
