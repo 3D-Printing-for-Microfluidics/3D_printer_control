@@ -564,7 +564,11 @@ class DLPC900_USB_Controller:
         self.log.debug("Main status: %s", hex(response))
         status = parse_main_status(response)
         if status and self.video_lock:
-            self.log.warning(status)
+            if self.is_idle and is_set(int(response), 2): 
+                # suppress warning about video freeze if idle mode is enabled since it is expected behavior
+                pass
+            else:
+                self.log.warning(status)
         return response
 
     def get_error_status(self):
