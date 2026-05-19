@@ -263,6 +263,49 @@ $(document).ready(function () {
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/printing");
     socket.emit("connecting");
 
+    let audioQueue = [];
+    let isPlaying = false;
+    let lastAlertTime = 0;
+    const ALERT_TIMEOUT_MS = 5000;
+    const NEXT_SOUND_DELAY_MS = 1000;
+    function playNextSound() {
+        if (audioQueue.length === 0) {
+            isPlaying = false;
+            return;
+        }
+        isPlaying = true;
+        const sound = audioQueue.shift();
+        const audio = new Audio("/static/audio/" + sound);
+        audio.preload = "auto";
+        audio.onended = function () {
+            setTimeout(playNextSound, NEXT_SOUND_DELAY_MS);
+        };
+        audio.play().catch(function (error) {
+            console.warn("Audio blocked:", error);
+            setTimeout(playNextSound, NEXT_SOUND_DELAY_MS);
+        });
+    }
+
+    function play_sound(sound) {
+        // Throttle alert.mp3
+        if (sound === "alert.mp3") {
+            const now = Date.now();
+            if (now - lastAlertTime < ALERT_TIMEOUT_MS) {
+                return;
+            }
+            lastAlertTime = now;
+        }
+        audioQueue.push(sound);
+        if (!isPlaying) {
+            playNextSound();
+        }
+    }
+
+    socket.on("play_sound", function (message) {
+        let sound = message.sound;
+        play_sound(sound);
+    });
+
     if (loadcell_exists) {
         // Set up Loadcell graph
         draw_loadcell_graph();
@@ -637,6 +680,7 @@ $(document).ready(function () {
        </div>
         `;
         $("#printer-controls").before(flash_msg);
+        play_sound("alert.mp3");
     });
 
     if (loadcell_exists) {

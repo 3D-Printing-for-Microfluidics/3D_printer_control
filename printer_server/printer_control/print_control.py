@@ -1001,6 +1001,7 @@ class PrintControl:
                 }
                 log.info(msg["text"])
                 home.update_printer_state(self.state, msg)
+                home.play_sound("print_completed.mp3")
                 self.write_to_event_log(msg["text"])
 
             async_file_hander.finish()

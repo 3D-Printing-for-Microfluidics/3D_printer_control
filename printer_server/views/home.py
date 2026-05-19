@@ -199,6 +199,9 @@ def index():
 def update_printer_state(state, msg):
     socketio.emit(state, msg, namespace="/printing")
 
+def play_sound(sound):
+    socketio.emit("play_sound", {"sound": sound}, namespace="/printing")
+
 if "loadcell" in config_dict.keys():
     def clear_loadcell_graph():
         socketio.emit("loadcell_graph_clear", namespace="/printing")
@@ -262,6 +265,7 @@ def critical_error(process):
         msg += "Printer must restart. Click 'Confirm' to continue..."
     time.sleep(1.0)
     socketio.emit("critical_error", {"process": process, "title": title, "message": msg}, namespace="/printing")
+    play_sound("critical_error.mp3")
 
 
 @socketio.on("critical_error_confirm", namespace="/printing")
