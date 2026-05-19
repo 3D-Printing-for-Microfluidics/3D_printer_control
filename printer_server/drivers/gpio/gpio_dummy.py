@@ -12,7 +12,7 @@ class GPIO_dummy:
         self.connected = False
 
     @dummy_log
-    def initialize(self):
+    def initialize(self, shutdown):
         self.film_relay_state = False
         self.connected = True
 

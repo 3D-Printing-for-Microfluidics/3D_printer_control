@@ -6,6 +6,7 @@ from printer_server.drivers.generic_drivers import (
     TTRStageDriver,
 )
 from printer_server.drivers.thorlabs_apt.thorlabs_apt import ThorlabsAPT
+from printer_server.drivers.thorlabs_apt.thorlabs_apt_dummy import ThorlabsAPT_dummy
 
 
 class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
@@ -13,7 +14,8 @@ class KDC101_TTRF(FocusStageDriver, TTRStageDriver):
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
 
-        self.apt_controller = ThorlabsAPT(
+        controller_cls = ThorlabsAPT_dummy if config_dict and config_dict.get("dummy") else ThorlabsAPT
+        self.apt_controller = controller_cls(
             config_dict=config_dict, log_level=log_level, driver_name="KDC101_TTRF"
         )
         self.mount_len = (

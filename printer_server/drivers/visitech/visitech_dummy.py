@@ -12,19 +12,40 @@ class Visitech_dummy(LightEngineDriver):
     """
     Dummy Visitech class for testing and development.
     """
-    def __init__(self, leds, log_level=logging.DEBUG, dual_led=False):
+    def __init__(
+        self,
+        leds=None,
+        config_dict=None,
+        log_level=logging.DEBUG,
+        dual_led=False,
+    ):
         self.max_exp_time = 10000
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
-        self.host = "192.168.0.10"
-        self.port = 5000
+        self.config_dict = config_dict or {}
+        if self.config_dict:
+            leds = self.config_dict.get("leds_nm", leds)
+            dual_led = self.config_dict.get("dual_led", dual_led)
+        self.host = self.config_dict.get("address", "192.168.0.10")
+        self.port = self.config_dict.get("port", 5000)
         self.socket = None
         self.connected = False
         self.exposure_time = 0
         self.led_on = False
+        self.repeats = 1
+        self.led = 0
+        self.led_power = 0
+        self.normalization_factor = 1.0
+        self.is_idle = False
         self.dual_led = dual_led
-        self.leds = leds
+        self.leds = leds or []
         self.suppress_ocp_error = False
+        self.hdmi_reset = False
+        self.hdmi_output = self.config_dict.get("hdmi_output", 1)
+        self.hdmi_reset_script = self.config_dict.get(
+            "hdmi_reset_script",
+            "/home/pi/3D_printer_control/rpi/reset_hdmi.sh",
+        )
 
     @dummy_log
     def connect(self):
@@ -40,8 +61,8 @@ class Visitech_dummy(LightEngineDriver):
         self.connected = False
 
     # @dummy_log
-    def send(self, data):
-        self.log.debug("Sent:  '%s'", data)
+    def send(self, msg, data=None):
+        self.log.debug("Sent:  '%s'", msg)
         return "+OK"
 
     # @dummy_log
@@ -162,8 +183,8 @@ class Visitech_dummy(LightEngineDriver):
         return self.send(f"SET LUT CONFIG {num_sequences} {repeats}")
 
     # @dummy_log
-    def upload_image(self, pattern_index, bitmap_size, bitmap_data):
-        return self.send(f"UPLOAD IMAGE PATTERN\r\n{pattern_index}\r\n{bitmap_size}\r\n{bitmap_data}")
+    def upload_image(self, filename, pattern_index):
+        return self.send(f"UPLOAD IMAGE PATTERN\r\n{pattern_index}\r\n{filename}")
 
     # @dummy_log
     def set_video_source(self, source="HDMI"):
@@ -185,6 +206,18 @@ class Visitech_dummy(LightEngineDriver):
     def unpark_dmd_mirrors(self):
         return self.send("SET MIRRORS UNPARKED")
 
+    def idle_on(self):
+        if not self.is_idle:
+            self.is_idle = True
+            self.log.info("DMD idle on")
+        return self.send("SET MIRROR SHAKE ON")
+
+    def idle_off(self):
+        if self.is_idle:
+            self.is_idle = False
+            self.log.info("DMD idle off")
+        return self.send("SET MIRROR SHAKE OFF")
+
     # @dummy_log
     def get_sticky_errors(self, warn="ALL"):
         return self.send("GET STICKY ERRORS")
@@ -199,6 +232,7 @@ class Visitech_dummy(LightEngineDriver):
 
     # @dummy_log
     def set_normalization_factor(self, normalization_factor):
+        self.normalization_factor = normalization_factor
         return self.send(f"FACTORY SET NORMALIZATION VALUE {normalization_factor}")
 
     # @dummy_log
@@ -231,9 +265,26 @@ class Visitech_dummy(LightEngineDriver):
             status["led_driver_status2"] = self.get_led_driver_status(led_num=1)
         return status
 
+    def getCurrentLed(self):
+        return self.led
+
     @dummy_log
     def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, is_grayscale_corrected=False, led_num=0):
         self.exposure_time = exposure_time_ms
+        self.repeats = repeat
+        self.led = led_num
+        self.led_power = led_power
+
+        if is_grayscale_corrected:
+            self.normalization_factor = self.config_dict.get(
+                "grayscale_normalization_factor",
+                [1.0],
+            )[led_num]
+        else:
+            self.normalization_factor = self.config_dict.get(
+                "normalization_factor",
+                [1.0],
+            )[led_num]
 
         # if is_grayscale_corrected:
         #     self.set_normalization_factor(self.config_dict["grayscale_normalization_factor"][led_num])
@@ -299,6 +350,9 @@ class Visitech_dummy(LightEngineDriver):
 
     @dummy_log
     def project(self, exposure, power, repeats=1, led_num=0):
+        self.led = led_num
+        self.led_power = power
+        self.repeats = repeats
         if self.dual_led:
             if led_num == 0:
                 self.led_driver_enable(led_num=0)
@@ -334,3 +388,6 @@ class Visitech_dummy(LightEngineDriver):
                 self.start_sequencer()
                 time.sleep(t * 1e-3)
                 self.led_on = False
+
+    def get_led_status(self):
+        return self.led_on

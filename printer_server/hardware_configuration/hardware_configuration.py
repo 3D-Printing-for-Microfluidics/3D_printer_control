@@ -101,28 +101,18 @@ class Printer3D:
                 )
 
         if "kdc101_ttrf" in config_dict.keys():
-            from printer_server.drivers.thorlabs_apt import KDC101_TTRF, KDC101_dummy
+            from printer_server.drivers.thorlabs_apt import KDC101_TTRF
 
-            if config_dict["kdc101_ttrf"]["dummy"]:
-                self.kdc101_ttrf = KDC101_dummy(
-                    config_dict=config_dict["kdc101_ttrf"], log_level=default_log_level
-                )
-            else:
-                self.kdc101_ttrf = KDC101_TTRF(
-                    config_dict=config_dict["kdc101_ttrf"], log_level=default_log_level
-                )
+            self.kdc101_ttrf = KDC101_TTRF(
+                config_dict=config_dict["kdc101_ttrf"], log_level=default_log_level
+            )
 
         if "lts_xy" in config_dict.keys():
-            from printer_server.drivers.thorlabs_apt import LTS_XY, KDC101_dummy
+            from printer_server.drivers.thorlabs_apt import LTS_XY
 
-            if config_dict["lts_xy"]["dummy"]:
-                self.lts_xy = KDC101_dummy(
-                    config_dict=config_dict["lts_xy"], log_level=default_log_level
-                )
-            else:
-                self.lts_xy = LTS_XY(
-                    config_dict=config_dict["lts_xy"], log_level=default_log_level
-                )
+            self.lts_xy = LTS_XY(
+                config_dict=config_dict["lts_xy"], log_level=default_log_level
+            )
 
         if "keyence" in config_dict.keys():
             from printer_server.drivers.keyence import Keyence, Keyence_dummy
@@ -183,7 +173,10 @@ class Printer3D:
             from printer_server.drivers.photodiode import Photodiode, Photodiode_dummy
 
             if config_dict["photodiode"]["dummy"]:
-                self.photodiode = Photodiode_dummy()
+                self.photodiode = Photodiode_dummy(
+                    config_dict=config_dict["photodiode"],
+                    log_level=default_log_level
+                )
             else:
                 self.photodiode = Photodiode(
                     config_dict=config_dict["photodiode"], log_level=default_log_level

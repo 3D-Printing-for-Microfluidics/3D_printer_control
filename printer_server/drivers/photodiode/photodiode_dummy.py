@@ -10,6 +10,8 @@ class Photodiode_dummy:
         self.photodiode = None
         self.connected = None
 
+        self.defaultWavelength = config_dict["default_wavelength"]
+
     @dummy_log  
     def connect(self):
         self.connected = True

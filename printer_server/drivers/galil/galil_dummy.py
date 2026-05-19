@@ -19,6 +19,8 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.movement_log = None
         self.config_dict = config_dict
 
+        super().__init__(config_dict=config_dict, log_level=log_level)
+
         self.sendLock = threading.Lock()
 
         self.thread = Thread(self.log, name="galil_loop_thread", target=self.loop)
@@ -34,6 +36,9 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.ctspmm = config_dict["axes_ctspmm"]
         self.default_speed = config_dict["axes_speed"]
         self.default_acceleration = config_dict["axes_acceleration"]
+        self.mirroring = config_dict.get("mirroring", {})
+        self.limits = config_dict.get("limits", {})
+        self.calibration_limits = config_dict.get("calibration_limits", {})
         self.calibration_position = config_dict["calibration_position"]
         self.bottom_position = config_dict["bottom_position"]
         self.top_position = config_dict["top_position"]
@@ -131,6 +136,14 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         self.absMove(mm=self.bottom_position, axis="Build Platform")
         self.current_position[self.convertAxis("Build Platform")] = self.bottom_position
         return self.getPosition(in_mm=True)
+
+    @dummy_log
+    def goToBPtop(self):
+        return self.goToBPmax()
+
+    @dummy_log
+    def goToBPbottom(self):
+        return self.goToBPmin()
 
     @dummy_log
     def connect(self):
@@ -338,16 +351,47 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
         return self.getDefaultAcceleration(axis)
 
     @dummy_log
+    def getXYLimits(self, axis=None):
+        a = self.convertAxis(axis)
+        limits = self.limits.get(a, (None, None))
+        if limits[0] is not None:
+            ll = limits[0]
+        else:
+            ll = -self.max_travel_mm[a] / 2
+        if limits[1] is not None:
+            ul = limits[1]
+        else:
+            ul = self.max_travel_mm[a] / 2
+        return (ll, ul)
+
+    @dummy_log
+    def setXYLimits(self, limits=None, axis=None):
+        a = self.convertAxis(axis)
+        if limits is None:
+            limits = self.limits.get(a, (None, None))
+        self.limits[a] = limits
+
+    @dummy_log
     def getXYPosition(self, axis=None, notify=True):
         return self.getPosition(in_mm=True, axis=axis)
 
     @dummy_log
     def absMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
+        if axis == "X":
+            self.prev_x_position = mm
+        elif axis == "Y":
+            self.prev_y_position = mm
 
     @dummy_log
     def relMoveXY(self, mm=None, speed=None, acceleration=None, wait_for_settling=True, axis=None):
         self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis=axis)
+        if axis == "X":
+            if self.prev_x_position is not None:
+                self.prev_x_position += mm
+        elif axis == "Y":
+            if self.prev_y_position is not None:
+                self.prev_y_position += mm
 
     @dummy_log
     def startXYJog(self, speed=None, acceleration=None, axis=None):
@@ -356,6 +400,7 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
     @dummy_log
     def stopXYJog(self, axis=None):
         self.stopJog(axis=axis)
+        super().stopXYJog(axis=axis)
 
     @dummy_log
     def getFocusPosition(self, notify=True):
@@ -364,10 +409,13 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
     @dummy_log
     def absMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
+        self.prev_focus_position = mm
 
     @dummy_log
     def relMoveFocus(self, mm, speed=None, acceleration=None, wait_for_settling=True):
         self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Focus")
+        if self.prev_focus_position is not None:
+            self.prev_focus_position += mm
 
     @dummy_log
     def startFocusJog(self, speed=None, acceleration=None):
@@ -376,6 +424,28 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
     @dummy_log
     def stopFocusJog(self):
         self.stopJog(axis="Focus")
+        super().stopFocusJog()
+
+    @dummy_log
+    def getFocusLimits(self):
+        a = self.convertAxis("Focus")
+        limits = self.limits.get(a, (None, None))
+        if limits[0] is not None:
+            ll = limits[0]
+        else:
+            ll = -self.max_travel_mm[a] / 2
+        if limits[1] is not None:
+            ul = limits[1]
+        else:
+            ul = self.max_travel_mm[a] / 2
+        return (ll, ul)
+
+    @dummy_log
+    def setFocusLimits(self, limits=None):
+        a = self.convertAxis("Focus")
+        if limits is None:
+            limits = self.limits.get(a, (None, None))
+        self.limits[a] = limits
 
     @dummy_log
     def getBPPosition(self, notify=True):
@@ -384,10 +454,13 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
     @dummy_log
     def absMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
         self.absMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Build Platform")
+        self.prev_bp_position = mm
 
     @dummy_log
     def relMoveBP(self, mm, speed=None, acceleration=None, wait_for_settling=True):
         self.relMove(mm=mm, speed=speed, acceleration=acceleration, wait_for_settling=wait_for_settling, axis="Build Platform")
+        if self.prev_bp_position is not None:
+            self.prev_bp_position += mm
 
     @dummy_log
     def startBPJog(self, speed=None, acceleration=None):
@@ -396,6 +469,30 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
     @dummy_log
     def stopBPJog(self):
         self.stopJog(axis="Build Platform")
+        super().stopBPJog()
+
+    @dummy_log
+    def getBPLimits(self):
+        a = self.convertAxis("Build Platform")
+        limits = self.limits.get(a, (None, None))
+        if limits[0] is not None:
+            ll = limits[0]
+        else:
+            ll = -self.max_travel_mm[a] / 2
+        if limits[1] is not None:
+            ul = limits[1]
+        else:
+            ul = self.max_travel_mm[a] / 2
+        return (ll, ul)
+
+    @dummy_log
+    def setBPLimits(self, limits=None):
+        a = self.convertAxis("Build Platform")
+        if limits is None:
+            limits = self.limits.get(a, (None, None))
+        elif limits == "calibration":
+            limits = self.calibration_limits.get(a, limits)
+        self.limits[a] = limits
 
         ################################# End parent class functions #######################################
 
@@ -468,6 +565,9 @@ class Galil_dummy(BPStageDriver, FocusStageDriver, XYStageDriver):
     def logging_stop(self):
         """Stops collecting position data."""
         pass
+
+    def get_logging_results(self):
+        return self.movement_log_times, self.movement_log_array
 
     @dummy_log
     def loop(self):
