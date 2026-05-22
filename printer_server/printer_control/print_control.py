@@ -575,6 +575,7 @@ class PrintControl:
             self.initialize_hardware()
             if len(self.failed_hardware.keys()) == 0:
                 log.info("Printer initialized, all hardware ready.")
+                play_sound("printer_ready.mp3")
                 return True
         self.critical_error_handle(process = "initialization")
         return False
@@ -1001,7 +1002,7 @@ class PrintControl:
                 }
                 log.info(msg["text"])
                 home.update_printer_state(self.state, msg)
-                home.play_sound("print_completed.mp3")
+                home.play_sound("print_finished.mp3")
                 self.write_to_event_log(msg["text"])
 
             async_file_hander.finish()

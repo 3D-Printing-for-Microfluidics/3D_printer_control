@@ -680,7 +680,6 @@ $(document).ready(function () {
        </div>
         `;
         $("#printer-controls").before(flash_msg);
-        play_sound("alert.mp3");
     });
 
     if (loadcell_exists) {

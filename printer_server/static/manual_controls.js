@@ -109,6 +109,5 @@ $(document).ready(function () {
        </div>
         `;
         $("#manual-controls").before(flash_msg);
-        play_sound("alert.mp3");
     });
 });

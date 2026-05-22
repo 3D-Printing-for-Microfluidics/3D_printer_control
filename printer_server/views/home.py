@@ -217,6 +217,7 @@ def send_bootstrap_alert(msg):
         {"text": msg, "category": "warning"},
         namespace="/printing",
     )
+    play_sound("alert.mp3")
 
 critical_error_val = None
 
