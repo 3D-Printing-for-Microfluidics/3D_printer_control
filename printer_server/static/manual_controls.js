@@ -65,7 +65,7 @@ $(document).ready(function () {
         },
         reset = function () {
             clearTimeout(timer);
-            timer = setTimeout(logout, 3600000);
+            timer = setTimeout(logout, 7200000);
         };
 
     document.addEventListener(event, reset, false);
