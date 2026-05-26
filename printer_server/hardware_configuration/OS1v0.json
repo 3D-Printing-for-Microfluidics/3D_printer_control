@@ -343,16 +343,16 @@
       1600
     ],
     "normalization_factor": [
-      0.76
+      0.753
     ],
     "grayscale_normalization_factor": [
-      0.97
+      0.942
     ],
     "orientation": "X",
     "mirror_long_axis": false,
     "mirror_short_axis": true,
     "grayscale_correction_image": [
-      "OS1v0_corrected_20250905_140900.png"
+      "OS1v0_corrected_20260525_173339.png"
     ]
   }
 }

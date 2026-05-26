@@ -186,13 +186,13 @@
             1600
         ],
         "grayscale_correction_image": [
-            "20250102-XU21371579.png"
+            "HR3v3_corrected_20260526_142139.png"
         ],
         "normalization_factor": [
-            0.62
+            0.52
         ],
         "grayscale_normalization_factor": [
-            0.78
+            0.64
         ],
         "orientation": "Y",
         "mirror_long_axis": true,
