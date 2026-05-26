@@ -441,7 +441,7 @@
                 },
                 "Do grayscale correction": {
                     "type": "boolean",
-                    "default": false,
+                    "default": true,
                     "description": "Should the printer apply a grayscale irradiance correction to the white values of this image?"
                 },
                 "Mirror image short axis": {

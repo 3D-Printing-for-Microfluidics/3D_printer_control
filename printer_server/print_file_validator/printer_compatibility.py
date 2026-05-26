@@ -94,7 +94,7 @@ def validate_printer_compatibility(print_settings):
 
 			corrected = settings.get(
 				"Do light grayscale correction",
-				settings.get("Do grayscale correction", False),
+				settings.get("Do grayscale correction", True),
 			)
 			if corrected:
 				if not leds_nm:
