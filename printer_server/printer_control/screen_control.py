@@ -41,7 +41,7 @@ class ScreenControl(PrintControl):
         # "Do light grayscale correction" setting deprecated, use "Do grayscale correction"
         corrected = settings.get(
             "Do light grayscale correction",
-            settings.get("Do grayscale correction", False),
+            settings.get("Do grayscale correction", True),
         )
         self.screen.setCorrectionEnable(corrected, light_engine=le)
 
