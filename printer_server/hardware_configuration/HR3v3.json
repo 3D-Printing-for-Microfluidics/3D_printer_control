@@ -189,10 +189,10 @@
             "HR3v3_corrected_20260526_142139.png"
         ],
         "normalization_factor": [
-            0.39
+            0.60
         ],
         "grayscale_normalization_factor": [
-            0.47
+            0.74
         ],
         "orientation": "Y",
         "mirror_long_axis": true,
