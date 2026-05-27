@@ -30,12 +30,12 @@
         "keyence_visitech": {
             "X": -1.705,
             "Y": -36.204,
-            "Focus": 2.300
+            "Focus": 2.3
         },
         "fiber_visitech": {
-            "X": -86.492,
-            "Y": 68.282,
-            "Focus": -0.025
+            "X": -85.465,
+            "Y": 67.954,
+            "Focus": -1.59
         }
     },
     "stages": {
@@ -108,7 +108,7 @@
                 null
             ],
             "2": [
-                -26.000,
+                -26.0,
                 null
             ]
         },
@@ -288,13 +288,13 @@
         "mirror_long_axis": false,
         "mirror_short_axis": false,
         "grayscale_correction_image": [
-            "20260309-XU19030146.png"
+            "HR5_corrected_20260526_184311.png"
         ],
         "normalization_factor": [
-            0.70
+            0.68
         ],
         "grayscale_normalization_factor": [
-            0.79
+            0.73
         ]
     }
 }
