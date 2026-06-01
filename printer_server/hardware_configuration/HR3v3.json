@@ -5,7 +5,8 @@
     ],
     "calibration_prints": [
         "Focus Sweep Print",
-        "Uniform Focus Print"
+        "Uniform Focus Print",
+        "Tip Tilt Focus Sweep Print"
     ],
     "external_control": {},
     "stages": {
