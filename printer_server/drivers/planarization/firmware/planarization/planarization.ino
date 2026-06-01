@@ -1,4 +1,4 @@
-// Teensy motor controller firmware using MP6550 and current sensing
+// Teensy 4.0 motor controller firmware using MP6550 and current sensing
 // Tightens/untightens to a target *torque* specified in kg·mm.
 // Uses VISEN -> current (A) via 200 mV/A, then current -> torque with your model:
 //   I(A) = 0.025 + 0.0049 * t(kg·mm)  =>  t = (I - 0.025)/0.0049
@@ -20,20 +20,20 @@ volatile bool inISR = false;
 // ---------------- Pin assignments ----------------
 const int IN1 = 2;              // PWM-capable
 const int IN2 = 3;              // PWM-capable
-const int VISEN_PIN = A0;       // Analog input for VISEN
+const int VISEN_PIN = A0;       // Analog input for VISEN (Pin 14 on Teensy 4.0)
 const int SLEEP_HB_LDO = 4;     // Combined enable (board-specific wiring)
 
 // ---------------- System configuration ----------------
-static constexpr float kVref = 3.3f;       // ADC analog reference (Teensy 4.x default 3.3 V)
+static constexpr float kVref = 3.3f;       // ADC analog reference
 static constexpr int   kADC_Bits = 12;     // 12-bit resolution
 static constexpr float kADC_Max = float((1 << kADC_Bits) - 1);
 
-// MP6550 with ISET = 2 kΩ (carrier default) => 0.2 V/A
+// MP6550 with ISET = 2 kΩ => 0.2 V/A
 static constexpr float kVisen_V_per_A = 0.200f;   // 200 mV/A
 
 // Your motor current model: I(A) = I0 + K * t(kg·mm)
-static constexpr float kI_intercept_A = 0.05f;        // I0 old = 0.025f; new = 0.05f
-static constexpr float kI_per_t_A_per_kgmm = 0.0065f;  // K old = 0.0049f; new = 0.0065f
+static constexpr float kI_intercept_A = 0.05f;        
+static constexpr float kI_per_t_A_per_kgmm = 0.0065f;  
 static constexpr float no_load_current = 0.081f;
 
 // Safety timeout
@@ -42,39 +42,41 @@ const unsigned long TIMEOUT_MS = 10000;    // ms
 // Default PWM duty (0..255). Adjust as needed for speed/torque ramping.
 uint8_t kPWM = 200;
 
-// Target torque in kg·mm (runtime-configurable via "s <kgmm>")
-float torqueTarget_kgmm = 40.0f;
+// Target torque in kg·mm (Must be volatile since it's shared between main and ISR)
+volatile float torqueTarget_kgmm = 40.0f;
 
 
 // ---------------- State tracking ----------------
-bool running = false;
-bool motor_engaged = false;
-unsigned long startTime = 0;
-int direction = 1;  // 1 = tighten, -1 = untighten
+volatile bool running = false;
+volatile bool motor_engaged = false;
+volatile unsigned long startTime = 0;
+volatile int direction = 1;  // 1 = tighten, -1 = untighten
+
+// Extra spin-down tracking for untightening
+const unsigned long EXTRA_SPIN_MS = 1000; // ms to spin after hitting 0
+volatile bool spinning_down = false;
+volatile uint32_t spin_down_start_time = 0;
+
+// ---------------- ISR to Main Loop Communication ----------------
+volatile float isr_torqueAvg = 0.0f;
+volatile uint32_t isr_time_ms = 0;
+volatile bool isr_data_ready = false;
+volatile int isr_stop_reason = 0; // 0=none, 1=done, 2=timeout, 3=extra spin started, 4=fully loose
 
 
 // ---------------- Helpers: ADC / VISEN / Torque ----------------
 
-// Convert ADC counts -> VISEN volts
 inline float visenVoltsFromADC(int adcCounts) {
   return (float(adcCounts) / kADC_Max) * kVref;
 }
 
-// Convert VISEN volts -> torque (kg·mm) using inverse of your motor model
 float torqueFromVisenVolts(float visenV) {
-  const float I = visenV / kVisen_V_per_A;                       // A
-  if (I < no_load_current) return 0.0f;                           // below no-load current
-  float t = (I - kI_intercept_A) / kI_per_t_A_per_kgmm;          // kg·mm
-  if (t < 0.0f) t = 0.0f;                                        // guard small negatives
+  const float I = visenV / kVisen_V_per_A;                       
+  if (I < no_load_current) return 0.0f;                           
+  float t = (I - kI_intercept_A) / kI_per_t_A_per_kgmm;          
+  if (t < 0.0f) t = 0.0f;                                        
   return t;
 }
-
-// Optional: torque -> VISEN volts (useful if you ever want to set a voltage threshold internally)
-// float visenVoltsFromTorque(float torque_kgmm) {
-//   const float I = kI_intercept_A + kI_per_t_A_per_kgmm * torque_kgmm;
-//   return I * kVisen_V_per_A;  // V
-// }
-
 
 // ---------------- Simple moving average filter ----------------
 template <size_t N>
@@ -95,24 +97,21 @@ struct MovingAverage {
     return s / float(count);
   }
 };
-MovingAverage<8> torqueFilt;   // 8-sample average for stability
+MovingAverage<8> torqueFilt;   
 
 
 // ---------------- Motor control ----------------
 void driveTighten() {
-  // Forward: IN1 PWM, IN2 low
   analogWrite(IN1, kPWM);
   digitalWrite(IN2, LOW);
 }
 
 void driveUntighten() {
-  // Reverse: IN2 PWM, IN1 low
   analogWrite(IN2, kPWM);
   digitalWrite(IN1, LOW);
 }
 
 void brakeCoastOff() {
-  // Turn off both PWM outputs
   analogWrite(IN1, 0);
   analogWrite(IN2, 0);
 }
@@ -124,17 +123,14 @@ void setup() {
   pinMode(IN2, OUTPUT);
   pinMode(SLEEP_HB_LDO, OUTPUT);
 
-  // Enable H-bridge + 3.3 V LDO (board-specific combined line)
   digitalWrite(SLEEP_HB_LDO, HIGH);
 
   // Quiet PWM (20 kHz)
   analogWriteFrequency(IN1, 20000);
   analogWriteFrequency(IN2, 20000);
 
-  // Initialize ADC with desired settings
-  // adc->adc0->setReference(ADC_REFERENCE::REF_3V3);              // Teensy 4.x default
-  adc->adc0->setAveraging(32);                                  // Average 32 samples
-  adc->adc0->setResolution(12);                                 // 12-bit resolution
+  adc->adc0->setAveraging(32);                                  
+  adc->adc0->setResolution(12);                                 
   adc->adc0->setConversionSpeed(ADC_CONVERSION_SPEED::MED_SPEED);
   adc->adc0->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED);
 
@@ -146,7 +142,7 @@ void setup() {
 }
 
 
-// Start motor with desired direction
+// Start motor
 void startMotor(int dir) {
   uint32_t now_ms = millis();
   Serial.print("start ");
@@ -157,8 +153,10 @@ void startMotor(int dir) {
   direction = dir;
   running   = true;
   startTime = millis();
+  spinning_down = false;
+  isr_stop_reason = 0;
 
-  torqueFilt = MovingAverage<8>();  // reset filter
+  torqueFilt = MovingAverage<8>(); 
 
   if (dir == 1) {
     driveTighten();
@@ -166,25 +164,27 @@ void startMotor(int dir) {
     driveUntighten();
   }
 
-  controlTimer.begin(torqueControlISR, 10000);  // 100 Hz = every 10,000 µs
+  controlTimer.begin(torqueControlISR, 10000);  // 100 Hz
   delay(500);
   motor_engaged = true;
 }
 
-
-
-// Stop motor and report
-void stopMotor() {
-  controlTimer.end();  // Stop ISR
+// Stop called from inside the ISR (NO SERIAL PRINTS HERE)
+void stopMotorFromISR() {
+  controlTimer.end(); 
   brakeCoastOff();
   running = false;
   motor_engaged = false;
+}
+
+// Stop called from main loop manually via command 'e'
+void stopMotor() {
+  stopMotorFromISR();
   Serial.println("stop");
 }
 
 
 // ---------------- Command parsing ----------------
-// We read a full line so we can support "s 37.5" etc.
 void handleLine(const String& line) {
   if (line.length() == 0) return;
 
@@ -195,7 +195,6 @@ void handleLine(const String& line) {
   } else if (line == "e") {
     stopMotor();
   } else if (line.startsWith("s ")) {
-    // Set torque target in kg·mm
     float newTarget = line.substring(2).toFloat();
     if (newTarget >= 0.0f) {
       torqueTarget_kgmm = newTarget;
@@ -203,7 +202,6 @@ void handleLine(const String& line) {
       Serial.println(torqueTarget_kgmm, 3);
     }
   } else if (line == "q") {
-    // Query instantaneous torque
     uint16_t adcVal = adc->adc0->analogRead(VISEN_PIN);
     float visenV = visenVoltsFromADC(adcVal);
     float tq = torqueFromVisenVolts(visenV);
@@ -215,11 +213,44 @@ void handleLine(const String& line) {
 
 // ---------------- Main loop ----------------
 void loop() {
-  // Only handle serial commands here
   if (Serial.available()) {
     String cmd = Serial.readStringUntil('\n');
     cmd.trim();
     handleLine(cmd);
+  }
+
+  // Handle telemetry and printing OUTSIDE the ISR
+  if (isr_data_ready) {
+    // Disable interrupts briefly to copy the volatile variables safely
+    noInterrupts();
+    float tq = isr_torqueAvg;
+    uint32_t t_ms = isr_time_ms;
+    int reason = isr_stop_reason;
+    isr_data_ready = false;
+    isr_stop_reason = 0;
+    interrupts();
+
+    // Always print the standard telemetry line
+    Serial.print("torque ");
+    Serial.print(tq, 3);
+    Serial.print(" @ ");
+    Serial.print(t_ms);
+    Serial.println(" ms");
+
+    // Output EXACTLY what the external parser expects
+    if (reason == 1 || reason == 4) {
+      // Reason 1: Normal target reached
+      // Reason 4: Fully loose (extra spin finished)
+      Serial.println("stop");
+      Serial.println("done");
+    } 
+    else if (reason == 2) {
+      // Reason 2: Safety timeout
+      Serial.println("stop");
+      Serial.println("timeout");
+    }
+    // Note: We silently ignore reason == 3 ("extra spin started") 
+    // so we don't confuse the connected system's text parser.
   }
 }
 
@@ -229,52 +260,52 @@ void torqueControlISR() {
   if (!running || inISR) return;
   inISR = true;
 
-  // Record time at ISR entry
   uint32_t now_ms = millis();
-
-  // Read ADC
   uint16_t adcCounts = adc->adc0->analogRead(VISEN_PIN);
-  // Serial.print("adc ");
-  // Serial.println(adcCounts);
   float visenV = visenVoltsFromADC(adcCounts);
-  // Serial.print("volts ");
-  // Serial.println(visenV);
   float torque = torqueFromVisenVolts(visenV);
 
-  // Filter + telemetry
   torqueFilt.add(torque);
   float torqueAvg = torqueFilt.mean();
 
-  // Report timestamp and torque
-  Serial.print("torque ");
-  Serial.print(torqueAvg, 3);
-  Serial.print(" @ ");
-  Serial.print(now_ms);
-  Serial.println(" ms");
+  // Send data to main loop
+  isr_torqueAvg = torqueAvg;
+  isr_time_ms = now_ms;
+  isr_data_ready = true;
 
-  // Stop if torque reached
-  if (motor_engaged && torqueFilt.filled){
-    if (direction == 1){
+  if (motor_engaged && torqueFilt.filled) {
+    if (direction == 1) {
       if (torqueAvg >= torqueTarget_kgmm) {
-        stopMotor();
-        Serial.println("done");
+        isr_stop_reason = 1;
+        stopMotorFromISR();
       }
     }
-    else{
-      if (torqueAvg <= torqueTarget_kgmm) {
-        stopMotor();
-        Serial.println("done");
+    else {
+      if (!spinning_down) {
+        if (torqueAvg <= torqueTarget_kgmm) {
+          if (torqueTarget_kgmm <= 0.01f) { 
+            spinning_down = true;
+            spin_down_start_time = now_ms;
+            isr_stop_reason = 3; 
+          } else {
+            isr_stop_reason = 1;
+            stopMotorFromISR();
+          }
+        }
+      } else {
+        if ((now_ms - spin_down_start_time) >= EXTRA_SPIN_MS) {
+          isr_stop_reason = 4;
+          stopMotorFromISR();
+        }
       }
     }
   }
-  
 
   // Timeout check
-  if (now_ms - startTime > TIMEOUT_MS) {
-    stopMotor();
-    Serial.println("timeout");
+  if (running && (now_ms - startTime > TIMEOUT_MS)) {
+    isr_stop_reason = 2;
+    stopMotorFromISR();
   }
 
   inISR = false;
 }
-
