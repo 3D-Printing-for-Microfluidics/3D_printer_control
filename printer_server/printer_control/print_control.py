@@ -463,34 +463,35 @@ class PrintControl:
         
         _x, _y, _f = self.xyf_adjustments_from_coord_system(coord_system_name, x, y, f, light_engine=light_engine)
 
-        self.focus_thread = None
+        _focus_thread = None
         if move_focus:
             log.debug("Moving focus stage to %s", _f)
-            self.focus_thread = self.focus_stage.threadedFocusMove(
+            _focus_thread = self.focus_stage.threadedFocusMove(
                 log, _f, join=False
             )
             time.sleep(0.05)
-        self.xy_threads = [None, None]
+        _xy_threads = [None, None]
         if move_xy:
-            self.xy_threads = self.xy_stage.threadedXYMove(log, _x, _y, join=False)
+            _xy_threads = self.xy_stage.threadedXYMove(log, _x, _y, join=False)
         
         # Wait for moves to complete
         if join:
-            for thread in self.xy_threads:
+            for thread in _xy_threads:
                 if thread is not None:
                     thread.join()
                     if thread.exception is not None:
                         log.critical("Unable to move xy stage")
                         self.failed_hardware["XY Stage"] = self.xy_stage
                         raise PrintingException()
-            if self.focus_thread is not None:
-                self.focus_thread.join()
-                if self.focus_thread.exception is not None:
+            if _focus_thread is not None:
+                _focus_thread.join()
+                if _focus_thread.exception is not None:
                     log.critical("Unable to move focus stage")
                     self.failed_hardware["Focus Stage"] = self.focus_stage
                     raise PrintingException()
         else:
-            return [self.focus_thread] + self.xy_threads
+            _xy_threads.insert(0, _focus_thread)
+            return _xy_threads
             
     def get_xyf_positions_in_coordinate_system(self, coord_system_name, light_engine=None):
         x, y = self.xy_stage.getXYPosition()

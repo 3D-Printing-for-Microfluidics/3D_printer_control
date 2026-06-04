@@ -149,18 +149,20 @@ class FocusControl(PrintControl):
                 join=False
             )
         else:
-            self.focus_thread = self.focus_stage.threadedFocusMove(log, self.focus + self.defocus_um/1000, join=False)
+            self.focus_thread = [self.focus_stage.threadedFocusMove(log, self.focus + self.defocus_um/1000, join=False)]
         time.sleep(0.1)
         return super().pre_exposure_tasks(settings, light_engine)
 
     def pre_exposure_joins(self, light_engine):
         """Join Focus threads"""
-        if self.focus_thread is not None:
-            self.focus_thread.join()
-            if self.focus_thread.exception is not None:
-                log.critical("Unable to move focus stage")
-                self.failed_hardware["Focus Stage"] = self.focus_stage
-                raise PrintingException()
+        # check if focus_thread is list (if coordinate system movement was used) or single thread (if not)
+        for thread in self.focus_thread:
+            if thread is not None:
+                thread.join()
+                if thread.exception is not None:
+                    log.critical("Unable to move focus stage")
+                    self.failed_hardware["Focus Stage"] = self.focus_stage
+                    raise PrintingException()
         return super().pre_exposure_joins(light_engine)
 
     def post_print_tasks(self):
