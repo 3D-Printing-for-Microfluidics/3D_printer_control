@@ -14,6 +14,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy.interpolate import griddata
+from matplotlib.backends.backend_pdf import PdfPages
 
 from printer_server.settings import Config
 import printer_server.views.home as home
@@ -593,10 +594,8 @@ class TestControl(PrintControl):
             # note: 15 & 30 are both factors of both 1590 and 2550 (our spot is 10px, so - 5 from each side)
             x_steps = 30
             y_steps = 30
-            # x_steps = 15
-            # y_steps = 15
-            # x_steps = 51
-            # y_steps = 53
+            # x_steps = 510
+            # y_steps = 530
         else:
             # note: 150 and 159 are factors of 2550 and 1590 respectively
             x_steps = 150
@@ -630,6 +629,8 @@ class TestControl(PrintControl):
             mask = image
             correction = Image.open(correction_path)
             image = Image.composite(correction, mask, mask=mask)
+        # Create image directory if it doesn't exist
+        (self.current_job / self.print_settings["Header"]["Image directory"]).mkdir(parents=True, exist_ok=True)
         image.save(self.current_job / self.print_settings["Header"]["Image directory"] / f"temp.png")  # Saves the image
         # Draw correction image
         self.screen.draw(self.current_job / self.print_settings["Header"]["Image directory"] / f"temp.png", light_engine=self.light_engine, led_num=self.led_num)
@@ -671,7 +672,7 @@ class TestControl(PrintControl):
 
         self.light_engines[self.light_engine].stop_sequencer()
 
-    def _createCorrectionImage(self, filename, save_directory_name, irradiance_map, light_correction=True, remove_outliers=True, grayscale_min=0.75):
+    def _createCorrectionImage(self, filename, save_directory_name, irradiance_map, light_correction=True, remove_outliers=True, grayscale_min=0.75, save_data=True):
         directory = self.current_job / "logs"
         light_engine_resolution = self.light_engines[self.light_engine].config_dict["resolution"]
         x_pixels = light_engine_resolution[0]
@@ -680,10 +681,10 @@ class TestControl(PrintControl):
         height_space = np.linspace(0, y_pixels, y_pixels)
         X, Y = np.meshgrid(width_space, height_space)
 
-        def load_data():
+        def load_data(save_data=True):
             log.info(f"\tLoading Data...")
             df = pd.read_csv(directory / filename)
-            df = average_data(df, directory / save_directory_name / f"averaged_{filename}")
+            df = average_data(df, directory / save_directory_name / f"averaged_{filename}", save_data=save_data)
             x = df.iloc[:, 0]
             y = df.iloc[:, 1]
             z = df.iloc[:, 2]
@@ -691,11 +692,12 @@ class TestControl(PrintControl):
             irradiance_data = np.array([np.array(x), np.array(y), np.array(z), np.array(std)])
             return irradiance_data
 
-        def average_data(df, avg_filename):
+        def average_data(df, avg_filename, save_data=True):
             if not remove_outliers:
                 log.info(f"\tAveraging Data...")
                 grouped_data = df.groupby(['x', 'y'])['irradiance'].agg(['mean', 'std']).reset_index()
-                grouped_data.to_csv(avg_filename, index=False)
+                if save_data:
+                    grouped_data.to_csv(avg_filename, index=False)
                 return grouped_data
             else:
                 log.info(f"\tCleaning Data...")
@@ -748,7 +750,8 @@ class TestControl(PrintControl):
                 grouped_data = filtered_df.groupby(['x', 'y'])['irradiance'].agg(['mean', 'std']).reset_index()
 
                 # Save the results to a CSV file
-                grouped_data.to_csv(avg_filename, index=False)
+                if save_data:
+                    grouped_data.to_csv(avg_filename, index=False)
                 
                 return grouped_data
 
@@ -904,11 +907,12 @@ class TestControl(PrintControl):
             plt.savefig(str(directory / save_directory_name / f"{name}_violin_plot.png"))
             plt.close()
 
-        # create folders
-        (directory / save_directory_name).mkdir(parents=True, exist_ok=True)
+        if save_data:
+            # create folders
+            (directory / save_directory_name).mkdir(parents=True, exist_ok=True)
 
         # load csv
-        irradiance_data = load_data()
+        irradiance_data = load_data(save_data=save_data)
 
         # convert to pixel space
         pixel_data = convert_to_pixel_space(irradiance_data)
@@ -916,51 +920,60 @@ class TestControl(PrintControl):
         # create fit of data
         fit_data, stddev_data = map_data(pixel_data)
 
-        # save stats (with and without 10px border)
-        # Compute statistics for full images
-        log.info(f"\tComputing stats...")
-        stats_df = compute_statistics("irradiance", fit_data)
-        stats_df = compute_statistics("sample_stddev", stddev_data, stats_df=stats_df)
+        if save_data:
+            # save stats (with and without 10px border)
+            # Compute statistics for full images
+            log.info(f"\tComputing stats...")
+            stats_df = compute_statistics("irradiance", fit_data)
+            stats_df = compute_statistics("sample_stddev", stddev_data, stats_df=stats_df)
 
-        # Crop images by 10 pixels on each side and compute statistics
-        fit_data_cropped = fit_data[10:-10, 10:-10]
-        stddev_data_cropped = stddev_data[10:-10, 10:-10]
+            # Crop images by 10 pixels on each side and compute statistics
+            fit_data_cropped = fit_data[10:-10, 10:-10]
+            stddev_data_cropped = stddev_data[10:-10, 10:-10]
 
-        stats_df = compute_statistics("irradiance_cropped_10", fit_data_cropped, stats_df=stats_df)
-        stats_df = compute_statistics("sample_stddev_cropped_10", stddev_data_cropped, stats_df=stats_df)
+            stats_df = compute_statistics("irradiance_cropped_10", fit_data_cropped, stats_df=stats_df)
+            stats_df = compute_statistics("sample_stddev_cropped_10", stddev_data_cropped, stats_df=stats_df)
 
-        # Crop images by 100 pixels on each side and compute statistics
-        fit_data_cropped2 = fit_data[100:-100, 100:-100]
-        stddev_data_cropped2 = stddev_data[100:-100, 100:-100]
+            # Crop images by 100 pixels on each side and compute statistics
+            fit_data_cropped2 = fit_data[100:-100, 100:-100]
+            stddev_data_cropped2 = stddev_data[100:-100, 100:-100]
 
-        stats_df = compute_statistics("irradiance_cropped_100", fit_data_cropped2, stats_df=stats_df)
-        stats_df = compute_statistics("sample_stddev_cropped_100", stddev_data_cropped2, stats_df=stats_df)
-        save_statistics(stats_df)
-
-        # Generate violin plots
-        log.info(f"\tSaving plots...")
+            stats_df = compute_statistics("irradiance_cropped_100", fit_data_cropped2, stats_df=stats_df)
+            stats_df = compute_statistics("sample_stddev_cropped_100", stddev_data_cropped2, stats_df=stats_df)
         
-        if irradiance_map is None:
-            violin_min = np.min(fit_data)/1.1
-            violin_max = np.max(fit_data)*1.1
-        else:
-            violin_min = np.min(irradiance_map)/1.1
-            violin_max = np.max(irradiance_map)*1.1
-        save_violin_plot(fit_data.flatten(), f"{save_directory_name.capitalize()} Irradiance", scale=(violin_min, violin_max))
-        save_violin_plot(fit_data_cropped.flatten(), f"{save_directory_name.capitalize()} Irradiance_cropped_10", scale=(violin_min, violin_max))
-        save_violin_plot(fit_data_cropped2.flatten(), f"{save_directory_name.capitalize()} Irradiance_cropped_100", scale=(violin_min, violin_max))
+            save_statistics(stats_df)
 
-        # normalize data
-        normalized_fit_data = normalize_data(fit_data)
+            # Generate violin plots
+            log.info(f"\tSaving plots...")
+            
+            if irradiance_map is None:
+                violin_min = np.min(fit_data)/1.1
+                violin_max = np.max(fit_data)*1.1
+            else:
+                violin_min = np.min(irradiance_map)/1.1
+                violin_max = np.max(irradiance_map)*1.1
+            save_violin_plot(fit_data.flatten(), f"{save_directory_name.capitalize()} Irradiance", scale=(violin_min, violin_max))
+            save_violin_plot(fit_data_cropped.flatten(), f"{save_directory_name.capitalize()} Irradiance_cropped_10", scale=(violin_min, violin_max))
+            save_violin_plot(fit_data_cropped2.flatten(), f"{save_directory_name.capitalize()} Irradiance_cropped_100", scale=(violin_min, violin_max))
 
-        # make the correction data
-        correction_data = create_correction_data(normalized_fit_data)
-        
-        # save correction image, std dev image, and scan image
-        save_images(normalized_fit_data, correction_data, stddev_data, np.max(fit_data))
+            # normalize data
+            normalized_fit_data = normalize_data(fit_data)
+
+            # make the correction data
+            correction_data = create_correction_data(normalized_fit_data)
+            
+            # save correction image, std dev image, and scan image
+            save_images(normalized_fit_data, correction_data, stddev_data, np.max(fit_data))
 
         return fit_data
 
+
+    def _get_test_irradiance_target(self):
+        wavelength = self.light_engines[self.light_engine].config_dict["leds_nm"][self.led_num]
+        positions = self._get_last_calibration_positions_from_logs()
+        key = f"irradiance_target_{self.light_engine}_{wavelength}"
+        return positions.get(key)
+    
     def capture_and_process_grayscale_correction(self, fine=True, save_results=True, orientation_test=False, find_focus=True, progress=(0,100)):
         x_pos = self.coord_systems["fiber_visitech"]["X"]
         y_pos = self.coord_systems["fiber_visitech"]["Y"]
@@ -978,46 +991,82 @@ class TestControl(PrintControl):
             focus_thread = None
 
         # Find the center and focus of the photodiode
-        self._update_progress(0, 4, progress)
+        self._update_progress(0, 7, progress)
         # self.x_px_size = 0.00756
         # self.y_px_size =  0.00756
         if find_focus:
-            self.find_photodiode_position_and_focus(progress=self._subdivide_progress(0,6,progress))
+            self.find_photodiode_position_and_focus(progress=self._subdivide_progress(0,7,progress))
         if self.printing_stopped.is_set():
             return
-        self._find_px_size(progress=self._subdivide_progress(1,6,progress))
+        self._find_px_size(progress=self._subdivide_progress(1,7,progress))
 
         # Measure the irradiance grid without correction to use as the basis for the correction image
         filename = "uncorrected_test_data.csv"
-        self._measure_irradiance_grid(fine=fine, save_name=filename, test=orientation_test, progress=self._subdivide_progress(2,6,progress))
+        self._measure_irradiance_grid(fine=fine, save_name=filename, test=orientation_test, progress=self._subdivide_progress(2,7,progress))
         if self.printing_stopped.is_set():
             return
         save_directory_name = "uncorrected"
         irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
 
+        old_normalization_factors = None
+        old_grayscale_normalization_factors = None
+
+        normalization_factor_before = None
+        normalization_factor_after = None
+        grayscale_normalization_before = None
+        grayscale_normalization_after = None
+
+        mean_irradiance_uncorrected_nonnormalized = float(np.mean(irradiance_map))
+        mean_irradiance_uncorrected_normalized = None
+        mean_irradiance_corrected_nonnormalized = None
+        mean_irradiance_corrected_normalized = None
+
         if not orientation_test:
             # Measure the grid with/without normalization to calculate the visitech normalization factor
+            old_normalization_factors = self.light_engines[self.light_engine].config_dict["normalization_factor"].copy() if "normalization_factor" in self.light_engines[self.light_engine].config_dict.keys() else None
             old_grayscale_normalization_factors = self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"].copy() if "grayscale_normalization_factor" in self.light_engines[self.light_engine].config_dict.keys() else None
-
-            if "grayscale_normalization_factor" not in self.light_engines[self.light_engine].config_dict.keys():
-                self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"] = self.light_engines[self.light_engine].config_dict["normalization_factor"].copy()
+            
+            if old_normalization_factors is not None:
+                normalization_factor_before = old_normalization_factors[self.led_num]
             else:
-                self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num] = self.light_engines[self.light_engine].config_dict["normalization_factor"][self.led_num]
+                normalization_factor_before = 1.0
+                self.light_engines[self.light_engine].config_dict["normalization_factor"] = [1.0] * len(self.light_engines[self.light_engine].config_dict["leds_nm"])
+            if old_grayscale_normalization_factors is not None:
+                grayscale_normalization_before = old_grayscale_normalization_factors[self.led_num]
+            else:
+                grayscale_normalization_before = normalization_factor_before
+                self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"] = [1.0] * len(self.light_engines[self.light_engine].config_dict["leds_nm"])
+
+            normalization_target = self._get_test_irradiance_target()
+
+            normalization_factor_after = round(normalization_factor_before*normalization_target/mean_irradiance_uncorrected_nonnormalized,3)
+            self.light_engines[self.light_engine].config_dict["normalization_factor"][self.led_num] = normalization_factor_after
+
+            filename = "uncorrected_normalized_test_data.csv"
+            self._measure_irradiance_grid(fine=False, save_name=filename, progress=self._subdivide_progress(3,7,progress))
+            save_directory_name = "uncorrected_normalized"
+            uncorrected_normalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None, save_data = False)
+            mean_irradiance_uncorrected_normalized = float(np.mean(uncorrected_normalized_irradiance_map))
+
             filename = "corrected_nonnormalized_test_data.csv"
-            self._measure_irradiance_grid(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'), progress=self._subdivide_progress(3,6,progress))
+            self._measure_irradiance_grid(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'), progress=self._subdivide_progress(4,7,progress))
             save_directory_name = "corrected_nonnormalized"
-            nonnormalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
-            self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num] = round(self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num]*np.mean(irradiance_map)/np.mean(nonnormalized_irradiance_map),3)
+            nonnormalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None, save_data = False)
+            mean_irradiance_corrected_nonnormalized = float(np.mean(nonnormalized_irradiance_map))
+
+            grayscale_normalization_after = round(grayscale_normalization_before*normalization_target/mean_irradiance_corrected_nonnormalized,3)
+            self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"][self.led_num] = grayscale_normalization_after
+
             filename = "corrected_normalized_test_data.csv"
-            self._measure_irradiance_grid(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'), progress=self._subdivide_progress(4,6,progress))
+            self._measure_irradiance_grid(fine=False, save_name=filename, correction_path=str(self.current_job / 'logs/uncorrected/correction_image.png'), progress=self._subdivide_progress(5,7,progress))
             save_directory_name = "corrected_normalized"
-            normalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None)
-            log.info("Pre mean irradiance: %s, Post mean irradiance: %s, Updated to: %s", np.mean(irradiance_map), np.mean(nonnormalized_irradiance_map), np.mean(normalized_irradiance_map))
+            normalized_irradiance_map = self._createCorrectionImage(filename, save_directory_name, None, save_data = False)
+            mean_irradiance_corrected_normalized = float(np.mean(normalized_irradiance_map))
 
         # Now measure the grid with the correction to see the improvement
         filename = "corrected_test_data.csv"
         correction_img = self.current_job / "logs/uncorrected/correction_image.png"
-        self._measure_irradiance_grid(fine=fine, save_name=filename, correction_path=str(correction_img), test=orientation_test, progress=self._subdivide_progress(5,6,progress))
+        self._measure_irradiance_grid(fine=fine, save_name=filename, correction_path=str(correction_img), test=orientation_test, progress=self._subdivide_progress(6,7,progress))
         if self.printing_stopped.is_set():
             return
         scale_factor = 1.0  # used if normalization factor was changed...
@@ -1025,7 +1074,14 @@ class TestControl(PrintControl):
         final_irradiance_map = self._createCorrectionImage(filename, save_directory_name, irradiance_map/scale_factor)
 
         # Combine datasets for global min/max and histogram
-        combined_fit_data = np.concatenate([irradiance_map.flatten(), final_irradiance_map.flatten()])
+        uncorrected_median = float(np.median(irradiance_map))
+        corrected_median = float(np.median(final_irradiance_map))
+        if corrected_median > 0:
+            remap_corrected = final_irradiance_map * (uncorrected_median / corrected_median)
+        else:
+            remap_corrected = final_irradiance_map
+        remap_uncorrected = irradiance_map
+        combined_fit_data = np.concatenate([remap_uncorrected.flatten(), remap_corrected.flatten()])
 
         # Compute global min and max for grayscale mapping
         global_min = np.min(combined_fit_data)
@@ -1039,11 +1095,11 @@ class TestControl(PrintControl):
             img = Image.fromarray(normalized, mode='L')
             img.save(save_path)
 
-        save_remapped_grayscale(irradiance_map,
+        save_remapped_grayscale(remap_uncorrected,
                                 self.current_job / "logs" / "uncorrected" / "grid fit remapped.png",
                                 global_min, global_max)
 
-        save_remapped_grayscale(final_irradiance_map,
+        save_remapped_grayscale(remap_corrected,
                                 self.current_job / "logs" / "corrected" / "grid fit remapped.png",
                                 global_min, global_max)
 
@@ -1096,8 +1152,139 @@ class TestControl(PrintControl):
 
         shutil.copy(self.current_job / 'logs/uncorrected/correction_image.png', self.current_job / 'logs/correction_image.png')
 
+        def _build_grayscale_report():
+            report_ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            report_path = self.current_job / f"grayscale_report_{report_ts}.pdf"
+            stats_uncorrected_path = self.current_job / "logs" / "uncorrected" / "stats.csv"
+            stats_corrected_path = self.current_job / "logs" / "corrected" / "stats.csv"
+
+            def load_image(image_path):
+                if not image_path.exists():
+                    log.warning("Missing report image: %s", image_path)
+                    return None
+                return Image.open(image_path)
+
+            def show_image(ax, img, *, force_grayscale=False):
+                if img is None:
+                    return
+                if force_grayscale:
+                    gray = img.convert("L")
+                    data = np.asarray(gray)
+                    ax.imshow(data, cmap="gray", vmin=0, vmax=255, interpolation="nearest")
+                    return
+                ax.imshow(img)
+
+            def load_stats(path, label):
+                if not path.exists():
+                    log.warning("Missing stats csv: %s", path)
+                    return None
+                df = pd.read_csv(path)
+                df.insert(0, "dataset", label)
+                return df
+
+            summary_lines = [
+                f"Normalization factor (before): {normalization_factor_before}" if normalization_factor_before is not None else "Normalization factor (before): n/a",
+                f"Mean irradiance (uncorrected nonnormalized): {mean_irradiance_uncorrected_nonnormalized:.3f}",
+                "",
+                f"Normalization factor (after): {normalization_factor_after}" if normalization_factor_after is not None else "Normalization factor (after): n/a",
+                f"Mean irradiance (fast uncorrected normalized): {mean_irradiance_uncorrected_normalized:.3f}",
+                "",
+                f"Grayscale normalization factor (before): {grayscale_normalization_before}" if grayscale_normalization_before is not None else "Grayscale normalization (before): n/a",
+                f"Mean irradiance (fast corrected nonnormalized): {mean_irradiance_corrected_nonnormalized:.3f}" if mean_irradiance_corrected_nonnormalized is not None else "Mean irradiance (grayscale unscaled): n/a",
+                "",
+                f"Grayscale normalization factor (after): {grayscale_normalization_after}" if grayscale_normalization_after is not None else "Grayscale normalization (after): n/a",
+                f"Mean irradiance (fast corrected normalized): {mean_irradiance_corrected_normalized:.3f}" if mean_irradiance_corrected_normalized is not None else "Mean irradiance (grayscale mean-matched): n/a",
+                f"Mean irradiance (corrected normalized): {float(np.mean(final_irradiance_map)):.3f}",
+
+            ]
+
+            img_uncorrected = load_image(self.current_job / "logs" / "uncorrected" / "grid fit remapped.png")
+            img_corrected = load_image(self.current_job / "logs" / "corrected" / "grid fit remapped.png")
+            violin_uncorrected = load_image(self.current_job / "logs" / "uncorrected" / "Uncorrected Irradiance_cropped_10_violin_plot.png")
+            violin_corrected = load_image(self.current_job / "logs" / "corrected" / "Corrected Irradiance_cropped_10_violin_plot.png")
+
+            stats_frames = [
+                load_stats(stats_uncorrected_path, "uncorrected"),
+                load_stats(stats_corrected_path, "corrected"),
+            ]
+            stats_frames = [frame for frame in stats_frames if frame is not None]
+            stats_df = pd.concat(stats_frames, ignore_index=True) if stats_frames else None
+
+            with PdfPages(report_path) as pdf:
+                fig = plt.figure(figsize=(11, 11))
+                gs = fig.add_gridspec(nrows=4, ncols=2, height_ratios=[0.4, 3, 4, 4])
+
+                ax_title = fig.add_subplot(gs[0, :])
+                ax_title.axis("off")
+                ax_title.set_title(f"Grayscale Correction Report - {report_ts}", fontsize=18, pad=10)
+
+                ax_uncorrected = fig.add_subplot(gs[1, 0])
+                ax_uncorrected.axis("off")
+                ax_uncorrected.set_title("Uncorrected Remapped", fontsize=10)
+                show_image(ax_uncorrected, img_uncorrected, force_grayscale=True)
+
+                ax_corrected = fig.add_subplot(gs[1, 1])
+                ax_corrected.axis("off")
+                ax_corrected.set_title("Corrected Remapped", fontsize=10)
+                show_image(ax_corrected, img_corrected, force_grayscale=True)
+
+                ax_violin_uncorrected = fig.add_subplot(gs[2, 0])
+                ax_violin_uncorrected.axis("off")
+                ax_violin_uncorrected.set_title("Uncorrected Violin (Cropped -10 px)", fontsize=10)
+                show_image(ax_violin_uncorrected, violin_uncorrected)
+
+                ax_violin_corrected = fig.add_subplot(gs[2, 1])
+                ax_violin_corrected.axis("off")
+                ax_violin_corrected.set_title("Corrected Violin (Cropped -10 px)", fontsize=10)
+                show_image(ax_violin_uncorrected, violin_corrected)
+
+                ax_summary = fig.add_subplot(gs[3, 0])
+                ax_summary.axis("off")
+                ax_summary.set_title("Irradiance and Normalization", fontsize=10)
+                y = 0.95
+                for line in summary_lines:
+                    ax_summary.text(0.02, y, line, fontsize=8, transform=ax_summary.transAxes)
+                    y -= 0.12
+
+                ax_table = fig.add_subplot(gs[3, 1])
+                ax_table.axis("off")
+                ax_table.set_title("Stats Summary", fontsize=10)
+                if stats_df is not None:
+                    stats_display = stats_df.copy()
+                    numeric_cols = stats_display.select_dtypes(include=["number"]).columns
+                    stats_display[numeric_cols] = stats_display[numeric_cols].round(3)
+                    num_cols = len(stats_display.columns)
+                    if num_cols >= 2:
+                        remaining = max(num_cols - 2, 1)
+                        remainder_width = 0.52 / remaining
+                        col_widths = [0.14, 0.34] + [remainder_width] * (num_cols - 2)
+                    else:
+                        col_widths = [0.5] * num_cols
+                    table = ax_table.table(
+                        cellText=stats_display.values,
+                        colLabels=stats_display.columns,
+                        loc="center",
+                        colWidths=col_widths,
+                    )
+                    table.auto_set_font_size(False)
+                    table.set_fontsize(7)
+                    table.scale(1, 1.1)
+
+                fig.tight_layout()
+                pdf.savefig(fig)
+                plt.close(fig)
+
+            log.info("Grayscale report saved: %s", report_path)
+
+        time.sleep(30)  # ensure all file operations are complete before building report
+        _build_grayscale_report()
+
         if not save_results and not orientation_test:
             # restore previous normalization factor if we aren't saving results
+            if old_normalization_factors is not None:
+                self.light_engines[self.light_engine].config_dict["normalization_factor"] = old_normalization_factors
+            else:
+                del self.light_engines[self.light_engine].config_dict["normalization_factor"]
             if old_grayscale_normalization_factors is not None:
                 self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"] = old_grayscale_normalization_factors
             else:
@@ -1124,13 +1311,21 @@ class TestControl(PrintControl):
                 cfg = json.load(fh)
 
             # do we do this with multiple leds? if so, we need to add all of them, if not, we need to make sure the path is added at the right index
-            cfg[self.light_engine]["light_grayscale_correction_image"] = [str(correction_image_name)]
-            self.light_engines[self.light_engine].config_dict["light_grayscale_correction_image"] = str(correction_image_name)
-            self.screen.config_dict[self.light_engine]["light_grayscale_correction_image"] = str(correction_image_name)
+            cfg[self.light_engine]["grayscale_correction_image"] = [str(correction_image_name)]
+            if "normalization_factor" in self.light_engines[self.light_engine].config_dict:
+                cfg[self.light_engine]["normalization_factor"] = list(
+                    self.light_engines[self.light_engine].config_dict["normalization_factor"]
+                )
+            if "grayscale_normalization_factor" in self.light_engines[self.light_engine].config_dict:
+                cfg[self.light_engine]["grayscale_normalization_factor"] = list(
+                    self.light_engines[self.light_engine].config_dict["grayscale_normalization_factor"]
+                )
+            self.light_engines[self.light_engine].config_dict["grayscale_correction_image"] = str(correction_image_name)
+            self.screen.config_dict[self.light_engine]["grayscale_correction_image"] = str(correction_image_name)
 
             tmp = cfg_path.with_suffix(cfg_path.suffix + ".tmp")
             with open(tmp, "w", encoding="utf-8") as fh:
-                json.dump(cfg, fh, indent=2)
+                json.dump(cfg, fh, indent=4)
                 fh.flush()
                 os.fsync(fh.fileno())
             os.replace(tmp, cfg_path)

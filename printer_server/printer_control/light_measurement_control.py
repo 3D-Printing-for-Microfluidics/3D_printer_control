@@ -198,41 +198,7 @@ class LightMeasurementControl(PrintControl):
                         log.warning("Unable to measure irradiance")
 
                 if adjust_normalization_factor and "photodiode" in config_dict and irr is not None:
-                    if target is not None and target > 0 and irr > 0:
-                        count = 0
-                        irr_adj = irr
-                        while abs(target - irr_adj) / target > 0.015 and count < 3:
-                            current_nf = light_engine_driver.config_dict.get("normalization_factor", [1.0])[i]
-                            updated_nf = round(current_nf * (target / irr_adj), 2)
-                            self._update_normalization_factor(
-                                light_engine_driver, light_engine, i, updated_nf, is_grayscale=False
-                            )
-                            try:
-                                light_engine_driver.stop_sequencer()
-                                light_engine_driver.setup_exposure(10000, led_power=100, repeat=0, is_grayscale_corrected=False, led_num=i)
-                                light_engine_driver.perform_exposure()
-                                time.sleep(0.1)
-                                _irr_adj = self.measure_irradiance(wavelength)
-                            except:
-                                log.warning("Unable to measure adjusted irradiance")
-
-                            if abs(target - _irr_adj) / target < abs(target - irr_adj) / target:
-                                log.info(
-                                    "Updated normalization factor for %s %s nm to %s (target=%s, measured=%s, corrected=%s)",
-                                    light_engine,
-                                    wavelength,
-                                    updated_nf,
-                                    target,
-                                    irr_adj,
-                                    _irr_adj,
-                                )
-                                irr_adj = _irr_adj
-                            else:
-                                self._update_normalization_factor(
-                                    light_engine_driver, light_engine, i, current_nf, is_grayscale=False
-                                )
-                                break
-                            count += 1
+                    irr_adj = irr
 
                 # Turn off light engine
                 light_engine_driver.stop_sequencer()
@@ -278,14 +244,21 @@ class LightMeasurementControl(PrintControl):
                         count = 0
                         irr_gray_adj = irr_gray
                         while abs(target - irr_gray_adj) / target > 0.015 and count < 3:
+                            ratio = target / irr_gray_adj
+                            current_nf = light_engine_driver.config_dict.get("normalization_factor", [1.0])[i]
                             current_gray_nf = light_engine_driver.config_dict.get(
                                 "grayscale_normalization_factor",
                                 light_engine_driver.config_dict.get("normalization_factor", [1.0]),
                             )[i]
-                            updated_gray_nf = round(current_gray_nf * (target / irr_gray_adj), 2)
+                            updated_nf = round(current_nf * ratio, 2)
+                            updated_gray_nf = round(current_gray_nf * ratio, 2)
+                            self._update_normalization_factor(
+                                light_engine_driver, light_engine, i, updated_nf, is_grayscale=False
+                            )
                             self._update_normalization_factor(
                                 light_engine_driver, light_engine, i, updated_gray_nf, is_grayscale=True
                             )
+                            _irr_gray_adj = irr_gray_adj
                             try:
                                 light_engine_driver.stop_sequencer()
                                 light_engine_driver.setup_exposure(10000, led_power=100, repeat=0, is_grayscale_corrected=True, led_num=i)
@@ -297,16 +270,20 @@ class LightMeasurementControl(PrintControl):
 
                             if abs(target - _irr_gray_adj) / target < abs(target - irr_gray_adj) / target:
                                 log.info(
-                                    "Updated grayscale normalization factor for %s %s nm to %s (target=%s, measured=%s, corrected=%s)",
+                                    "Updated grayscale normalization factors for %s %s nm to %s/%s (target=%s, measured=%s, corrected=%s)",
                                     light_engine,
                                     wavelength,
+                                    updated_nf,
                                     updated_gray_nf,
                                     target,
                                     irr_gray_adj,
-                                    _irr_gray_adj
+                                    _irr_gray_adj,
                                 )
                                 irr_gray_adj = _irr_gray_adj
                             else:
+                                self._update_normalization_factor(
+                                    light_engine_driver, light_engine, i, current_nf, is_grayscale=False
+                                )
                                 self._update_normalization_factor(
                                     light_engine_driver, light_engine, i, current_gray_nf, is_grayscale=True
                                 )
