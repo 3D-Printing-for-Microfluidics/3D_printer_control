@@ -18,6 +18,7 @@ class Photodiode:
     def __init__(self, config_dict=None, log_level=logging.DEBUG):
         # set defaults in init
         self.log = logging.getLogger(__name__)
+        logging.getLogger("pyvisa").setLevel(logging.ERROR)
         self.log.setLevel(log_level)
         
         self.connected = None
