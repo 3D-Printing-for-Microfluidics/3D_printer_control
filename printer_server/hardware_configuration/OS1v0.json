@@ -36,9 +36,9 @@
       "Focus": -2.0
     },
     "fiber_visitech": {
-      "X": -68.158,
-      "Y": -189.000,
-      "Focus": -4.0
+      "X": -66.489,
+      "Y": -191.641,
+      "Focus": -4.9874
     }
   },
   "stages": {
@@ -285,7 +285,7 @@
     "microcontroller": "Teensy3.2",
     "baudrate": 115200,
     "sample_period_us": 1000,
-    "calibration_intercept": 32160.0,
+    "calibration_intercept": 31260.0,
     "calibration_slope": -2.064,
     "loadcell_planarization_enabled": true,
     "loadcell_planarization_force": 35.0,
