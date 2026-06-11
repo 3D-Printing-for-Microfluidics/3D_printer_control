@@ -66,10 +66,11 @@ class LightEngineControl(PrintControl):
         for light_engine, thread in self.light_engine_threads.items():
             thread.join()
             light_engine_driver = self.light_engines[light_engine]
-            if light_engine_driver.hdmi_reset:
-                time.sleep(1)  # wait for light engine to come back after HDMI reset
-                light_engine_driver.screen.stop(restart=True)
-                light_engine_driver.hdmi_reset = False
+            # if light_engine_driver.hdmi_reset and len(self.light_engines) > 1:
+            #     if light_engine_driver.config_dict["virtual_screen"]:
+            #         time.sleep(10)  # wait for light engine to come back after HDMI reset
+            #         light_engine_driver.screen.stop(restart=True)
+            #     light_engine_driver.hdmi_reset = False
             if thread.exception is not None:
                 log.error("%s failed to initialize!", light_engine.capitalize())
                 self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = self.light_engines[light_engine]
@@ -103,10 +104,13 @@ class LightEngineControl(PrintControl):
         le, led = parseJSONLightEngine(light_engine, settings.get("Light engine wavelength (nm)"))
         light_engine_driver = self.light_engines[le]
         
+        correction_images = light_engine_driver.config_dict.get("grayscale_correction_image", [])
+        grayscale_available = len(correction_images) > led and correction_images.get(led, None) is not None
+
         # "Do light grayscale correction" setting deprecated, use "Do grayscale correction"
         corrected = settings.get(
             "Do light grayscale correction",
-            settings.get("Do grayscale correction", True),
+            settings.get("Do grayscale correction", grayscale_available),
         )
 
         mirror_short = settings.get("Mirror image short axis", False)

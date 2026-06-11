@@ -5,7 +5,6 @@ import base64
 import tkinter
 import logging
 import threading
-import queue
 from io import BytesIO
 from pathlib import Path
 from PIL import Image, ImageTk
@@ -145,29 +144,6 @@ class ScreenThread(Thread):
         self.log_level = log_level
         self._stop_requested = threading.Event()
         self._reset_requested = threading.Event()
-        self._tk_ready = threading.Event()
-        self._tk_queue = queue.Queue()
-        self._thread_id = None
-
-    def _is_tk_thread(self):
-        return self._thread_id == threading.get_ident()
-
-    def _run_in_tk_thread(self, func, *args, wait=True, timeout=2, **kwargs):
-        if self._is_tk_thread():
-            return func(*args, **kwargs)
-        if not self._tk_ready.is_set() or self.screens is None:
-            self.log.warning("Screen thread not ready; skipping Tk call")
-            return None
-
-        done = threading.Event()
-        result = {"value": None, "error": None}
-        self._tk_queue.put((func, args, kwargs, done, result))
-        if wait:
-            done.wait(timeout=timeout)
-            if result["error"]:
-                raise result["error"]
-            return result["value"]
-        return None
 
     def _getScreenIndex(self, light_engine):
         if light_engine in self.light_engines:
@@ -181,7 +157,6 @@ class ScreenThread(Thread):
         atexit.register(self.stop)
         self._stop_requested.clear()
         self._reset_requested.clear()
-        self._thread_id = threading.get_ident()
 
         while True:
             self.screens = []
@@ -212,32 +187,7 @@ class ScreenThread(Thread):
                 for screen, (img_path, led_num, mirror_short, mirror_long) in zip(self.screens, self.screen_draw_info):
                     screen.draw(img_path, led_num=led_num, mirror_short=mirror_short, mirror_long=mirror_long)
 
-            self._tk_ready.set()
-
-            def _process_queue():
-                while True:
-                    try:
-                        func, args, kwargs, done, result = self._tk_queue.get_nowait()
-                    except queue.Empty:
-                        break
-                    try:
-                        result["value"] = func(*args, **kwargs)
-                    except Exception as exc:
-                        result["error"] = exc
-                    finally:
-                        done.set()
-
-                root = tkinter._default_root
-                if root is not None:
-                    root.after(10, _process_queue)
-
-            root = tkinter._default_root
-            if root is not None:
-                root.after(10, _process_queue)
-
             tkinter.mainloop()
-
-            self._tk_ready.clear()
 
             if self._reset_requested.is_set() and not self._stop_requested.is_set():
                 self._reset_requested.clear()
@@ -279,15 +229,12 @@ class ScreenThread(Thread):
             else:
                 self._stop_requested.set()
 
-            def _destroy_screens():
-                for screen in self.screens:
-                    screen.window.destroy()
-                root = tkinter._default_root
-                if root is not None:
-                    root.after(10, root.destroy)
-                self.screens = None
+            for screen in self.screens:
+                screen.window.destroy()
+            root = tkinter._default_root
+            root.after(10, root.destroy)
+            self.screens = None
 
-            self._run_in_tk_thread(_destroy_screens, wait=False)
 
     def draw(self, img_path, light_engine="visitech", led_num=0, mirror_short=False, mirror_long=False, _grayscale_correction_path=None):
         """Draw an image to the specified screen."""
@@ -305,8 +252,7 @@ class ScreenThread(Thread):
         trys = 3 # very occationally the screen will fail to find the image. Not sure why, but hopefully this will fix it
         for i in range(trys):
             try:
-                self._run_in_tk_thread(
-                    self.screens[screen].draw,
+                self.screens[screen].draw(
                     img_path,
                     led_num=led_num,
                     mirror_short=mirror_short,

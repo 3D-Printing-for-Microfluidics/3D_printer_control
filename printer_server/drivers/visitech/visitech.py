@@ -517,7 +517,8 @@ class Visitech(EthernetSerial, LightEngineDriver):
             timeout = 30.0  # must wait for at least 5 seconds to read or write operation mode
             if self._wait_for_video_lock(timeout=timeout):
                 return self.send(f"SET OPERATION MODE {mode}")
-            if self._reset_hdmi() and self._wait_for_video_lock(timeout=timeout):
+            # if this is the only virtual screen, reset HDMI (if multiple screens are present, this breaks the other screen's output)
+            if len(self.screen.screens) == 1 and self._reset_hdmi() and self._wait_for_video_lock(timeout=timeout):
                 return self.send(f"SET OPERATION MODE {mode}")
         else:
             return self.send(f"SET OPERATION MODE {mode}")
