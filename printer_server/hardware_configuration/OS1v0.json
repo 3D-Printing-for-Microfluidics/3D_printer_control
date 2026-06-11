@@ -16,8 +16,8 @@
   "external_control": {},
   "coord_systems": {
     "global": {
-      "X": 0,
-      "Y": 0,
+      "X": -0.1,
+      "Y": -0.1,
       "Focus": 0
     },
     "parked": {

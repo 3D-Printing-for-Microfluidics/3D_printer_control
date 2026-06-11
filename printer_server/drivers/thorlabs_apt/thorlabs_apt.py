@@ -608,13 +608,14 @@ class ThorlabsAPT(USBSerial):
                         ):
                             if ((not self.mirroring[ax] and self.limits[ax][0] is not None and pos < self.limits[ax][0]) 
                                 or (self.mirroring[ax] and self.limits[ax][1] is not None and pos < -self.limits[ax][1])):
+                                self.log.info(f"{not self.mirroring[ax] and self.limits[ax][0] is not None and pos < self.limits[ax][0]}, {self.mirroring[ax] and self.limits[ax][1] is not None and pos < -self.limits[ax][1]}, {self.limits[ax]}")
                                 self.log.warning(
-                                    "%s - %s - %s position %s below lower limit %s",
+                                    "%s - %s - %s position %s below lower limit %s" if not self.mirroring[ax] else "%s - %s - %s position %s above upper limit %s",
                                     self.driver_name,
                                     ax,
                                     source,
-                                    pos,
-                                    self.limits[ax][0],
+                                    pos if not self.mirroring[ax] else -pos,
+                                    self.limits[ax][0] if not self.mirroring[ax] else -self.limits[ax][1],
                                 )
                                 self.fullstop(axis=ax)
                         elif (
@@ -622,13 +623,14 @@ class ThorlabsAPT(USBSerial):
                         ):
                             if ((not self.mirroring[ax] and self.limits[ax][1] is not None and pos > self.limits[ax][1])
                                 or (self.mirroring[ax] and self.limits[ax][0] is not None and pos > -self.limits[ax][0])):
+                                self.log.info(f"{not self.mirroring[ax] and self.limits[ax][1] is not None and pos > self.limits[ax][1]}, {self.mirroring[ax] and self.limits[ax][0] is not None and pos > -self.limits[ax][0]}, {self.limits[ax]}")
                                 self.log.warning(
-                                    "%s - %s - %s position %s above upper limit %s",
+                                    "%s - %s - %s position %s above upper limit %s" if not self.mirroring[ax] else "%s - %s - %s position %s below lower limit %s",
                                     self.driver_name,
                                     ax,
                                     source,
-                                    pos,
-                                    self.limits[ax][1],
+                                    pos if not self.mirroring[ax] else -pos,
+                                    self.limits[ax][1] if not self.mirroring[ax] else -self.limits[ax][0],
                                 )
                                 self.fullstop(axis=ax)
 
