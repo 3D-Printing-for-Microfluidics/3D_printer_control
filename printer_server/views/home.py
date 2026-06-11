@@ -69,9 +69,6 @@ if "focus_stage" in config_dict["stages"]:
     if "keyence" in config_dict and config_dict["keyence"].get("auto_focus_with_keyence"):
         from printer_server.printer_control.keyence_focus_control import KeyenceFocusControl
         parent_classes.append(KeyenceFocusControl)
-    elif "photodiode" in config_dict and config_dict["photodiode"].get("auto_focus_with_photodiode"):
-        from printer_server.printer_control.photodiode_focus_control import PhotodiodeFocusControl
-        parent_classes.append(PhotodiodeFocusControl)
 
     from printer_server.printer_control.focus_control import FocusControl
     parent_classes.append(FocusControl)

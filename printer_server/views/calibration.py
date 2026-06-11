@@ -161,7 +161,7 @@ def create_calibration_data():
                 settings_list.append(f"{le}_{axis}_offset")
         add_to_list(settings_list, GROUP_ACTIVE_OFFSETS)
 
-    auto_focus = ("keyence" in config_dict and config_dict["keyence"].get("auto_focus_with_keyence")) or ("photodiode" in config_dict and config_dict["photodiode"].get("auto_focus_with_photodiode"))
+    auto_focus = ("keyence" in config_dict and config_dict["keyence"].get("auto_focus_with_keyence"))
     if auto_focus:
         settings_list = []
         for le in config_dict["light_engines"]:
