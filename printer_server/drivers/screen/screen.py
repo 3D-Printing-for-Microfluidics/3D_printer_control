@@ -68,7 +68,7 @@ class Screen:
         self.config_mirror_short_axis = mirror_short_axis
         self.config_mirror_long_axis = mirror_long_axis
 
-    def draw(self, img_path, led_num=0, mirror_short=False, mirror_long=False):
+    def draw(self, img_path, led_num=0, mirror_short=False, mirror_long=False, _grayscale_correction_path=None):
         """Draw image in the Tk canvas."""
         try:
             self.image_path = img_path
@@ -90,9 +90,12 @@ class Screen:
             elif _mirror_long:
                 self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
 
-            if self.do_correction and self.correction_paths[led_num] is not None:
+            if self.do_correction and (self.correction_paths[led_num] is not None or _grayscale_correction_path is not None):
                 mask = self.image
-                correction = Image.open(self.correction_paths[led_num])
+                if _grayscale_correction_path is not None:
+                    correction = Image.open(_grayscale_correction_path)
+                else:
+                    correction = Image.open(self.correction_paths[led_num])
                 self.image = Image.composite(correction, mask, mask=mask)
 
         except (OSError, FileNotFoundError):
@@ -286,20 +289,30 @@ class ScreenThread(Thread):
 
             self._run_in_tk_thread(_destroy_screens, wait=False)
 
-    def draw(self, img_path, light_engine="visitech", led_num=0, mirror_short=False, mirror_long=False):
+    def draw(self, img_path, light_engine="visitech", led_num=0, mirror_short=False, mirror_long=False, _grayscale_correction_path=None):
         """Draw an image to the specified screen."""
         screen = self._getScreenIndex(light_engine)
         self.log.info("Drawing %s to %s (screen %s)", Path(img_path).name, light_engine, screen)
         if self.getCorrectionEnable(light_engine):
-            if self.screens[screen].correction_paths[led_num] is None:
+            if self.screens[screen].correction_paths[led_num] is None and _grayscale_correction_path is None:
                 self.log.warning("Correction image %s missing", Path(self.screens[screen].correction_paths[led_num]).name)
             else:
-                self.log.info("\tCorrection image: %s", Path(self.screens[screen].correction_paths[led_num]).name)
+                if _grayscale_correction_path is not None:
+                    self.log.info("\tInternal Correction image: %s", Path(_grayscale_correction_path).name)
+                else:
+                    self.log.info("\tCorrection image: %s", Path(self.screens[screen].correction_paths[led_num]).name)
 
         trys = 3 # very occationally the screen will fail to find the image. Not sure why, but hopefully this will fix it
         for i in range(trys):
             try:
-                self.screens[screen].draw(img_path, led_num=led_num, mirror_short=mirror_short, mirror_long=mirror_long)
+                self._run_in_tk_thread(
+                    self.screens[screen].draw,
+                    img_path,
+                    led_num=led_num,
+                    mirror_short=mirror_short,
+                    mirror_long=mirror_long,
+                    _grayscale_correction_path=_grayscale_correction_path
+                )
                 break
             except IndexError:
                 if i != trys - 1:

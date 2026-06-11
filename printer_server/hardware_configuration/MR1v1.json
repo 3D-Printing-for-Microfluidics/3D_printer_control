@@ -234,6 +234,7 @@
             2560,
             1600
         ],
+        "pixel_pitch_um": 15.12,
         "orientation": "X",
         "mirror_long_axis": false,
         "mirror_short_axis": false
@@ -251,6 +252,7 @@
             1920,
             1080
         ],
+        "pixel_pitch_um": 0.75,
         "orientation": "X",
         "mirror_long_axis": false,
         "mirror_short_axis": false

@@ -187,6 +187,7 @@
         "resolution": [
             2560,
             1600
-        ]
+        ],
+        "pixel_pitch_um": 3.78
     }
 }

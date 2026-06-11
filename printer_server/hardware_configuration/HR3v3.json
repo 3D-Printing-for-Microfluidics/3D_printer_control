@@ -209,6 +209,7 @@
             2560,
             1600
         ],
+        "pixel_pitch_um": 7.56,
         "grayscale_correction_image": [
             "HR3v3_corrected_20260526_142139.png"
         ],

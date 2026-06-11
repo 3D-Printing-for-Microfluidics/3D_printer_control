@@ -284,6 +284,7 @@
             2560,
             1600
         ],
+        "pixel_pitch_um": 7.56,
         "orientation": "Y",
         "mirror_long_axis": false,
         "mirror_short_axis": false,
