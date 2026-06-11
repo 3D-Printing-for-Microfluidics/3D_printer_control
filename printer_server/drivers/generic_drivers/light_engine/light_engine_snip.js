@@ -11,7 +11,13 @@ var disable_button = function (id) {
 }
 
 $(document).ready(function () {
-    for (let light_engine in manual_controls_data["light_engines"]) {
+        // Fuction to get led index from led button group
+        let get_led_index = function (le) {
+            let activeButton = document.querySelector(
+                `#${le}-led-group .active`
+            );
+            return parseInt(activeButton.dataset.ledIndex, 10);
+        }
         // Handles to user inputs
         let LedPowerSliderElement = document.getElementById(`${light_engine}-led-power-slider`);
         let LedPowerLabelElement = document.getElementById(`${light_engine}-led-power-label`);
@@ -71,14 +77,10 @@ $(document).ready(function () {
                 }
             }
 
-            let led_1_element = document.getElementById(`led_1`);
-            let led_1_checked = false;
-            if (led_1_element != null) {
-                led_1_checked = led_1_element.classList.contains("active");
-            }
+            let led_index = get_led_index(light_engine);
 
-            console.log({ "repeat": repeat, "exposure": exposure, "ledPower": ledPower, "led": led_1_checked })
-            socket.emit("light_engine_start", { "light_engine": light_engine, "repeat": repeat, "exposure": exposure, "ledPower": ledPower, "led": led_1_checked });
+            console.log({ "repeat": repeat, "exposure": exposure, "ledPower": ledPower, "led": led_index})
+            socket.emit("light_engine_start", { "light_engine": light_engine, "repeat": repeat, "exposure": exposure, "ledPower": ledPower, "led": led_index});
         });
     }
     socket.on("light_engine_update_led_state", function (message) {

@@ -193,7 +193,6 @@ def index():
         for light_engine in config_dict["light_engines"]:
             manual_controls_data["light_engines"][light_engine] = {}
             if light_engine in config_dict.keys():
-                manual_controls_data["light_engines"][light_engine]["dual_led"] = config_dict[light_engine]["dual_led"]
                 manual_controls_data["light_engines"][light_engine]["leds_nm"] = config_dict[light_engine]["leds_nm"]
                 
     if "xy_stage" in config_dict["stages"].keys():

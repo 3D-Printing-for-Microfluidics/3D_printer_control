@@ -7,18 +7,17 @@
         </div>
     </div>
 
-    {% if manual_controls_data["light_engines"][light_engine]['dual_led'] %}
-    <!-- LED section (dual led) -->
+    {% if manual_controls_data["light_engines"][light_engine]['leds_nm']|length > 1 %}
+    <!-- LED section -->
     <div class="row">
         <div class="col-4">
             <h5>LED</h5>
         </div>
         <div class="col-7">
-            <div class="btn-group btn-group-toggle float-right" data-toggle="buttons">
-                <label class="btn btn-outline-info btn-fixed-width shadow-none active"><input type="radio">{{
-                    manual_controls_data["light_engines"][light_engine]['leds_nm'][0] }}</label>
-                <label class="btn btn-outline-info btn-fixed-width shadow-none" id="led_1"><input type="radio">{{
-                    manual_controls_data["light_engines"][light_engine]['leds_nm'][1] }}</label>
+            <div class="btn-group btn-group-toggle float-right" data-toggle="buttons" id="{{ light_engine }}-led-group">
+                {% for nm in manual_controls_data["light_engines"][light_engine]["leds_nm"] %}
+                <label class="btn btn-outline-info btn-fixed-width shadow-none {% if loop.first %}active{% endif %}" data-led-index="{{ loop.index0 }}"><input type="radio">{{ nm }}</label> <!--  id="{{ light_engine }}-led-{{ loop.index0 }}" -->
+                {% endfor %}
             </div>
         </div>
         <div class="col-1">
