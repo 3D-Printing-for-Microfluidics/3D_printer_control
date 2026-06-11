@@ -5,6 +5,7 @@ import base64
 import tkinter
 import logging
 import threading
+import queue
 from io import BytesIO
 from pathlib import Path
 from PIL import Image, ImageTk
@@ -105,18 +106,6 @@ class Screen:
         # It takes about 200ms to change the screen
         time.sleep(0.25)
 
-    def clear(self):
-        """Clear the Tk window by drawing a black image."""
-        self.image = Image.new(mode="L", size=self.resolution, color=0)
-        self.image_preview = self.image
-        self.tk_image = ImageTk.PhotoImage(self.image)
-        self.image_path = None
-        self.canvas.itemconfig(self.canvas_image, image=self.tk_image)
-        self.window.update()
-
-        # It takes about 200ms to change the screen
-        time.sleep(0.25)
-
     def fetch_preview(self, scale=1/20):
         new_size = (int(self.resolution[0] * scale), int(self.resolution[1] * scale))
         if self.image_preview is not None:
@@ -131,6 +120,9 @@ class Screen:
 
         img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
         return img_base64
+    
+    def get_image(self):
+        return self.image_path
 
 
 class ScreenThread(Thread):
@@ -150,6 +142,29 @@ class ScreenThread(Thread):
         self.log_level = log_level
         self._stop_requested = threading.Event()
         self._reset_requested = threading.Event()
+        self._tk_ready = threading.Event()
+        self._tk_queue = queue.Queue()
+        self._thread_id = None
+
+    def _is_tk_thread(self):
+        return self._thread_id == threading.get_ident()
+
+    def _run_in_tk_thread(self, func, *args, wait=True, timeout=2, **kwargs):
+        if self._is_tk_thread():
+            return func(*args, **kwargs)
+        if not self._tk_ready.is_set() or self.screens is None:
+            self.log.warning("Screen thread not ready; skipping Tk call")
+            return None
+
+        done = threading.Event()
+        result = {"value": None, "error": None}
+        self._tk_queue.put((func, args, kwargs, done, result))
+        if wait:
+            done.wait(timeout=timeout)
+            if result["error"]:
+                raise result["error"]
+            return result["value"]
+        return None
 
     def _getScreenIndex(self, light_engine):
         if light_engine in self.light_engines:
@@ -163,6 +178,7 @@ class ScreenThread(Thread):
         atexit.register(self.stop)
         self._stop_requested.clear()
         self._reset_requested.clear()
+        self._thread_id = threading.get_ident()
 
         while True:
             self.screens = []
@@ -193,7 +209,32 @@ class ScreenThread(Thread):
                 for screen, (img_path, led_num, mirror_short, mirror_long) in zip(self.screens, self.screen_draw_info):
                     screen.draw(img_path, led_num=led_num, mirror_short=mirror_short, mirror_long=mirror_long)
 
+            self._tk_ready.set()
+
+            def _process_queue():
+                while True:
+                    try:
+                        func, args, kwargs, done, result = self._tk_queue.get_nowait()
+                    except queue.Empty:
+                        break
+                    try:
+                        result["value"] = func(*args, **kwargs)
+                    except Exception as exc:
+                        result["error"] = exc
+                    finally:
+                        done.set()
+
+                root = tkinter._default_root
+                if root is not None:
+                    root.after(10, _process_queue)
+
+            root = tkinter._default_root
+            if root is not None:
+                root.after(10, _process_queue)
+
             tkinter.mainloop()
+
+            self._tk_ready.clear()
 
             if self._reset_requested.is_set() and not self._stop_requested.is_set():
                 self._reset_requested.clear()
@@ -234,11 +275,16 @@ class ScreenThread(Thread):
                     self.screen_draw_info.append((screen.image_path, screen.led_num, screen.mirror_short, screen.mirror_long))
             else:
                 self._stop_requested.set()
-            for screen in self.screens:
-                screen.window.destroy()
-            root = tkinter._default_root
-            root.after(10, root.destroy)
-            self.screens = None
+
+            def _destroy_screens():
+                for screen in self.screens:
+                    screen.window.destroy()
+                root = tkinter._default_root
+                if root is not None:
+                    root.after(10, root.destroy)
+                self.screens = None
+
+            self._run_in_tk_thread(_destroy_screens, wait=False)
 
     def draw(self, img_path, light_engine="visitech", led_num=0, mirror_short=False, mirror_long=False):
         """Draw an image to the specified screen."""
@@ -263,18 +309,16 @@ class ScreenThread(Thread):
                     self.log.error("Screen for %s (screen %s) failed to load image", light_engine, screen)
             time.sleep(0.1)
 
-    def clear(self, light_engine="visitech"):
-        """Clear the specified screen."""
+    def fetch_preview(self, light_engine="visitech", scale=1/20):
         screen = self._getScreenIndex(light_engine)
-        self.log.info("Clearing screen %s", screen)
         try:
-            self.screens[screen].clear()
+            return self.screens[screen].fetch_preview(scale=scale)
         except IndexError:
             self.log.error("Screen for %s (screen %s) does not exist", light_engine, screen)
 
-    def fetch_preview(self, light_engine="visitech"):
+    def get_image(self, light_engine="visitech"):
         screen = self._getScreenIndex(light_engine)
         try:
-            return self.screens[screen].fetch_preview()
+            return self.screens[screen].get_image()
         except IndexError:
             self.log.error("Screen for %s (screen %s) does not exist", light_engine, screen)

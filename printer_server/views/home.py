@@ -74,7 +74,6 @@ if "focus_stage" in config_dict["stages"]:
     parent_classes.append(FocusControl)
 
 if "light_engines" in config_dict:
-    from printer_server.printer_control.screen_control import ScreenControl
     from printer_server.printer_control.light_engine_control import LightEngineControl
     parent_classes.append(LightEngineControl)
 

@@ -1,10 +1,12 @@
+import os
 import time
 import logging
 
+from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 from printer_server.views.manual_controls import update_le_led_state
-from printer_server.printer_control.print_control import PrintingException
-from printer_server.printer_control.screen_control import ScreenControl
+from printer_server.printer_control.print_control import PrintControl, PrintingException
+from printer_server.views.manual_controls import update_light_engine_preview
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 
 
@@ -25,19 +27,29 @@ def parseJSONLightEngine(json_le, wavelength_nm=None):
                             break
             return le, led
 
-class LightEngineControl(ScreenControl):
+class LightEngineControl(PrintControl):
     def __init__(self):
         super().__init__()
         self.light_engines = driver_handles.light_engines
-        self.screen = driver_handles.screen
         self.light_engine_threads = {}
+        self.screen_thread = None
 
     def connect_hardware(self):
         for light_engine, light_engine_driver in self.light_engines.items():
+            if light_engine_driver.config_dict["virtual_screen"]:
+                if self.screen_thread is None:
+                    screen_thread = Thread(log, name=f"{light_engine}_screen_connect_thread", target=light_engine_driver.screen.start, args=[])
+                    screen_thread.start()
+                    self.screen_thread = screen_thread
             thread = Thread(log, name=f"{light_engine}_control_connect_thread", target=light_engine_driver.connect)
             thread.start()
             self.light_engine_threads[light_engine] = thread
         super().connect_hardware()
+        if self.screen_thread is not None:
+            self.screen_thread.join()
+            if self.screen_thread.exception is not None:
+                log.error("Virtual Screen failed to connect!")
+                self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = self.light_engines[light_engine]
         for light_engine, thread in self.light_engine_threads.items():
             thread.join()
             if not self.light_engines[light_engine].connected or thread.exception is not None:
@@ -56,7 +68,7 @@ class LightEngineControl(ScreenControl):
             light_engine_driver = self.light_engines[light_engine]
             if light_engine_driver.hdmi_reset:
                 time.sleep(1)  # wait for light engine to come back after HDMI reset
-                self.screen.stop(restart=True)
+                light_engine_driver.screen.stop(restart=True)
                 light_engine_driver.hdmi_reset = False
             if thread.exception is not None:
                 log.error("%s failed to initialize!", light_engine.capitalize())
@@ -96,13 +108,32 @@ class LightEngineControl(ScreenControl):
             "Do light grayscale correction",
             settings.get("Do grayscale correction", True),
         )
+
+        mirror_short = settings.get("Mirror image short axis", False)
+        mirror_long = settings.get("Mirror image long axis", False)
+
+        self.screen_thread = Thread(
+            log, 
+            name=f"{light_engine}_control_draw_thread", 
+            target=light_engine_driver.set_image, 
+            args=[self.image], 
+            kwargs={
+                "led_num": led, 
+                "grayscale_corrected": corrected,
+                "mirror_short": mirror_short, 
+                "mirror_long": mirror_long
+            }
+        )
+
         self.light_engine_threads = Thread(
             log, 
             name=f"{le}_control_setup_thread",
             target=light_engine_driver.setup_exposure,
             args=[self.exposure_time_ms],
-            kwargs={"led_power": self.power, "is_grayscale_corrected": corrected, "led_num": led},
+            kwargs={"led_power": self.power, "led_num": led},
         )
+
+        self.screen_thread.start()
         self.light_engine_threads.start()
         super().pre_exposure_tasks(settings, light_engine)
 
@@ -112,6 +143,17 @@ class LightEngineControl(ScreenControl):
             log.critical("Unable communicate with light engine")
             self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = self.light_engines[light_engine]
             raise PrintingException()
+        
+        le, led = parseJSONLightEngine(light_engine)
+        self.screen_thread.join()
+        if self.screen_thread.exception is not None:
+            log.critical("Unable draw to screen")
+            self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = self.light_engines[light_engine]
+            raise PrintingException()
+        update_light_engine_preview(
+            light_engine, 
+            self.light_engines[le].get_image_preview()
+        )
         return super().pre_exposure_joins(light_engine)
 
     def exposure(self, settings, light_engine):
@@ -143,6 +185,15 @@ class LightEngineControl(ScreenControl):
             light_engine_driver.stop_sequencer()
             update_le_led_state(light_engine, False)
             light_engine_driver.idle_on()
+
+            imagePath = os.path.join(
+                Config.PRINT_SERVER_FOLDER, f"drivers/{light_engine}/images", f"black.png"
+            )
+            light_engine_driver.set_image(imagePath, led_num=0, grayscale_corrected=False)
+            update_light_engine_preview(
+                light_engine, 
+                light_engine_driver.get_image_preview()
+            )
         except Exception as ex:
             log.critical("Unable communicate with light engine (%s)", ex, exc_info=True)
             self.failed_hardware[f"{light_engine.capitalize()} Light Engine"] = light_engine_driver

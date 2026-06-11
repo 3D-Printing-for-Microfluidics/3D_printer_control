@@ -216,13 +216,13 @@
             "visitech": false
         }
     },
-    "screen": {},
     "light_engines": [
         "visitech",
         "wintech"
     ],
     "visitech": {
         "dummy": false,
+        "virtual_screen": true,
         "address": "192.168.0.10",
         "port": 5000,
         "dual_led": true,
@@ -240,6 +240,7 @@
     },
     "wintech": {
         "dummy": false,
+        "virtual_screen": true,
         "vendor_id": "0x0451",
         "product_id": "0xC900",
         "dual_led": false,

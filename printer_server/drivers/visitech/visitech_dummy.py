@@ -5,6 +5,7 @@ Dummy Visitech Module
 import time
 import logging
 from datetime import datetime
+from printer_server.drivers.screen import screen
 from printer_server.logging_handler import dummy_log
 from printer_server.drivers.generic_drivers import LightEngineDriver
 
@@ -18,6 +19,7 @@ class Visitech_dummy(LightEngineDriver):
         config_dict=None,
         log_level=logging.DEBUG,
         dual_led=False,
+        screen=None,
     ):
         self.max_exp_time = 10000
         self.log = logging.getLogger(__name__)
@@ -46,6 +48,7 @@ class Visitech_dummy(LightEngineDriver):
             "hdmi_reset_script",
             "/home/pi/3D_printer_control/rpi/reset_hdmi.sh",
         )
+        self.screen = screen
 
     @dummy_log
     def connect(self):
@@ -264,18 +267,42 @@ class Visitech_dummy(LightEngineDriver):
             status["led_driver_temp2"] = self.get_led_driver_board_temp(led_num=1)
             status["led_driver_status2"] = self.get_led_driver_status(led_num=1)
         return status
+    
+    @dummy_log
+    def set_image(self, img_path, led_num=0, grayscale_corrected=False, mirror_short=False, mirror_long=False, _grayscale_correction_path=None):
+        """
+        Sets the image to be drawn
+        """
+        self.screen.setCorrectionEnable(grayscale_corrected, light_engine="visitech")
+        self.screen.draw(img_path, light_engine="visitech", led_num=led_num, mirror_short=mirror_short, mirror_long=mirror_long, _grayscale_correction_path=_grayscale_correction_path)
+
+    def get_image(self):
+        """
+        Gets the current image from the screen
+        """
+        return self.screen.get_image("visitech")
+
+    @dummy_log
+    def get_image_preview(self, scale=1/20):
+        """
+        Get a preview of the current image.
+        """
+        return self.screen.fetch_preview("visitech", scale=scale)
+    
+    def is_grayscale_corrected(self):
+        return self.screen.getCorrectionEnable("visitech")
 
     def getCurrentLed(self):
         return self.led
 
     @dummy_log
-    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, is_grayscale_corrected=False, led_num=0):
+    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
         self.exposure_time = exposure_time_ms
         self.repeats = repeat
         self.led = led_num
         self.led_power = led_power
 
-        if is_grayscale_corrected:
+        if self.is_grayscale_corrected():
             self.normalization_factor = self.config_dict.get(
                 "grayscale_normalization_factor",
                 [1.0],
@@ -286,7 +313,7 @@ class Visitech_dummy(LightEngineDriver):
                 [1.0],
             )[led_num]
 
-        # if is_grayscale_corrected:
+        # if self.is_grayscale_corrected():
         #     self.set_normalization_factor(self.config_dict["grayscale_normalization_factor"][led_num])
         # else:
         #     self.set_normalization_factor(self.config_dict["normalization_factor"][led_num])

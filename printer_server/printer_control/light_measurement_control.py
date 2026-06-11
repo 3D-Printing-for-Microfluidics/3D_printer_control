@@ -10,7 +10,7 @@ from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
 from printer_server.printer_control.print_control import PrintControl, run_in_thread
-from printer_server.views.manual_controls import update_le_led_state, update_screen_preview
+from printer_server.views.manual_controls import update_le_led_state, update_light_engine_preview
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 from printer_server.print_file_validator import check_version
 
@@ -120,6 +120,45 @@ class LightMeasurementControl(PrintControl):
         light_engine_driver.config_dict[key][led_num] = new_value
         config_dict[light_engine][key][led_num] = new_value
 
+    def start_light_engine(self, light_engine, led_num=0, is_grayscale_corrected=False):
+        light_engine_driver = self.light_engines[light_engine]
+
+        imagePath = os.path.join(
+            Config.PRINT_SERVER_FOLDER, f"drivers/{light_engine}/images", f"white.png"
+        )
+        draw_thread = Thread(
+            log, name="light_engine_control_draw_thread", target=light_engine_driver.set_image, args=[imagePath], kwargs={"led_num": led_num, "grayscale_corrected": is_grayscale_corrected}
+        )
+
+        light_engine_thread = Thread(
+            log, 
+            name=f"{light_engine}_control_setup_thread",
+            target=light_engine_driver.setup_exposure,
+            args=[10000],
+            kwargs={"led_power": 100, "repeat": 0, "led_num": led_num},
+        )
+
+        draw_thread.start()
+        time.sleep(0.1)
+        light_engine_thread.start()
+
+        light_engine_thread.join()
+        if light_engine_thread.exception is not None:
+            raise light_engine_thread.exception
+        draw_thread.join()
+        if draw_thread.exception is not None:
+            raise draw_thread.exception
+
+        # Turn on light engine
+        update_le_led_state(light_engine, True)
+        light_engine_driver.perform_exposure()
+        time.sleep(0.1)
+
+        update_light_engine_preview(
+            light_engine, 
+            light_engine_driver.get_image_preview()
+        )
+
     def measure_light(self, path_prefix, adjust_normalization_factor=False):
         for light_engine in config_dict["light_engines"]:
             
@@ -146,44 +185,7 @@ class LightMeasurementControl(PrintControl):
                 if "spectrometer" in config_dict:
                     num_avg = config_dict["spectrometer"]["default_number_of_averages"]
 
-                try:
-                    self.screen.setCorrectionEnable(False, light_engine=light_engine)
-                except:
-                    continue
-
-                light_engine_thread = Thread(
-                    log, 
-                    name=f"{light_engine}_control_setup_thread",
-                    target=light_engine_driver.setup_exposure,
-                    args=[10000],
-                    kwargs={"led_power": 100, "repeat": 0, "is_grayscale_corrected":False, "led_num": i},
-                )
-
-                imagePath = os.path.join(
-                    Config.PRINT_SERVER_FOLDER, f"drivers/{light_engine}/images", f"white.png"
-                )
-                screen_thread = Thread(
-                    log, name="screen_control_draw_thread", target=self.screen.draw, args=[imagePath], kwargs={"light_engine": light_engine, "led_num": i}
-                )
-                light_engine_thread.start()
-                screen_thread.start()
-
-                light_engine_thread.join()
-                if light_engine_thread.exception is not None:
-                    raise light_engine_thread.exception
-                self.screen_thread.join()
-                if self.screen_thread.exception is not None:
-                    raise self.screen_thread.exception
-
-                # Turn on light engine
-                update_le_led_state(light_engine, True)
-                light_engine_driver.perform_exposure()
-                time.sleep(0.1)
-
-                update_screen_preview(
-                    light_engine, 
-                    self.screen.fetch_preview(light_engine)
-                )
+                self.start_light_engine(light_engine, led_num=i, is_grayscale_corrected=False)
 
                 # Measure spectrum and irradiance
                 if "spectrometer" in config_dict:
@@ -204,34 +206,7 @@ class LightMeasurementControl(PrintControl):
                 light_engine_driver.stop_sequencer()
                 update_le_led_state(light_engine, False)
 
-                try:
-                    self.screen.setCorrectionEnable(True, light_engine=light_engine)
-                except Exception as ex:
-                    continue
-
-                light_engine_thread = Thread(
-                    log, 
-                    name=f"{light_engine}_control_setup_thread",
-                    target=light_engine_driver.setup_exposure,
-                    args=[10000],
-                    kwargs={"led_power": 100, "repeat": 0, "is_grayscale_corrected":True, "led_num": i},
-                )
-
-                light_engine_thread.start()
-  
-                light_engine_thread.join()
-                if light_engine_thread.exception is not None:
-                    raise light_engine_thread.exception
-
-                # Turn on light engine
-                update_le_led_state(light_engine, True)
-                light_engine_driver.perform_exposure()
-                time.sleep(0.1)
-
-                update_screen_preview(
-                    light_engine, 
-                    self.screen.fetch_preview(light_engine)
-                )
+                self.start_light_engine(light_engine, led_num=i, is_grayscale_corrected=True)
 
                 if "photodiode" in config_dict:
                     try:
@@ -261,9 +236,7 @@ class LightMeasurementControl(PrintControl):
                             _irr_gray_adj = irr_gray_adj
                             try:
                                 light_engine_driver.stop_sequencer()
-                                light_engine_driver.setup_exposure(10000, led_power=100, repeat=0, is_grayscale_corrected=True, led_num=i)
-                                light_engine_driver.perform_exposure()
-                                time.sleep(0.1)
+                                self.start_light_engine(light_engine, led_num=i, is_grayscale_corrected=True)
                                 _irr_gray_adj = self.measure_irradiance(wavelength)
                             except:
                                 log.warning("Unable to measure adjusted irradiance")

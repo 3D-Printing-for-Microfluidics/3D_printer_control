@@ -268,12 +268,12 @@
         "baudrate": 115200,
         "measurement_period_us": 5000
     },
-    "screen": {},
     "light_engines": [
         "visitech"
     ],
     "visitech": {
         "dummy": false,
+        "virtual_screen": true,
         "address": "192.168.0.10",
         "port": 5000,
         "dual_led": false,

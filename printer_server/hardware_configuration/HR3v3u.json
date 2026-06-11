@@ -192,12 +192,12 @@
         "tighten_delay_ms": 1000,
         "motor_timeout_ms": 7500
     },
-    "screen": {},
     "light_engines": [
         "visitech"
     ],
     "visitech": {
         "dummy": false,
+        "virtual_screen": true,
         "address": "192.168.0.10",
         "port": 5000,
         "dual_led": false,

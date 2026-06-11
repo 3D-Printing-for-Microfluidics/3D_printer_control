@@ -182,13 +182,16 @@ class Printer3D:
                     config_dict=config_dict["photodiode"], log_level=default_log_level
                 )
 
-        if "screen" in config_dict.keys():
+        # create virual screen if needed
+        config_dict["screen"] = None
+        for light_engine in config_dict["light_engines"]:
+            if light_engine in config_dict.keys() and config_dict[light_engine]["virtual_screen"]:
+                if config_dict["screen"] is None:
+                    config_dict["screen"] = {"light_engines": []}
+                config_dict["screen"]["light_engines"].append(light_engine)
+                config_dict["screen"][light_engine] = config_dict[light_engine]
+        if config_dict["screen"] is not None:
             from printer_server.drivers.screen import ScreenThread
-
-            config_dict["screen"]["light_engines"] = config_dict["light_engines"]
-            for le in config_dict["light_engines"]:
-                config_dict["screen"][le] = config_dict[le]
-
             self.screen = ScreenThread(
                 config_dict=config_dict["screen"],
                 log_level=default_log_level,
@@ -228,6 +231,7 @@ class Printer3D:
                     config_dict["visitech"]["leds_nm"],
                     log_level=default_log_level,
                     dual_led=config_dict["visitech"]["dual_led"],
+                    screen=self.screen
                 )
             else:
                 if "light_engines" in config_dict and "hdmi_output" not in config_dict["visitech"]:
@@ -239,6 +243,7 @@ class Printer3D:
                 self.visitech = Visitech(
                     config_dict=config_dict["visitech"],
                     log_level=default_log_level,
+                    screen=self.screen
                 )
 
         if "wintech" in config_dict.keys():
@@ -248,6 +253,7 @@ class Printer3D:
                 config_dict=config_dict["wintech"],
                 log_level=default_log_level,
                 dummy=config_dict["wintech"]["dummy"],
+                screen=self.screen
             )
 
         self.bp_stage = None

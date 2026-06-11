@@ -76,7 +76,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
     SET LBREG
     """
 
-    def __init__(self, config_dict=None, log_level=logging.DEBUG):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG, screen=None):
         self.max_exp_time = 10000  # max single projection time in ms
         self.log = logging.getLogger(__name__)
         self.log.setLevel(log_level)
@@ -98,6 +98,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
             "hdmi_reset_script",
             "/home/pi/3D_printer_control/rpi/reset_hdmi.sh",
         )
+        self.screen = screen
 
     def initialize(self):
         # set default state for light engine and clear previous errors
@@ -857,8 +858,30 @@ class Visitech(EthernetSerial, LightEngineDriver):
     
     def getCurrentLed(self):
         return self.led
+    
+    def set_image(self, img_path, led_num=0, grayscale_corrected=False, mirror_short=False, mirror_long=False, _grayscale_correction_path=None):
+        """
+        Sets the image to be drawn
+        """
+        self.screen.setCorrectionEnable(grayscale_corrected, light_engine="visitech")
+        self.screen.draw(img_path, light_engine="visitech", led_num=led_num, mirror_short=mirror_short, mirror_long=mirror_long, _grayscale_correction_path=_grayscale_correction_path)
 
-    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, is_grayscale_corrected=False, led_num=0):
+    def get_image(self):
+        """
+        Gets the current image from the screen
+        """
+        return self.screen.get_image("visitech")
+
+    def get_image_preview(self, scale=1/20):
+        """
+        Get a preview of the current image.
+        """
+        return self.screen.fetch_preview("visitech", scale=scale)
+    
+    def is_grayscale_corrected(self):
+        return self.screen.getCorrectionEnable("visitech")
+        
+    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
         """
         Setup an exposure.
             exposure_time_ms - exposure time in milliseconds
@@ -870,7 +893,7 @@ class Visitech(EthernetSerial, LightEngineDriver):
         self.repeats = repeat
         self.led = led_num
 
-        if is_grayscale_corrected:
+        if self.is_grayscale_corrected():
             if "grayscale_normalization_factor" in self.config_dict:
                 self.normalization_factor = self.config_dict["grayscale_normalization_factor"][led_num]
             else:
@@ -949,13 +972,13 @@ class Visitech(EthernetSerial, LightEngineDriver):
                 time.sleep(self.exposure_time * 1e-3)
             self.led_on = False
 
-    def project(self, exposure, power, is_grayscale_corrected=False, repeats=1, led_num=0):
+    def project(self, exposure, power, repeats=1, led_num=0):
         """
         Call all of the necessary methods to project an image, and block
         until projection is complete.
         """
 
-        if is_grayscale_corrected:
+        if self.is_grayscale_corrected():
             if "grayscale_normalization_factor" in self.config_dict:
                 normalization_factor = self.config_dict["grayscale_normalization_factor"][led_num]
             else:

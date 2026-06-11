@@ -326,12 +326,12 @@
     "product_id": 32882,
     "serial_number": "M01239335"
   },
-  "screen": {},
   "light_engines": [
     "visitech"
   ],
   "visitech": {
     "dummy": false,
+    "virtual_screen": true,
     "address": "192.168.0.10",
     "port": 5000,
     "dual_led": false,

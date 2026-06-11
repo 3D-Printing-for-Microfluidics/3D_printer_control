@@ -172,12 +172,12 @@
         "loadcell_planarization_force": 35.0,
         "loadcell_print_start_force": 5.0
     },
-    "screen": {},
     "light_engines": [
         "visitech"
     ],
     "visitech": {
         "dummy": false,
+        "virtual_screen": true,
         "address": "192.168.0.10",
         "port": 5000,
         "dual_led": false,

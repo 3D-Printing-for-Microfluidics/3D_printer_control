@@ -25,8 +25,20 @@ class LightEngineDriver:
 
     def getCurrentLed(self):
         return 0
+    
+    def set_image(self, img_path, led_num=0, grayscale_corrected=False, mirror_short=False, mirror_long=False, _grayscale_correction_path=None):
+        log.warning("Function not implemented. Using abstract LightEngineDriver class")
 
-    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, is_grayscale_corrected=False, led_num=0):
+    def get_image(self):
+        log.warning("Function not implemented. Using abstract LightEngineDriver class")
+
+    def get_image_preview(self, scale=1/20):
+        log.warning("Function not implemented. Using abstract LightEngineDriver class")
+
+    def is_grayscale_corrected(self):
+        log.warning("Function not implemented. Using abstract LightEngineDriver class")
+
+    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
         log.warning("Function not implemented. Using abstract LightEngineDriver class")
 
     def perform_exposure(self):
@@ -36,7 +48,4 @@ class LightEngineDriver:
         log.warning("Function not implemented. Using abstract LightEngineDriver class")
 
     def get_led_status(self):
-        log.warning("Function not implemented. Using abstract LightEngineDriver class")
-
-    def upload_image(self, filename, pattern_index):
         log.warning("Function not implemented. Using abstract LightEngineDriver class")

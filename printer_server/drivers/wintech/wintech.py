@@ -11,7 +11,7 @@ from printer_server.drivers.generic_drivers import LightEngineDriver
 class Wintech(LightEngineDriver):
     """Control module for the Wintech optical engine."""
 
-    def __init__(self, config_dict=None, log_level=logging.DEBUG, dummy=False):
+    def __init__(self, config_dict=None, log_level=logging.DEBUG, dummy=False, screen=None):
         self.config_dict=config_dict
         self.log_level = log_level
         self.log = logging.getLogger(__name__)
@@ -22,6 +22,7 @@ class Wintech(LightEngineDriver):
         self.led_on = False
         self.led = 0
         self.hdmi_reset = False
+        self.screen = screen
 
         if dummy:
             self.dmd_controller = DLPC900_USB_Controller_dummy(log_level=self.log_level)
@@ -69,8 +70,30 @@ class Wintech(LightEngineDriver):
             "led_driver_temp2": "",
             "led_driver_status2": "",
         }
+    
+    def set_image(self, img_path, led_num=0, grayscale_corrected=False, mirror_short=False, mirror_long=False, _grayscale_correction_path=None):
+        """
+        Sets the image to be drawn
+        """
+        self.screen.setCorrectionEnable(grayscale_corrected, light_engine="wintech")
+        self.screen.draw(img_path, light_engine="wintech", led_num=led_num, mirror_short=mirror_short, mirror_long=mirror_long, _grayscale_correction_path=_grayscale_correction_path)
 
-    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, is_grayscale_corrected=False, led_num=0):
+    def get_image(self):
+        """
+        Gets the current image from the screen
+        """
+        return self.screen.get_image("wintech")
+
+    def get_image_preview(self, scale=1/20):
+        """
+        Get a preview of the current image.
+        """
+        return self.screen.fetch_preview("wintech", scale=scale)
+
+    def is_grayscale_corrected(self):
+        return self.screen.getCorrectionEnable("wintech")
+
+    def setup_exposure(self, exposure_time_ms, led_power=100, repeat=1, led_num=0):
         """
         Setup an exposure.
             exposure_time_ms - exposure time in milliseconds

@@ -7,6 +7,48 @@
         </div>
     </div>
 
+    <div class="row">
+        <div class="col-1"></div>
+        <div class="col-3">
+            <img id="{{ light_engine }}-preview" style="display:none; opacity: 0.5;" />
+        </div>
+        <form class="col-3">
+            <div class="row">
+                <input type="file" class="form-control-file" name="file" accept=".png" id="{{ light_engine }}-file-picker">
+                <div class="invalid-feedback">
+                    Please provide an 8-bit grayscale PNG file.
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-check text-center">
+                    <input class="form-check-input" type="checkbox" value="" id="{{ light_engine }}-correction-chkbx">
+                    <label class="form-check-label" for="{{ light_engine }}-correction-chkbx">Use grayscale correction</label>
+                </div>
+            </div>
+        </form>
+        <div class="col-5">
+            <div class="row">
+                <div class="col-6">
+                    <button type="button" class="btn btn-outline-info btn-block"
+                        id="{{ light_engine }}-upload-btn">Upload</button>
+                </div>
+                <div class="col-6">
+                    <button type="button" class="btn btn-outline-info btn-block" id="{{ light_engine }}-draw-btn">Use uploaded</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    <button type="button" class="btn btn-outline-info btn-block" id="{{ light_engine }}-white-btn">Set all
+                        white</button>
+                </div>
+                <div class="col-6">
+                    <button type="button" class="btn btn-outline-info btn-block"
+                        id="{{ light_engine }}-black-btn">Set all black</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% if manual_controls_data["light_engines"][light_engine]['leds_nm']|length > 1 %}
     <!-- LED section -->
     <div class="row">

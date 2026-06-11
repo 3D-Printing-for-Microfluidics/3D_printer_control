@@ -143,15 +143,6 @@ if "photodiode" in config_dict.keys():
         printer_server.drivers.photodiode.photodiode_snip.get_photodiode_power
     )
 
-if "screen" in config_dict.keys():
-    import printer_server.drivers.screen.screen_snip
-    on_load_f_init.append(
-        printer_server.drivers.screen.screen_snip.screenLoad
-    )
-    on_load_f_init.append(
-        printer_server.drivers.screen.screen_snip.screenFetchPreviews
-    )
-
 if "spectrometer" in config_dict.keys():
     import printer_server.drivers.spectrometer.spectrometer_snip
     on_load_f_init.append(
@@ -162,6 +153,12 @@ if "light_engines" in config_dict.keys():
     import printer_server.drivers.generic_drivers.light_engine.light_engine_snip
     on_load_f_init.append(
         printer_server.drivers.generic_drivers.light_engine.light_engine_snip.getLedStatus
+    )
+    on_load_f_init.append(
+        printer_server.drivers.generic_drivers.light_engine.light_engine_snip.getGrayscaleCorrection
+    )
+    on_load_f_init.append(
+        printer_server.drivers.generic_drivers.light_engine.light_engine_snip.fetchPreviews
     )
 
 
@@ -189,7 +186,7 @@ def index():
     if "keyence" in config_dict.keys():
         manual_controls_data["keyence"] = list(config_dict["keyence"]["sensors"].keys())
 
-    if "light_engines" in config_dict.keys() or "screen" in config_dict.keys():
+    if "light_engines" in config_dict.keys():
         for light_engine in config_dict["light_engines"]:
             manual_controls_data["light_engines"][light_engine] = {}
             if light_engine in config_dict.keys():
@@ -269,16 +266,16 @@ def stop_loop(force=False):
             loop_thread = None
 
 
-@blueprint.route("screen_image_upload", methods=["POST"])
+@blueprint.route("light_engine_image_upload", methods=["POST"])
 def upload():
-    return printer_server.drivers.screen.screen_snip.handleUpload(request)
+    return printer_server.drivers.generic_drivers.light_engine.light_engine_snip.handleUpload(request)
 
 
 def update_le_led_state(le, state):
     socketio.emit(f"light_engine_update_led_state", {"light_engine": le, "state":state}, namespace="/manual")
 
-def update_screen_preview(light_engine, preview):
+def update_light_engine_preview(light_engine, preview):
     previews = {light_engine: preview}
     socketio.emit(
-        "screen_previews", previews, namespace="/manual"
+        "light_engine_previews", previews, namespace="/manual"
     )
