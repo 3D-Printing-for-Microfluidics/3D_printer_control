@@ -209,7 +209,7 @@ class PrintRecord(SurrogatePK, Model):
                 log.warning("Error: Failed to remove zip")
 
     def remove_old_jobs(self):
-        MAX_ENTRIES = 2500
+        MAX_ENTRIES = 15000
         print_history_path = Path(Config.UPLOAD_FOLDER) / "print_history"
         entries_count = len(self.query.order_by(self.id).all())
         num_entries_to_delete = entries_count - MAX_ENTRIES
