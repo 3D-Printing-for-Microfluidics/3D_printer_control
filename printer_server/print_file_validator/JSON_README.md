@@ -210,7 +210,7 @@ Note: A `"Comment"` tag can be put into any object and it will be ignored.
                 "Image settings list": [
                     {
                         "Image file": "0000.png",
-                        "Layer exposure time (ms)": 20000
+                        "Layer exposure time (ms)": 10000
                     }
                 ]
             },
@@ -350,7 +350,7 @@ Note: A `"Comment"` tag can be put into any object and it will be ignored.
         ]
     }
 
-## Additional v5 features and how to use them
+## New JSON v5.0 features and how to use them
 
 ### Design metadata
 Add design provenance and context (including the newly added `User` field):
@@ -361,6 +361,8 @@ Add design provenance and context (including the newly added `User` field):
         "Description": "Bioresorbable scaffold",
         "Resin": "PEGDA",
         "3D printer": "HR5",
+        "Design file": "<filepath>",
+        "STL file": "<filepath>",
         "Slicer": "Custom",
         "Date": "2026-01-16"
     }
@@ -441,7 +443,7 @@ Define a layer sequence once and reuse it in `Layers`. You can override global `
 Special techniques are available at the print, layer, and image levels:
 
     "Special print techniques": {
-        "Vacuum settings": {
+        "Print under vacuum": {
             "Enable vacuum": true,
             "Target vacuum level (Torr)": 10,
             "Vacuum wait time (sec)": 30
