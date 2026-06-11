@@ -520,18 +520,18 @@ class PrintControl:
         log.warning("Base printer_control class does not have a defined focus stage")
         return 0
 
-    def convert_le_to_screen_le(self, light_engine):
+    def convert_json_le_to_le(self, light_engine):
         # convert light engine to screen light engine
-        screen_light_engine = None
+        le = None
         for temp in config_dict["light_engines"]:
             if temp in light_engine:
-                screen_light_engine = temp
+                le = temp
                 break
-        if screen_light_engine is None:
+        if le is None:
             log.error(
                 "No matching light engine found in coord systems: '%s'", light_engine
             )
-        return screen_light_engine
+        return le
 
     @run_in_thread("initialized", "Initialize")
     def initialize(self, critical_error_handle):

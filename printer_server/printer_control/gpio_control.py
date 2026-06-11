@@ -37,9 +37,9 @@ class FilmGPIOControl(GPIOControl):
 class WintechFanGPIOControl(GPIOControl):
     def pre_exposure_tasks(self, settings, light_engine):
         """Move X, Y, and Focus stages to exposure positions"""
-        screen_light_engine = self.convert_le_to_screen_le(light_engine)
+        le = self.convert_json_le_to_le(light_engine)
 
-        if screen_light_engine == "wintech":
+        if le == "wintech":
             try:
                 self.gpio.wintech_fan_relay_on()
             except Exception as ex:

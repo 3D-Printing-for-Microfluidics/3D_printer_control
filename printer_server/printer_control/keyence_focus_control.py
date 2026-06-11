@@ -408,16 +408,16 @@ class KeyenceFocusControl(PrintControl):
         super().move_build_platform(position_settings, layer)
 
     def get_exposure_defocus(self, settings, light_engine):
-        screen_light_engine = self.convert_le_to_screen_le(light_engine)
+        le = self.convert_json_le_to_le(light_engine)
 
         last_positions = get_last_calibration_positions_from_logs()
-        self.focus = last_positions.get(f"{screen_light_engine}_focus_offset",0)/1000
+        self.focus = last_positions.get(f"{le}_focus_offset",0)/1000
 
         defocus_um = settings["Relative focus position (um)"]
 
         # keyence correction
         if self.direct_focal_measurement:
-            keyence_measurement = (0 - self.keyence_offset_targets[f"active_{screen_light_engine}"][f"{self.x_offset}, {self.y_offset}"])
+            keyence_measurement = (0 - self.keyence_offset_targets[f"active_{le}"][f"{self.x_offset}, {self.y_offset}"])
         else:
             keyence_measurement = 0
 

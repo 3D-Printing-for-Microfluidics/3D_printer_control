@@ -138,13 +138,13 @@ class FocusControl(PrintControl):
             x_offset = float(settings.get("Image x offset (um)", self.default_raw_x_offset))
             y_offset = float(settings.get("Image y offset (um)", self.default_raw_y_offset))
 
-            screen_light_engine = self.convert_le_to_screen_le(light_engine)
+            le = self.convert_json_le_to_le(light_engine)
             self.focus_thread = self.move_xyf_stages_in_coordinate_system(
-                coord_system_name=screen_light_engine,
+                coord_system_name=le,
                 x=x_offset/1000,
                 y=y_offset/1000,
                 f=self.focus + self.defocus_um/1000,
-                light_engine=screen_light_engine,
+                light_engine=le,
                 move_xy=False,
                 join=False
             )
