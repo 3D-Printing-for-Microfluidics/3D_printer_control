@@ -105,7 +105,7 @@ class LightEngineControl(PrintControl):
         light_engine_driver = self.light_engines[le]
         
         correction_images = light_engine_driver.config_dict.get("grayscale_correction_image", [])
-        grayscale_available = len(correction_images) > led and correction_images.get(led, None) is not None
+        grayscale_available = len(correction_images) > led and correction_images[led] is not None
 
         # "Do light grayscale correction" setting deprecated, use "Do grayscale correction"
         corrected = settings.get(
