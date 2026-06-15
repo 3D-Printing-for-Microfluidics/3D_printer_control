@@ -29,7 +29,6 @@ class User(SurrogatePK, Model):
     created_at = Column(db.DateTime, nullable=False, default=datetime.now)
     first_name = Column(db.String(30), nullable=True)
     last_name = Column(db.String(30), nullable=True)
-    active = Column(db.Boolean(), default=False)
     is_admin = Column(db.Boolean(), default=False)
 
     def __init__(self, username, email, password=None, **kwargs):
@@ -58,6 +57,36 @@ class User(SurrogatePK, Model):
         return "<User({username!r})>".format(username=self.username)
 
 
+class Session(SurrogatePK, Model):
+    """A session of printing activity"""
+    
+    __tablename__ = "Sessions"
+    
+    # Timestamp for the session
+    start_time = Column(db.DateTime, nullable=False, default=datetime.now)
+    end_time = Column(db.DateTime, nullable=False, default=datetime.now)
+    
+    # User associated with the session
+    user_id = Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
+    user = relationship("User", backref="sessions")
+    
+    # Whether film was changed during session
+    film_changed = Column(db.Boolean, default=False)
+    
+    # Focus/tip/tilt positions
+    focus_position = Column(db.String(50))
+    tip_position = Column(db.String(50))
+    tilt_position = Column(db.String(50))
+    #### ADD MORE CALIBRATION PARAMETERS HERE ####
+    
+    # Hardware issues
+    hardware_issues = Column(db.Boolean, default=False)
+    hardware_issues_details = Column(db.Text)
+
+    # General comments for the entire session
+    notes = Column(db.Text)
+
+
 class PrintQueue(SurrogatePK, Model):
     """Print jobs in queue
 
@@ -80,6 +109,8 @@ class PrintQueue(SurrogatePK, Model):
     original_filename = Column(db.String(128), index=True, nullable=False)
     upload_time = Column(db.DateTime, nullable=False)
     upload_ip = Column(db.String(30))
+    user_id = Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
+    user = relationship("User", backref="queue")
 
     @property
     def zip_filename(self):
@@ -158,6 +189,10 @@ class PrintRecord(SurrogatePK, Model):
     original_filename = Column(db.String(128), index=True, nullable=False)
     upload_time = Column(db.DateTime, nullable=False)
     upload_ip = Column(db.String(30))
+    user_id = Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
+    user = relationship("User", backref="print_records")
+    session_id = Column(db.Integer, db.ForeignKey('Sessions.id'))
+    session = relationship("Session", backref="print_records")
     start_ip = Column(db.String(30))
     start_time = Column(db.DateTime, nullable=False, default=datetime.now)
     end_time = Column(db.DateTime)
@@ -169,6 +204,18 @@ class PrintRecord(SurrogatePK, Model):
     design_printer = Column(db.String(128), index=True)
     design_slicer = Column(db.String(128), index=True)
     design_slice_date = Column(db.String(64))
+
+    # Define FailureModeEnum for print failures
+    class FailureModeEnum(db.Enum):
+        NO_FAILURE = "None"
+        DELAMINATION = "Delamination"
+        PITTING = "Pitting"
+        PRINT_FAILURE = "Print Design"
+        OTHER_FAILURE = "Other"
+    failure_mode = Column(db.Enum(FailureModeEnum), default=FailureModeEnum.NO_FAILURE)
+    other_failure_mode = Column(db.String(256))
+
+    notes = Column(db.Text)
 
     @property
     def zip_filename(self):
@@ -250,25 +297,26 @@ class PrintRecord(SurrogatePK, Model):
                 pass
 
 
-class ServerLog(SurrogatePK, Model):
-    __tablename__ = "Logs"
-    logger = Column(db.String)  # the name of the logger. (e.g. myapp.views)
-    level = Column(db.String)  # info, debug, or error?
-    trace = Column(db.String)  # the full traceback printout
-    msg = Column(db.String)  # any custom log you may have included
-    created_at = Column(db.DateTime, default=datetime.now)  # the current timestamp
+## DEPRECATED DUE TO EXCESSIVE DB SIZE ##
+# class ServerLog(SurrogatePK, Model):
+#     __tablename__ = "Logs"
+#     logger = Column(db.String)  # the name of the logger. (e.g. myapp.views)
+#     level = Column(db.String)  # info, debug, or error?
+#     trace = Column(db.String)  # the full traceback printout
+#     msg = Column(db.String)  # any custom log you may have included
+#     created_at = Column(db.DateTime, default=datetime.now)  # the current timestamp
 
-    def __init__(self, logger=None, level=None, trace=None, msg=None):
-        self.logger = logger
-        self.level = level
-        self.trace = trace
-        self.msg = msg
+#     def __init__(self, logger=None, level=None, trace=None, msg=None):
+#         self.logger = logger
+#         self.level = level
+#         self.trace = trace
+#         self.msg = msg
 
-    def __unicode__(self):
-        return self.__repr__()
+#     def __unicode__(self):
+#         return self.__repr__()
 
-    def __repr__(self):
-        return "<Log: %s - %s>" % (
-            self.created_at.strftime("%m/%d/%Y-%H:%M:%S"),
-            self.msg[:50],
-        )
+#     def __repr__(self):
+#         return "<Log: %s - %s>" % (
+#             self.created_at.strftime("%m/%d/%Y-%H:%M:%S"),
+#             self.msg[:50],
+#         )
