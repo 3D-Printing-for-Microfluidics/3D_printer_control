@@ -114,6 +114,32 @@
         {% endif %}
         {% endwith %}
 
+        <div class="alert alert-dark d-flex justify-content-between align-items-center">
+            <div>
+                <strong>Available</strong>
+                <br>
+                <small class="text-muted">
+                    No active session
+                </small>
+            </div>
+            <button class="btn btn-outline-success">
+                Start Session
+            </button>
+        </div>
+
+        <div class="alert alert-primary d-flex justify-content-between align-items-center">
+            <div>
+                <strong>Dallin Miner</strong>
+                <br>
+                <small class="text-muted">
+                    Session active • 11 min
+                </small>
+            </div>
+            <button class="btn btn-outline-warning">
+                End Session
+            </button>
+        </div>
+
         {% block page_content %}{% endblock %}
     </div>
 
