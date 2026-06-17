@@ -311,21 +311,24 @@ $(document).ready(function () {
         draw_loadcell_graph();
     }
 
-    try {
-        if (degas_state == "idle") {
-            show_degas_btn("#start-degas-btn");
+    // check if degas state is available
+    if (typeof degas_state !== "undefined") {
+        try {
+            if (degas_state == "idle") {
+                show_degas_btn("#start-degas-btn");
+            }
+            else if (degas_state == "running") {
+                show_degas_btn("#stop-degas-btn");
+            }
+            else if (degas_state == "finish") {
+                show_degas_btn("#finish-degas-btn");
+            }
+            else if (degas_state == "none") {
+                show_degas_btn();
+            }
+        } catch (error) {
+            console.error(error);
         }
-        else if (degas_state == "running") {
-            show_degas_btn("#stop-degas-btn");
-        }
-        else if (degas_state == "finish") {
-            show_degas_btn("#finish-degas-btn");
-        }
-        else if (degas_state == "none") {
-            show_degas_btn();
-        }
-    } catch (error) {
-        console.error(error);
     }
 
     // Set up the drag/drop zone.
