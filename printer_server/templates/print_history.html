@@ -16,14 +16,14 @@
 
 <container>
     <div class="row justify-content-center filter-row">
-        <label class="mr-2">Search</label>
-        <input type="text" name="search" id="search-text" placeholder="Search filename" value="{{ search }}">
-        <input type="text" name="design_user" id="design-user" list="design-user-options" placeholder="User" value="{{ design_user }}">
+        <label class="mr-2 ph-label">Search</label>
+        <input class="ph-input" type="text" name="search" id="search-text" placeholder="Search filename" value="{{ search }}">
+        <input class="ph-input" type="text" name="design_user" id="design-user" list="design-user-options" placeholder="User" value="{{ design_user }}">
     </div>
     <div class="row justify-content-center filter-row">
-        <label>Filter by Start Time</label>
-        <input type="date" name="start_time" id="start-date" value="{{ start_date }}">
-        <input type="date" name="start_time" id="end-date" value="{{ end_date }}">
+        <label class="mr-2 ph-label">Filter by Start Time</label>
+        <input class="ph-input" type="date" name="start_time" id="start-date" value="{{ start_date }}">
+        <input class="ph-input" type="date" name="start_time" id="end-date" value="{{ end_date }}">
         <button type="button" class="btn btn-outline-info ml-2" id="advanced_toggle">Advanced filters</button>
     </div>
     <div class="advanced-filters advanced-section">
@@ -36,12 +36,12 @@
                 <option value="yes" {% if completed_filter == 'yes' %}selected{% endif %}>Completed</option>
                 <option value="no" {% if completed_filter == 'no' %}selected{% endif %}>Not completed</option>
             </select>
-            <input type="text" name="design_purpose" id="design-purpose" placeholder="Purpose" value="{{ design_purpose }}">
-            <input type="text" name="design_description" id="design-description" placeholder="Description" value="{{ design_description }}">
-            <input type="text" name="design_resin" id="design-resin" list="design-resin-options" placeholder="Resin" value="{{ design_resin }}">
-            <input type="text" name="design_printer" id="design-printer" list="design-printer-options" placeholder="3D printer" value="{{ design_printer }}">
-            <input type="text" name="design_slicer" id="design-slicer" list="design-slicer-options" placeholder="Slicer" value="{{ design_slicer }}">
-            <input type="text" name="design_slice_date" id="design-slice-date" placeholder="Slice date" value="{{ design_slice_date }}">
+            <input class="ph-input" type="text" name="design_purpose" id="design-purpose" placeholder="Purpose" value="{{ design_purpose }}">
+            <input class="ph-input" type="text" name="design_description" id="design-description" placeholder="Description" value="{{ design_description }}">
+            <input class="ph-input" type="text" name="design_resin" id="design-resin" list="design-resin-options" placeholder="Resin" value="{{ design_resin }}">
+            <input class="ph-input" type="text" name="design_printer" id="design-printer" list="design-printer-options" placeholder="3D printer" value="{{ design_printer }}">
+            <input class="ph-input" type="text" name="design_slicer" id="design-slicer" list="design-slicer-options" placeholder="Slicer" value="{{ design_slicer }}">
+            <input class="ph-input" type="text" name="design_slice_date" id="design-slice-date" placeholder="Slice date" value="{{ design_slice_date }}">
         </div>
     </div>
     <div class="advanced-filters advanced-section">
@@ -50,60 +50,60 @@
         </div>
         <div class="row justify-content-center advanced-row form-group columns-grid">
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-name-toggle" data-column="col-name" checked>
-                <label class="form-check-label" for="col-name-toggle">Name</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-name-toggle" data-column="col-name" checked>
+                <label class="form-check-label ph-label" for="col-name-toggle">Name</label>
             </div>
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-start-time-toggle" data-column="col-start-time" checked>
-                <label class="form-check-label" for="col-start-time-toggle">Start Time</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-start-time-toggle" data-column="col-start-time" checked>
+                <label class="form-check-label ph-label" for="col-start-time-toggle">Start Time</label>
             </div>
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-end-time-toggle" data-column="col-end-time">
-                <label class="form-check-label" for="col-end-time-toggle">End Time</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-end-time-toggle" data-column="col-end-time">
+                <label class="form-check-label ph-label" for="col-end-time-toggle">End Time</label>
             </div>
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-upload-time-toggle" data-column="col-upload-time">
-                <label class="form-check-label" for="col-upload-time-toggle">Upload Time</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-upload-time-toggle" data-column="col-upload-time">
+                <label class="form-check-label ph-label" for="col-upload-time-toggle">Upload Time</label>
             </div>
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-print-time-toggle" data-column="col-print-time" checked>
-                <label class="form-check-label" for="col-print-time-toggle">Print Time</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-print-time-toggle" data-column="col-print-time" checked>
+                <label class="form-check-label ph-label" for="col-print-time-toggle">Print Time</label>
             </div>
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-completed-toggle" data-column="col-completed" checked>
-                <label class="form-check-label" for="col-completed-toggle">Completed</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-completed-toggle" data-column="col-completed" checked>
+                <label class="form-check-label ph-label" for="col-completed-toggle">Completed</label>
             </div>
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-design-user-toggle" data-column="col-design-user" checked>
-                <label class="form-check-label" for="col-design-user-toggle">Design User</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-design-user-toggle" data-column="col-design-user" checked>
+                <label class="form-check-label ph-label" for="col-design-user-toggle">Design User</label>
             </div>
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-design-purpose-toggle" data-column="col-design-purpose">
-                <label class="form-check-label" for="col-design-purpose-toggle">Purpose</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-design-purpose-toggle" data-column="col-design-purpose">
+                <label class="form-check-label ph-label" for="col-design-purpose-toggle">Purpose</label>
             </div>
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-design-description-toggle" data-column="col-design-description">
-                <label class="form-check-label" for="col-design-description-toggle">Description</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-design-description-toggle" data-column="col-design-description">
+                <label class="form-check-label ph-label" for="col-design-description-toggle">Description</label>
             </div>
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-design-resin-toggle" data-column="col-design-resin">
-                <label class="form-check-label" for="col-design-resin-toggle">Resin</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-design-resin-toggle" data-column="col-design-resin">
+                <label class="form-check-label ph-label" for="col-design-resin-toggle">Resin</label>
             </div>
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-design-printer-toggle" data-column="col-design-printer">
-                <label class="form-check-label" for="col-design-printer-toggle">3D Printer</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-design-printer-toggle" data-column="col-design-printer">
+                <label class="form-check-label ph-label" for="col-design-printer-toggle">3D Printer</label>
             </div>
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-design-slicer-toggle" data-column="col-design-slicer">
-                <label class="form-check-label" for="col-design-slicer-toggle">Slicer</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-design-slicer-toggle" data-column="col-design-slicer">
+                <label class="form-check-label ph-label" for="col-design-slicer-toggle">Slicer</label>
             </div>
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-design-slice-date-toggle" data-column="col-design-slice-date">
-                <label class="form-check-label" for="col-design-slice-date-toggle">Slice Date</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-design-slice-date-toggle" data-column="col-design-slice-date">
+                <label class="form-check-label ph-label" for="col-design-slice-date-toggle">Slice Date</label>
             </div>
             <div class="form-check text-center">
-                <input class="form-check-input column-toggle" type="checkbox" id="col-reprint-toggle" data-column="col-reprint" checked>
-                <label class="form-check-label" for="col-reprint-toggle">Reprint</label>
+                <input class="form-check-input column-toggle ph-input" type="checkbox" id="col-reprint-toggle" data-column="col-reprint" checked>
+                <label class="form-check-label ph-label" for="col-reprint-toggle">Reprint</label>
             </div>
         </div>
     </div>

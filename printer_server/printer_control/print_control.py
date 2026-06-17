@@ -14,7 +14,7 @@ from zipfile import ZipFile, BadZipFile, ZIP_DEFLATED
 import printer_server.views.home as home
 from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
-from printer_server.models import PrintQueue, PrintRecord
+from printer_server.models import PrintQueue, PrintRecord, Session
 from printer_server.async_file_handler import async_file_hander
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 from printer_server.print_file_validator import (
@@ -208,6 +208,8 @@ class PrintControl:
             original_filename=job.original_filename,
             upload_time=job.upload_time,
             upload_ip=job.upload_ip,
+            user=Session.get_session_user(),
+            session=Session.get_active_session(),
             start_time=datetime.now(),
             start_ip=request.remote_addr,
             **design_metadata,
@@ -1112,12 +1114,14 @@ class PrintControl:
                     original_filename=f.filename,
                     upload_time=upload_time,
                     upload_ip=request.remote_addr,
+                    user=Session.get_session_user()
                 ).save()
                 msg = {
                     "id": new_print_job.id,
                     "name": f.filename,
                     "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
                     "upload_ip": request.remote_addr,
+                    "user": Session.get_session_user().full_name if Session.get_session_user() else None,
                 }
                 home.update_printer_state("job uploaded", msg)
             except ValueError as ex:

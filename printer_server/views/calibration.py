@@ -16,13 +16,12 @@ from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 import printer_server.views.home
 from printer_server.hardware_configuration.hardware_configuration import config_dict
-from printer_server.models import PrintQueue, Calibration
+from printer_server.models import PrintQueue, Session, Calibration
 from printer_server.print_file_validator import validate_schema, validate_printer_compatibility
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
-position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
 CALIBRATION_PRINTS_ROOT = Path(Config.PRINT_SERVER_FOLDER) / "calibration_prints"
 
 # Create bluprint
@@ -562,6 +561,7 @@ def calibration_prints_add_to_queue(message):
             original_filename=display_name,
             upload_time=upload_time,
             upload_ip=request.remote_addr,
+            user=Session.get_session_user()
         ).save()
 
         socketio.emit(
@@ -571,6 +571,7 @@ def calibration_prints_add_to_queue(message):
                 "name": display_name,
                 "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
                 "upload_ip": request.remote_addr,
+                "user": Session.get_session_user().full_name if Session.get_session_user() else None,
             },
             namespace="/printing",
         )

@@ -102,6 +102,10 @@
         document.getElementById("favicon2").setAttribute("type", "image/png");
     </script>
 
+    {% include 'partials/register_user_modal.html' %}
+    {% include 'partials/start_session_modal.html' %}
+    {% include 'partials/end_session_modal.html' %}
+
     <div class="container" id="base-body">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -112,9 +116,21 @@
         </div><!-- end .alert -->
         {% endfor %}
         {% endif %}
-        {% endwith %}
+        {% endwith %}   
 
-        <div class="alert alert-dark d-flex justify-content-between align-items-center">
+        <div class="alert alert-primary justify-content-between align-items-center {% if active_session %}d-flex{% else %}d-none{% endif %}" id="session-active-banner">
+            <div>
+                <strong>{{ active_session.user }}</strong>
+                <br>
+                <small class="text-muted">
+                    Session active • <span id="session-time" data-start="{{ active_session.start_time }}"></span>
+                </small>
+            </div>
+            <button class="btn btn-outline-warning" id="endSessionBtn">
+                End Session
+            </button>
+        </div>
+        <div class="alert alert-dark justify-content-between align-items-center {% if active_session %}d-none{% else %}d-flex{% endif %}" id="session-available-banner">
             <div>
                 <strong>Available</strong>
                 <br>
@@ -122,21 +138,8 @@
                     No active session
                 </small>
             </div>
-            <button class="btn btn-outline-success">
+            <button class="btn btn-outline-success" id="startSessionBtn">
                 Start Session
-            </button>
-        </div>
-
-        <div class="alert alert-primary d-flex justify-content-between align-items-center">
-            <div>
-                <strong>Dallin Miner</strong>
-                <br>
-                <small class="text-muted">
-                    Session active • 11 min
-                </small>
-            </div>
-            <button class="btn btn-outline-warning">
-                End Session
             </button>
         </div>
 
@@ -145,5 +148,12 @@
 
     {% endblock %}
 </body>
+
+<script src="{{ url_for('static', filename='lib/ajax-socket.io-4.7.5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='base.js') }}"></script>
+
+<script>
+    var base_socket;
+</script>
 
 </html>

@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timedelta
 from flask import Blueprint, request, render_template, flash, send_file
 
-from printer_server.models import PrintRecord, PrintQueue
+from printer_server.models import PrintRecord, PrintQueue, Session
 from printer_server.settings import Config
 from printer_server.extensions import socketio, db
 from printer_server.hardware_configuration.hardware_configuration import config_dict
@@ -212,6 +212,7 @@ def add_to_queue(job_id):
             original_filename=job.original_filename,
             upload_time=upload_time,
             upload_ip=job.upload_ip,
+            user=Session.get_session_user()
         ).save()
         socketio.emit(
             "job uploaded",
@@ -220,6 +221,7 @@ def add_to_queue(job_id):
                 "name": job.original_filename,
                 "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
                 "upload_ip": request.remote_addr,
+                "user": Session.get_session_user().full_name if Session.get_session_user() else None,
             },
             namespace="/printing"
         )

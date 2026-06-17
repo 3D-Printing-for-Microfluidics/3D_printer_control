@@ -48,3 +48,14 @@
   background: #555;
   border-radius: 3px;
 }
+
+.chevron {
+    transition: transform 0.2s ease;
+    font-size: 18px;
+    user-select: none;
+}
+
+/* collapsed state */
+.card-header.collapsed .chevron {
+    transform: rotate(90deg);
+}

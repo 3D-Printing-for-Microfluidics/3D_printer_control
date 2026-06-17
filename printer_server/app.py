@@ -1,11 +1,11 @@
 """The app module, containing the app factory function."""
 import logging
 from werkzeug.middleware.proxy_fix import ProxyFix
-from flask import Flask, render_template
+from flask import Flask, render_template, g
 from printer_server.extensions import db, migrate, socketio
-from printer_server.models import PrintRecord, PrintQueue, Calibration
+from printer_server.models import PrintRecord, PrintQueue, Session, Calibration
 from printer_server import commands, models
-from printer_server.views import home, calibration, manual_controls, print_history, server_logs
+from printer_server.views import home, calibration, manual_controls, print_history, server_logs, users
 from printer_server.settings import ProdConfig, DevConfig
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
 from printer_server.logging_handler import configure_loggers
@@ -27,6 +27,42 @@ def create_app(config_object=ProdConfig):
     register_commands(app)
     register_hardware(app)
     register_logger(app)
+
+    @app.before_request
+    def build_global_forms():
+        g.start_session_form = users.StartSessionForm()
+        g.register_form = users.RegisterForm()
+        g.end_session_form = users.EndSessionForm()
+
+        # get session info
+        session = Session.get_active_session()
+        if session:
+            g.active_session = {
+                "user": session.user.full_name,
+                "start_time": session.start_time
+            }
+        else:
+            g.active_session = None
+
+        if session:
+            for p in session.print_records:
+                g.end_session_form.prints.append_entry({
+                    "print_id": p.id,
+                    "print_name": p.original_filename,
+                    "start_time": p.start_time,
+                    "end_time": p.end_time,
+                    "incomplete": "" if p.completed else "Incomplete",
+                })
+
+    # add globals
+    @app.context_processor
+    def inject_globals():
+        return {
+            "start_session_form": g.start_session_form,
+            "register_form": g.register_form,
+            "end_session_form": g.end_session_form,
+            "active_session": g.active_session
+        }
 
     try:
         calibration.extract_calibration_print_archives()
@@ -66,6 +102,7 @@ def register_blueprints(app):
     app.register_blueprint(manual_controls.blueprint)
     app.register_blueprint(print_history.blueprint)
     app.register_blueprint(server_logs.blueprint)
+    app.register_blueprint(users.blueprint)
 
 
 def register_errorhandlers(app):

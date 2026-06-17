@@ -1,0 +1,81 @@
+{% for print_form in end_session_form.prints %}
+
+    <div class="card mb-3 print-card">
+
+    <div class="card-header d-flex justify-content-between align-items-center"
+            data-toggle="collapse"
+            data-target="#print-{{ loop.index }}">
+
+        <div>
+        <strong>{{ print_form.print_name.data }}</strong>
+        <br>
+        <small class="text-muted ml-2">
+            {{ print_form.start_time.data }} --- 
+            {% if print_form.incomplete.data %}
+            {{ print_form.incomplete.data }}
+            {% else %}
+            {{ print_form.end_time.data }}
+            {% endif %}
+        </small>
+        </div>
+
+        <div class="chevron">
+        ▾
+        </div>
+    </div>
+
+    <div id="print-{{ loop.index }}" class="collapse show">
+
+        <div class="card-body">
+
+        <!-- hidden print_id -->
+        {{ print_form.print_id() }}
+
+        <!-- SUCCESS -->
+        <div class="form-group">
+            {{ print_form.print_success.label(class="form-label") }}
+            {{ print_form.print_success(
+                class="form-control print-success"
+            ) }}
+            
+            {% for error in print_form.print_success.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+
+        <!-- FAILURE SECTION -->
+        <div class="failure-div" style="display: none;">
+
+            <div class="form-group">
+            {{ print_form.failure_mode.label(class="form-label") }}
+            {{ print_form.failure_mode(
+                class="form-control failure-mode"
+            ) }}
+
+            {% for error in print_form.failure_mode.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+            </div>
+
+            <div class="form-group other-failure-div" style="display: none;">
+            {{ print_form.failure_detail.label(class="form-label") }}
+            {{ print_form.failure_detail(class="form-control") }}
+
+            {% for error in print_form.failure_detail.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+            </div>
+
+        </div>
+
+        <!-- NOTES -->
+        <div class="form-group">
+            {{ print_form.print_notes.label(class="form-label") }}
+            {{ print_form.print_notes(class="form-control") }}
+        </div>
+
+        </div>
+    </div>
+    </div>
+
+{% endfor %}

@@ -3,8 +3,10 @@ import os
 import glob
 import json
 import logging
+from enum import Enum
 from pathlib import Path
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from printer_server.settings import Config
 from printer_server.database import (
@@ -26,7 +28,7 @@ class User(SurrogatePK, Model):
     __tablename__ = "Users"
     username = Column(db.String(80), unique=True, nullable=False)
     email = Column(db.String(80), unique=True, nullable=False)
-    password = Column(db.LargeBinary(128), nullable=True)  #: The hashed password
+    password = Column(db.LargeBinary(256), nullable=True)  #: The hashed password
     created_at = Column(db.DateTime, nullable=False, default=datetime.now)
     first_name = Column(db.String(30), nullable=True)
     last_name = Column(db.String(30), nullable=True)
@@ -42,11 +44,11 @@ class User(SurrogatePK, Model):
 
     def set_password(self, password):
         """Set password."""
-        self.password = b"[password]" + password.encode()
+        self.password = generate_password_hash(password).encode()
 
     def check_password(self, value):
         """Check password."""
-        return self.password == b"[password]" + value.encode()
+        return check_password_hash(self.password.decode(), value)
 
     @property
     def full_name(self):
@@ -65,7 +67,7 @@ class Session(SurrogatePK, Model):
     
     # Timestamp for the session
     start_time = Column(db.DateTime, nullable=False, default=datetime.now)
-    end_time = Column(db.DateTime, nullable=False, default=datetime.now)
+    end_time = Column(db.DateTime)
     
     # User associated with the session
     user_id = Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
@@ -75,10 +77,8 @@ class Session(SurrogatePK, Model):
     film_changed = Column(db.Boolean, default=False)
     
     # Focus/tip/tilt positions
-    focus_position = Column(db.String(50))
-    tip_position = Column(db.String(50))
-    tilt_position = Column(db.String(50))
-    #### ADD MORE CALIBRATION PARAMETERS HERE ####
+    calibration_data_id = Column(db.Integer, db.ForeignKey('Calibration.id'), nullable=True)
+    calibration_data = relationship("Calibration", backref="sessions")
     
     # Hardware issues
     hardware_issues = Column(db.Boolean, default=False)
@@ -86,6 +86,23 @@ class Session(SurrogatePK, Model):
 
     # General comments for the entire session
     notes = Column(db.Text)
+
+    @classmethod
+    def get_active_session(cls):
+        """Get the active session using end_time (only one can be active at a time)."""
+        return cls.query.filter(cls.end_time.is_(None)).first()
+
+    @classmethod
+    def session_active(cls):
+        """Check if the session is active."""
+        return cls.get_active_session() is not None
+    
+    @classmethod
+    def get_session_user(cls):
+        """Get the active user."""
+        if cls.session_active():
+            return cls.get_active_session().user
+        return None
 
 
 class PrintQueue(SurrogatePK, Model):
@@ -110,7 +127,7 @@ class PrintQueue(SurrogatePK, Model):
     original_filename = Column(db.String(128), index=True, nullable=False)
     upload_time = Column(db.DateTime, nullable=False)
     upload_ip = Column(db.String(30))
-    user_id = Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
+    user_id = Column(db.Integer, db.ForeignKey('Users.id'))
     user = relationship("User", backref="queue")
 
     @property
@@ -192,7 +209,7 @@ class PrintRecord(SurrogatePK, Model):
     original_filename = Column(db.String(128), index=True, nullable=False)
     upload_time = Column(db.DateTime, nullable=False)
     upload_ip = Column(db.String(30))
-    user_id = Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
+    user_id = Column(db.Integer, db.ForeignKey('Users.id'))
     user = relationship("User", backref="print_records")
     session_id = Column(db.Integer, db.ForeignKey('Sessions.id'))
     session = relationship("Session", backref="print_records")
@@ -209,15 +226,15 @@ class PrintRecord(SurrogatePK, Model):
     design_slice_date = Column(db.String(64))
 
     # Define FailureModeEnum for print failures
-    class FailureModeEnum(db.Enum):
+    class FailureModeEnum(Enum):
         NO_FAILURE = "None"
-        DELAMINATION = "Delamination"
-        PITTING = "Pitting"
-        PRINT_FAILURE = "Print Design"
+        DELAMINATION = "Print Delamination from Substrate"
+        ADHESION = "Substrate Detached from Build Platform"
+        PITTING = "Device Pitting/Damaged Film"
+        PRINTER_FAILURE = "Printer Hardware Issue"
         OTHER_FAILURE = "Other"
     failure_mode = Column(db.Enum(FailureModeEnum), default=FailureModeEnum.NO_FAILURE)
     other_failure_mode = Column(db.String(256))
-
     notes = Column(db.Text)
 
     @property
