@@ -1,6 +1,5 @@
 import time
 import json
-from pathlib import Path
 import logging
 import signal
 from flask import Blueprint, request, render_template

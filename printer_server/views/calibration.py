@@ -16,7 +16,7 @@ from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 import printer_server.views.home
 from printer_server.hardware_configuration.hardware_configuration import config_dict
-from printer_server.models import PrintQueue
+from printer_server.models import PrintQueue, Calibration
 from printer_server.print_file_validator import validate_schema, validate_printer_compatibility
 
 log = logging.getLogger(__name__)
@@ -104,20 +104,10 @@ def register_stitching_correction():
 
 
 def get_last_calibration_positions_from_logs():
-    """Return the last focused position from the position log file."""
-    log_file = Path(Config.PROJECT_ROOT) / "logs" / "calibration_position_log.txt"
-    last_line = None
-    try:
-        with open(log_file) as f:
-            for line in f:
-                last_line = line.rstrip()
-
-        last_line = last_line[20:]
-        last_line = last_line.replace("'", '"')
-        temp = json.loads(last_line)
-        return temp
-    except FileNotFoundError:
-        return {}
+    # Get the last calibration positions from the database
+    from autoapp import app
+    with app.app_context():
+        return Calibration.get_last_positions()
 
 
 def create_calibration_data():
@@ -220,12 +210,21 @@ def index():
 
 
 def write_to_position_log(message):
+    position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
     with open(position_log_file, "a") as f:
         f.write(
             "{} {}\n".format(
                 datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), json.dumps(message)
             )
         )
+
+    from autoapp import app
+    with app.app_context():
+        calibration = Calibration(
+            calibration_date=datetime.now(),
+            calibration_data=message
+        )
+        calibration.save()
 
 
 @socketio.on("set", namespace="/calibration")

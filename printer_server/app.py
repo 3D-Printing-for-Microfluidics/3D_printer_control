@@ -3,7 +3,7 @@ import logging
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, render_template
 from printer_server.extensions import db, migrate, socketio
-from printer_server.models import PrintRecord, PrintQueue
+from printer_server.models import PrintRecord, PrintQueue, Calibration
 from printer_server import commands, models
 from printer_server.views import home, calibration, manual_controls, print_history, server_logs
 from printer_server.settings import ProdConfig, DevConfig
@@ -33,6 +33,14 @@ def create_app(config_object=ProdConfig):
     except Exception as ex:
         logging.getLogger(__name__).warning(
             "Failed to extract calibration print archives on startup: %s", ex
+        )
+
+    try:
+        with app.app_context():
+            Calibration.init_Calibration_from_old_text_logs()
+    except Exception as ex:
+        logging.getLogger(__name__).warning(
+            "Failed to initialize calibration from old text logs on startup: %s", ex
         )
 
     try:
@@ -101,13 +109,13 @@ def register_logger(app):
 
 
 def cleanup_db():
-    PrintQueue().remove_orphaned_entries()
-    PrintQueue().remove_orphaned_files()
+    PrintQueue.remove_orphaned_entries()
+    PrintQueue.remove_orphaned_files()
 
-    PrintRecord().remove_orphaned_entries()
-    PrintRecord().remove_orphaned_files()
-    PrintRecord().remove_old_jobs()
-    PrintRecord().remove_old_logs()
+    PrintRecord.remove_orphaned_entries()
+    PrintRecord.remove_orphaned_files()
+    PrintRecord.remove_old_jobs()
+    PrintRecord.remove_old_logs()
 
 CONFIG = DevConfig if get_debug_flag() else ProdConfig
 app = create_app(CONFIG)

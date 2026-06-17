@@ -1,6 +1,7 @@
 """Database models"""
 import os
 import glob
+import json
 import logging
 from pathlib import Path
 from datetime import datetime
@@ -124,9 +125,10 @@ class PrintQueue(SurrogatePK, Model):
         """
         return "{}.zip".format(self.upload_time.strftime("job-%Y-%m-%d_%H-%M-%S.%f"))
 
-    def remove_orphaned_entries(self):
+    @classmethod
+    def remove_orphaned_entries(cls):
         queue_path = Path(Config.UPLOAD_FOLDER) / "queue"
-        entries = self.query.order_by(self.id).all()
+        entries = cls.query.order_by(cls.id).all()
         for entry in entries:
             entry_path = queue_path / entry.zip_filename
             if not entry_path.exists():
@@ -135,10 +137,11 @@ class PrintQueue(SurrogatePK, Model):
                 )
                 entry.delete()
 
-    def remove_orphaned_files(self):
+    @classmethod
+    def remove_orphaned_files(cls):
         queue_path = Path(Config.UPLOAD_FOLDER) / "queue"
         zips = list(queue_path.glob("*.zip"))
-        for entry in self.query.order_by(self.id).all():
+        for entry in cls.query.order_by(cls.id).all():
             entry_path = queue_path / entry.zip_filename
             zips.remove(entry_path)
         for entry in zips:
@@ -229,9 +232,10 @@ class PrintRecord(SurrogatePK, Model):
         """
         return "{}.zip".format(self.upload_time.strftime("job-%Y-%m-%d_%H-%M-%S.%f"))
 
-    def remove_orphaned_entries(self):
+    @classmethod
+    def remove_orphaned_entries(cls):
         print_history_path = Path(Config.UPLOAD_FOLDER) / "print_history"
-        entries = self.query.order_by(self.id).all()
+        entries = cls.query.order_by(cls.id).all()
         for entry in entries:
             entry_path = print_history_path / entry.zip_filename
             if not entry_path.exists():
@@ -242,10 +246,11 @@ class PrintRecord(SurrogatePK, Model):
                 )
                 entry.delete()
 
-    def remove_orphaned_files(self):
+    @classmethod
+    def remove_orphaned_files(cls):
         print_history_path = Path(Config.UPLOAD_FOLDER) / "print_history"
         zips = list(print_history_path.glob("*.zip"))
-        for entry in self.query.order_by(self.id).all():
+        for entry in cls.query.order_by(cls.id).all():
             entry_path = print_history_path / entry.zip_filename
             zips.remove(entry_path)
         for entry in zips:
@@ -255,10 +260,11 @@ class PrintRecord(SurrogatePK, Model):
             except FileNotFoundError:
                 log.warning("Error: Failed to remove zip")
 
-    def remove_old_jobs(self):
+    @classmethod
+    def remove_old_jobs(cls):
         MAX_ENTRIES = 15000
         print_history_path = Path(Config.UPLOAD_FOLDER) / "print_history"
-        entries_count = len(self.query.order_by(self.id).all())
+        entries_count = len(cls.query.order_by(cls.id).all())
         num_entries_to_delete = entries_count - MAX_ENTRIES
         if num_entries_to_delete <= 0:
             num_entries_to_delete = 0
@@ -268,7 +274,7 @@ class PrintRecord(SurrogatePK, Model):
             )
 
         entries_to_be_deleted = (
-            self.query.order_by(self.id).limit(num_entries_to_delete).all()
+            cls.query.order_by(cls.id).limit(num_entries_to_delete).all()
         )
 
         for entry in entries_to_be_deleted:
@@ -278,7 +284,8 @@ class PrintRecord(SurrogatePK, Model):
                 pass
             entry.delete()
 
-    def remove_old_logs(self):
+    @classmethod
+    def remove_old_logs(cls):
         MAX_ENTRIES = 14
         host = Config.HOSTNAME
         log_list = glob.glob(f"logs/{host}_log*.txt")
@@ -295,6 +302,45 @@ class PrintRecord(SurrogatePK, Model):
                 os.remove(Path(Config.PROJECT_ROOT) / log_list[i])
             except FileNotFoundError:
                 pass
+
+class Calibration(SurrogatePK, Model):
+    __tablename__ = "Calibration"
+    # Add your calibration fields here
+    calibration_date = Column(db.DateTime, default=datetime.now)
+    calibration_data = Column(db.JSON)
+
+    @classmethod
+    def init_Calibration_from_old_text_logs(cls):
+        # This method should initialize the Calibration table from old text logs
+        if cls.get_last_positions() is None:
+            log.info("Initializing Calibration from old text logs")
+            # Initialize from old text logs here
+            """Return the last focused position from the position log file."""
+            log_file = Path(Config.PROJECT_ROOT) / "logs" / "calibration_position_log.txt"
+            last_line = None
+            try:
+                with open(log_file) as f:
+                    for line in f:
+                        last_line = line.rstrip()
+                        log.info("Processing line: %s", last_line)
+                        
+                        calibration = Calibration(
+                            calibration_date=datetime.strptime(last_line[:19], "%Y-%m-%d_%H-%M-%S"),
+                            calibration_data=json.loads(last_line[20:].replace("'", '"'))
+                        )
+                        calibration.save()
+                        log.info("Calibration saved: %s", calibration)
+
+            except FileNotFoundError:
+                return
+
+    @classmethod
+    def get_last_positions(cls):
+        # This method should return the last calibration positions from the database
+        last_calibration = cls.query.order_by(cls.calibration_date.desc()).first()
+        if last_calibration:
+            return last_calibration.calibration_data
+        return {}
 
 
 ## DEPRECATED DUE TO EXCESSIVE DB SIZE ##

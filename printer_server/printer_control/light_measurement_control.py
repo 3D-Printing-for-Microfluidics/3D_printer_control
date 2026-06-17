@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 import printer_server.views.home as home
+import printer_server.views.calibration as calibration
 from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
 from printer_server.async_file_handler import async_file_hander
@@ -78,25 +79,8 @@ class LightMeasurementControl(PrintControl):
                 log.warning("Error occured during light measurement (%s)", ex, exc_info=True)
         super().post_print_tasks()
 
-    def _get_last_calibration_positions_from_logs(self):
-        log_file = Path(Config.PROJECT_ROOT) / "logs" / "calibration_position_log.txt"
-        last_line = None
-        try:
-            with open(log_file) as file_handle:
-                for line in file_handle:
-                    last_line = line.rstrip()
-            if not last_line:
-                return {}
-            last_line = last_line[20:]
-            last_line = last_line.replace("'", '"')
-            return json.loads(last_line)
-        except FileNotFoundError:
-            return {}
-        except json.JSONDecodeError:
-            return {}
-
     def _get_irradiance_target(self, light_engine, wavelength):
-        positions = self._get_last_calibration_positions_from_logs()
+        positions = calibration.get_last_calibration_positions_from_logs()
         key = f"irradiance_target_{light_engine}_{wavelength}"
         return positions.get(key)
 
