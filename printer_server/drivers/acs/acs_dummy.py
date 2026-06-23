@@ -147,7 +147,7 @@ class ACS_dummy(BPStageDriver, XYStageDriver):
 
     @dummy_log
     def disconnect(self):
-        """Disconnect form the ACS controller."""
+        """Disconnect from the ACS controller."""
         if self.connected is not None and self.connected is not False:
             self.thread_running = False
             try:

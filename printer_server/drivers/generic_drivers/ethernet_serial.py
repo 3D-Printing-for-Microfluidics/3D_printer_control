@@ -60,7 +60,7 @@ class EthernetSerial():
         return None
 
     def disconnect(self):
-        """Disconnect form the device."""
+        """Disconnect from the device."""
         if self.connected is not None and self.connected and self.socket is not None:
             self.connected = None
             self.log.info("Disconnecting from %s...", self.name)

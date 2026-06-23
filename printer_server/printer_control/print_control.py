@@ -1131,7 +1131,7 @@ class PrintControl:
                 os.remove(filename_on_disk)
 
     def delete_job(self, message, delete_on_disk=True):
-        """Delete a print job form the queue by removing it from the
+        """Delete a print job from the queue by removing it from the
         Print Queue table in the database and optionally deleting the print
         file stored on disk.
 
