@@ -1,3 +1,13 @@
+/* ?? */
+
+pre {
+    font-family: "Lato";
+    --font-family-sans-serif: "Lato";
+    font-size: 1rem;
+    margin-bottom: 0;
+}
+
+/* Link formatting */
 a {
     color: #3498DB;
 }
@@ -5,10 +15,6 @@ a {
 a:hover {
     color: #375a7f;
 }
-
-/* .container {
-    max-width: 1000px;
-} */
 
 /* Date picker formatting  */
 
@@ -24,24 +30,25 @@ a:hover {
     opacity: 0;
 }
 
-/* form {
-    background-color: #FFF;
-    height: 600px;
-    width: 600px;
-    margin-right: auto;
-    margin-left: auto;
-    margin-top: 0px;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-    padding: 0px;
-    text-align: center;
-} */
+/* Page label and input */
+.table-label {
+    margin-top: 8px;
+    float: left;
+}
+
+.table-input {
+    border: 1px solid #c4c4c4;
+    border-radius: 5px;
+    background-color: #fff;
+    padding: 3px 5px;
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.1);
+    width: 190px;
+    height: 32px;
+    margin-left: 10px;
+    margin-top: 3px;
+}
 
 /* Pagination navbar formatting */
-
-/* .btn-xs{
-    font-size: 0.8em;
-} */
 
 hr {
     margin: 12px;
@@ -75,17 +82,7 @@ hr {
     border-color: #3498DB
 }
 
-.justify-center {
-    text-align: center;
-}
-
-pre {
-    font-family: "Lato";
-    --font-family-sans-serif: "Lato";
-    font-size: 1rem;
-    margin-bottom: 0;
-}
-
+/* Advanced filters */
 .advanced-filters {
     display: none;
 }
@@ -98,11 +95,7 @@ pre {
     font-weight: 600;
 }
 
-.filter-row {
-    margin-bottom: 10px;
-}
-
-.advanced-row {
+.row {
     margin-bottom: 10px;
 }
 
@@ -111,7 +104,6 @@ pre {
     column-gap: 12px;
     row-gap: 10px;
 }
-
 
 /* Column visibility */
 .columns-grid {
@@ -157,13 +149,40 @@ pre {
     display: none;
 }
 
-/* Navigation tabs styling */
-.nav-tabs .nav-link.active {
-    background-color: #303030; /* Your desired color */
-    color: white;              /* Optional: text color */
-    border-color: #444444;     /* Optional: border color */
+/* Rotated header*/
+.vertical-header {
+    writing-mode: sideways-lr;
+    white-space: nowrap;
+    text-align: center;
+    padding: 0.5rem;
 }
 
-.nav-tabs .nav-link:hover {
+/* Table data centering */
+.justify-center {
+    text-align: center;
+}
+
+/* Table row hover effect */
+.data-row:hover {
+    cursor: pointer;
     background-color: #444444;
+}
+
+/* Table row hover effect */
+.data-row.expanded {
+    cursor: pointer;
+    background-color: #303030;
+}
+
+
+/* Details row */
+.details-row td {
+    background-color: #303030;
+    padding: 1px;
+    /* white-space: pre-line; */
+}
+
+/* add space below each detail */
+dt {
+    margin-bottom: 20px;
 }

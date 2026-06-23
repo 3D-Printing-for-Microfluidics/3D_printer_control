@@ -5,7 +5,7 @@ from flask import Flask, render_template, g
 from printer_server.extensions import db, migrate, socketio
 from printer_server.models import PrintRecord, PrintQueue, Session, Calibration
 from printer_server import commands, models
-from printer_server.views import home, calibration, manual_controls, print_history, server_logs, users
+from printer_server.views import home, calibration, manual_controls, print_history, server_logs, users, calibration_history
 from printer_server.settings import ProdConfig, DevConfig
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
 from printer_server.logging_handler import configure_loggers
@@ -63,6 +63,35 @@ def create_app(config_object=ProdConfig):
             "end_session_form": g.end_session_form,
             "active_session": g.active_session
         }
+    
+    @app.template_filter("duration")
+    def duration(td):
+        total_seconds = int(td.total_seconds())
+
+        # 1 hour or more: round to nearest minute, hide seconds
+        if total_seconds >= 3600:
+            total_minutes = (total_seconds + 30) // 60  # round
+            hours, minutes = divmod(total_minutes, 60)
+
+            parts = []
+            if hours:
+                parts.append(f"{hours} hr")
+            if minutes:
+                parts.append(f"{minutes} min")
+
+            return " ".join(parts)
+
+        # under 1 hour: show seconds
+        hours, rem = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(rem, 60)
+
+        parts = []
+        if minutes:
+            parts.append(f"{minutes} min")
+        if seconds or not parts:
+            parts.append(f"{seconds} sec")
+
+        return " ".join(parts)
 
     try:
         calibration.extract_calibration_print_archives()
@@ -71,13 +100,13 @@ def create_app(config_object=ProdConfig):
             "Failed to extract calibration print archives on startup: %s", ex
         )
 
-    try:
-        with app.app_context():
-            Calibration.init_Calibration_from_old_text_logs()
-    except Exception as ex:
-        logging.getLogger(__name__).warning(
-            "Failed to initialize calibration from old text logs on startup: %s", ex
-        )
+    # try:
+        # with app.app_context():
+        #     Calibration.init_Calibration_from_old_text_logs()
+    # except Exception as ex:
+    #     logging.getLogger(__name__).warning(
+    #         "Failed to initialize calibration from old text logs on startup: %s", ex
+    #     )
 
     try:
         with app.app_context():
@@ -103,6 +132,7 @@ def register_blueprints(app):
     app.register_blueprint(print_history.blueprint)
     app.register_blueprint(server_logs.blueprint)
     app.register_blueprint(users.blueprint)
+    app.register_blueprint(calibration_history.blueprint)
 
 
 def register_errorhandlers(app):

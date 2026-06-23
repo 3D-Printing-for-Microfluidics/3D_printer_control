@@ -5,7 +5,7 @@ from wtforms import PasswordField, StringField, BooleanField, SelectField, FormF
 # from wtforms import FileField, SubmitField, IntegerField
 from wtforms.validators import DataRequired, Email, EqualTo, Length
 
-from printer_server.models import User
+from printer_server.models import User, PrintRecord
 
 import logging
 
@@ -94,14 +94,14 @@ class EndPrintForm(FlaskForm):
         ("yes", "Yes"), 
         ("no", "No")
     ])
-    failure_mode = SelectField("Failure Mode", choices=[
-        ("", "-- Select --"), 
-        ("DELAMINATION", "Print Delamination from Substrate"), 
-        ("ADHESION", "Substrate Detached from Build Platform"), 
-        ("PITTING", "Device Pitting/Damaged Film"), 
-        ("PRINTER_FAILURE", "Printer Hardware Issue"), 
-        ("OTHER_FAILURE", "Other")
-    ])   
+    choices = [
+        ("", "-- Select --")
+    ] + [
+        (e.name, e.value)
+        for e in PrintRecord.FailureModeEnum
+        if e != PrintRecord.FailureModeEnum.NO_FAILURE
+    ]
+    failure_mode = SelectField("Failure Mode", choices=choices)
     failure_detail = TextAreaField("Failure Details")
     print_notes = TextAreaField("Print Notes")
 

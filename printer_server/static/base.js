@@ -164,7 +164,7 @@ $(document).ready(function () {
     // Load in updated modal partial on open
     $('#endSessionBtn').on('click', function() {
         $('#endSessionModal').one('shown.bs.modal', async function () {
-                const response = await fetch('/users/end_session_modal_prints');
+                const response = await fetch('/users/print_form');
                 const html = await response.text();
                 document.getElementById('print-container').innerHTML = html;
             })

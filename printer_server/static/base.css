@@ -15,6 +15,20 @@
   margin-left: -0.5rem;
 }
 
+.navbar-toggler {
+    padding: 0.2rem 0.4rem;
+    border: none;
+}
+
+.navbar-toggler:focus {
+    box-shadow: none;
+}
+
+.navbar-toggler-icon {
+    width: 1.1em;
+    height: 1.1em;
+}
+
 .identicon {
   margin-left: 2.1rem;
   margin-right: 2rem;

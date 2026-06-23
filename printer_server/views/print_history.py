@@ -4,9 +4,11 @@ import logging
 from datetime import datetime, timedelta
 from flask import Blueprint, request, render_template, flash, send_file
 
-from printer_server.models import PrintRecord, PrintQueue, Session
+
 from printer_server.settings import Config
 from printer_server.extensions import socketio, db
+from printer_server.views.table import *
+from printer_server.models import PrintRecord, PrintQueue, Session, User
 from printer_server.hardware_configuration.hardware_configuration import config_dict
 from printer_server.print_file_validator import validate_schema, validate_printer_compatibility
 
@@ -16,166 +18,168 @@ blueprint = Blueprint(
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
+def generate_session_table_column_definition():
+    printer_user_options = [name for _, name in get_user_lookup()]
 
-def calculate_page_range(current_page, total_pages):
-    """Calculate the page range to be displayed on the navbar.
+    columns = [
+        Column(key="col-user", name="User", value=lambda r: r.user.full_name, filterable="Yes", options=printer_user_options, visible=True, db_col=Session.user.has(User.full_name), db_filter=generate_nested_lambda([Session.user, User.full_name], generate_string_lambda)),
+        Column(key="col-start-time", name="Start Time", value=lambda r: r.start_time, type="datetime", filterable="Yes", visible=True, db_col=Session.start_time, db_filter=generate_datetime_lambda(Session.start_time)),
+        Column(key="col-end-time", name="End Time", value=lambda r: r.end_time, type="datetime", filterable="No", db_col=Session.end_time, db_filter=generate_datetime_lambda(Session.end_time)),
+        Column(key="col-session-duration", name="Duration", value=lambda r: generate_duration_value(r.start_time, r.end_time), type="duration", filterable="No", visible=True, db_col=generate_duration_db_column(Session.start_time, Session.end_time), db_filter=lambda search: generate_duration_db_column(Session.start_time, Session.end_time).ilike(f"%{search}%")),
+        Column(key="col-print-ratio", name="Print Ratio", value=lambda r: f"{r.prints_successful}/{len(r.print_records)}", type="text", filterable="No", visible=True, db_col=Session.total_prints_in_session),
+        Column(key="col-good-prints", name="Successful Prints", value=lambda r: f"{r.prints_successful}", type="text", db_col=Session.prints_successful, db_filter=generate_string_lambda(Session.prints_successful)),
+        Column(key="col-total-prints", name="Total Prints", value=lambda r: len(r.print_records), type="text", db_col=Session.total_prints_in_session, db_filter=generate_string_lambda(Session.total_prints_in_session)),
+        Column(key="col-film-changed", name="Film Changed", value=lambda r: r.film_changed, type="boolean", visible=True, db_col=Session.film_changed, db_filter=generate_boolean_lambda(Session.film_changed)),
+        # Column(key="col-calibration-data", name=, value=, type=, sortable=, filterable=, options=, visible=, db_col=, db_filter=, button_style=, button_name=, button_class=, href=, href_enabled=),
+        Column(key="col-hardware-issues", name="Hardware Issues", value=lambda r: r.hardware_issues, type="boolean", visible=True, db_col=Session.hardware_issues, db_filter=generate_boolean_lambda(Session.hardware_issues)),
+        Column(key="col-hardware-issues-details", name="Hardware Issues Details", value=lambda r: r.hardware_issues_details, db_col=Session.hardware_issues_details, db_filter=generate_string_lambda(Session.hardware_issues_details)),
+        Column(key="col-notes", name="Notes", value=lambda r: r.notes, db_col=Session.notes, db_filter=generate_string_lambda(Session.notes)),
+    ]
 
-    :param current_page: current page number
-    :param total_pages: total page number
-    :returns: the page number range to show in the pagination navbar and
-     whether or not to display the beginning and end page shortcuts
-    """
-    window_size = 7
-    if total_pages <= window_size:
-        return 1, total_pages, (False, False)
-    start = current_page - window_size / 2
-    end = current_page + window_size / 2
-    if start <= 1:
-        return 1, window_size, (False, True)
-    if end >= total_pages:
-        return total_pages - window_size + 1, total_pages, (True, False)
-    return int(start) + 1, int(end), (True, True)
+    def get_sort_col(column_key):
+        map = {}
+        for col in columns:
+            if col.db_col is not None:
+                map[col.key] = col.db_col
+        return map.get(column_key, Session.start_time)
+    
+    def get_filter_lambda(column_key):
+        map = {}
+        for col in columns:
+            if col.db_filter is not None:
+                map[col.key] = col.db_filter
+        return map.get(column_key, lambda x: None)
+
+    return {
+        "columns": columns,
+        "sort_columns": get_sort_col,
+        "filter_lambdas": get_filter_lambda,
+    }
 
 
-@blueprint.route("/print_history")
-def index():
-    query = PrintRecord.query
-    current_page = request.args.get("current_page", 1, type=int)
-    today = datetime.now().strftime("%Y-%m-%d")
-    default_start = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-    search = request.args.get("search", "", type=str).strip()
-    design_user = request.args.get("design_user", "", type=str).strip()
-    design_purpose = request.args.get("design_purpose", "", type=str).strip()
-    design_description = request.args.get("design_description", "", type=str).strip()
-    design_resin = request.args.get("design_resin", "", type=str).strip()
-    design_printer = request.args.get("design_printer", "", type=str).strip()
-    design_slicer = request.args.get("design_slicer", "", type=str).strip()
-    design_slice_date = request.args.get("design_slice_date", "", type=str).strip()
-    completed_filter = request.args.get("completed", "all", type=str).strip().lower()
-    sort_by = request.args.get("sort", "start_time", type=str).strip().lower()
-    sort_dir = request.args.get("dir", "desc", type=str).strip().lower()
-
-    def get_distinct_values(column):
-        return [
-            row[0]
-            for row in db.session.query(column)
-            .filter(column.isnot(None), column != "")
-            .distinct()
-            .order_by(column)
-            .all()
-        ]
-
+def generate_print_table_column_definition():
+    printer_user_options = [name for _, name in get_user_lookup()]
     design_user_options = get_distinct_values(PrintRecord.design_user)
     design_resin_options = get_distinct_values(PrintRecord.design_resin)
     design_printer_options = get_distinct_values(PrintRecord.design_printer)
     design_slicer_options = get_distinct_values(PrintRecord.design_slicer)
 
-    try:
-        start_date = request.args.get("start", default_start)
-        dtart_date_dt = datetime(*[int(i) for i in start_date.split("-")])
-        query = query.filter(PrintRecord.start_time >= dtart_date_dt)
-    except ValueError:
-        flash("Bad start date", category="danger")
+    # upload_ip = Column(db.String(30))
+    # start_ip = Column(db.String(30))
 
-    try:
-        end_date = request.args.get("end", today)
-        end_time_dt = datetime(*[int(i) for i in end_date.split("-")]) + timedelta(days=1)
-        query = query.filter(PrintRecord.start_time <= end_time_dt)
-    except ValueError:
-        flash("Bad end date", category="danger")
+    columns = [
+        Column(key="col-name", name="Name", value=lambda r: r.original_filename, type="link", href="/print_history/download/<id>", filterable="Yes", visible=True, db_col=PrintRecord.original_filename, db_filter=generate_string_lambda(PrintRecord.original_filename)),
+        Column(key="col-printer-user", name="Printer User", value=lambda r: r.user.full_name, filterable="Yes", options=printer_user_options, visible=True, db_col=PrintRecord.user.has(User.full_name), db_filter=generate_nested_lambda([PrintRecord.user, User.full_name], generate_string_lambda)),
+        Column(key="col-start-time", name="Start Time", value=lambda r: r.start_time, type="datetime", filterable="Yes", visible=True, db_col=PrintRecord.start_time, db_filter=generate_datetime_lambda(PrintRecord.start_time)),
+        Column(key="col-end-time", name="End Time", value=lambda r: r.end_time, type="datetime", filterable="No", db_col=PrintRecord.end_time, db_filter=generate_datetime_lambda(PrintRecord.end_time)),
+        Column(key="col-upload-time", name="Upload Time", value=lambda r: r.upload_time, type="datetime", filterable="No", db_col=PrintRecord.upload_time, db_filter=generate_datetime_lambda(PrintRecord.upload_time)),
+        Column(key="col-print-time", name="Print Time", value=lambda r: generate_duration_value(r.start_time, r.end_time), type="duration", filterable="No", visible=True, db_col=generate_duration_db_column(PrintRecord.start_time, PrintRecord.end_time), db_filter=lambda search: generate_duration_db_column(PrintRecord.start_time, PrintRecord.end_time).ilike(f"%{search}%")),
+        Column(key="col-completed", name="Completed", value=lambda r: r.completed, type="boolean", visible=True, db_col=PrintRecord.completed, db_filter=generate_boolean_lambda(PrintRecord.completed)),
+        Column(key="col-design-user", name="Design User", value=lambda r: r.design_user, options=design_user_options, db_col=PrintRecord.design_user, db_filter=generate_string_lambda(PrintRecord.design_user)),
+        Column(key="col-design-purpose", name="Purpose", value=lambda r: r.design_purpose, db_col=PrintRecord.design_purpose, db_filter=generate_string_lambda(PrintRecord.design_purpose)),
+        Column(key="col-design-description", name="Description", value=lambda r: r.design_description, db_col=PrintRecord.design_description, db_filter=generate_string_lambda(PrintRecord.design_description)),
+        Column(key="col-design-resin", name="Resin", value=lambda r: r.design_resin, options=design_resin_options, db_col=PrintRecord.design_resin, db_filter=generate_string_lambda(PrintRecord.design_resin)),
+        Column(key="col-design-printer", name="3D Printer", value=lambda r: r.design_printer, options=design_printer_options, db_col=PrintRecord.design_printer, db_filter=generate_string_lambda(PrintRecord.design_printer)),
+        Column(key="col-design-slicer", name="Slicer", value=lambda r: r.design_slicer, options=design_slicer_options, db_col=PrintRecord.design_slicer, db_filter=generate_string_lambda(PrintRecord.design_slicer)),
+        Column(key="col-design-slice-date", name="Slice Date", value=lambda r: r.design_slice_date, filterable="No", db_col=PrintRecord.design_slice_date, db_filter=generate_string_lambda(PrintRecord.design_slice_date)),
+        Column(key="col-failure-mode", name="Failure Mode", value=lambda r: PrintRecord.FailureModeEnum(r.failure_mode).value, db_col=PrintRecord.failure_mode, db_filter=generate_string_lambda(PrintRecord.failure_mode)),
+        Column(key="col-failure-other", name="Other Failure Mode", value=lambda r: r.other_failure_mode, db_col=PrintRecord.other_failure_mode, db_filter=generate_string_lambda(PrintRecord.other_failure_mode)),
+        Column(key="col-notes", name="Notes", value=lambda r: r.notes, db_col=PrintRecord.notes, db_filter=generate_string_lambda(PrintRecord.notes)),
+        Column(key="col-reprint", name="Reprint", type="button", href="/print_history/reprint/<id>", button_style="btn-outline-info", button_name="Reprint", button_class="reprint-btn", sortable=False, filterable="No", visible=True)
+    ]
 
-    if search:
-        like_value = f"%{search}%"
-        query = query.filter(
-            db.or_(
-                PrintRecord.original_filename.ilike(like_value),
-                PrintRecord.upload_ip.ilike(like_value),
-                PrintRecord.start_ip.ilike(like_value),
-                PrintRecord.design_user.ilike(like_value),
-                PrintRecord.design_purpose.ilike(like_value),
-                PrintRecord.design_description.ilike(like_value),
-                PrintRecord.design_resin.ilike(like_value),
-                PrintRecord.design_printer.ilike(like_value),
-                PrintRecord.design_slicer.ilike(like_value),
-                PrintRecord.design_slice_date.ilike(like_value),
-            )
-        )
+    def get_sort_col(column_key):
+        map = {}
+        for col in columns:
+            if col.db_col is not None:
+                map[col.key] = col.db_col
+        return map.get(column_key, PrintRecord.start_time)
+    
+    def get_filter_lambda(column_key):
+        map = {}
+        for col in columns:
+            if col.db_filter is not None:
+                map[col.key] = col.db_filter
+        return map.get(column_key, lambda x: None)
 
-    if design_user:
-        query = query.filter(PrintRecord.design_user.ilike(f"%{design_user}%"))
-    if design_purpose:
-        query = query.filter(PrintRecord.design_purpose.ilike(f"%{design_purpose}%"))
-    if design_description:
-        query = query.filter(PrintRecord.design_description.ilike(f"%{design_description}%"))
-    if design_resin:
-        query = query.filter(PrintRecord.design_resin.ilike(f"%{design_resin}%"))
-    if design_printer:
-        query = query.filter(PrintRecord.design_printer.ilike(f"%{design_printer}%"))
-    if design_slicer:
-        query = query.filter(PrintRecord.design_slicer.ilike(f"%{design_slicer}%"))
-    if design_slice_date:
-        query = query.filter(PrintRecord.design_slice_date.ilike(f"%{design_slice_date}%"))
-
-    if completed_filter in {"yes", "no"}:
-        query = query.filter(PrintRecord.completed.is_(completed_filter == "yes"))
-
-    duration_expr = db.func.coalesce(
-        (db.func.julianday(PrintRecord.end_time) - db.func.julianday(PrintRecord.start_time))
-        * 86400,
-        0,
-    )
-    sort_map = {
-        "name": PrintRecord.original_filename,
-        "design_user": PrintRecord.design_user,
-        "design_purpose": PrintRecord.design_purpose,
-        "design_description": PrintRecord.design_description,
-        "design_resin": PrintRecord.design_resin,
-        "design_printer": PrintRecord.design_printer,
-        "design_slicer": PrintRecord.design_slicer,
-        "design_slice_date": PrintRecord.design_slice_date,
-        "start_time": PrintRecord.start_time,
-        "end_time": PrintRecord.end_time,
-        "upload_time": PrintRecord.upload_time,
-        "print_time": duration_expr,
-        "completed": PrintRecord.completed,
+    return {
+        "columns": columns,
+        "sort_columns": get_sort_col,
+        "filter_lambdas": get_filter_lambda,
     }
-    sort_col = sort_map.get(sort_by, PrintRecord.start_time)
-    if sort_dir == "asc":
-        query = query.order_by(sort_col.asc(), PrintRecord.id.asc())
-    else:
-        query = query.order_by(sort_col.desc(), PrintRecord.id.desc())
 
-    print_records = query.paginate(page=current_page, per_page=20)
-    start, end, boundaries = calculate_page_range(current_page, print_records.pages)
 
+
+@blueprint.route("/print_history")
+def index():
+    val = request.args.get("session_view", "true").lower()
+    session_view = val in ("true", "1", "yes", "on")
+    
     return render_template(
         "print_history.html",
-        print_records=print_records,
-        start=start,
-        end=end,
-        start_date=start_date,
-        end_date=end_date,
-        search=search,
-        design_user=design_user,
-        design_purpose=design_purpose,
-        design_description=design_description,
-        design_resin=design_resin,
-        design_printer=design_printer,
-        design_slicer=design_slicer,
-        design_slice_date=design_slice_date,
-        design_user_options=design_user_options,
-        design_resin_options=design_resin_options,
-        design_printer_options=design_printer_options,
-        design_slicer_options=design_slicer_options,
-        completed_filter=completed_filter,
-        sort_by=sort_by,
-        sort_dir=sort_dir,
-        boundaries=boundaries,
+        session_view=session_view,
         hostname=Config.HOSTNAME,
     )
 
 
-@blueprint.route("/print_history/<path:job_id>", methods=["GET", "POST"])
+@blueprint.route("/print_history/print_table")
+def print_table():
+    subtable_id = request.args.get("session_id", None)
+    if subtable_id is None:
+        table = generate_table(
+            name = "Prints",
+            table_key = "print-history", 
+            route = "/print_history/print_table",
+            query = PrintRecord.query, 
+            table_definition = generate_print_table_column_definition(),  
+            has_filters = True,
+            subtables = None,
+            paginate = 20, 
+            args = request.args
+        )
+    else:
+        table = generate_table(
+            name = "Prints",
+            table_key = f"session-history-Prints-subtable-{subtable_id}",
+            route = f"/print_history/print_table?session_id={subtable_id}",
+            query = PrintRecord.query.filter_by(session_id=subtable_id),
+            table_definition = generate_print_table_column_definition(),
+            has_filters = False,
+            subtables = None,
+            paginate = -1, 
+            args = request.args
+        )
+
+    return render_template(
+        "partials/table.html",
+        table=table
+    )
+
+@blueprint.route("/print_history/session_table")
+def session_table():
+    table = generate_table(
+        name = "Sessions",
+        table_key = "session-history",
+        route = "/print_history/session_table",
+        query = Session.query, 
+        table_definition = generate_session_table_column_definition(),
+        has_filters = True,
+        subtables = {
+            "Calibration": "/calibration_history/calibration_table?session_id=",
+            "Prints" : "/print_history/print_table?session_id=",
+        },
+        paginate = 20, 
+        args = request.args
+    )
+    
+
+    return render_template(
+        "partials/table.html",
+        table=table
+    )
+
+
+@blueprint.route("/print_history/download/<path:job_id>", methods=["GET", "POST"])
 def download(job_id):
     """Download the job specified by job_id."""
     file_location = os.path.join(os.path.join(Config.UPLOAD_FOLDER, "print_history"))
@@ -187,10 +191,11 @@ def download(job_id):
     )
 
 
-@socketio.on("add_to_queue", namespace="/print_history")
+# @socketio.on("add_to_queue", namespace="/print_history")
+@blueprint.route("/print_history/reprint/<path:job_id>", methods=["GET", "POST"])
 def add_to_queue(job_id):
     """Add the print job to the print queue."""
-    job_id = job_id.split("-")[1]
+    # job_id = job_id.split("-")[1]
     job = PrintRecord.query.get_or_404(job_id)
     upload_time = datetime.now()
     old_filename = os.path.join(Config.UPLOAD_FOLDER, "print_history", job.zip_filename)
@@ -232,4 +237,4 @@ def add_to_queue(job_id):
         )
         log.info(msg)
         os.remove(new_filename)
-    return ""
+    return '', 204

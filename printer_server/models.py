@@ -6,6 +6,7 @@ import logging
 from enum import Enum
 from pathlib import Path
 from datetime import datetime
+from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from printer_server.settings import Config
@@ -32,7 +33,11 @@ class User(SurrogatePK, Model):
     created_at = Column(db.DateTime, nullable=False, default=datetime.now)
     first_name = Column(db.String(30), nullable=True)
     last_name = Column(db.String(30), nullable=True)
-    is_admin = Column(db.Boolean(), default=False)
+    full_name = Column(db.String(60), nullable=True)
+    print_permissions = Column(db.Boolean(), default=False)
+    calibration_permissions = Column(db.Boolean(), default=False)
+    advanced_permissions = Column(db.Boolean(), default=False)
+    admin_permissions = Column(db.Boolean(), default=False)
 
     def __init__(self, username, email, password=None, **kwargs):
         """Create instance."""
@@ -41,6 +46,14 @@ class User(SurrogatePK, Model):
             self.set_password(password)
         else:
             self.password = None
+        if self.first_name and self.last_name:
+            self.full_name = self.first_name + " " + self.last_name
+        elif self.first_name:
+            self.full_name = self.first_name
+        elif self.last_name:
+            self.full_name = self.last_name
+        else:
+            self.full_name = None
 
     def set_password(self, password):
         """Set password."""
@@ -49,11 +62,6 @@ class User(SurrogatePK, Model):
     def check_password(self, value):
         """Check password."""
         return check_password_hash(self.password.decode(), value)
-
-    @property
-    def full_name(self):
-        """Full user name."""
-        return "{0} {1}".format(self.first_name, self.last_name)
 
     def __repr__(self):
         """Represent instance as a unique string."""
@@ -72,6 +80,8 @@ class Session(SurrogatePK, Model):
     # User associated with the session
     user_id = Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
     user = relationship("User", backref="sessions")
+
+    prints_successful = Column(db.Integer, default=0)
     
     # Whether film was changed during session
     film_changed = Column(db.Boolean, default=False)
@@ -103,6 +113,18 @@ class Session(SurrogatePK, Model):
         if cls.session_active():
             return cls.get_active_session().user
         return None
+    
+    @hybrid_property
+    def total_prints(self):
+        return len(self.print_records)
+
+    @total_prints.expression
+    def total_prints_in_session(cls):
+        return (
+            db.select(db.func.count(PrintRecord.id))
+            .where(PrintRecord.session_id == cls.id)
+            .scalar_subquery()
+        )
 
 
 class PrintQueue(SurrogatePK, Model):
@@ -228,9 +250,11 @@ class PrintRecord(SurrogatePK, Model):
     # Define FailureModeEnum for print failures
     class FailureModeEnum(Enum):
         NO_FAILURE = "None"
-        DELAMINATION = "Print Delamination from Substrate"
-        ADHESION = "Substrate Detached from Build Platform"
+        DELAMINATION = "Print Delamination from Glass"
+        ADHESION = "Glass Detached from Build Platform"
+        SPLITTING = "Mid-Print Delamination"
         PITTING = "Device Pitting/Damaged Film"
+        OPTICS = "Dirty Optics"
         PRINTER_FAILURE = "Printer Hardware Issue"
         OTHER_FAILURE = "Other"
     failure_mode = Column(db.Enum(FailureModeEnum), default=FailureModeEnum.NO_FAILURE)
@@ -329,7 +353,7 @@ class Calibration(SurrogatePK, Model):
     @classmethod
     def init_Calibration_from_old_text_logs(cls):
         # This method should initialize the Calibration table from old text logs
-        if cls.get_last_positions() is None:
+        if cls.get_last_positions() is None or cls.get_last_positions() == {}:
             log.info("Initializing Calibration from old text logs")
             # Initialize from old text logs here
             """Return the last focused position from the position log file."""

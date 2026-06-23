@@ -6,7 +6,7 @@ from flask import Blueprint, request, render_template
 from flask_socketio import join_room, leave_room, emit
 
 from printer_server.settings import Config
-from printer_server.models import PrintQueue
+from printer_server.models import PrintQueue, Session
 from printer_server.extensions import socketio
 from printer_server.views.manual_controls import stop_loop
 from printer_server.hardware_configuration.hardware_configuration import config_dict
@@ -174,7 +174,25 @@ print_control = BasePrintControl()
 
 @blueprint.route("/")
 def index():
-    allJobs = PrintQueue.query.all()
+    session_user = Session.get_session_user()
+    if session_user:
+        allJobs = PrintQueue.query.filter_by(user_id=session_user.id).all()
+    else:
+        allJobs = PrintQueue.query.filter_by(user_id=None).all()
+
+    # from autoapp import app
+    # from printer_server.models import Calibration
+    
+    # with app.app_context():
+    #     try:
+    #         logging.getLogger(__name__).info("Initializing calibration from old text logs...")
+    #         logging.getLogger(__name__).info(Calibration.get_last_positions())
+    #         Calibration.init_Calibration_from_old_text_logs()
+    #     except Exception as ex:
+    #         logging.getLogger(__name__).warning(
+    #             "Failed to initialize calibration from old text logs on startup: %s", ex
+    #         )
+    #     logging.getLogger(__name__).info("Calibration initialized.")
 
     kwargs = {
         "allJobs":allJobs,

@@ -29,7 +29,7 @@ def index():
     profile_enabled = Config.PROFILE_CODE
     if profile_enabled:
         profiles_dir = Path(Config.PROFILES_FOLDER)
-        profile_file = str(Path(Config.PROJECT_ROOT) / "logs" / "profile.txt")
+        profile_file = str(Path(Config.PROJECT_ROOT) / "logs" / "profile.prof")
         if profiles_dir.is_dir():
             combined_profile = pstats.Stats()
             for tempfile in profiles_dir.iterdir():
@@ -37,9 +37,7 @@ def index():
                     combined_profile.add(str(tempfile))
             combined_profile.dump_stats(profile_file)
 
-    txt_logs = [
-        logs_folder / f for f in os.listdir(logs_folder) if f.lower().endswith(".txt")
-    ]
+    txt_logs = ([profile_file] if profile_enabled else []) + [logs_folder / f for f in os.listdir(logs_folder) if f.lower().endswith(".txt")]
     txt_logs.sort(key=os.path.getmtime)
     files = []
     for i in sorted(txt_logs, reverse=True):

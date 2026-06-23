@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}User Management ({{ hostname }}){% endblock %}
+
+{% block printer3d_state %}
+<h2>{{ hostname }} - User Management</h2>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link href="{{ url_for('static', filename='users.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block page_content %}
+
+<!-- <br> -->
+
+<div id="main-table-container"></div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='lib/ajax-socket.io-4.7.5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='users.js') }}"></script>
+{% endblock %}
