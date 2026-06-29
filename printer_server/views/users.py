@@ -412,6 +412,7 @@ def end_session_post(session_id):
             else:
                 print_record.other_failure_mode = None
         elif end_print_form.successful.data == "yes":
+            prints_successful += 1
             print_record.successful = True
             print_record.failure_mode = "NO_FAILURE"
             print_record.other_failure_mode = None
