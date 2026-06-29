@@ -233,9 +233,9 @@ class KeyenceFocusControl(PrintControl):
                 self.coord_systems[f"keyence_{light_engine}"]["Focus"] += focus_drift/1000
                 self.coord_systems[f"{light_engine}"]["Focus"] += focus_drift/1000
 
-                last_positions = get_last_calibration_positions_from_logs()
-                last_positions[f"{light_engine}_focus_base"] = float(f"{le_position:.1f}")
-                write_to_position_log(last_positions)
+                # last_positions = get_last_calibration_positions_from_logs()
+                # last_positions[f"{light_engine}_focus_base"] = float(f"{le_position:.1f}")
+                # write_to_position_log(last_positions)
 
                 # Step 6f: Get measurements at each unique x,y offset position
                 if self.direct_focal_measurement:
