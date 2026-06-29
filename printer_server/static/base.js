@@ -29,14 +29,13 @@ async function onSubmit(url, modalId, on_success, e) {
 
         // Show errors
         for (const [key, value] of Object.entries(data.errors)) {
-            console.log(key, value);
+            console.log(0, key, value);
             // if value is a list (of dicts), iterate through them, if it is just a list of strings ignore
             if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
-                console.log("IF");
                 for (const [index, item] of value.entries()) {
-                    console.log(index, item);
+                    console.log(1, index, item);
                     for (const [subkey, subvalue] of Object.entries(item)) {
-                        console.log(subkey, subvalue);
+                        console.log(2, subkey, subvalue);
                         
                         if (!$(modalId).find(`[name="prints-${index}-${subkey}"]`).next('.error-message').length) {
                             $(modalId).find(`[name="prints-${index}-${subkey}"]`).after(`<div class="error-message text-danger small">${subvalue}</div>`);
@@ -45,10 +44,15 @@ async function onSubmit(url, modalId, on_success, e) {
                 }
             }
             else {
-                console.log("ELSE");
                 // Check if div already exists
                 if (!$(modalId).find(`[name="${key}"]`).next('.error-message').length) {
                     $(modalId).find(`[name="${key}"]`).after(`<div class="error-message text-danger small">${value}</div>`);
+                }
+
+                // if subkey is "username" and "session_id" is in data.errors, show the "End Previous Session" button and set data-session-id attribute to the session_id value
+                if (key === "password" && "session_id" in data.errors) {
+                    $('#endPreviousSessionDiv').show();
+                    $('#endPreviousSessionButton').attr('data-session-id', data.errors.session_id);
                 }
             }
         }
@@ -129,10 +133,11 @@ $(document).ready(function () {
         if (e.target.matches('#start-session-form')) {
             onSubmit(
                 '/users/start_session',
-                '#sessionModal',
+                '#startSessionModal',
                 function (response) { // On success
-                    $('#sessionModal').modal('hide');
-                    window.location.reload();
+                    $('#startSessionModal').modal('hide');
+                    // window.location.reload();
+                    showSessionSummaryModal();
                 },
                 e
             )
@@ -173,7 +178,8 @@ $(document).ready(function () {
                 '#endPrintModal',
                 function (response) { // On success
                     // reload the page
-                    window.location.reload();
+                    // window.location.reload();
+                    $('#endPrintModal').modal('hide');
                 },
                 e
             )
@@ -183,8 +189,8 @@ $(document).ready(function () {
     /////////////// Start Session ///////////////
     function showStartSessionModal() {
         $.get("/users/start_session", function(html) {
-            $("#sessionModal").html(html);
-            $("#sessionModal").modal("show");
+            $("#startSessionModal").html(html);
+            $("#startSessionModal").modal("show");
         });
     }
 
@@ -192,7 +198,15 @@ $(document).ready(function () {
         showStartSessionModal();
     });
 
-    $('#sessionModal').on('shown.bs.modal', function () {
+    $(document).on('click', '#endPreviousSessionButton', function() {
+        const sessionId = $(this).data('session-id');
+        $('#startSessionModal').one('hidden.bs.modal', function () {
+            showEndSessionModal(sessionId);
+        });
+        $('#startSessionModal').modal('hide');
+    });
+
+    $('#startSessionModal').on('shown.bs.modal', function () {
         in_start_session = true;
         if (username) {
             $(this).find('[name="username"]').val(username);
@@ -203,10 +217,18 @@ $(document).ready(function () {
         }
     });
 
-    $('#sessionModal').on('hidden.bs.modal', function () {
+    $('#startSessionModal').on('hidden.bs.modal', function () {
         in_start_session = false;
     });
 
+
+    /////////////// Session Summary ///////////////
+    function showSessionSummaryModal() {
+        $.get("/users/session_summary", function(html) {
+            $("#sessionSummaryModal").html(html);
+            $("#sessionSummaryModal").modal("show");
+        });
+    }
     
     /////////////// Register User ///////////////
     function showRegisterModal() {
@@ -218,11 +240,11 @@ $(document).ready(function () {
 
     // $('#showRegisterModal').on('click', function () {
     $(document).on("click", "#showRegisterModal", function () {
-        $('#sessionModal').one('hidden.bs.modal', function () {
+        $('#startSessionModal').one('hidden.bs.modal', function () {
             in_start_session = true;
             showRegisterModal();
         });
-        $('#sessionModal').modal('hide');
+        $('#startSessionModal').modal('hide');
     });
 
     // $('#backToSessionModal').on('click', function () {

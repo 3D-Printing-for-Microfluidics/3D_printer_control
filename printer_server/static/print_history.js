@@ -80,5 +80,11 @@ $(document).ready(function () {
             const print_id = $(this).closest('tr').data('id');
             showEndPrintModal(print_id);
         });
+
+        document.addEventListener('submit', function (e) {
+            if (e.target.matches('#end-print-form')) {
+                window.location.reload();
+            }
+        });
     });
 });

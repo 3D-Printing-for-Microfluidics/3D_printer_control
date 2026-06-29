@@ -51,10 +51,44 @@ def create_app(config_object=ProdConfig):
         return {
             "active_session": g.active_session
         }
-    
+
+    @app.template_filter("long_duration")
+    def long_duration(td):
+        if td is None:
+            return ""
+
+        total_seconds = int(td.total_seconds())
+
+        # if less than a minute, show seconds only
+        if total_seconds < 60:
+            return f"{total_seconds} sec"
+
+        # else if less than a hour, show minutes only
+        elif total_seconds < 3600:
+            total_minutes = (total_seconds + 30) // 60  # round
+            return f"{total_minutes} min"
+
+        # else if less than a day, show hours only
+        elif total_seconds < 86400:
+            total_hours = (total_seconds + 1800) // 3600  # round
+            return f"{total_hours} hr"
+
+        # else show days only
+        else:
+            total_days = (total_seconds + 43200) // 86400  # round
+            return f"{total_days} day{'s' if total_days > 1 else ''}"
+
     @app.template_filter("duration")
     def duration(td):
+        if td is None:
+            return ""
+
         total_seconds = int(td.total_seconds())
+
+        # if more than a day: round to days, hide hours/minutes/seconds
+        if total_seconds >= 86400:
+            total_days = (total_seconds + 43200) // 86400  # round
+            return f"{total_days} day{'s' if total_days > 1 else ''}"
 
         # 1 hour or more: round to nearest minute, hide seconds
         if total_seconds >= 3600:

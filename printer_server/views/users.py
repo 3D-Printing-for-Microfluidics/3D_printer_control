@@ -117,6 +117,48 @@ def print_table():
     )
 
 
+@blueprint.route("/users/session_summary")
+def session_summary():
+    session = Session.get_active_session()
+    if not session:
+        return jsonify({"success": False, "errors": {"session": ["No active session"]}})
+
+    number_of_sessions = 4
+
+    time_since_film_change = Session.query.filter(Session.film_changed == True, Session.start_time <= session.start_time).order_by(Session.start_time.desc()).first()
+    time_since_calibration = Calibration.query.filter(Calibration.calibration_date <= session.start_time).order_by(Calibration.calibration_date.desc()).first()
+    last_sessions = Session.query.filter(Session.start_time <= session.start_time).order_by(Session.start_time.desc()).limit(number_of_sessions).all()
+    total_prints = sum(len(s.print_records) for s in last_sessions)
+    sessions = []
+    failure_modes = {}
+    successful_prints = 0
+    for s in last_sessions:
+        sessions.append({
+            "user": s.user.full_name if s.user else "Unknown",
+            "time_since": (datetime.now() - s.start_time)
+        })
+        for p in s.print_records:
+            if p.successful:
+                successful_prints += 1
+            if p.failure_mode != PrintRecord.FailureModeEnum.NO_FAILURE:
+                failure_modes[p.failure_mode.value] = failure_modes.get(p.failure_mode, 0) + 1
+    success_rate = round((successful_prints / total_prints) * 100, 2) if total_prints > 0 else 0
+
+    return render_template(
+        "partials/session_summary_modal.html",
+        session=session,
+        session_summary={
+            "time_since_film_change": (datetime.now() - time_since_film_change.start_time) if time_since_film_change else None,
+            "time_since_calibration": (datetime.now() - time_since_calibration.calibration_date) if time_since_calibration else None,
+            "last_sessions": sessions,
+            "successful_prints": successful_prints,
+            "total_prints": total_prints,
+            "success_rate": success_rate,
+            "failure_modes": failure_modes
+        }
+    )
+
+
 @blueprint.route(
     "/users/register_user",
     methods=["GET"],
@@ -174,8 +216,13 @@ def start_session_post():
 
     if existing:
         log.info("Printer already in use by %s", existing.user.full_name)
-        return jsonify({"success": False, "errors": {"user": ["Printer already in use"]}})
-    
+        return jsonify({"success": False, "errors": {"password": ["Printer already in use"]}})
+
+    # check if user has an unended session (end time not set)
+    previous_session = Session.query.filter_by(user_id=start_form.user.id).order_by(Session.start_time.desc()).first()
+    if previous_session and previous_session.end_time is None:
+        return jsonify({"success": False, "errors": {"password": ["Your previous session's logs are incomplete. Please complete your previous session before starting a new one."], "session_id": previous_session.id}})
+
     session = Session(
         user=start_form.user,
         start_time=datetime.now(),
