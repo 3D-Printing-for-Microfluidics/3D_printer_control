@@ -437,10 +437,10 @@ def end_session_post(session_id):
     if calibrations:
         # Keep only the last calibration during the session
         latest_calibration = max(calibrations, key=lambda x: x.calibration_date)
-        # Remove all other calibrations
-        for calibration in calibrations:
-            if calibration != latest_calibration:
-                calibration.delete()
+        # # Remove all other calibrations
+        # for calibration in calibrations:
+        #     if calibration != latest_calibration:
+        #         calibration.delete()
     else:
         # no calibrations done during session. Set to the last calibration done before session started
         latest_calibration = Calibration.query.filter(
