@@ -38,6 +38,7 @@ psutil==6.0.0
 pyparsing==3.2.3
 pyserial==3.5
 python-dateutil==2.9.0.post0
+python-dotenv==1.2.2
 python-engineio==4.9.1
 python-socketio==5.11.3
 python-usbtmc==0.8

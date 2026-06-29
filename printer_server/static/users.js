@@ -10,4 +10,12 @@ $(document).ready(function () {
     $(document).ready(async function() {
         await load_user_table();
     });
+
+    $('#addUserBtn').on('click', function () {
+        $('#registerModal').modal('show');
+    });
+
+    $('#registerModal').on('hidden.bs.modal', function () {
+        window.location.reload();
+    });
 });

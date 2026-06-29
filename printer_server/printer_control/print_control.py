@@ -14,7 +14,7 @@ from zipfile import ZipFile, BadZipFile, ZIP_DEFLATED
 import printer_server.views.home as home
 from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
-from printer_server.models import PrintQueue, PrintRecord, Session
+from printer_server.models import PrintQueue, PrintRecord, Session, User
 from printer_server.async_file_handler import async_file_hander
 from printer_server.hardware_configuration.hardware_configuration import config_dict, driver_handles
 from printer_server.print_file_validator import (
@@ -752,12 +752,12 @@ class PrintControl:
         self.exposure_index = 0
         self.exposure_count = self.total_number_of_exposures()
 
-        self.pre_print_tasks()
-        self.pre_print_joins()
-
         # clear old flags
         self.printing_stopped.clear()
         self.printing_paused.clear()
+
+        self.pre_print_tasks()
+        self.pre_print_joins()
 
         # update frontend message pane and progress bar
         msg = {
@@ -1008,6 +1008,8 @@ class PrintControl:
                 home.play_sound("print_finished.mp3")
                 self.write_to_event_log(msg["text"])
 
+            home.print_finished(latest_record.id)
+
             async_file_hander.finish()
 
             latest_record.save()
@@ -1090,6 +1092,12 @@ class PrintControl:
         Print Queue table in the database.
         """
 
+        user = request.form.get("user", None)
+        if user is None:
+            user = Session.get_session_user()
+        else:
+            user = User.query.filter_by(username=user).first()
+
         for _, f in enumerate(request.files.getlist("file")):
             upload_time = datetime.now()
             filename_on_disk = os.path.join(
@@ -1114,14 +1122,15 @@ class PrintControl:
                     original_filename=f.filename,
                     upload_time=upload_time,
                     upload_ip=request.remote_addr,
-                    user=Session.get_session_user()
+                    user=user
                 ).save()
                 msg = {
                     "id": new_print_job.id,
                     "name": f.filename,
                     "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
                     "upload_ip": request.remote_addr,
-                    "user": Session.get_session_user().full_name if Session.get_session_user() else None,
+                    "user_name": user.full_name if user else None,
+                    "is_current_user": user == Session.get_session_user()
                 }
                 home.update_printer_state("job uploaded", msg)
             except ValueError as ex:

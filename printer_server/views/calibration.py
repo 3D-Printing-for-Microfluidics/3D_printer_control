@@ -244,6 +244,12 @@ def set(message):
         last_positions[machine_name] = round(
             distance + last_positions.get(machine_name, 0.0), round_precision
         )
+
+    cal_data = create_calibration_data()
+    for val in cal_data:
+        if val["machine_name"] not in last_positions:
+            last_positions[val["machine_name"]] = 0.0
+
     write_to_position_log(last_positions)
     socketio.emit("set_done", create_calibration_data(), namespace="/calibration")
 
@@ -571,7 +577,8 @@ def calibration_prints_add_to_queue(message):
                 "name": display_name,
                 "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
                 "upload_ip": request.remote_addr,
-                "user": Session.get_session_user().full_name if Session.get_session_user() else None,
+                "user_name": Session.get_session_user().full_name if Session.get_session_user() else None,
+                "is_current_user": True
             },
             namespace="/printing",
         )

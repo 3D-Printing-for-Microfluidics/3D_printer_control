@@ -182,14 +182,20 @@ def generate_table(name, table_key, route, query, table_definition, has_filters,
                     if end_date == "":
                         end_date = today
                     end_date_dt = datetime(*[int(i) for i in end_date.split("-")])
-                    for filter in filter_lambdas(column.key)(start_date_dt, end_date_dt):
-                        query = query.filter(filter)
+                    try:
+                        for filter in filter_lambdas(column.key)(start_date_dt, end_date_dt):
+                            query = query.filter(filter)
+                    except AttributeError as e:
+                        pass
                     column.filter_start = start_date
                     column.filter_end = end_date
                 else:
                     value = args.get(f"filter_{column.key}", "")
                     if value != "":
-                        query = query.filter(filter_lambdas(column.key)(value))
+                        try:
+                            query = query.filter(filter_lambdas(column.key)(value))
+                        except AttributeError as e:
+                            pass
 
                     column.filter = value
 

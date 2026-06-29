@@ -6,7 +6,7 @@ from flask import Blueprint, request, render_template
 from flask_socketio import join_room, leave_room, emit
 
 from printer_server.settings import Config
-from printer_server.models import PrintQueue, Session
+from printer_server.models import PrintQueue, Session, User
 from printer_server.extensions import socketio
 from printer_server.views.manual_controls import stop_loop
 from printer_server.hardware_configuration.hardware_configuration import config_dict
@@ -196,7 +196,8 @@ def index():
 
     kwargs = {
         "allJobs":allJobs,
-        "hostname":Config.HOSTNAME
+        "hostname":Config.HOSTNAME,
+        "usernames": [u.username for u in User.query.all()]
     }
 
     kwargs["loadcell_exists"] = "loadcell" in config_dict.keys()
@@ -208,6 +209,9 @@ def index():
         "home.html",
         **kwargs
     )
+
+def print_finished(id):
+    socketio.emit("print_finished", {"id": id}, namespace="/users")
 
 def update_printer_state(state, msg):
     socketio.emit(state, msg, namespace="/printing")

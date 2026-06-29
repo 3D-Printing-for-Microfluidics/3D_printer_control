@@ -72,6 +72,8 @@ class Session(SurrogatePK, Model):
     """A session of printing activity"""
     
     __tablename__ = "Sessions"
+
+    active = Column(db.Boolean, default=True)
     
     # Timestamp for the session
     start_time = Column(db.DateTime, nullable=False, default=datetime.now)
@@ -92,15 +94,24 @@ class Session(SurrogatePK, Model):
     
     # Hardware issues
     hardware_issues = Column(db.Boolean, default=False)
-    hardware_issues_details = Column(db.Text)
+    hardware_issues_details = Column(db.Text, default=None)
 
     # General comments for the entire session
-    notes = Column(db.Text)
+    notes = Column(db.Text, default=None)
 
     @classmethod
     def get_active_session(cls):
-        """Get the active session using end_time (only one can be active at a time)."""
-        return cls.query.filter(cls.end_time.is_(None)).first()
+        # Get latest session; if active, return it
+        latest_session = cls.query.order_by(cls.start_time.desc()).first()
+        if latest_session and latest_session.active:
+            return latest_session
+        return None
+
+        # """Get the active session using active (only one can be active at a time)."""
+        # return cls.query.filter(cls.active == True).first()
+
+        # """Get the active session using end_time (only one can be active at a time)."""
+        # return cls.query.filter(cls.end_time.is_(None)).first()
 
     @classmethod
     def session_active(cls):
@@ -257,9 +268,11 @@ class PrintRecord(SurrogatePK, Model):
         OPTICS = "Dirty Optics"
         PRINTER_FAILURE = "Printer Hardware Issue"
         OTHER_FAILURE = "Other"
+    logged = Column(db.Boolean, default=False)
+    successful = Column(db.Boolean, default=None)
     failure_mode = Column(db.Enum(FailureModeEnum), default=FailureModeEnum.NO_FAILURE)
-    other_failure_mode = Column(db.String(256))
-    notes = Column(db.Text)
+    other_failure_mode = Column(db.String(256), default=None)
+    notes = Column(db.Text, default=None)
 
     @property
     def zip_filename(self):

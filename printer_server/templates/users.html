@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}User Management ({{ hostname }}){% endblock %}
+{% block title %}Users ({{ hostname }}){% endblock %}
 
 {% block printer3d_state %}
-<h2>{{ hostname }} - User Management</h2>
+<h2>{{ hostname }} - Users</h2>
 {% endblock %}
 
 {% block styles %}
@@ -14,6 +14,17 @@
 {% block page_content %}
 
 <!-- <br> -->
+
+<div class="d-flex justify-content-end mb-2">
+    <button type="button" class="btn btn-outline-info" id="addUserBtn">
+        Add User
+    </button>
+    <button type="button" class="btn btn-outline-info" id="manageUsersBtn">
+        Manage Users
+    </button>
+</div>
+
+<br>
 
 <div id="main-table-container"></div>
 

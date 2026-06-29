@@ -1,77 +1,78 @@
-<div class="modal fade" id="endSessionModal" tabindex="-1" role="dialog" aria-labelledby="endSessionModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl" role="document" id="endSessionModalDialog">
-    <form id="end-session-form">
-        {{ end_session_form.hidden_tag() }}
-      
+<div class="modal-dialog modal-lg" role="document" id="endSessionModalDialog">
+  <form id="end-session-form">
+      {{ end_session_form.hidden_tag() }}
+    
 
-      <div class="modal-content">
+    <div class="modal-content">
 
-        <!-- HEADER -->
-        <div class="modal-header">
-          <h5 class="modal-title" id="endSessionModalLabel">End Session</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+      <!-- HEADER -->
+      <div class="modal-header">
+        <h5 class="modal-title" id="endSessionModalLabel">End Session</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <!-- BODY -->
+      <div class="modal-body">
+
+        <!-- SESSION LEVEL FIELDS -->
+        <div class="form-group">
+          <div class="form-check">
+            {{ end_session_form.film_changed(class="form-check-input") }}
+            {{ end_session_form.film_changed.label(class="form-check-label") }}
+          </div>
         </div>
 
-        <!-- BODY -->
-        <div class="modal-body">
-
-          <!-- SESSION LEVEL FIELDS -->
-          <div class="form-group">
-            <div class="form-check">
-              {{ end_session_form.film_changed(class="form-check-input") }}
-              {{ end_session_form.film_changed.label(class="form-check-label") }}
-            </div>
+        <div class="form-group">
+          <div class="form-check">
+            {{ end_session_form.printer_issues(class="form-check-input", id="printer_issues") }}
+            {{ end_session_form.printer_issues.label(class="form-check-label") }}
           </div>
-
-          <div class="form-group">
-            <div class="form-check">
-              {{ end_session_form.printer_issues(class="form-check-input", id="printer_issues") }}
-              {{ end_session_form.printer_issues.label(class="form-check-label") }}
-            </div>
-          </div>
-
-          <div class="form-group" id="printer_issue_details_div" style="display: none;">
-            {{ end_session_form.printer_issue_details.label(class="form-label") }}
-            {{ end_session_form.printer_issue_details(class="form-control") }}
-
-            {% for error in end_session_form.printer_issue_details.errors %}
-              <small class="text-danger">{{ error }}</small>
-            {% endfor %}
-          </div>
-
-          <div class="form-group">
-            {{ end_session_form.session_notes.label(class="form-label") }}
-            {{ end_session_form.session_notes(class="form-control") }}
-          </div>
-
-          <hr>
-
-          <!-- PRINTS SECTION -->
-          <h5>Prints</h5>
-
-          <div id="print-container">
-
-            <div class="modal-content" id="endSessionContent">
-                  Loading...
-              </div>
-
-          </div>
-
         </div>
 
-        <!-- FOOTER -->
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">
-            Cancel
-          </button>
-          <button type="submit" class="btn btn-primary">
-            End Session
-          </button>
+        <div class="form-group" id="printer_issue_details_div" {% if end_session_form.printer_issues.data == False %}style="display: none;"{% endif %}>
+          {{ end_session_form.printer_issue_details.label(class="form-label") }}
+          {{ end_session_form.printer_issue_details(class="form-control") }}
+
+          {% for error in end_session_form.printer_issue_details.errors %}
+            <small class="text-danger">{{ error }}</small>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          {{ end_session_form.session_notes.label(class="form-label") }}
+          {{ end_session_form.session_notes(class="form-control") }}
+        </div>
+
+        <hr>
+
+        <!-- PRINTS SECTION -->
+        <h5>Prints</h5>
+
+        <div id="print-container">
+
+          <div class="modal-content" id="endSessionContent">
+                Loading...
+            </div>
+
         </div>
 
       </div>
-    </form>
-  </div>
+
+      <!-- FOOTER -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-secondary" value="later" formnovalidate>
+          Finish Later
+        </button>
+        <button type="submit" class="btn btn-primary">
+          End Session
+        </button>
+      </div>
+
+    </div>
+  </form>
 </div>

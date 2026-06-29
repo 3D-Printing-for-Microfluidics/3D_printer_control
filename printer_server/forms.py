@@ -89,11 +89,12 @@ class EndPrintForm(FlaskForm):
     start_time = HiddenField("Start Time")
     end_time = HiddenField("End Time")
     incomplete = HiddenField("Incomplete")
-    print_success = SelectField("Print Succeeded?", choices=[
+    successful = SelectField("Print Succeeded?", choices=[
         ("", "-- Select --"), 
         ("yes", "Yes"), 
         ("no", "No")
     ])
+    logged = HiddenField("Logged")
     choices = [
         ("", "-- Select --")
     ] + [
@@ -117,19 +118,24 @@ class EndPrintForm(FlaskForm):
         if not initial_validation:
             failed = True
         
-        # If print_success "", show an error
-        if self.print_success.data == "":
-            self.print_success.errors.append("Please select an option.")
+        # If successful "", show an error
+        if self.successful.data == "":
+            self.successful.errors.append("Please select an option.")
             failed = True
 
-        # If print_success is False, failure_mode must be selected
-        if self.print_success.data == "no" and not self.failure_mode.data:
+        # If successful is False, failure_mode must be selected
+        if self.successful.data == "no" and not self.failure_mode.data:
             self.failure_mode.errors.append("Failure mode is required when print is unsuccessful.")
             failed = True
 
         # If failure_mode is other, failure_detail must be populated
         if self.failure_mode.data == "other" and not self.failure_detail.data:
             self.failure_detail.errors.append("Failure details are required when failure mode is other.")
+            failed = True
+
+        # print notes must be at least 3 characters
+        if not self.print_notes.data and len(self.print_notes.data) < 3:
+            self.print_notes.errors.append("Print notes are required.")
             failed = True
 
         return not failed
@@ -169,5 +175,10 @@ class EndSessionForm(FlaskForm):
         for print_form in self.prints:
             if not print_form.validate(print_form):
                 failed = True
+
+        # Session notes are required
+        if not self.session_notes.data and len(self.session_notes.data) < 3:
+            self.session_notes.errors.append("Session notes are required.")
+            failed = True
 
         return not failed

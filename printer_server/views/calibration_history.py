@@ -40,7 +40,7 @@ def generate_calibration_table_column_definition():
         Column(key="col-calibration-date", name="Calibration Date", value=lambda r: r.calibration_date, type="datetime", visible=True, db_col=Calibration.calibration_date, db_filter=generate_datetime_lambda(Calibration.calibration_date)),
     ]
     for key in all_keys:
-        if key in lut:
+        if key in sorted(lut.keys()):
             human_name = lut[key]["full_name"]
 
             db_col = db.func.json_extract(
@@ -51,7 +51,7 @@ def generate_calibration_table_column_definition():
             columns.append(Column(
                 key=f"col-{key}",
                 name=human_name,
-                value=lambda r, k=key: r.calibration_data.get(k),
+                value=lambda r, k=key: r.calibration_data.get(k) if r.calibration_data.get(k) != 0 else 0.0,
                 visible=lut[key]["group"] in [GROUP_ACTIVE_OFFSETS, GROUP_NON_ACTIVE_OFFSETS],
                 db_col=db_col,
                 db_filter=generate_string_lambda(db_col),

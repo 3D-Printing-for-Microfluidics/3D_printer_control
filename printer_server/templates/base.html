@@ -89,9 +89,9 @@
                                     </a>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{ url_for('manual_controls.index') }}">Manual Controls</a>
-                                        <a class="dropdown-item" href="{{ url_for('users.index') }}">User Management</a>
                                         <a class="dropdown-item" href="{{ url_for('calibration_history.index') }}">Calibration History</a>
                                         <a class="dropdown-item" href="{{ url_for('server_logs.index') }}">Server Logs</a>
+                                        <a class="dropdown-item" href="{{ url_for('users.index') }}">Users</a>
                                     </div>
                                 </li>
                             </ul>
@@ -115,9 +115,10 @@
         document.getElementById("favicon2").setAttribute("type", "image/png");
     </script>
 
-    {% include 'partials/register_user_modal.html' %}
-    {% include 'partials/start_session_modal.html' %}
-    {% include 'partials/end_session_modal.html' %}
+    <div class="modal fade" id="registerModal" tabindex="-1" role="dialog" aria-labelledby="registerModalTitle" aria-hidden="true"></div>
+    <div class="modal fade" id="sessionModal" tabindex="-1" role="dialog" aria-labelledby="sessionModalTitle" aria-hidden="true"></div>
+    <div class="modal fade" id="endSessionModal" tabindex="-1" role="dialog" aria-labelledby="endSessionModalLabel" aria-hidden="true"></div>
+    <div class="modal fade" id="endPrintModal" tabindex="-1" role="dialog" aria-labelledby="endPrintModalLabel" aria-hidden="true"></div>
 
     <div class="container" id="base-body">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -168,6 +169,7 @@
 
 <script>
     var base_socket;
+    var active_session = JSON.parse('{{ active_session|tojson }}');
 </script>
 
 </html>

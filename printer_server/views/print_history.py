@@ -2,7 +2,7 @@ import os
 import shutil
 import logging
 from datetime import datetime, timedelta
-from flask import Blueprint, request, render_template, flash, send_file
+from flask import Blueprint, request, render_template, flash, send_file, jsonify
 
 
 from printer_server.settings import Config
@@ -22,7 +22,7 @@ def generate_session_table_column_definition():
     printer_user_options = [name for _, name in get_user_lookup()]
 
     columns = [
-        Column(key="col-user", name="User", value=lambda r: r.user.full_name, filterable="Yes", options=printer_user_options, visible=True, db_col=Session.user.has(User.full_name), db_filter=generate_nested_lambda([Session.user, User.full_name], generate_string_lambda)),
+        Column(key="col-user", name="User", value=lambda r: r.user.full_name if r.user else "", filterable="Yes", options=printer_user_options, visible=True, db_col=Session.user.has(User.full_name), db_filter=generate_nested_lambda([Session.user, User.full_name], generate_string_lambda)),
         Column(key="col-start-time", name="Start Time", value=lambda r: r.start_time, type="datetime", filterable="Yes", visible=True, db_col=Session.start_time, db_filter=generate_datetime_lambda(Session.start_time)),
         Column(key="col-end-time", name="End Time", value=lambda r: r.end_time, type="datetime", filterable="No", db_col=Session.end_time, db_filter=generate_datetime_lambda(Session.end_time)),
         Column(key="col-session-duration", name="Duration", value=lambda r: generate_duration_value(r.start_time, r.end_time), type="duration", filterable="No", visible=True, db_col=generate_duration_db_column(Session.start_time, Session.end_time), db_filter=lambda search: generate_duration_db_column(Session.start_time, Session.end_time).ilike(f"%{search}%")),
@@ -30,10 +30,11 @@ def generate_session_table_column_definition():
         Column(key="col-good-prints", name="Successful Prints", value=lambda r: f"{r.prints_successful}", type="text", db_col=Session.prints_successful, db_filter=generate_string_lambda(Session.prints_successful)),
         Column(key="col-total-prints", name="Total Prints", value=lambda r: len(r.print_records), type="text", db_col=Session.total_prints_in_session, db_filter=generate_string_lambda(Session.total_prints_in_session)),
         Column(key="col-film-changed", name="Film Changed", value=lambda r: r.film_changed, type="boolean", visible=True, db_col=Session.film_changed, db_filter=generate_boolean_lambda(Session.film_changed)),
-        # Column(key="col-calibration-data", name=, value=, type=, sortable=, filterable=, options=, visible=, db_col=, db_filter=, button_style=, button_name=, button_class=, href=, href_enabled=),
         Column(key="col-hardware-issues", name="Hardware Issues", value=lambda r: r.hardware_issues, type="boolean", visible=True, db_col=Session.hardware_issues, db_filter=generate_boolean_lambda(Session.hardware_issues)),
         Column(key="col-hardware-issues-details", name="Hardware Issues Details", value=lambda r: r.hardware_issues_details, db_col=Session.hardware_issues_details, db_filter=generate_string_lambda(Session.hardware_issues_details)),
         Column(key="col-notes", name="Notes", value=lambda r: r.notes, db_col=Session.notes, db_filter=generate_string_lambda(Session.notes)),
+        # Column(key="col-active", name="Active", value=lambda r: r.active, type="boolean", visible=True, db_col=Session.active, db_filter=generate_boolean_lambda(Session.active)),
+        Column(key="col-finish", name="", type="button", button_style="btn btn-outline-warning", button_name="End Session", button_class="finish-session-btn", sortable=False, filterable="No", visible=True, href_enabled=lambda r: r.end_time is None)
     ]
 
     def get_sort_col(column_key):
@@ -69,7 +70,7 @@ def generate_print_table_column_definition():
 
     columns = [
         Column(key="col-name", name="Name", value=lambda r: r.original_filename, type="link", href="/print_history/download/<id>", filterable="Yes", visible=True, db_col=PrintRecord.original_filename, db_filter=generate_string_lambda(PrintRecord.original_filename)),
-        Column(key="col-printer-user", name="Printer User", value=lambda r: r.user.full_name, filterable="Yes", options=printer_user_options, visible=True, db_col=PrintRecord.user.has(User.full_name), db_filter=generate_nested_lambda([PrintRecord.user, User.full_name], generate_string_lambda)),
+        Column(key="col-printer-user", name="Printer User", value=lambda r: r.user.full_name if r.user else "", filterable="Yes", options=printer_user_options, visible=True, db_col=PrintRecord.user.has(User.full_name), db_filter=generate_nested_lambda([PrintRecord.user, User.full_name], generate_string_lambda)),
         Column(key="col-start-time", name="Start Time", value=lambda r: r.start_time, type="datetime", filterable="Yes", visible=True, db_col=PrintRecord.start_time, db_filter=generate_datetime_lambda(PrintRecord.start_time)),
         Column(key="col-end-time", name="End Time", value=lambda r: r.end_time, type="datetime", filterable="No", db_col=PrintRecord.end_time, db_filter=generate_datetime_lambda(PrintRecord.end_time)),
         Column(key="col-upload-time", name="Upload Time", value=lambda r: r.upload_time, type="datetime", filterable="No", db_col=PrintRecord.upload_time, db_filter=generate_datetime_lambda(PrintRecord.upload_time)),
@@ -82,10 +83,11 @@ def generate_print_table_column_definition():
         Column(key="col-design-printer", name="3D Printer", value=lambda r: r.design_printer, options=design_printer_options, db_col=PrintRecord.design_printer, db_filter=generate_string_lambda(PrintRecord.design_printer)),
         Column(key="col-design-slicer", name="Slicer", value=lambda r: r.design_slicer, options=design_slicer_options, db_col=PrintRecord.design_slicer, db_filter=generate_string_lambda(PrintRecord.design_slicer)),
         Column(key="col-design-slice-date", name="Slice Date", value=lambda r: r.design_slice_date, filterable="No", db_col=PrintRecord.design_slice_date, db_filter=generate_string_lambda(PrintRecord.design_slice_date)),
-        Column(key="col-failure-mode", name="Failure Mode", value=lambda r: PrintRecord.FailureModeEnum(r.failure_mode).value, db_col=PrintRecord.failure_mode, db_filter=generate_string_lambda(PrintRecord.failure_mode)),
+        Column(key="col-failure-mode", name="Failure Mode", value=lambda r: PrintRecord.FailureModeEnum(r.failure_mode).value if r.failure_mode is not None else "", db_col=PrintRecord.failure_mode, db_filter=generate_string_lambda(PrintRecord.failure_mode)),
         Column(key="col-failure-other", name="Other Failure Mode", value=lambda r: r.other_failure_mode, db_col=PrintRecord.other_failure_mode, db_filter=generate_string_lambda(PrintRecord.other_failure_mode)),
         Column(key="col-notes", name="Notes", value=lambda r: r.notes, db_col=PrintRecord.notes, db_filter=generate_string_lambda(PrintRecord.notes)),
-        Column(key="col-reprint", name="Reprint", type="button", href="/print_history/reprint/<id>", button_style="btn-outline-info", button_name="Reprint", button_class="reprint-btn", sortable=False, filterable="No", visible=True)
+        Column(key="col-reprint", name="Reprint", type="button", href="/print_history/reprint/<id>", button_style="btn-outline-info", button_name="Reprint", button_class="reprint-btn", sortable=False, filterable="No", visible=True),
+        Column(key="col-log", name="", type="button", button_style="btn btn-outline-warning", button_name="Fill Log", button_class="print-log-btn", sortable=False, filterable="No", visible=True, href_enabled=lambda r: r.logged == False and r.session.active)
     ]
 
     def get_sort_col(column_key):
@@ -107,7 +109,6 @@ def generate_print_table_column_definition():
         "sort_columns": get_sort_col,
         "filter_lambdas": get_filter_lambda,
     }
-
 
 
 @blueprint.route("/print_history")
@@ -154,6 +155,7 @@ def print_table():
         "partials/table.html",
         table=table
     )
+
 
 @blueprint.route("/print_history/session_table")
 def session_table():
@@ -226,7 +228,8 @@ def add_to_queue(job_id):
                 "name": job.original_filename,
                 "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
                 "upload_ip": request.remote_addr,
-                "user": Session.get_session_user().full_name if Session.get_session_user() else None,
+                "user_name": Session.get_session_user().full_name if Session.get_session_user() else None,
+                "is_current_user": True
             },
             namespace="/printing"
         )

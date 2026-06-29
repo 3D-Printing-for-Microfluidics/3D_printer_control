@@ -1,5 +1,8 @@
 """The app module, containing the app factory function."""
+import os
+import smtplib
 import logging
+from email.message import EmailMessage
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, render_template, g
 from printer_server.extensions import db, migrate, socketio
@@ -9,6 +12,7 @@ from printer_server.views import home, calibration, manual_controls, print_histo
 from printer_server.settings import ProdConfig, DevConfig
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
 from printer_server.logging_handler import configure_loggers
+from printer_server.threading_wrapper import Thread
 from flask.helpers import get_debug_flag
 
 def create_app(config_object=ProdConfig):
@@ -30,37 +34,21 @@ def create_app(config_object=ProdConfig):
 
     @app.before_request
     def build_global_forms():
-        g.start_session_form = users.StartSessionForm()
-        g.register_form = users.RegisterForm()
-        g.end_session_form = users.EndSessionForm()
-
         # get session info
         session = Session.get_active_session()
         if session:
             g.active_session = {
+                "id": session.id,
                 "user": session.user.full_name,
                 "start_time": session.start_time
             }
         else:
             g.active_session = None
 
-        if session:
-            for p in session.print_records:
-                g.end_session_form.prints.append_entry({
-                    "print_id": p.id,
-                    "print_name": p.original_filename,
-                    "start_time": p.start_time,
-                    "end_time": p.end_time,
-                    "incomplete": "" if p.completed else "Incomplete",
-                })
-
     # add globals
     @app.context_processor
     def inject_globals():
         return {
-            "start_session_form": g.start_session_form,
-            "register_form": g.register_form,
-            "end_session_form": g.end_session_form,
             "active_session": g.active_session
         }
     
@@ -101,6 +89,7 @@ def create_app(config_object=ProdConfig):
         )
 
     # try:
+    
         # with app.app_context():
         #     Calibration.init_Calibration_from_old_text_logs()
     # except Exception as ex:
@@ -186,3 +175,28 @@ def cleanup_db():
 
 CONFIG = DevConfig if get_debug_flag() else ProdConfig
 app = create_app(CONFIG)
+
+def send_email(recipient, subject, body_html):
+    thread = Thread(log=logging.getLogger(__name__), target=_send_email, args=(recipient, subject, body_html))
+    thread.start()
+
+def _send_email(recipient, subject, body_html):
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = CONFIG.SMTP_USERNAME
+    msg["To"] = recipient
+
+    msg.set_content("This email requires an HTML-capable client.")
+
+    msg.add_alternative(body_html, subtype="html")
+
+    try:
+        with smtplib.SMTP(CONFIG.SMTP_SERVER, CONFIG.SMTP_PORT) as server:
+            server.starttls()
+            server.login(CONFIG.SMTP_USERNAME, CONFIG.SMTP_PASSWORD)
+            server.send_message(msg)
+
+        logging.getLogger(__name__).info("Email sent successfully!")
+
+    except Exception as e:
+        logging.getLogger(__name__).info(f"An error occurred: {e}")

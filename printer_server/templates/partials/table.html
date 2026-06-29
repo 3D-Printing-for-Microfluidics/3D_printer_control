@@ -119,12 +119,12 @@
                     {% for column in table.columns %}
                     {% set value = "" %}
                     {% if column.value is defined and column.value %}
-                        {% set value = column.value(rec) | default("", true) %}
+                        {% set value = column.value(rec) | default("") %}
                     {% endif %}
                     {% if column.href_enabled is sameas true %}
                         {% set href_enabled = true %}
-                    {% elif column.href_enabled == rec.id %}
-                        {% set href_enabled = true %}
+                    {% elif column.href_enabled is callable %}
+                        {% set href_enabled = column.href_enabled(rec) %}
                     {% else %}
                         {% set href_enabled = false %}
                     {% endif %}
@@ -154,11 +154,13 @@
                     </td>
                     {% elif column.type == 'button' %}
                     <td class="align-middle{{ ' ' if loop.first else ' justify-center ' }}{{ table.key }}-{{ column.key }}">
-                        <a class="table-a" {% if href_enabled %}href="{{ column.href | replace('<id>', rec.id|string) }}"{% endif %}>
-                            <button type="button" class="btn {{ column.button_style }} btn-sm {{ table.key }}-{{ column.button_class }} {% if not href_enabled %}disabled{% endif %}">
+                        {% if href_enabled %}
+                        <a class="table-a" {% if href_enabled and column.href %}href="{{ column.href | replace('<id>', rec.id|string) }}"{% endif %}>
+                            <button type="button" class="btn {{ column.button_style }} btn-sm {{ table.key }}-{{ column.button_class }}">
                                 {{ column.button_name }}
                             </button>
                         </a>
+                        {% endif %}
                     </td> 
                     {% elif column.type == 'expand' %}
                     {% else %}

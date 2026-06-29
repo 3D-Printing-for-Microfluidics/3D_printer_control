@@ -1,4 +1,7 @@
 
+var in_start_session = false;
+var username = null;
+
 async function onSubmit(url, modalId, on_success, e) {
     e.preventDefault();
 
@@ -14,6 +17,8 @@ async function onSubmit(url, modalId, on_success, e) {
 
     const data = await response.json();
 
+    console.log(data);
+
     if (data.success) {
         if (on_success) {
             on_success();
@@ -24,10 +29,14 @@ async function onSubmit(url, modalId, on_success, e) {
 
         // Show errors
         for (const [key, value] of Object.entries(data.errors)) {
+            console.log(key, value);
             // if value is a list (of dicts), iterate through them, if it is just a list of strings ignore
             if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
+                console.log("IF");
                 for (const [index, item] of value.entries()) {
+                    console.log(index, item);
                     for (const [subkey, subvalue] of Object.entries(item)) {
+                        console.log(subkey, subvalue);
                         
                         if (!$(modalId).find(`[name="prints-${index}-${subkey}"]`).next('.error-message').length) {
                             $(modalId).find(`[name="prints-${index}-${subkey}"]`).after(`<div class="error-message text-danger small">${subvalue}</div>`);
@@ -36,6 +45,7 @@ async function onSubmit(url, modalId, on_success, e) {
                 }
             }
             else {
+                console.log("ELSE");
                 // Check if div already exists
                 if (!$(modalId).find(`[name="${key}"]`).next('.error-message').length) {
                     $(modalId).find(`[name="${key}"]`).after(`<div class="error-message text-danger small">${value}</div>`);
@@ -74,14 +84,21 @@ $(document).ready(function () {
     }
 
     base_socket.on("session_started", function(data) {
-        console.log("Session started:", data);
         // get session-active-banner and update its content
         const banner = document.getElementById('session-active-banner');
         if (banner) {
-            const user = data.user;
-            const start_time = data.start_time;
-            banner.querySelector('strong').textContent = user;
-            banner.querySelector('small').textContent = `Session active • ${start_time}`;
+            active_session = {
+                id: data.id,
+                user: data.user,
+                start_time: data.start_time
+            };
+            // const user = data.user;
+            // const start_time = data.start_time;
+            // banner.querySelector('strong').textContent = user;
+            // banner.querySelector('small').textContent = `Session active • ${start_time}`;
+
+            banner.querySelector('strong').textContent = active_session.user;
+            banner.querySelector('small').textContent = `Session active • ${active_session.start_time}`;
         }
         // Show the active session banner
         document.getElementById('session-active-banner').classList.remove('d-none');
@@ -91,7 +108,6 @@ $(document).ready(function () {
     });
 
     base_socket.on("session_ended", function() {
-        console.log("Session ended");
         // Show the active session banner
         document.getElementById('session-available-banner').classList.remove('d-none');
         document.getElementById('session-available-banner').classList.add('d-flex');
@@ -99,88 +115,167 @@ $(document).ready(function () {
         document.getElementById('session-active-banner').classList.remove('d-flex');
     });
 
+    base_socket.on("print_finished", function(data) {
+        const id = data.id;
+        showEndPrintModal(id);
+    });
+
     updateSessionTime();
     setInterval(updateSessionTime, 60000);
 
-    /////////////// Start Session ///////////////
-    $('#startSessionBtn').on('click', function() {
-        $('#sessionModal')
-            .one('shown.bs.modal', function () {
-                $(this).find('[name="username"]').trigger('focus');
-            })
-            .modal('show');
+    /////////////// Submit Handlers ///////////////
+
+    document.addEventListener('submit', function (e) {
+        if (e.target.matches('#start-session-form')) {
+            onSubmit(
+                '/users/start_session',
+                '#sessionModal',
+                function (response) { // On success
+                    $('#sessionModal').modal('hide');
+                    window.location.reload();
+                },
+                e
+            )
+        }
+        else if (e.target.matches('#end-session-form')) {
+            const id = $('#endSessionModal').data('id');
+            const later = e.submitter.value === 'later';
+
+            onSubmit(
+                `/users/end_session/${id}?later=${later}`,
+                '#endSessionModal',
+                function (response) { // On success
+                    // reload the page
+                    window.location.reload();
+                },
+                e
+            )
+        }
+        else if (e.target.matches('#register-form')) {
+            onSubmit(
+                '/users/register_user',
+                '#registerModal',
+                function (response) { // On success
+                    $('#registerModal').modal('hide');
+                    if (in_start_session) {
+                        username = $('#register-form').find('[name="username"]').val();
+                    };
+                },
+                e
+            )
+        }
+        else if (e.target.matches('#end-print-form')) {
+            const printId = $('#endPrintModal').data('id');
+            const later = e.submitter.value === 'later';
+
+            onSubmit(
+                `/users/end_print/${printId}?later=${later}`,
+                '#endPrintModal',
+                function (response) { // On success
+                    // reload the page
+                    window.location.reload();
+                },
+                e
+            )
+        }
     });
 
-    function onSessionStartSuccess() {
-        // reload the page
-        window.location.reload();
+    /////////////// Start Session ///////////////
+    function showStartSessionModal() {
+        $.get("/users/start_session", function(html) {
+            $("#sessionModal").html(html);
+            $("#sessionModal").modal("show");
+        });
     }
 
-    document.getElementById('start-session-form').addEventListener('submit', onSubmit.bind(null, '/users/start-session', '#sessionModal', onSessionStartSuccess));
+    $('#startSessionBtn').on('click', function() {
+        showStartSessionModal();
+    });
 
-    $('#showRegisterModal').on('click', function () {
-        console.log(base_socket);
-        $('#sessionModal').one('hidden.bs.modal', function () {
-            $('#registerModal')
-                .one('shown.bs.modal', function () {
-                    $(this).find('[name="first_name"]').trigger('focus');
-                })
-                .modal('show');
+    $('#sessionModal').on('shown.bs.modal', function () {
+        in_start_session = true;
+        if (username) {
+            $(this).find('[name="username"]').val(username);
+            $(this).find('[name="password"]').trigger('focus');
+        }
+        else{
+            $(this).find('[name="username"]').trigger('focus');
+        }
+    });
+
+    $('#sessionModal').on('hidden.bs.modal', function () {
+        in_start_session = false;
+    });
+
+    
+    /////////////// Register User ///////////////
+    function showRegisterModal() {
+        $.get("/users/register_user", function(html) {
+            $("#registerModal").html(html);
+            $("#registerModal").modal("show");
         });
+    }
 
+    // $('#showRegisterModal').on('click', function () {
+    $(document).on("click", "#showRegisterModal", function () {
+        $('#sessionModal').one('hidden.bs.modal', function () {
+            in_start_session = true;
+            showRegisterModal();
+        });
         $('#sessionModal').modal('hide');
     });
 
-    $('#backToSessionModal').on('click', function () {
-        $('#registerModal').one('hidden.bs.modal', function () {
-            $('#sessionModal')
-                .one('shown.bs.modal', function () {
-                    $(this).find('[name="username"]').trigger('focus');
-                })
-                .modal('show');
-        });
-
+    // $('#backToSessionModal').on('click', function () {
+    $(document).on("click", "#backToSessionModal", function () {
         $('#registerModal').modal('hide');
     });
 
-    function onRegisterSuccess() {
-        $('#registerModal').one('hidden.bs.modal', function () {
-            $('#sessionModal')
-                .one('shown.bs.modal', function () {
-                    const username = $('#register-form').find('[name="username"]').val();
-                    $('#sessionModal').find('[name="username"]').val(username);
-                    $(this).find('[name="password"]').trigger('focus');
-                })
-                .modal('show');
-        });
+    $('#registerModal').on('shown.bs.modal', function () {
+        $(this).find('[name="first_name"]').trigger('focus');
+    });
 
-        $('#registerModal').modal('hide');
+    $('#registerModal').on('hidden.bs.modal', function () {
+        if (in_start_session) {
+            showStartSessionModal();
+        }
+    });
+
+    /////////////// Finish Print ///////////////
+    function showEndPrintModal(printId) {
+        $.get(`/users/print_form?print_id=${printId}`, function(html) {
+            $("#endPrintModal").html(html);
+            $("#endPrintModal").modal("show");
+        });
+        $('#endPrintModal').attr('data-id', printId);
     }
 
-    document.getElementById('register-form').addEventListener('submit', onSubmit.bind(null, '/users/register_user', '#registerModal', onRegisterSuccess));
-
     /////////////// End Session ///////////////
+    function showEndSessionModal(sessionId) {
+        $.get(`/users/end_session/${sessionId}`, function(html) {
+            $("#endSessionModal").html(html);
+            const waitForContainer = () => {
+                const el = document.getElementById("print-container");
+                if (!el) {
+                    requestAnimationFrame(waitForContainer);
+                    return;
+                }
+                $.get(`/users/print_form?session_id=${sessionId}`, function(inner_html) {
+                    el.innerHTML = inner_html;
+                });
+                $("#endSessionModal").modal("show");
+            };
+            waitForContainer();
+        });
+        $('#endSessionModal').attr('data-id', sessionId);
+    }
 
     // Load in updated modal partial on open
     $('#endSessionBtn').on('click', function() {
-        $('#endSessionModal').one('shown.bs.modal', async function () {
-                const response = await fetch('/users/print_form');
-                const html = await response.text();
-                document.getElementById('print-container').innerHTML = html;
-            })
-            .modal('show');
+        showEndSessionModal(active_session.id);
     });
 
-    function onSessionEndSuccess() {
-        // reload the page
-        console.log("Session ended successfully");
-        window.location.reload();
-    }
-
-    document.getElementById('end-session-form').addEventListener('submit', onSubmit.bind(null, '/users/end_session', '#endSessionModal', onSessionEndSuccess));
-
-    $('#printer_issues').change(function() {
-        
+    // $('#printer_issues').change(function() {
+    $(document).on('change','#printer_issues',function() {
         if ($(this).is(':checked')) {
             $('#printer_issue_details_div').show();
         } else {

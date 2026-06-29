@@ -35,6 +35,33 @@ $(document).ready(function () {
         await load_session_table();
     });
 
+    function showEndSessionModal(sessionId) {
+        $.get(`/users/end_session/${sessionId}`, function(html) {
+            $("#endSessionModal").html(html);
+            const waitForContainer = () => {
+                const el = document.getElementById("print-container");
+                if (!el) {
+                    requestAnimationFrame(waitForContainer);
+                    return;
+                }
+                $.get(`/users/print_form?session_id=${sessionId}`, function(inner_html) {
+                    el.innerHTML = inner_html;
+                });
+                $("#endSessionModal").modal("show");
+            };
+            waitForContainer();
+        });
+        $('#endSessionModal').attr('data-id', sessionId);
+    }
+
+    function showEndPrintModal(printId) {
+        $.get(`/users/print_form?print_id=${printId}`, function(html) {
+            $("#endPrintModal").html(html);
+            $("#endPrintModal").modal("show");
+        });
+        $('#endPrintModal').attr('data-id', printId);
+    }
+
     // Load the initial table on page load
     $(document).ready(async function() {
         if (session_view) {
@@ -42,5 +69,16 @@ $(document).ready(function () {
         } else {
             await load_print_table();
         }
+
+        $('.session-history-finish-session-btn').on('click', async function() {
+            // get row id
+            const session_id = $(this).closest('tr').data('id');
+            showEndSessionModal(session_id);
+        });
+
+        $('.print-history-print-log-btn').on('click', async function() {
+            const print_id = $(this).closest('tr').data('id');
+            showEndPrintModal(print_id);
+        });
     });
 });

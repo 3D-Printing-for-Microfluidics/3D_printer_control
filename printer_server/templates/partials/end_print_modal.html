@@ -1,0 +1,44 @@
+<div class="modal-dialog modal-lg" role="document" id="endPrintModalDialog">
+  <form id="end-print-form">
+
+    {{ print_forms[0].hidden_tag() }}
+
+    <div class="modal-content">
+
+      <!-- HEADER -->
+      <div class="modal-header">
+        <h5 class="modal-title" id="endPrintModalLabel">Print Log</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <!-- BODY -->
+      <div class="modal-body">
+
+        <div id="print-container">
+
+          <div class="modal-content" id="endPrintContent">
+            {% include 'partials/print_form.html' %}
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- FOOTER -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-secondary" value="later" formnovalidate>
+          Finish Later
+        </button>
+        <button type="submit" class="btn btn-primary">
+          Save
+        </button>
+      </div>
+
+    </div>
+  </form>
+</div>
