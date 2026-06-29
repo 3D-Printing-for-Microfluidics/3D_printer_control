@@ -352,6 +352,80 @@ def end_session_get(session_id):
     )
 
 
+timeout_email_msg = {
+    "head": "Printer Session Ended (Logs Required)",
+    "body": f"""
+        <html>
+            <body>
+                <p>Your session has been ended on the <b>{Config.HOSTNAME}</b> printer at <b>{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</b>, but the required print logs have not yet been completed.</p>
+
+                <p>Please complete the logs as soon as possible.</p>
+
+                <ul>
+                <li>Access them via <b>{Config.HOSTNAME} → </b> Print History → Sessions</li>
+                <li>You cannot start a new session until logs are complete</li>
+                </ul>
+
+                <p>Thank you.</p>
+            </body>
+        </html>
+    """
+}
+
+def end_session_timeout(session_id):
+    session = Session.query.get(session_id)
+
+    # Send an email to the user
+    from printer_server.app import send_email
+    send_email(
+        recipient=session.user.email,
+        subject=timeout_email_msg["head"],
+        body_html=timeout_email_msg["body"]
+    )
+
+    # Update print information
+    prints = session.print_records
+    prints_successful = 0
+    for print_record in prints:
+        if print_record.successful:
+            prints_successful += 1
+
+    # Update calibration information (query all calibration records between start and end of session (last print) and remove all but the latest)
+    calibrations = None
+    if Calibration.query.order_by(Calibration.calibration_date.desc()).first() is not None:
+        calibrations = Calibration.query.filter(
+            Calibration.calibration_date >= session.start_time,
+            Calibration.calibration_date <= (datetime.now() if len(prints) == 0 else prints[-1].start_time + timedelta(seconds=10))
+        ).all()
+
+    if calibrations:
+        # Keep only the last calibration during the session
+        latest_calibration = max(calibrations, key=lambda x: x.calibration_date)
+        # # Remove all other calibrations
+        # for calibration in calibrations:
+        #     if calibration != latest_calibration:
+        #         calibration.delete()
+    else:
+        # no calibrations done during session. Set to the last calibration done before session started
+        latest_calibration = Calibration.query.filter(
+            Calibration.calibration_date < session.start_time
+        ).order_by(Calibration.calibration_date.desc()).first()
+
+        # fallback to the most recent calibration
+        if not latest_calibration: 
+            latest_calibration = Calibration.query.order_by(Calibration.calibration_date.desc()).first()
+
+    # Update session information
+    if session:
+        session.active = False
+        session.prints_successful = prints_successful
+        session.calibration_data = latest_calibration
+        session.save()
+
+        log.info("%s session timed out", session.user.full_name)
+            
+    socketio.emit("session_ended", namespace="/users")
+
 @blueprint.route(
     "/users/end_session/<session_id>",
     methods=["POST"],
@@ -362,32 +436,13 @@ def end_session_post(session_id):
     session = Session.query.get(session_id)
 
     if later:
+        # Send an email to the user
         from printer_server.app import send_email
-
-        head = f"Printer Session Ended (Logs Required)"
-        body = f"""
-        <html>
-        <body>
-            <p>Your session has been ended on the <b>{Config.HOSTNAME}</b> printer at <b>{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</b>, but the required print logs have not yet been completed.</p>
-
-            <p>Please complete the logs as soon as possible.</p>
-
-            <ul>
-            <li>Access them via <b>{Config.HOSTNAME} → </b> Print History → Sessions</li>
-            <li>You cannot start a new session until logs are complete</li>
-            </ul>
-
-            <p>Thank you.</p>
-        </body>
-        </html>
-        """
-
-        # # Send an email to the user
-        # send_email(
-        #     recipient=session.user.email,
-        #     subject=head,
-        #     body_html=body
-        # )
+        send_email(
+            recipient=session.user.email,
+            subject=timeout_email_msg["head"],
+            body_html=timeout_email_msg["body"]
+        )
     else:
         if not end_session_form.validate():
             return jsonify({"success": False, "errors": end_session_form.errors})

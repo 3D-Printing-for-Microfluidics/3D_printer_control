@@ -2,6 +2,8 @@
 import os
 import smtplib
 import logging
+from datetime import datetime, timedelta
+from threading import Lock
 from email.message import EmailMessage
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, render_template, g
@@ -32,6 +34,12 @@ def create_app(config_object=ProdConfig):
     register_hardware(app)
     register_logger(app)
 
+    # monitor activity for session timeout
+    @app.before_request
+    def record_request():
+        update_activity()
+
+    # load session active for all templates
     @app.before_request
     def build_global_forms():
         # get session info
@@ -123,7 +131,6 @@ def create_app(config_object=ProdConfig):
         )
 
     # try:
-    
         # with app.app_context():
         #     Calibration.init_Calibration_from_old_text_logs()
     # except Exception as ex:
@@ -139,12 +146,75 @@ def create_app(config_object=ProdConfig):
 
     return app
 
+########### monitor activity for session timeout ###########
+
+last_activity = datetime.now()
+activity_lock = Lock()
+
+def update_activity():
+    global last_activity
+    with activity_lock:
+        last_activity = datetime.now()
+
+# Override socketio.on_event and socketio.emit to update last_activity on any event or emit
+def install_on_event_hook(socketio):
+    original_on_event = socketio.on_event
+    def on_event(event, handler, namespace=None):
+        def wrapped(*args, **kwargs):
+            update_activity()
+            return handler(*args, **kwargs)
+        return original_on_event(event, wrapped, namespace=namespace)
+    socketio.on_event = on_event
+
+def install_emit_hook(socketio):
+    original_socketio_emit = socketio.emit
+    original_server_emit = socketio.server.emit
+
+    def emit(event, *args, **kwargs):
+        update_activity()
+        return original_socketio_emit(event, *args, **kwargs)
+
+    def server_emit(event, *args, **kwargs):
+        update_activity()
+        return original_server_emit(event, *args, **kwargs)
+
+    socketio.emit = emit
+    socketio.server.emit = server_emit
+
+def idle_monitor():
+    while True:
+        socketio.sleep(60)
+
+        with activity_lock:
+            idle = datetime.now() - last_activity
+
+        if idle > timedelta(hours=1):
+            with app.app_context():
+                session = Session.get_active_session()
+                if session:
+                    logging.getLogger(__name__).info(
+                        "Session %s has been idle for %s, ending session",
+                        session.id,
+                        idle,
+                    )
+                    from printer_server.views.users import end_session_timeout
+                    from printer_server.forms import EndSessionForm
+                    end_session_timeout(session.id)
+                
+            update_activity()
+
+#############################################################
+
 
 def register_extensions(app):
     """Register Flask extensions."""
     db.init_app(app)
     migrate.init_app(app, db)
     socketio.init_app(app)
+
+    install_on_event_hook(socketio)
+    install_emit_hook(socketio)
+    socketio.start_background_task(idle_monitor)
 
 
 def register_blueprints(app):

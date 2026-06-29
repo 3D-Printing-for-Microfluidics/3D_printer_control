@@ -117,6 +117,12 @@ $(document).ready(function () {
         document.getElementById('session-available-banner').classList.add('d-flex');
         document.getElementById('session-active-banner').classList.add('d-none');
         document.getElementById('session-active-banner').classList.remove('d-flex');
+
+        // hide any any session modals that are open
+        $('#startSessionModal').modal('hide');
+        $('#sessionSummaryModal').modal('hide');
+        $('#endPrintModal').modal('hide');
+        $('#endSessionModal').modal('hide');
     });
 
     base_socket.on("print_finished", function(data) {
