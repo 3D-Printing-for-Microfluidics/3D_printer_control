@@ -5,7 +5,7 @@ import json
 import logging
 from enum import Enum
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -38,6 +38,9 @@ class User(SurrogatePK, Model):
     calibration_permissions = Column(db.Boolean(), default=False)
     advanced_permissions = Column(db.Boolean(), default=False)
     admin_permissions = Column(db.Boolean(), default=False)
+    token = Column(db.String(256), nullable=True)
+    reset_otc = Column(db.String(256), nullable=True)
+    token_expiration = Column(db.DateTime, nullable=True)
 
     def __init__(self, username, email, password=None, **kwargs):
         """Create instance."""
@@ -63,6 +66,38 @@ class User(SurrogatePK, Model):
         """Check password."""
         return check_password_hash(self.password.decode(), value)
 
+    def generate_token(self, need_otc=True):
+        """Generate a reset token for the user."""
+        import secrets
+        token = secrets.token_urlsafe(16)
+        self.token = token
+        self.token_expiration = datetime.now() + timedelta(minutes=10)
+
+        otc = None
+        if need_otc:
+            otc = secrets.token_urlsafe(6)
+            otc = otc[:6]  # Ensure the one-time code is 6 characters long
+        self.reset_otc = otc
+        self.save()
+        return token, otc
+
+    def verify_token(self, token, otc):
+        """Verify the reset token and one-time code."""
+        if (
+            self.token == token
+            and self.reset_otc == otc
+            and self.token_expiration > datetime.now()
+        ):
+            return True
+        return False
+
+    def clear_token(self):
+        """Clear the reset token and one-time code."""
+        self.token = None
+        self.reset_otc = None
+        self.token_expiration = None
+        self.save()
+
     def __repr__(self):
         """Represent instance as a unique string."""
         return "<User({username!r})>".format(username=self.username)
@@ -80,7 +115,7 @@ class Session(SurrogatePK, Model):
     end_time = Column(db.DateTime)
     
     # User associated with the session
-    user_id = Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
+    user_id = Column(db.Integer, db.ForeignKey('Users.id'))
     user = relationship("User", backref="sessions")
 
     prints_successful = Column(db.Integer, default=0)

@@ -9,7 +9,7 @@ from flask import Blueprint, request, render_template, jsonify, flash, send_file
 from printer_server.settings import Config
 from printer_server.extensions import socketio, db
 from printer_server.views.table import *
-from printer_server.forms import StartSessionForm, RegisterForm, EndSessionForm, EndPrintForm
+from printer_server.forms import StartSessionForm, RegisterForm, EndSessionForm, EndPrintForm, ResetCodeForm, ResetPasswordForm
 from printer_server.models import PrintRecord, PrintQueue, Session, User, Calibration
 from printer_server.hardware_configuration.hardware_configuration import config_dict
 from printer_server.print_file_validator import validate_schema, validate_printer_compatibility
@@ -60,12 +60,12 @@ def generate_user_table_column_definition():
         Column(key="col-first-name", name="First Name", value=lambda r: r.first_name, db_col=User.first_name, db_filter=generate_string_lambda(User.first_name)),
         Column(key="col-last-name", name="Last Name", value=lambda r: r.last_name, db_col=User.last_name, db_filter=generate_string_lambda(User.last_name)),
         Column(key="col-full-name", name="Full Name", value=lambda r: r.full_name, filterable="Yes", visible=True, db_col=User.full_name, db_filter=generate_string_lambda(User.full_name)),
-        Column(key="col-print-permissions", name="Print Permissions", value=lambda r: r.print_permissions, type="checkbox", href_enabled=False, visible=True, db_col=User.print_permissions, db_filter=generate_boolean_lambda(User.print_permissions), vertical_header=True),
-        Column(key="col-calibration-permissions", name="Calibration Permissions", value=lambda r: r.calibration_permissions, type="checkbox", href_enabled=False, visible=True, db_col=User.calibration_permissions, db_filter=generate_boolean_lambda(User.calibration_permissions), vertical_header=True),
-        Column(key="col-advanced-permissions", name="Advanced Permissions", value=lambda r: r.advanced_permissions, type="checkbox", href_enabled=False, visible=True, db_col=User.advanced_permissions, db_filter=generate_boolean_lambda(User.advanced_permissions), vertical_header=True),
-        Column(key="col-admin-permissions", name="Admin Permissions", value=lambda r: r.admin_permissions, type="checkbox", href_enabled=False, visible=True, db_col=User.admin_permissions, db_filter=generate_boolean_lambda(User.admin_permissions), vertical_header=True),
-        Column(key="col-reset", name="Reset Password", type="button", href="/users/reset/<id>", href_enabled=lambda r: r.id == user, button_style="btn-outline-warning", button_name="Reset", button_class="reset-btn", sortable=False, filterable="No", visible=True),
-        Column(key="col-delete", name="Delete User", type="button", href="/users/delete/<id>", href_enabled=lambda r: r.id == user, button_style="btn-outline-danger", button_name="Delete", button_class="delete-btn", sortable=False, filterable="No", visible=True)
+        Column(key="col-print-permissions", name="Print Permissions", value=lambda r: r.print_permissions, type="checkbox", href_enabled=True, button_class="permission-btn", visible=True, db_col=User.print_permissions, db_filter=generate_boolean_lambda(User.print_permissions), vertical_header=True),
+        Column(key="col-calibration-permissions", name="Calibration Permissions", value=lambda r: r.calibration_permissions, type="checkbox", href_enabled=True, button_class="permission-btn", visible=True, db_col=User.calibration_permissions, db_filter=generate_boolean_lambda(User.calibration_permissions), vertical_header=True),
+        Column(key="col-advanced-permissions", name="Advanced Permissions", value=lambda r: r.advanced_permissions, type="checkbox", href_enabled=True, button_class="permission-btn", visible=True, db_col=User.advanced_permissions, db_filter=generate_boolean_lambda(User.advanced_permissions), vertical_header=True),
+        Column(key="col-admin-permissions", name="Admin Permissions", value=lambda r: r.admin_permissions, type="checkbox", href_enabled=True, button_class="permission-btn", visible=True, db_col=User.admin_permissions, db_filter=generate_boolean_lambda(User.admin_permissions), vertical_header=True),
+        Column(key="col-reset", name="Password", type="button", href_enabled=lambda r: r.id == user, button_style="btn-outline-warning", button_name="Change", button_class="reset-btn", sortable=False, filterable="No", visible=True),
+        Column(key="col-delete", name="Delete User", type="button", href_enabled=lambda r: r.id == user, button_style="btn-outline-danger", button_name="Delete", button_class="delete-btn", sortable=False, filterable="No", visible=True)
     ]
 
     def get_sort_col(column_key):
@@ -175,6 +175,10 @@ def register_user_get():
     methods=["POST"],
 )
 def register_user_post():
+    if not Config.OPEN_REGISTRATION:
+        # check if user is logged in and has admin permissions
+        pass
+
     register_form = RegisterForm()
 
     if not register_form.validate():
@@ -200,7 +204,8 @@ def register_user_post():
 def start_session_get():
     return render_template(
         "partials/start_session_modal.html",
-        start_session_form=StartSessionForm()
+        start_session_form=StartSessionForm(),
+        open_access=Config.OPEN_REGISTRATION
     )
 
 @blueprint.route(
@@ -233,6 +238,219 @@ def start_session_post():
     socketio.emit("session_started", {"id": session.id, "user": session.user.full_name, "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, namespace="/users")
 
     return jsonify({"success": True})
+
+
+@blueprint.route(
+    "/users/reset_code",
+    methods=["GET"],
+)
+def reset_code_get():
+    from printer_server.app import send_email
+    username = request.args.get("username")
+    user = User.query.filter_by(username=username).first()
+    token = None
+    if not user:
+        return jsonify({"success": False, "errors": {"username": ["User not found"]}})
+    token, otc = user.generate_token()
+    send_email(
+        recipient=user.email,
+        subject="Password Reset Code",
+        body_html=f"""
+            <html>
+                <body>
+                    <p>Your password reset code is: <b>{otc}</b></p>
+                    <p>This code will expire in 10 minutes.</p>
+                    <p>If you did not request a password reset, please ignore this email.</p>
+                </body>
+            </html>
+        """
+    )
+    form = ResetCodeForm(username=username, token=token)
+    return render_template(
+        "partials/forgot_password_code_modal.html",
+        verify_reset_code_form=form
+    )
+
+
+@blueprint.route(
+    "/users/reset_code",
+    methods=["POST"],
+)
+def reset_code_post():
+    reset_form = ResetCodeForm()
+    if not reset_form.validate():
+        return jsonify({"success": False, "errors": reset_form.errors})
+    # generate new reset token
+    reset_form.user.generate_token(need_otc=False)
+    return jsonify({"success": True, "token": reset_form.user.token})
+
+
+@blueprint.route(
+    "/users/reset_password",
+    methods=["GET"],
+)
+def reset_password_get():
+    user_id = request.args.get("id")
+    username = request.args.get("username")
+    token = request.args.get("token")
+
+    # lookup username if user_id is provided
+    if user_id:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"success": False, "errors": {"username": ["Invalid user ID"]}})
+        username = user.username
+    
+    # If session user is the same as the username in the request, generate a new reset token without requiring OTC
+    session_user = Session.get_session_user()
+    if session_user and session_user.username == username:
+        session_user.generate_token(need_otc=False)
+        token = session_user.token
+
+    # If current user has admin permission generate token
+
+    if not token:
+        return jsonify({"success": False, "errors": {"token": ["Missing reset token"]}})
+
+    user = User.query.filter_by(token=token).first()
+
+    if not user:
+        return jsonify({"success": False, "errors": {"token": ["Invalid user"]}})
+    if user.token_expiration < datetime.now():
+        return jsonify({"success": False, "errors": {"token": ["Reset token has expired"]}})
+    if user.reset_otc is not None:
+        return jsonify({"success": False, "errors": {"token": ["Reset token requires one-time code verification"]}})
+
+    return render_template(
+        "partials/forgot_password_modal.html",
+        reset_password_form=ResetPasswordForm(username=user.username, token=token),
+    )
+
+@blueprint.route(
+    "/users/reset_password",
+    methods=["POST"],
+)
+def reset_password_post():
+    reset_form = ResetPasswordForm()
+    if not reset_form.validate():
+        return jsonify({"success": False, "errors": reset_form.errors})
+
+    user = reset_form.user
+    user.clear_token()
+    user.set_password(reset_form.password.data)
+    user.save()
+    log.info("%s reset password", user.full_name)
+
+    return jsonify({"success": True})
+
+
+@blueprint.route("/users/delete_user", methods=["GET"])
+def delete_user_get():
+    user_id = request.args.get("user_id")
+    token = None
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"success": False, "errors": {"token": ["Invalid user"]}})
+
+    # If session user is the same as in the request, generate a new reset token
+    session_user = Session.get_session_user()
+    if session_user and session_user.id == user.id:
+        log.info("%s requested to delete their own account, generating reset token", session_user.full_name)
+        session_user.generate_token(need_otc=False)
+        token = session_user.token
+
+    # If current user has admin permission generate token
+
+    if not token:
+        return jsonify({"success": False, "errors": {"token": ["Insufficient permissions"]}})
+
+    return {"success": True, "token": token}
+
+
+@blueprint.route("/users/delete_user", methods=["POST"])
+def delete_user_post():
+    user_id = request.args.get("user_id")
+    token = request.args.get("token")
+
+    log.info("Delete user request received for user_id: %s with token: %s", user_id, token)
+
+    if not user_id:
+        return jsonify({"success": False, "errors": {"user_id": ["Missing user ID"]}})
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"success": False, "errors": {"user_id": ["Invalid user ID"]}})
+
+    if not token:
+        return jsonify({"success": False, "errors": {"token": ["Missing token"]}})
+    if user.token != token:
+        return jsonify({"success": False, "errors": {"token": ["Insufficient permissions"]}})
+    if user.token_expiration < datetime.now():
+        return jsonify({"success": False, "errors": {"token": ["Token has expired"]}})
+
+    log.info("%s deleted user %s", Session.get_session_user().full_name, user.full_name)
+
+    # stop session if user is currently in a session
+    active_session = Session.query.filter_by(user_id=user.id, active=True).first()
+    if active_session:
+        end_session_timeout(active_session.id)
+    user.delete()
+    return jsonify({"success": True})
+
+
+@blueprint.route("/users/change_permission", methods=["GET"])
+def change_permission_get():
+    user_id = request.args.get("id")
+    token = None
+
+    log.info(f"Request change permission token for user_id: {user_id}")
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"success": False, "errors": {"token": ["Invalid user"]}})
+
+    # If current user has admin permission generate token
+
+    if not token:
+        return jsonify({"success": False, "errors": {"token": ["Insufficient permissions"]}})
+
+    return {"success": True, "token": token}
+
+@blueprint.route("/users/change_permission", methods=["POST"])
+def change_permission_post():
+    user_id = request.args.get("id")
+    token = request.args.get("token")
+    permission = request.args.get("permission")
+    value = request.args.get("value", "false").lower() == "true"
+
+    log.info(f"Change permission request received for user_id: {user_id}, permission: {permission}, value: {value}, token: {token}")
+
+    if not user_id:
+        return jsonify({"success": False, "errors": {"user_id": ["Missing user ID"]}})
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"success": False, "errors": {"user_id": ["Invalid user ID"]}})
+
+    if not token:
+        return jsonify({"success": False, "errors": {"token": ["Missing token"]}})
+    if user.token != token:
+        return jsonify({"success": False, "errors": {"token": ["Insufficient permissions"]}})
+    if user.token_expiration < datetime.now():
+        return jsonify({"success": False, "errors": {"token": ["Token has expired"]}})
+
+    if permission == "print":
+        user.print_permissions = value
+    elif permission == "calibration":
+        user.calibration_permissions = value
+    elif permission == "advanced":
+        user.advanced_permissions = value
+    elif permission == "admin":
+        user.admin_permissions = value
+    else:
+        return jsonify({"success": False, "errors": {"permission": ["Invalid permission"]}})
+    user.save()
+
+    return jsonify({"success": True, "permission": permission, "value": value})
 
 
 @blueprint.route("/users/print_form")

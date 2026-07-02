@@ -134,6 +134,8 @@ class Column:
             self.button_style = button_style
             self.button_name = button_name
             self.button_class = button_class
+        elif type == "checkbox":
+            self.button_class = button_class
 
     def to_dict(self):
         output_dict = {
@@ -155,6 +157,8 @@ class Column:
         if self.type == "button":
             output_dict["button_style"] = self.button_style
             output_dict["button_name"] = self.button_name
+            output_dict["button_class"] = self.button_class
+        elif self.type == "checkbox":
             output_dict["button_class"] = self.button_class
         return output_dict
 

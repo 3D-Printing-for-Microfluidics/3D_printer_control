@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link id="favicon1" rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+        <link id="favicon2" rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
+        <title>{{ hostname }} - Login</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='lib/darkly-bootstrap-4.1.1.min.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    </head>
+    <body>
+        <script src="{{ url_for('static', filename='lib/jquery-3.3.1.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='lib/ajax-popper-2.9.2.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='lib/bootstrap-4.1.1.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='lib/jdenticon-3.1.1.min.js') }}"></script>
+
+        <!-- Set color palette of identicon -->
+        <script>
+            window.jdenticon_config = {
+                hues: [
+                    204.07, //blue
+                    210.83, //indigo
+                    262.83, //purple
+                    261.26, //pink
+                    332.47, //red
+                    5.61, //orange
+                    27.3, //yellow
+                    36.8, //green
+                    164.68, //teal
+                    162.25, //cyan
+                    0 //white
+                ]
+            };
+        </script>
+
+        <div class="col-12 jumbotron jumbotron-fluid">
+            <div class="container">
+                <div class="row">
+                    <div class="identicon-container">
+                        <canvas id="identicon" class="identicon" data-jdenticon-value={{ hostname }} width="69"
+                            height="69">{{ hostname
+                            }}
+                        </canvas>
+                    </div>
+                    <div>
+                        <h2 style="display: inline">{{ hostname }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
+                {{message}}
+            </div><!-- end .alert -->
+            {% endfor %}
+            {% endif %}
+            {% endwith %}   
+
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <h2 class="text-center">Login</h2>
+                    <form method="POST" action="{{ url_for('users.login', next=next) }}">
+                        {{ form.hidden_tag() }}
+                        <div class="form-group">
+                            {{ form.username.label(class="form-label") }}
+                            {{ form.username(class="form-control") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.password.label(class="form-label") }}
+                            {{ form.password(class="form-control") }}
+                        </div>
+                        <div class="form-group form-check">
+                            {{ form.remember_me(class="form-check-input") }}
+                            {{ form.remember_me.label(class="form-check-label") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.submit(class="btn btn-primary btn-block") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </body>
+
+    <!-- Set favicon as identicon -->
+    <script>
+        jdenticon()
+        var l = document.getElementById("identicon");
+        var identicon_href = l.toDataURL("image/png")
+
+        document.getElementById("favicon1").setAttribute("href", identicon_href);
+        document.getElementById("favicon2").setAttribute("href", identicon_href);
+        document.getElementById("favicon1").setAttribute("type", "image/png");
+        document.getElementById("favicon2").setAttribute("type", "image/png");
+    </script>
+</html>

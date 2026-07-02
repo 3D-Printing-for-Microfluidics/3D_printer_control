@@ -115,11 +115,16 @@
         document.getElementById("favicon2").setAttribute("type", "image/png");
     </script>
 
+    <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalTitle" aria-hidden="true">
+        {% include "partials/confirm_modal.html" %}
+    </div>
     <div class="modal fade" id="registerModal" tabindex="-1" role="dialog" aria-labelledby="registerModalTitle" aria-hidden="true"></div>
     <div class="modal fade" id="startSessionModal" tabindex="-1" role="dialog" aria-labelledby="startSessionModalTitle" aria-hidden="true"></div>
     <div class="modal fade" id="sessionSummaryModal" tabindex="-1" role="dialog" aria-labelledby="sessionSummaryModalTitle" aria-hidden="true"></div>
     <div class="modal fade" id="endSessionModal" tabindex="-1" role="dialog" aria-labelledby="endSessionModalLabel" aria-hidden="true"></div>
     <div class="modal fade" id="endPrintModal" tabindex="-1" role="dialog" aria-labelledby="endPrintModalLabel" aria-hidden="true"></div>
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" role="dialog" aria-labelledby="resetPasswordModalLabel" aria-hidden="true"></div>
+    <div class="modal fade" id="resetCodeModal" tabindex="-1" role="dialog" aria-labelledby="resetCodeModalLabel" aria-hidden="true"></div>
 
     <div class="container" id="base-body">
         {% with messages = get_flashed_messages(with_categories=true) %}

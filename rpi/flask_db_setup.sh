@@ -26,6 +26,7 @@ export FLASK_APP=autoapp.py
 flask db init
 flask db migrate
 flask db upgrade
+flask seed-db
 
 # Go back to original folder
 # cd $PROJECT_ROOT

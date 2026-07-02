@@ -148,8 +148,12 @@
                     </td>
                     {% elif column.type == 'checkbox' %}
                     <td class="align-middle{{ ' ' if loop.first else ' justify-center ' }}{{ table.key }}-{{ column.key }}">
-                        <a class="table-a" {% if href_enabled %}href="{{ column.href | replace('<id>', rec.id|string) }}"{% endif %}>
-                            <input type="checkbox" {% if value %}checked{% endif %} {% if not href_enabled %}disabled{% endif %}>
+                        <a class="table-a {{ table.key }}-{{ column.button_class }}" {% if href_enabled %}href="{{ column.href | replace('<id>', rec.id|string) }}"{% endif %}>
+                            {% if not href_enabled %}
+                                {% if value %}🗹{% else %}☐{% endif %}
+                            {% else %}
+                            <input type="checkbox" {% if value %}checked{% endif %}>
+                            {% endif %}
                         </a>
                     </td>
                     {% elif column.type == 'button' %}

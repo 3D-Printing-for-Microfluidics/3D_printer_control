@@ -77,7 +77,79 @@ class StartSessionForm(FlaskForm):
             return False
         self.user = user
         return True
+
+
+class ResetCodeForm(FlaskForm):
+    """
+    Reset code form
+    - hidden field for username
+    - hidden field for token
+    - field for OTC
+    """
+
+    username = HiddenField("Username", validators=[DataRequired()])
+    token = HiddenField("Token", validators=[DataRequired()])
+    otc = StringField("One-Time Code", validators=[DataRequired(), Length(min=6, max=6)])
+
+    def __init__(self, *args, **kwargs):
+        """Create instance."""
+        super(ResetCodeForm, self).__init__(*args, **kwargs)
+        self.user = None
+
+    def validate(self):
+        """Validate the form."""
+        initial_validation = super(ResetCodeForm, self).validate()
+        if not initial_validation:
+            return False
+        user = User.query.filter_by(username=self.username.data).first()
+        if not user:
+            self.username.errors.append("Unknown username")
+            return False
+        if not user.verify_token(self.token.data, self.otc.data):
+            self.otc.errors.append("Invalid one-time code")
+            return False
+        self.user = user
+        return True
     
+
+class ResetPasswordForm(FlaskForm):
+    """
+    Reset password form
+    - hidden field for username
+    - hidden field for token
+    - field for new password
+    - field for confirm new password
+    """
+
+    username = HiddenField("Username", validators=[DataRequired()])
+    token = HiddenField("Token", validators=[DataRequired()])
+    password = PasswordField(
+        "New Password", validators=[DataRequired(), Length(min=6, max=40)]
+    )
+    confirm_password = PasswordField(
+        "Verify New Password",
+        [DataRequired(), EqualTo("password", message="Passwords must match")],
+    )
+
+    def __init__(self, *args, **kwargs):
+        """Create instance."""
+        super(ResetPasswordForm, self).__init__(*args, **kwargs)
+        self.user = None
+
+    def validate(self):
+        """Validate the form."""
+        initial_validation = super(ResetPasswordForm, self).validate()
+        if not initial_validation:
+            return False
+        user = User.query.filter_by(username=self.username.data).first()
+        if not user:
+            self.username.errors.append("Unknown username")
+            return False
+        if not user.verify_token(self.token.data, None):
+            self.token.errors.append("Invalid token")
+            return False
+        self.user = user
+        return True
 
 
 class EndPrintForm(FlaskForm):

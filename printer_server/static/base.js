@@ -21,7 +21,7 @@ async function onSubmit(url, modalId, on_success, e) {
 
     if (data.success) {
         if (on_success) {
-            on_success();
+            on_success(data);
         }
     } else {
         // Remove any existing error messages
@@ -190,6 +190,29 @@ $(document).ready(function () {
                 e
             )
         }
+        else if (e.target.matches('#reset-password-form')) {
+            onSubmit(
+                '/users/reset_password',
+                '#resetPasswordModal',
+                function (response) { // On success
+                    $('#resetPasswordModal').modal('hide');
+                },
+                e
+            )
+        }
+        else if (e.target.matches('#verify-reset-code-form')) {
+            onSubmit(
+                '/users/reset_code',
+                '#resetCodeModal',
+                function (response) { // On success
+                    $('#resetCodeModal').modal('hide');
+                    const username = $('#verify-reset-code-form').find('[name="username"]').val();
+                    const token = response.token;
+                    showResetPasswordModal(username, token);
+                },
+                e
+            )
+        }
     });
 
     /////////////// Start Session ///////////////
@@ -208,6 +231,14 @@ $(document).ready(function () {
         const sessionId = $(this).data('session-id');
         $('#startSessionModal').one('hidden.bs.modal', function () {
             showEndSessionModal(sessionId);
+        });
+        $('#startSessionModal').modal('hide');
+    });
+
+    $(document).on('click', '#resetPasswordLink', function() {
+        $('#startSessionModal').one('hidden.bs.modal', function () {
+            const username = $('#startSessionModal').find('[name="username"]').val();
+            showResetCodeModal(username);
         });
         $('#startSessionModal').modal('hide');
     });
@@ -267,6 +298,29 @@ $(document).ready(function () {
             showStartSessionModal();
         }
     });
+
+    ///////////////// Reset Password ///////////////
+    function showResetPasswordModal(username=null, token=null) {
+        $.get(`/users/reset_password?username=${username}&token=${token}`, function(html) {
+            if (typeof html === 'object' && html !== null && 'success' in html && html.success === false) {
+                console.log("Reset password request failed: " + JSON.stringify(html.errors));
+                return;
+            }
+            $("#resetPasswordModal").html(html);
+            $("#resetPasswordModal").modal("show");
+        });
+    }
+
+    function showResetCodeModal(username=null) {
+        $.get(`/users/reset_code?username=${username}`, function(html) {
+            if (typeof html === 'object' && html !== null && 'success' in html && html.success === false) {
+                console.log("Reset code request failed: " + JSON.stringify(html.errors));
+                return;
+            }
+            $("#resetCodeModal").html(html);
+            $("#resetCodeModal").modal("show");
+        });
+    }
 
     /////////////// Finish Print ///////////////
     function showEndPrintModal(printId) {

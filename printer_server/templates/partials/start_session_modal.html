@@ -40,21 +40,31 @@
                         {{ error }}
                     </div>
                     {% endfor %}
-                    <div class="form-group" style="display: none;" id="endPreviousSessionDiv">
-                    <button type="button"
-                            class="btn btn-sm btn-primary"
-                            id="endPreviousSessionButton">
-                        End Previous Session
-                    </button>
-                </div>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div id="endPreviousSessionDiv" style="display: none;">
+                            <button type="button"
+                                    class="btn btn-sm btn-primary"
+                                    id="endPreviousSessionButton">
+                                End Previous Session
+                            </button>
+                        </div>
+
+                        <button type="button"
+                                class="btn btn-link btn-sm p-0"
+                                id="resetPasswordLink">
+                            Forgot Password?
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer justify-content-between">
+                {% if open_access %}
                 <button type="button"
                         class="btn btn-link"
                         id="showRegisterModal">
                     Register New User
                 </button>
+                {% endif %}
                 <div>
                     <button type="button"
                             class="btn btn-secondary"

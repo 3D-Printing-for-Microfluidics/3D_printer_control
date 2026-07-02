@@ -212,14 +212,15 @@ def install_emit_hook(socketio):
     socketio.emit = emit
     socketio.server.emit = server_emit
 
-def idle_monitor():
+def idle_monitor(login_timeout_minutes=10, session_timeout_minutes=60, check_interval_seconds=60):
     while True:
-        socketio.sleep(60)
+        socketio.sleep(check_interval_seconds)
 
         with activity_lock:
             idle = datetime.now() - last_activity
 
-        if idle > timedelta(hours=1):
+        # session timeout
+        if idle > timedelta(minutes=login_timeout_minutes):
             with app.app_context():
                 session = Session.get_active_session()
                 if session:
@@ -245,7 +246,12 @@ def register_extensions(app):
 
     install_on_event_hook(socketio)
     install_emit_hook(socketio)
-    socketio.start_background_task(idle_monitor)
+    socketio.start_background_task(
+        idle_monitor, 
+        login_timeout_minutes=app.config["LOGIN_EXPIRATION_MINUTES"], 
+        session_timeout_minutes=app.config["SESSION_EXPIRATION_MINUTES"],
+        check_interval_seconds=60
+    )
 
 
 def register_blueprints(app):
