@@ -180,20 +180,6 @@ def index():
     else:
         allJobs = PrintQueue.query.filter_by(user_id=None).all()
 
-    # from autoapp import app
-    # from printer_server.models import Calibration
-    
-    # with app.app_context():
-    #     try:
-    #         logging.getLogger(__name__).info("Initializing calibration from old text logs...")
-    #         logging.getLogger(__name__).info(Calibration.get_last_positions())
-    #         Calibration.init_Calibration_from_old_text_logs()
-    #     except Exception as ex:
-    #         logging.getLogger(__name__).warning(
-    #             "Failed to initialize calibration from old text logs on startup: %s", ex
-    #         )
-    #     logging.getLogger(__name__).info("Calibration initialized.")
-
     kwargs = {
         "allJobs":allJobs,
         "hostname":Config.HOSTNAME,

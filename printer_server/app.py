@@ -8,7 +8,7 @@ from email.message import EmailMessage
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, render_template, g
 from printer_server.extensions import db, migrate, socketio
-from printer_server.models import PrintRecord, PrintQueue, Session, Calibration
+from printer_server.models import PrintRecord, PrintQueue, Session, Calibration, User
 from printer_server import commands, models
 from printer_server.views import home, calibration, manual_controls, print_history, server_logs, users, calibration_history
 from printer_server.settings import ProdConfig, DevConfig
@@ -33,6 +33,45 @@ def create_app(config_object=ProdConfig):
     register_commands(app)
     register_hardware(app)
     register_logger(app)
+
+    # first time database setup (fill tables with default data)
+    @app.cli.command("seed-db")
+    def seed_db_command():
+        if not User.query.filter_by(username="admin").first():
+            admin = User(
+                first_name="",
+                last_name="",
+                email="admin@email.test",
+                username="admin",
+                password=config_object.ADMIN_PWD,
+            )
+            admin.admin_permissions = True
+            admin.save()
+
+            user = User(
+                first_name="",
+                last_name="",
+                email="user@email.test",
+                username="new_user",
+                password=config_object.ADMIN_PWD,
+            )
+            user.print_permissions = config_object.NEW_USER_PRINT_PERMISSION
+            user.calibration_permissions = config_object.NEW_USER_CALIBRATION_PERMISSION
+            user.advanced_permissions = config_object.NEW_USER_ADVANCED_PERMISSION
+            user.admin_permissions = config_object.NEW_USER_ADMIN_PERMISSION
+            user.save()
+
+            print("User table seeded with default users.")
+
+        if not Calibration.query.first():
+            # try:
+            #     with app.app_context():
+            Calibration.init_Calibration_from_old_text_logs()
+            print("Moved calibration data from old text logs.")
+            # except Exception as ex:
+            #     logging.getLogger(__name__).warning(
+            #         "Failed to initialize calibration from old text logs on startup: %s", ex
+            #     )
 
     # monitor activity for session timeout
     @app.before_request
@@ -129,14 +168,6 @@ def create_app(config_object=ProdConfig):
         logging.getLogger(__name__).warning(
             "Failed to extract calibration print archives on startup: %s", ex
         )
-
-    # try:
-        # with app.app_context():
-        #     Calibration.init_Calibration_from_old_text_logs()
-    # except Exception as ex:
-    #     logging.getLogger(__name__).warning(
-    #         "Failed to initialize calibration from old text logs on startup: %s", ex
-    #     )
 
     try:
         with app.app_context():
