@@ -11,7 +11,6 @@ $(document).ready(function () {
         await load_user_table();
 
         $(document).on("click", ".user-table-delete-btn", async function() {
-        // $('.user-table-delete-btn').on('click', async function() {
             const user_id = $(this).closest('tr').data('id');
             const user_name = $(this).closest('tr').find('td:first').text().trim();
             $.get(`/users/delete_user?user_id=${user_id}`, function(html) {
@@ -28,20 +27,7 @@ $(document).ready(function () {
             });
         });
 
-        // $('.user-table-reset-btn').on('click', async function() {
-        //     const user_id = $(this).closest('tr').data('id');
-        //     $.get(`/users/reset_password?id=${user_id}`, function(html) {
-        //         if (typeof html === 'object' && html !== null && 'success' in html && html.success === false) {
-        //             console.log("Reset password request failed: " + JSON.stringify(html.errors));
-        //             return;
-        //         }
-        //         $("#resetPasswordModal").html(html);
-        //         $("#resetPasswordModal").modal("show");
-        //     });
-        // });
-
         $(document).on("click", ".user-table-reset-btn", async function() {
-        // $('.user-table-reset-btn').on('click', async function() {
             const user_id = $(this).closest('tr').data('id');
             $.get(`/users/register_user?edit=true&user_id=${user_id}`, function(html) {
                 if (typeof html === 'object' && html !== null && 'success' in html && html.success === false) {
@@ -54,10 +40,8 @@ $(document).ready(function () {
         });
 
         document.on("click", ".user-table-permission-btn", async function () {
-        // $(".user-table-permission-btn").on("click", async function () {
             const user_id = $(this).closest("tr").data("id");
             const $btn = $(this)
-            console.log("Permission button clicked for user ID: " + user_id);
             $.get(`/users/change_permission?id=${user_id}`, function(response) {
                 if (response.success) {
                     const token = response.token;
@@ -100,7 +84,6 @@ $(document).ready(function () {
         $("#print-alert-confirm").click(function () {
             const user_id = $("#user-id-to-delete").data("user-id");
             const token = $("#user-id-to-delete").data("reset-token");
-            console.log(`Deleting user with ID: ${user_id} and reset token: ${token}`);
             $.ajax({
                 url: `/users/delete_user?user_id=${user_id}&token=${token}`,
                 type: 'POST',

@@ -175,9 +175,6 @@ function loadTable(table_key){
 
     ////////////// Row Details //////////////
     var load_subtable = async function(subtable_route, container_id, subtable_key) {
-        console.log("Loading subtable: " + subtable_key);
-        console.log("Subtable route: " + subtable_route);
-        console.log("Container ID: " + container_id);
         const response = await fetch(subtable_route);
         const html = await response.text();
         document.getElementById(container_id).innerHTML = html;
@@ -209,9 +206,7 @@ function loadTable(table_key){
         if (subtables) {
             if (detailsRow.is(':visible')) {
                 // get id of the clicked row
-                console.log("Loading subtables: " + Object.keys(subtables).join(', '));
                 for (const [subtable_name, subtable_route] of Object.entries(subtables)) {
-                    console.log("Loading subtable: " + subtable_name + ", Route: " + subtable_route);
                     await load_subtable(subtable_route + row.data('id'), table_key + '-' + subtable_name + '-subtable-' + row.data('id') + '-container', table_key + '-' + subtable_name + '-subtable-' + row.data('id'));
                 }
             }

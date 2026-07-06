@@ -17,8 +17,6 @@ async function onSubmit(url, modalId, on_success, e) {
 
     const data = await response.json();
 
-    console.log(data);
-
     if (data.success) {
         if (on_success) {
             on_success(data);
@@ -29,14 +27,10 @@ async function onSubmit(url, modalId, on_success, e) {
 
         // Show errors
         for (const [key, value] of Object.entries(data.errors)) {
-            console.log(0, key, value);
             // if value is a list (of dicts), iterate through them, if it is just a list of strings ignore
             if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
                 for (const [index, item] of value.entries()) {
-                    console.log(1, index, item);
-                    for (const [subkey, subvalue] of Object.entries(item)) {
-                        console.log(2, subkey, subvalue);
-                        
+                    for (const [subkey, subvalue] of Object.entries(item)) {  
                         if (!$(modalId).find(`[name="prints-${index}-${subkey}"]`).next('.error-message').length) {
                             $(modalId).find(`[name="prints-${index}-${subkey}"]`).after(`<div class="error-message text-danger small">${subvalue}</div>`);
                         }
@@ -227,7 +221,6 @@ $(document).ready(function () {
             )
         }
         else if (e.target.matches('#login-modal-form')) {
-            console.log("Login form submitted");
             onSubmit(
                 '/users/login_modal',
                 '#loginModal',
@@ -397,7 +390,6 @@ $(document).ready(function () {
     }
 
     $('.logoutBtn').on('click', function() {
-        console.log("Logout button clicked");
         $.get("/logout", function(html) {
             // if open_access is true, just reload the page, otherwise use the rendered html template (login page)
             if (open_access) {

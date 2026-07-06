@@ -129,7 +129,6 @@ def login_modal():
 
 @blueprint.route("/users/login_modal", methods=["POST"])
 def login_modal_post():
-    log.info("Login modal POST request received")
     next_page = request.args.get("next") 
     form = LoginForm()
     if form.validate_on_submit():
@@ -143,7 +142,6 @@ def login_modal_post():
             flash("Invalid username or password.", "warning")
             log.warning("Failed login attempt for username: %s", form.username.data)
             return jsonify({"success": False, "errors": {"username": ["Invalid username or password"]}})
-    log.info("Rendering login modal with errors")
     return jsonify({"success": False, "errors": form.errors})
 
 @blueprint.route("/logout")
@@ -170,7 +168,7 @@ def generate_user_table_column_definition():
         Column(key="col-calibration-permissions", name="Calibration Permissions", value=lambda r: r.calibration_permissions, type="checkbox", href_enabled=is_admin, button_class="permission-btn", visible=True, db_col=User.calibration_permissions, db_filter=generate_boolean_lambda(User.calibration_permissions), vertical_header=True),
         Column(key="col-advanced-permissions", name="Advanced Permissions", value=lambda r: r.advanced_permissions, type="checkbox", href_enabled=is_admin, button_class="permission-btn", visible=True, db_col=User.advanced_permissions, db_filter=generate_boolean_lambda(User.advanced_permissions), vertical_header=True),
         Column(key="col-admin-permissions", name="Admin Permissions", value=lambda r: r.admin_permissions, type="checkbox", href_enabled=lambda r: is_admin and r.username not in ["admin", "default"], button_class="permission-btn", visible=True, db_col=User.admin_permissions, db_filter=generate_boolean_lambda(User.admin_permissions), vertical_header=True),
-        Column(key="col-reset", name="Password", type="button", href_enabled=lambda r: (r.id == user_id or is_admin) and r.username not in ["admin", "default"], button_style="btn-outline-warning", button_name="Change", button_class="reset-btn", sortable=False, filterable="No", visible=True),
+        Column(key="col-reset", name="Edit User", type="button", href_enabled=lambda r: (r.id == user_id or is_admin) and r.username not in ["admin", "default"], button_style="btn-outline-warning", button_name="Edit", button_class="reset-btn", sortable=False, filterable="No", visible=True),
         Column(key="col-delete", name="Delete User", type="button", href_enabled=lambda r: (r.id == user_id or is_admin) and r.username not in ["admin", "default"], button_style="btn-outline-danger", button_name="Delete", button_class="delete-btn", sortable=False, filterable="No", visible=True)
     ]
 
@@ -320,7 +318,6 @@ def register_user_post():
             return jsonify({"success": False, "errors": {"username": ["Access denied"]}})
 
     
-    log.info("Register user POST request received, edit: %s, edit_user_id: %s", edit, edit_user_id)
     if not register_form.validate():
         return jsonify({"success": False, "errors": register_form.errors})
     
@@ -565,8 +562,6 @@ def delete_user_post():
     user_id = request.args.get("user_id")
     token = request.args.get("token")
 
-    log.info("Delete user request received for user_id: %s with token: %s", user_id, token)
-
     if not user_id:
         return jsonify({"success": False, "errors": {"user_id": ["Missing user ID"]}})
     user = User.query.get(user_id)
@@ -596,8 +591,6 @@ def change_permission_get():
     user_id = request.args.get("id")
     token = None
 
-    log.info(f"Request change permission token for user_id: {user_id}")
-
     user = User.query.get(user_id)
     if not user:
         return jsonify({"success": False, "errors": {"token": ["Invalid user"]}})
@@ -619,8 +612,6 @@ def change_permission_post():
     token = request.args.get("token")
     permission = request.args.get("permission")
     value = request.args.get("value", "false").lower() == "true"
-
-    log.info(f"Change permission request received for user_id: {user_id}, permission: {permission}, value: {value}, token: {token}")
 
     if not user_id:
         return jsonify({"success": False, "errors": {"user_id": ["Missing user ID"]}})
@@ -861,9 +852,6 @@ def end_session_post(session_id):
     end_session_form = EndSessionForm()
     later = request.args.get('later', "false", type=str) == "true"
     session = Session.query.get(session_id)
-
-    log.info(request.form)
-    log.info(request.args)
 
     if later:
         # Send an email to the user

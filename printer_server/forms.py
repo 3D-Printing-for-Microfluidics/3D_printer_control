@@ -46,7 +46,6 @@ class RegisterForm(FlaskForm):
         if not initial_validation:
             return False
         user = User.query.filter_by(username=self.username.data).first()
-        log.info(f"Validating user: {self.username.data}, edit_user_id: {edit_user_id}, found user: {user} ({user.id if user else 'None'})")
         if user and user.id != int(edit_user_id):
             self.username.errors.append("Username already registered")
             return False
