@@ -70,20 +70,27 @@ $(document).ready(function () {
             await load_print_table();
         }
 
-        $('.session-history-finish-session-btn').on('click', async function() {
+        $(document).on("click", ".session-history-finish-session-btn", function() {
+        // $('.session-history-finish-session-btn').on('click', async function() {
             // get row id
             const session_id = $(this).closest('tr').data('id');
             showEndSessionModal(session_id);
         });
 
-        $('.print-history-print-log-btn').on('click', async function() {
+        $(document).on("click", ".print-history-print-log-btn", function() {
+        // $('.print-history-print-log-btn').on('click', async function() {
             const print_id = $(this).closest('tr').data('id');
             showEndPrintModal(print_id);
         });
 
         document.addEventListener('submit', function (e) {
             if (e.target.matches('#end-print-form')) {
-                window.location.reload();
+                // if in print view, reload the print table, if in session view, reload the session table
+                if (session_view) {
+                    load_session_table();
+                } else {
+                    load_print_table();
+                }
             }
         });
     });

@@ -1,6 +1,6 @@
 """User forms."""
 from flask_wtf import FlaskForm
-from wtforms import PasswordField, StringField, BooleanField, SelectField, FormField, FieldList, HiddenField, TextAreaField
+from wtforms import PasswordField, StringField, BooleanField, SelectField, FormField, FieldList, HiddenField, TextAreaField, SubmitField
 
 # from wtforms import FileField, SubmitField, IntegerField
 from wtforms.validators import DataRequired, Email, EqualTo, Length
@@ -16,6 +16,8 @@ log.setLevel(logging.INFO)
 class RegisterForm(FlaskForm):
     """Register form."""
 
+    edit = HiddenField("Edit")
+    edit_user_id = HiddenField("Edit User ID")
     first_name = StringField("First Name", validators=[DataRequired()])
     last_name = StringField("Last Name", validators=[DataRequired()])
     email = StringField(
@@ -38,20 +40,58 @@ class RegisterForm(FlaskForm):
     def validate(self):
         """Validate the form."""
         initial_validation = super(RegisterForm, self).validate()
+
+        edit_user_id = self.edit_user_id.data if self.edit.data == "true" else None
+
         if not initial_validation:
             return False
         user = User.query.filter_by(username=self.username.data).first()
-        if user:
+        log.info(f"Validating user: {self.username.data}, edit_user_id: {edit_user_id}, found user: {user} ({user.id if user else 'None'})")
+        if user and user.id != int(edit_user_id):
             self.username.errors.append("Username already registered")
             return False
         user = User.query.filter_by(email=self.email.data).first()
-        if user:
+        if user and user.id != int(edit_user_id):
             self.email.errors.append("Email already registered")
             return False
         return True
+
+class LoginForm(FlaskForm):
+    """Login form"""
+
+    username = StringField("Username", validators=[DataRequired(), Length(min=3, max=25)])
+    password = PasswordField(
+        "Password", validators=[DataRequired(), Length(min=6, max=40)]
+    )
+    remember_me = BooleanField("Remember Me")
+    submit = SubmitField("Sign In")
+
+    def __init__(self, *args, **kwargs):
+        """Create instance."""
+        super(LoginForm, self).__init__(*args, **kwargs)
+        self.user = None
+
+    def validate(self, extra_validators=None):
+        if not super().validate(extra_validators=extra_validators):
+            return False
+
+        # """Validate the form."""
+        # initial_validation = super(LoginForm, self).validate()
+        # if not initial_validation:
+        #     return False
+        user = User.query.filter_by(username=self.username.data).first()
+        if not user:
+            self.username.errors.append("Unknown username")
+            return False
+        if not user.check_password(self.password.data):
+            self.password.errors.append("Invalid password")
+            return False
+        self.user = user
+        return True
+
     
 class StartSessionForm(FlaskForm):
-    """Login form"""
+    """No remember login form"""
 
     username = StringField("Username", validators=[DataRequired(), Length(min=3, max=25)])
     password = PasswordField(
@@ -203,11 +243,6 @@ class EndPrintForm(FlaskForm):
         # If failure_mode is other, failure_detail must be populated
         if self.failure_mode.data == "other" and not self.failure_detail.data:
             self.failure_detail.errors.append("Failure details are required when failure mode is other.")
-            failed = True
-
-        # print notes must be at least 3 characters
-        if not self.print_notes.data and len(self.print_notes.data) < 3:
-            self.print_notes.errors.append("Print notes are required.")
             failed = True
 
         return not failed

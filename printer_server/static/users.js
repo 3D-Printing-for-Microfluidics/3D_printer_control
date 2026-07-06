@@ -10,7 +10,8 @@ $(document).ready(function () {
     $(document).ready(async function() {
         await load_user_table();
 
-        $('.user-table-delete-btn').on('click', async function() {
+        $(document).on("click", ".user-table-delete-btn", async function() {
+        // $('.user-table-delete-btn').on('click', async function() {
             const user_id = $(this).closest('tr').data('id');
             const user_name = $(this).closest('tr').find('td:first').text().trim();
             $.get(`/users/delete_user?user_id=${user_id}`, function(html) {
@@ -27,19 +28,33 @@ $(document).ready(function () {
             });
         });
 
-        $('.user-table-reset-btn').on('click', async function() {
+        // $('.user-table-reset-btn').on('click', async function() {
+        //     const user_id = $(this).closest('tr').data('id');
+        //     $.get(`/users/reset_password?id=${user_id}`, function(html) {
+        //         if (typeof html === 'object' && html !== null && 'success' in html && html.success === false) {
+        //             console.log("Reset password request failed: " + JSON.stringify(html.errors));
+        //             return;
+        //         }
+        //         $("#resetPasswordModal").html(html);
+        //         $("#resetPasswordModal").modal("show");
+        //     });
+        // });
+
+        $(document).on("click", ".user-table-reset-btn", async function() {
+        // $('.user-table-reset-btn').on('click', async function() {
             const user_id = $(this).closest('tr').data('id');
-            $.get(`/users/reset_password?id=${user_id}`, function(html) {
+            $.get(`/users/register_user?edit=true&user_id=${user_id}`, function(html) {
                 if (typeof html === 'object' && html !== null && 'success' in html && html.success === false) {
-                    console.log("Reset password request failed: " + JSON.stringify(html.errors));
+                    console.log("Update info failed: " + JSON.stringify(html.errors));
                     return;
                 }
-                $("#resetPasswordModal").html(html);
-                $("#resetPasswordModal").modal("show");
+                $("#registerModal").html(html);
+                $("#registerModal").modal("show");
             });
         });
 
-        $(".user-table-permission-btn").on("click", async function () {
+        document.on("click", ".user-table-permission-btn", async function () {
+        // $(".user-table-permission-btn").on("click", async function () {
             const user_id = $(this).closest("tr").data("id");
             const $btn = $(this)
             console.log("Permission button clicked for user ID: " + user_id);
@@ -118,6 +133,6 @@ $(document).ready(function () {
     });
 
     $('#registerModal').on('hidden.bs.modal', function () {
-        window.location.reload();
+        load_user_table();
     });
 });

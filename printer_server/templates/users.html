@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Users ({{ hostname }}){% endblock %}
+{% block title %}{{ hostname }} - Users{% endblock %}
 
 {% block printer3d_state %}
 <h2>{{ hostname }} - Users</h2>
@@ -16,11 +16,13 @@
 <!-- <br> -->
 
 <div class="d-flex justify-content-end mb-2">
-    <button type="button" class="btn btn-outline-info" id="addUserBtn">
+    {% if open_registration or is_admin %}
+    <button type="button" class="btn btn-outline-info mr-2" id="addUserBtn">
         Add User
     </button>
-    <button type="button" class="btn btn-outline-info" id="manageUsersBtn">
-        Manage Users
+    {% endif %}
+    <button type="button" class="btn btn-outline-info" id="loginBtn">
+        Admin Login
     </button>
 </div>
 

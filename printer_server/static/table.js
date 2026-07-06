@@ -102,7 +102,7 @@ function loadTable(table_key){
             $('.advanced-filters').toggle(show);
         }
 
-        const savedAdvanced = localStorage.getItem('printHistoryShowAdvanced');
+        const savedAdvanced = localStorage.getItem(table_key + 'ShowAdvanced');
         if (savedAdvanced !== null) {
             setAdvancedFilters(savedAdvanced === 'true');
         }
@@ -110,7 +110,7 @@ function loadTable(table_key){
         $('#advanced_toggle').on('click', function () {
             const isVisible = $('.advanced-filters').is(':visible');
             const nextState = !isVisible;
-            localStorage.setItem('printHistoryShowAdvanced', nextState);
+            localStorage.setItem(table_key + 'ShowAdvanced', nextState);
             setAdvancedFilters(nextState);
         });
     }
@@ -192,7 +192,11 @@ function loadTable(table_key){
         e.stopPropagation();
     });
 
-    $('.' + table_key + '-row').on('click', async function () {
+    $('.' + table_key + '-row').on('click', async function (e) {
+        // check that a button/checkbox was not clicked
+        if ($(e.target).is('button') || $(e.target).is('input[type="checkbox"]')) {
+            return;
+        }
         const row = $(this);
         const detailsRow = row.next('.details-row');
         detailsRow.toggle();

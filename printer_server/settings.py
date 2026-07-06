@@ -3,6 +3,7 @@ import os
 import socket
 import hashlib
 from dotenv import load_dotenv
+from datetime import timedelta
 
 
 load_dotenv()
@@ -12,7 +13,7 @@ class Config:
 
     PROFILE_CODE = False
     LOG_THREADING = False
-    ADMIN_PWD = os.getenv("PRINTER_SERVER_ADMIN_PASSWORD", "admin")
+    ADMIN_PWD = os.getenv("ADMIN_PASSWORD", "admin")
     hash_object = hashlib.sha256(ADMIN_PWD.encode('utf-8'))
     SECRET_KEY = hash_object.hexdigest()
 
@@ -32,19 +33,17 @@ class Config:
 
     HOSTNAME = socket.gethostname()
 
-    OPEN_ACCESS = os.getenv("PRINTER_SERVER_OPEN_ACCESS", "false").lower() == "true"
-    OPEN_REGISTRATION = os.getenv("PRINTER_SERVER_OPEN_REGISTRATION", "false").lower() == "true"
-    SESSION_EXPIRATION_MINUTES = int(os.getenv("PRINTER_SERVER_SESSION_EXPIRATION_MINUTES", "60"))
-    LOGIN_EXPIRATION_MINUTES = int(os.getenv("PRINTER_SERVER_LOGIN_EXPIRATION_MINUTES", "10"))
-    SMTP_SERVER = os.getenv("PRINTER_SERVER_SMTP_SERVER", "localhost")
-    SMTP_PORT = int(os.getenv("PRINTER_SERVER_SMTP_PORT", "587"))
-    SMTP_USERNAME = os.getenv("PRINTER_SERVER_SMTP_USERNAME", "")
-    SMTP_PASSWORD = os.getenv("PRINTER_SERVER_SMTP_PASSWORD", "")
+    OPEN_ACCESS = os.getenv("OPEN_ACCESS", "false").lower() == "true"
+    OPEN_REGISTRATION = os.getenv("OPEN_REGISTRATION", "false").lower() == "true"
+    SESSION_EXPIRATION_MINUTES = int(os.getenv("SESSION_EXPIRATION_MINUTES", "60"))
+    PERMANENT_SESSION_LIFETIME = timedelta(minutes=int(os.getenv("LOGIN_EXPIRATION_MINUTES", "10")))
+    SESSION_REFRESH_EACH_REQUEST = True
+    REMEMBER_COOKIE_DURATION = timedelta(days=int(os.getenv("REMEMBER_COOKIE_DURATION_DAYS", "7")))
 
-    NEW_USER_PRINT_PERMISSION = os.getenv("PRINTER_SERVER_NEW_USER_PRINT_PERMISSION", "true").lower() == "true"
-    NEW_USER_CALIBRATION_PERMISSION = os.getenv("PRINTER_SERVER_NEW_USER_CALIBRATION_PERMISSION", "false").lower() == "true"
-    NEW_USER_ADVANCED_PERMISSION = os.getenv("PRINTER_SERVER_NEW_USER_ADVANCED_PERMISSION", "false").lower() == "true"
-    NEW_USER_ADMIN_PERMISSION = os.getenv("PRINTER_SERVER_NEW_USER_ADMIN_PERMISSION", "false").lower() == "true"
+    SMTP_SERVER = os.getenv("SMTP_SERVER", "localhost")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 
 class ProdConfig(Config):
     """Production configuration."""

@@ -18,6 +18,7 @@ import printer_server.views.home
 from printer_server.hardware_configuration.hardware_configuration import config_dict
 from printer_server.models import PrintQueue, Session, Calibration
 from printer_server.print_file_validator import validate_schema, validate_printer_compatibility
+from printer_server.views.users import require_permissions, socket_require_permissions
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -197,6 +198,7 @@ def create_calibration_data():
 
 # Decorator to handle navigation to calibration page
 @blueprint.route("/calibration")
+@require_permissions(permission="calibration", require_session=True)
 def index():
     initialized = printer_server.views.home.print_control.state != "uninitialized"
 
@@ -227,6 +229,7 @@ def write_to_position_log(message):
 
 
 @socketio.on("set", namespace="/calibration")
+@socket_require_permissions(permission="calibration", require_session=True)
 def set(message):
     register_irradiance_targets()
     mode = message["mode"]
@@ -255,6 +258,7 @@ def set(message):
 
 
 @socketio.on("goto", namespace="/calibration")
+@socket_require_permissions(permission="calibration", require_session=True)
 def goto():
     from printer_server.hardware_configuration.hardware_configuration import (
         driver_handles,
@@ -306,6 +310,7 @@ def goto():
 
 
 @blueprint.route("/calibration_prints/<path:filename>")
+@require_permissions(permission="calibration", require_session=True)
 def calibration_prints_file(filename):
     return send_from_directory(CALIBRATION_PRINTS_ROOT, filename)
 
@@ -491,6 +496,7 @@ def _format_calibration_vars_for_filename(variables):
 
 
 @socketio.on("calibration_prints_list", namespace="/calibration")
+@socket_require_permissions(permission="calibration", require_session=True)
 def calibration_prints_list():
     socketio.emit(
         "calibration_prints_list_done",
@@ -500,6 +506,7 @@ def calibration_prints_list():
 
 
 @socketio.on("calibration_prints_details", namespace="/calibration")
+@socket_require_permissions(permission="calibration", require_session=True)
 def calibration_prints_details(message):
     try:
         print_id = (message or {}).get("id")
@@ -516,6 +523,7 @@ def calibration_prints_details(message):
 
 
 @socketio.on("calibration_prints_add_to_queue", namespace="/calibration")
+@socket_require_permissions(permission="calibration", require_session=True)
 def calibration_prints_add_to_queue(message):
     try:
         payload = message or {}

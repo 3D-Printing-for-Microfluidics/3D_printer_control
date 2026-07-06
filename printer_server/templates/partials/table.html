@@ -148,22 +148,33 @@
                     </td>
                     {% elif column.type == 'checkbox' %}
                     <td class="align-middle{{ ' ' if loop.first else ' justify-center ' }}{{ table.key }}-{{ column.key }}">
-                        <a class="table-a {{ table.key }}-{{ column.button_class }}" {% if href_enabled %}href="{{ column.href | replace('<id>', rec.id|string) }}"{% endif %}>
+                        {% if href_enabled %}<a class="table-a {{ table.key }}-{{ column.button_class }}" href="{{ column.href | replace('<id>', rec.id|string) }}">{% endif %}
                             {% if not href_enabled %}
                                 {% if value %}🗹{% else %}☐{% endif %}
                             {% else %}
                             <input type="checkbox" {% if value %}checked{% endif %}>
                             {% endif %}
-                        </a>
+                        {% if href_enabled and column.href %}</a>{% endif %}
                     </td>
                     {% elif column.type == 'button' %}
                     <td class="align-middle{{ ' ' if loop.first else ' justify-center ' }}{{ table.key }}-{{ column.key }}">
                         {% if href_enabled %}
-                        <a class="table-a" {% if href_enabled and column.href %}href="{{ column.href | replace('<id>', rec.id|string) }}"{% endif %}>
-                            <button type="button" class="btn {{ column.button_style }} btn-sm {{ table.key }}-{{ column.button_class }}">
-                                {{ column.button_name }}
+                        {% if href_enabled and column.href %}<a class="table-a" href="{{ column.href | replace('<id>', rec.id|string) }}">{% endif %}
+                            <!-- check if button_style is callable -->
+                            {% if column.button_style is callable %}
+                                {% set button_style = column.button_style(rec) %}
+                            {% else %}
+                                {% set button_style = column.button_style %}
+                            {% endif %}
+                            <button type="button" class="btn {{ button_style }} btn-sm {{ table.key }}-{{ column.button_class }}">
+                                <!-- check if button name is lambda -->
+                                {% if column.button_name is callable %}
+                                    {{ column.button_name(rec) }}
+                                {% else %}
+                                    {{ column.button_name }}
+                                {% endif %}
                             </button>
-                        </a>
+                        {% if href_enabled and column.href %}</a>{% endif %}
                         {% endif %}
                     </td> 
                     {% elif column.type == 'expand' %}

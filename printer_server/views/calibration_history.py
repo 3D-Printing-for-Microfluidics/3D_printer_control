@@ -10,6 +10,7 @@ from printer_server.settings import Config
 from printer_server.extensions import socketio, db
 from printer_server.views.table import *
 from printer_server.views.calibration import create_calibration_data, GROUP_ACTIVE_OFFSETS, GROUP_NON_ACTIVE_OFFSETS
+from printer_server.views.users import require_permissions
 from printer_server.forms import StartSessionForm, RegisterForm, EndSessionForm
 from printer_server.models import PrintRecord, PrintQueue, Session, User, Calibration
 from printer_server.hardware_configuration.hardware_configuration import config_dict
@@ -37,7 +38,7 @@ def generate_calibration_table_column_definition():
         }
 
     columns = [
-        Column(key="col-calibration-date", name="Calibration Date", value=lambda r: r.calibration_date, type="datetime", visible=True, db_col=Calibration.calibration_date, db_filter=generate_datetime_lambda(Calibration.calibration_date)),
+        Column(key="col-calibration-date", name="Calibration Date", value=lambda r: r.calibration_date, type="datetime", filterable="Yes", visible=True, db_col=Calibration.calibration_date, db_filter=generate_datetime_lambda(Calibration.calibration_date)),
     ]
     for key in all_keys:
         if key in sorted(lut.keys()):
@@ -80,6 +81,7 @@ def generate_calibration_table_column_definition():
 
 
 @blueprint.route("/calibration_history")
+@require_permissions(require_session=False)
 def index():
     return render_template(
         "calibration_history.html",
@@ -88,6 +90,7 @@ def index():
 
 
 @blueprint.route("/calibration_history/calibration_table")
+@require_permissions(require_session=False)
 def print_table():
     subtable_id = request.args.get("session_id", None)
     if subtable_id is None:

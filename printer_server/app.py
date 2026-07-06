@@ -7,10 +7,12 @@ from threading import Lock
 from email.message import EmailMessage
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, render_template, g
-from printer_server.extensions import db, migrate, socketio
+from flask_login import current_user
+from printer_server.extensions import db, migrate, socketio, login
 from printer_server.models import PrintRecord, PrintQueue, Session, Calibration, User
 from printer_server import commands, models
 from printer_server.views import home, calibration, manual_controls, print_history, server_logs, users, calibration_history
+from printer_server.views.users import require_permissions
 from printer_server.settings import ProdConfig, DevConfig
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
 from printer_server.logging_handler import configure_loggers
@@ -39,7 +41,7 @@ def create_app(config_object=ProdConfig):
     def seed_db_command():
         if not User.query.filter_by(username="admin").first():
             admin = User(
-                first_name="",
+                first_name="admin",
                 last_name="",
                 email="admin@email.test",
                 username="admin",
@@ -48,18 +50,15 @@ def create_app(config_object=ProdConfig):
             admin.admin_permissions = True
             admin.save()
 
-            user = User(
-                first_name="",
+            default = User(
+                first_name="default",
                 last_name="",
-                email="user@email.test",
-                username="new_user",
+                email="default@email.test",
+                username="default",
                 password=config_object.ADMIN_PWD,
             )
-            user.print_permissions = config_object.NEW_USER_PRINT_PERMISSION
-            user.calibration_permissions = config_object.NEW_USER_CALIBRATION_PERMISSION
-            user.advanced_permissions = config_object.NEW_USER_ADVANCED_PERMISSION
-            user.admin_permissions = config_object.NEW_USER_ADMIN_PERMISSION
-            user.save()
+            default.print_permissions = True
+            default.save()
 
             print("User table seeded with default users.")
 
@@ -83,20 +82,32 @@ def create_app(config_object=ProdConfig):
     def build_global_forms():
         # get session info
         session = Session.get_active_session()
+        g.active_session = None
         if session:
             g.active_session = {
                 "id": session.id,
                 "user": session.user.full_name,
                 "start_time": session.start_time
             }
-        else:
-            g.active_session = None
+        
+        g.current_user = None
+        g.is_admin = False
+        if current_user.is_authenticated:
+            g.current_user = current_user.full_name if current_user.full_name else current_user.username
+            g.is_admin = current_user.admin_permissions
+            
 
     # add globals
     @app.context_processor
     def inject_globals():
         return {
-            "active_session": g.active_session
+            "active_session": g.active_session,
+            "current_user": g.current_user,
+            "is_admin": g.is_admin,
+            "server_time": datetime.now(),
+            "session_expiration_minutes": app.config["SESSION_EXPIRATION_MINUTES"],
+            "open_access": app.config["OPEN_ACCESS"],
+            "open_registration": app.config["OPEN_REGISTRATION"],
         }
 
     @app.template_filter("long_duration")
@@ -179,6 +190,7 @@ def create_app(config_object=ProdConfig):
 
 ########### monitor activity for session timeout ###########
 
+session_active_on_boot = None
 last_activity = datetime.now()
 activity_lock = Lock()
 
@@ -212,7 +224,7 @@ def install_emit_hook(socketio):
     socketio.emit = emit
     socketio.server.emit = server_emit
 
-def idle_monitor(login_timeout_minutes=10, session_timeout_minutes=60, check_interval_seconds=60):
+def idle_monitor(session_timeout_minutes=60, check_interval_seconds=60):
     while True:
         socketio.sleep(check_interval_seconds)
 
@@ -220,7 +232,7 @@ def idle_monitor(login_timeout_minutes=10, session_timeout_minutes=60, check_int
             idle = datetime.now() - last_activity
 
         # session timeout
-        if idle > timedelta(minutes=login_timeout_minutes):
+        if idle > timedelta(minutes=session_timeout_minutes):
             with app.app_context():
                 session = Session.get_active_session()
                 if session:
@@ -243,12 +255,13 @@ def register_extensions(app):
     db.init_app(app)
     migrate.init_app(app, db)
     socketio.init_app(app)
+    login.init_app(app)
+    login.login_view = "users.do_login"
 
     install_on_event_hook(socketio)
     install_emit_hook(socketio)
     socketio.start_background_task(
         idle_monitor, 
-        login_timeout_minutes=app.config["LOGIN_EXPIRATION_MINUTES"], 
         session_timeout_minutes=app.config["SESSION_EXPIRATION_MINUTES"],
         check_interval_seconds=60
     )
@@ -268,13 +281,14 @@ def register_blueprints(app):
 def register_errorhandlers(app):
     """Register error handlers."""
 
+    @require_permissions(require_session=False)
     def render_error(error):
         """Render error template."""
         # If a HTTPException, pull the `code` attribute; default to 500
         error_code = getattr(error, "code", 500)
-        return render_template("{}.html".format(error_code), msg=error), error_code
+        return render_template("{}.html".format(error_code), hostname=app.config["HOSTNAME"], msg=error), error_code
 
-    for errcode in [404, 500]:
+    for errcode in [401, 403, 404, 500]:
         app.errorhandler(errcode)(render_error)
 
 

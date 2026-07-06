@@ -7,6 +7,7 @@ from enum import Enum
 from pathlib import Path
 from datetime import datetime, timedelta
 from sqlalchemy.ext.hybrid import hybrid_property
+from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from printer_server.settings import Config
@@ -23,7 +24,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-class User(SurrogatePK, Model):
+class User(SurrogatePK, Model, UserMixin):
     """A user of the app."""
 
     __tablename__ = "Users"

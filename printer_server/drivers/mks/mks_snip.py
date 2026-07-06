@@ -2,6 +2,7 @@ import time
 import logging
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration.hardware_configuration import driver_handles, config_dict
+from printer_server.views.users import socket_require_permissions
 
 mks = driver_handles.mks
 mks_teensy = driver_handles.mks_teensy
@@ -65,6 +66,7 @@ def get_relay_status(emit=True):
 
 
 @socketio.on("mks_switch_relay", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def switchRelay(message):
     try:
         if message["relay"] in config_dict["mks"]["relays"].keys():
@@ -95,6 +97,7 @@ def cranePosition(emit=True):
 
 
 @socketio.on("mks_crane_move", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def craneMove(message):
     try:
         if message["mm"] == "Top":

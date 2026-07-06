@@ -9,6 +9,7 @@ from printer_server.settings import Config
 from printer_server.models import PrintQueue, Session, User
 from printer_server.extensions import socketio
 from printer_server.views.manual_controls import stop_loop
+from printer_server.views.users import socket_require_permissions, require_permissions, get_auth_context
 from printer_server.hardware_configuration.hardware_configuration import config_dict
 from printer_server.printer_control.print_control import PrintControl, PrintingException, run_in_thread
 
@@ -173,6 +174,7 @@ class BasePrintControl(*parent_classes):
 print_control = BasePrintControl()
 
 @blueprint.route("/")
+@require_permissions(require_session=False)
 def index():
     session_user = Session.get_session_user()
     if session_user:
@@ -242,6 +244,7 @@ def disconnect():
 
 
 @socketio.on("initialize", namespace="/printing")
+@socket_require_permissions(permission="print", require_session=True)
 # pylint: disable=unused-argument
 def initialize(message):
     # classes = ""
@@ -273,6 +276,7 @@ def critical_error(process):
 
 
 @socketio.on("critical_error_confirm", namespace="/printing")
+@socket_require_permissions(permission="print", require_session=True)
 # pylint: disable=unused-argument
 def critical_error_confirm(message):
     global critical_error_val
@@ -284,6 +288,7 @@ def critical_error_confirm(message):
 
 
 @socketio.on("critical_error_cancel", namespace="/printing")
+@socket_require_permissions(permission="print", require_session=True)
 # pylint: disable=unused-argument
 def critical_error_reply(message):
     global critical_error_val
@@ -293,6 +298,7 @@ def critical_error_reply(message):
 
 
 @socketio.on("planarization step 1", namespace="/printing")
+@socket_require_permissions(permission="print", require_session=True)
 # pylint: disable=unused-argument
 def planarization_step_1(message):
     if "planarization" in config_dict:
@@ -302,45 +308,53 @@ def planarization_step_1(message):
 
 
 @socketio.on("planarization step 2", namespace="/printing")
+@socket_require_permissions(permission="print", require_session=True)
 # pylint: disable=unused-argument
 def planarization_step_2(message):
     print_control.planarization_step_2(run_in_thread=True, top_level=True)
 
 @socketio.on("cancel planarization", namespace="/printing")
+@socket_require_permissions(permission="print", require_session=True)
 # pylint: disable=unused-argument
 def cancel_planarization(message):
     print_control.cancel_planarization(run_in_thread=True, top_level=True)
 
 @socketio.on("start", namespace="/printing")
+@socket_require_permissions(permission="print", require_session=True)
 # pylint: disable=unused-argument
 def start_print(message):
     print_control.start(message["job"])
 
 
 @socketio.on("pause", namespace="/printing")
+@socket_require_permissions(permission="print", require_session=True)
 # pylint: disable=unused-argument
 def pause_print(message):
     print_control.pause(run_in_thread=True, top_level=True)
 
 
 @socketio.on("resume", namespace="/printing")
+@socket_require_permissions(permission="print", require_session=True)
 # pylint: disable=unused-argument
 def resume_print(message):
     print_control.resume()
 
 
 @socketio.on("stop", namespace="/printing")
+@socket_require_permissions(permission="print", require_session=True)
 # pylint: disable=unused-argument
 def stop(message):
     print_control.stop(run_in_thread=True, top_level=True)
 
 
 @socketio.on("degas", namespace="/printing")
+@socket_require_permissions(permission="print", require_session=True)
 def degas(msg):
     print_control.degas(msg)
 
 
 @socketio.on("shutdown", namespace="/printing")
+@socket_require_permissions(permission="print", require_session=True)
 # pylint: disable=unused-argument
 def shutdown(message="critical"):
     is_critical = True
@@ -356,21 +370,25 @@ signal.signal(signal.SIGINT, shutdown_exception)
 
 if "loadcell" in config_dict.keys():
     @socketio.on("request_loadcell_data", namespace="/printing")
+    @socket_require_permissions(permission="print", require_session=True)
     def join_loadcell_room():
         join_room("loadcell")
 
 
     @socketio.on("unrequest_loadcell_data", namespace="/printing")
+    @socket_require_permissions(permission="print", require_session=True)
     def leave_loadcell_room():
         leave_room("loadcell")
 
 
 @blueprint.route("handle-upload", methods=["POST"])
+@require_permissions(permission="print", require_session=True)
 def handle_upload():
     print_control.handle_upload(request)
     return ""
 
 
 @socketio.on("delete job", namespace="/printing")
+@socket_require_permissions(permission="print", require_session=True)
 def delete_job(message, delete_on_disk=True):
     print_control.delete_job(message, delete_on_disk=True)

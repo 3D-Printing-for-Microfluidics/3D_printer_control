@@ -2,6 +2,7 @@ import logging
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
 from printer_server.drivers.generic_drivers.bp_stage.bp_stage_snip import bp_get_position
+from printer_server.views.users import socket_require_permissions
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -10,6 +11,7 @@ external_control_enable = driver_handles.external_control
 bp_stage = driver_handles.bp_stage
 
 @socketio.on("external_control_set_enable", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def set_external_control_enable(message):
     """set_external_control -- Sets the variable determining if printer can be auto-calibrated"""
     try:
@@ -26,6 +28,7 @@ def set_external_control_enable(message):
 
 
 @socketio.on("external_control_get_enable", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def get_external_control_enable(emit=True):
     """Return the external control enable flag."""
     socketio.emit(

@@ -1,6 +1,7 @@
 import logging
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
+from printer_server.views.users import socket_require_permissions
 
 spectrometer = driver_handles.spectrometer
 
@@ -8,6 +9,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 @socketio.on("spectrometer_capture", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def spectrometerCapture(message):
     try:
         auto = int(message["auto"])

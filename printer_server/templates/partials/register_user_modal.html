@@ -15,6 +15,9 @@
                 </button>
             </div>
             <div class="modal-body">
+                <!-- hidden edit field -->
+                {{ register_form.edit }}
+                {{ register_form.edit_user_id }}
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         {{ register_form.first_name.label }}
@@ -62,10 +65,12 @@
                     {% endfor %}
                 </div>
                 <div class="form-group">
+                    <!-- if password.data, fill in password data field -->
                     {{ register_form.password.label }}
-                    {{ register_form.password(
+                    <!-- {{ register_form.password(
                         class="form-control"
-                    ) }}
+                    ) }} -->
+                    <input class="form-control" id="password" maxlength="40" minlength="6" name="password", required type="password" value="{{ register_form.password.data if register_form.password.data else '' }}">
                     {% for error in register_form.password.errors %}
                     <div class="text-danger small">
                         {{ error }}
@@ -74,9 +79,10 @@
                 </div>
                 <div class="form-group">
                     {{ register_form.confirm.label }}
-                    {{ register_form.confirm(
+                    <!-- {{ register_form.confirm(
                         class="form-control"
-                    ) }}
+                    ) }} -->
+                    <input class="form-control" id="confirm" maxlength="40" minlength="6" name="confirm", required type="password" value="{{ register_form.password.data if register_form.password.data else '' }}">
                     {% for error in register_form.confirm.errors %}
                     <div class="text-danger small">
                         {{ error }}
@@ -92,7 +98,11 @@
                 </button>
                 <button type="submit"
                         class="btn btn-success">
+                    {% if register_form.edit.data %}
+                    Update User
+                    {% else %}
                     Create User
+                    {% endif %}
                 </button>
             </div>
         </form>

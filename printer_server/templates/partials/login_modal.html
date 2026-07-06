@@ -2,11 +2,11 @@
 <div class="modal-dialog modal-dialog-centered"
         role="document">
     <div class="modal-content">
-        <form id="start-session-form">
-            {{ start_session_form.hidden_tag() }}
+        <form id="login-modal-form">
+            {{ login_form.hidden_tag() }}
             <div class="modal-header">
                 <h5 class="modal-title">
-                    Start Printer Session
+                    Login
                 </h5>
                 <button type="button"
                         class="close"
@@ -16,38 +16,35 @@
             </div>
             <div class="modal-body">
                 <p class="text-muted">
-                    Start a printer session to enable printing,
-                    calibration, and machine control.
+                    Please enter your username and password to log in.
                 </p>
                 <div class="form-group">
-                    {{ start_session_form.username.label }}
-                    {{ start_session_form.username(
+                    {{ login_form.username.label }}
+                    {{ login_form.username(
                         class="form-control"
                     ) }}
-                    {% for error in start_session_form.username.errors %}
+                    {% for error in login_form.username.errors %}
                     <div class="text-danger small">
                         {{ error }}
                     </div>
                     {% endfor %}
                 </div>
                 <div class="form-group">
-                    {{ start_session_form.password.label }}
-                    {{ start_session_form.password(
+                    {{ login_form.password.label }}
+                    {{ login_form.password(
                         class="form-control"
                     ) }}
-                    {% for error in start_session_form.password.errors %}
+                    {% for error in login_form.password.errors %}
                     <div class="text-danger small">
                         {{ error }}
                     </div>
                     {% endfor %}
+                    <div class="form-group form-check" style="display: none;">
+                        {{ login_form.remember_me(class="form-check-input") }}
+                        {{ login_form.remember_me.label(class="form-check-label") }}
+                    </div>
                     <div class="d-flex justify-content-between align-items-center mt-2">
-                        <div id="endPreviousSessionDiv" style="display: none;">
-                            <button type="button"
-                                    class="btn btn-sm btn-primary"
-                                    id="endPreviousSessionButton">
-                                End Previous Session
-                            </button>
-                        </div>
+                        <div></div>
 
                         <button type="button" class="btn btn-link btn-sm p-0 resetPasswordLink">
                             Forgot Password?
@@ -73,7 +70,7 @@
                     </button>
                     <button type="submit"
                             class="btn btn-primary">
-                        Start Session
+                        Login
                     </button>
                 </div>
             </div>

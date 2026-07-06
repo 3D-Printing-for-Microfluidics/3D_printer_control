@@ -1,6 +1,34 @@
 var start_job_id = "";
 var delete_job_id;
 var critical_error_process = ""
+let sessionTimeout = null;
+let countdownInterval = null;
+
+function clearSessionTimers() {
+    if (sessionTimeout) {
+        clearTimeout(sessionTimeout);
+        sessionTimeout = null;
+    }
+
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+}
+
+function endSession() {
+    clearSessionTimers();
+
+    $.post(`/users/end_session_timeout/${active_session.id}?later=True`, function (data) {
+        if (data.success) {
+            console.log("Session ended");
+            location.reload();
+        } else {
+            console.log("Session end failed:", data.errors);
+        }
+    });
+}
+
 
 if (loadcell_exists) {
     var loadcell_trace = {
@@ -269,11 +297,68 @@ $(document).ready(function () {
     });
 
     socket.on("uninitialized", function (message) {
+        console.log("Printer is uninitialized");
         $("#printer-state").text("Uninitialized");
         show_print_btn("#init-btn, #shutdown-btn");
+
         let content = '3D printer has been shutdown';
         if (document.getElementById('base-body').innerHTML == content) {
-            location.reload()
+            console.log("Reloading page because printer is uninitialized");
+            location.reload();
+        }
+
+        
+        // Session timeout logic: if there is an active session, and the session start time is more than 60 seconds ago, show a modal to end the session
+        const session_start_time = active_session && active_session.start_time ? new Date(active_session.start_time).getTime() / 1000 : null;
+        const printer_server_time = server_time ? new Date(server_time).getTime() / 1000 : null;
+
+        if (
+            active_session && 
+            session_start_time !== null && 
+            (printer_server_time - session_start_time) > session_expiration_minutes*60
+        ) {
+            // Clear any existing timers in case this event fires multiple times
+            if (sessionTimeout) clearTimeout(sessionTimeout);
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            $("#print-alert-title").text("Session Timeout");
+
+            let countdown = 60;
+            $("#print-alert-body").text(
+                `Printer is uninitialized while a session is active. The session will timeout in ${countdown} seconds. Click "Confirm" to end the session now or "Cancel" to keep the session active.`
+            );
+
+            sessionTimeout = setTimeout(function () {
+                $('#confirmModal').modal('hide');
+                endSession();
+            }, 60000);
+
+            countdownInterval = setInterval(function () {
+                countdown--;
+
+                $("#print-alert-body").text(
+                    `Printer is uninitialized while a session is active. The session will timeout in ${countdown} seconds. Click "Confirm" to end the session now or "Cancel" to keep the session active.`
+                );
+
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
+            }, 1000);
+
+            $('#confirmModal').modal('show');
+        }
+    });
+
+    $('#confirmModal').on('hidden.bs.modal', function () {
+        if (sessionTimeout) {
+            clearTimeout(sessionTimeout);
+            sessionTimeout = null;
+        }
+
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
         }
     });
 
@@ -376,6 +461,11 @@ $(document).ready(function () {
         let operation = $("#print-alert-title").text();
         let msg;
 
+        if (operation === "Session Timeout") {
+            endSession();
+            return;
+        }
+
         if (loadcell_exists && (operation === "Start" || operation === "Planarization Step 1" || operation === "Planarization Step 2" || operation === "Resume")) {
             show_loadcell();
         }
@@ -391,9 +481,6 @@ $(document).ready(function () {
             msg = {};
         }
         socket.emit(operation.toLowerCase(), msg);
-        $("#print-alert-title").text("");
-        $("#print-alert-body").text("");
-        critical_error_process = "";
     });
 
     $("#print-alert-cancel").click(function () {
@@ -405,7 +492,10 @@ $(document).ready(function () {
             msg = critical_error_process;
             socket.emit(operation.toLowerCase(), msg);
         }
+    });
 
+    $("#confirmModal").on("hidden.bs.modal", function () {
+        clearSessionTimers();
         $("#print-alert-title").text("");
         $("#print-alert-body").text("");
         critical_error_process = "";

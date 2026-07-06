@@ -5,6 +5,7 @@ from PIL import Image
 from printer_server.settings import Config
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration.hardware_configuration import driver_handles, config_dict
+from printer_server.views.users import socket_require_permissions
 
 light_engines = driver_handles.light_engines
 
@@ -73,6 +74,7 @@ def fetchPreviews():
     
 
 @socketio.on("light_engine_grayscale_correction", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def lightEngineGrayscaleCorrection(message):
     light_engine = message["light_engine"]
     try:
@@ -90,6 +92,7 @@ def lightEngineGrayscaleCorrection(message):
 
 
 @socketio.on("light_engine_led_changed", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def lightEngineLEDChanged(message):
     light_engine = message["light_engine"]
     try:
@@ -107,6 +110,7 @@ def lightEngineLEDChanged(message):
 
 
 @socketio.on("light_engine_draw_image", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def lightEngineDraw(message):
     light_engine = message["light_engine"]
     try:
@@ -125,6 +129,7 @@ def lightEngineDraw(message):
 
 
 @socketio.on("light_engine_draw_white", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def lightEngineWhite(message):
     light_engine = message["light_engine"]
     try:
@@ -143,6 +148,7 @@ def lightEngineWhite(message):
 
 
 @socketio.on("light_engine_draw_black", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def lightEngineClear(message):
     light_engine = message["light_engine"]
     try:
@@ -161,6 +167,7 @@ def lightEngineClear(message):
 
 
 @socketio.on("light_engine_stop", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def light_engine_stop(light_engine):
     """Turn off the LED in the light engine."""
     try:
@@ -174,6 +181,7 @@ def light_engine_stop(light_engine):
 
 
 @socketio.on("light_engine_start", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def light_engine_start(message):
     """Project the image with the given settings."""
     try:
@@ -199,6 +207,7 @@ def light_engine_start(message):
 
 
 @socketio.on("light_engine_get_status", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def light_engine_get_status(light_engine):
     try:
         socketio.emit(

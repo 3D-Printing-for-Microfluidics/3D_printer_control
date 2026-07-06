@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{{ hostname }} - Error 403{% endblock %}
+
+{% block printer3d_state %}
+<h2 style="display: inline">{{ hostname }} - </h2>
+<h2 style="display: inline">Error 403</h2>
+{% endblock %}
+
+{% block page_content %}
+<div class="modal-dialog modal-dialog-centered"
+        role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Insufficient Permissions</h5>
+        </div>
+        <div class="modal-body">
+            <p>
+                - You do not have the necessary permissions to access this page. Please contact your system administrator if you believe this is an error.
+            </p>
+            <p class="text-muted">
+                - {{ msg }}
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" id="loginBtn"
+                    class="btn btn-secondary"
+                    data-dismiss="modal">
+                Change User
+            </button>
+    </div>
+</div>
+{% endblock %}

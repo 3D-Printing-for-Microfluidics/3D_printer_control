@@ -1,7 +1,27 @@
 {% extends "base.html" %}
 
-{% block title %}Page Not Found{% endblock %}
+{% block title %}{{ hostname }} - Error 404{% endblock %}
 
 {% block printer3d_state %}
-<h2>Not Found</h2>
+<h2 style="display: inline">{{ hostname }} - </h2>
+<h2 style="display: inline">Error 404</h2>
+{% endblock %}
+
+{% block page_content %}
+<div class="modal-dialog modal-dialog-centered"
+        role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Page Not Found</h5>
+        </div>
+        <div class="modal-body">
+            <p>
+                - The page you are looking for does not exist.
+            </p>
+            <p class="text-muted">
+                - {{ msg }}
+            </p>
+        </div>
+    </div>
+</div>
 {% endblock %}

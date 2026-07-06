@@ -67,6 +67,13 @@ $(document).ready(function () {
         base_socket.disconnect();
     });
 
+    $('#loginBtn').on('click', async function() {
+        $.get("/users/login_modal", function(html) {
+            $("#loginModal").html(html);
+            $("#loginModal").modal("show");
+        });
+    });
+
     /////////////// Session Header ///////////////
     function updateSessionTime() {
         const el = document.getElementById('session-time');
@@ -135,6 +142,7 @@ $(document).ready(function () {
 
     /////////////// Submit Handlers ///////////////
 
+
     document.addEventListener('submit', function (e) {
         if (e.target.matches('#start-session-form')) {
             onSubmit(
@@ -142,8 +150,8 @@ $(document).ready(function () {
                 '#startSessionModal',
                 function (response) { // On success
                     $('#startSessionModal').modal('hide');
-                    // window.location.reload();
-                    showSessionSummaryModal();
+                    sessionStorage.setItem('showSessionSummaryModal', '1');
+                    window.location.reload();
                 },
                 e
             )
@@ -170,6 +178,7 @@ $(document).ready(function () {
                     $('#registerModal').modal('hide');
                     if (in_start_session) {
                         username = $('#register-form').find('[name="username"]').val();
+                        showStartSessionModal();
                     };
                 },
                 e
@@ -196,6 +205,10 @@ $(document).ready(function () {
                 '#resetPasswordModal',
                 function (response) { // On success
                     $('#resetPasswordModal').modal('hide');
+                    if (in_start_session) { // show start session modal if in_start_session is true
+                        username = $('#reset-password-form').find('[name="username"]').val();
+                        showStartSessionModal();
+                    }
                 },
                 e
             )
@@ -209,6 +222,18 @@ $(document).ready(function () {
                     const username = $('#verify-reset-code-form').find('[name="username"]').val();
                     const token = response.token;
                     showResetPasswordModal(username, token);
+                },
+                e
+            )
+        }
+        else if (e.target.matches('#login-modal-form')) {
+            console.log("Login form submitted");
+            onSubmit(
+                '/users/login_modal',
+                '#loginModal',
+                function (response) { // On success
+                    $('#loginModal').modal('hide');
+                    window.location.reload();
                 },
                 e
             )
@@ -235,12 +260,21 @@ $(document).ready(function () {
         $('#startSessionModal').modal('hide');
     });
 
-    $(document).on('click', '#resetPasswordLink', function() {
-        $('#startSessionModal').one('hidden.bs.modal', function () {
-            const username = $('#startSessionModal').find('[name="username"]').val();
-            showResetCodeModal(username);
-        });
-        $('#startSessionModal').modal('hide');
+    $(document).on('click', '.resetPasswordLink', function() {
+        if ($('#startSessionModal').is(':visible')) {
+            $('#startSessionModal').one('hidden.bs.modal', function () {
+                const username = $('#startSessionModal').find('[name="username"]').val();
+                showResetCodeModal(username);
+            });
+            $('#startSessionModal').modal('hide');
+        }
+        else if ($('#loginModal').is(':visible')) {
+            $('#loginModal').one('hidden.bs.modal', function () {
+                const username = $('#loginModal').find('[name="username"]').val();
+                showResetCodeModal(username);
+            });
+            $('#loginModal').modal('hide');
+        }
     });
 
     $('#startSessionModal').on('shown.bs.modal', function () {
@@ -265,6 +299,11 @@ $(document).ready(function () {
             $("#sessionSummaryModal").html(html);
             $("#sessionSummaryModal").modal("show");
         });
+    }
+
+    if (sessionStorage.getItem('showSessionSummaryModal') === '1') {
+        sessionStorage.removeItem('showSessionSummaryModal');
+        showSessionSummaryModal();
     }
     
     /////////////// Register User ///////////////
@@ -307,6 +346,9 @@ $(document).ready(function () {
                 return;
             }
             $("#resetPasswordModal").html(html);
+            $("#resetPasswordModal").one('shown.bs.modal', function () {
+                $("#resetPasswordModal").find('[name="password"]').trigger('focus');
+            });
             $("#resetPasswordModal").modal("show");
         });
     }
@@ -318,6 +360,9 @@ $(document).ready(function () {
                 return;
             }
             $("#resetCodeModal").html(html);
+            $("#resetCodeModal").one('shown.bs.modal', function () {
+                $("#resetCodeModal").find('[name="otc"]').trigger('focus');
+            });
             $("#resetCodeModal").modal("show");
         });
     }
@@ -350,6 +395,21 @@ $(document).ready(function () {
         });
         $('#endSessionModal').attr('data-id', sessionId);
     }
+
+    $('.logoutBtn').on('click', function() {
+        console.log("Logout button clicked");
+        $.get("/logout", function(html) {
+            // if open_access is true, just reload the page, otherwise use the rendered html template (login page)
+            if (open_access) {
+                window.location.reload();
+            }
+            else {
+                document.open();
+                document.write(html);
+                document.close(); 
+            };
+        });
+    });
 
     // Load in updated modal partial on open
     $('#endSessionBtn').on('click', function() {

@@ -1,15 +1,17 @@
 import os
 import shutil
 import logging
-from flask_socketio import emit
+from functools import wraps
+from flask_socketio import emit, disconnect
+from flask_login import login_user, logout_user, current_user, login_required
 from datetime import datetime, timedelta
-from flask import Blueprint, request, render_template, jsonify, flash, send_file
+from flask import Blueprint, request, render_template, jsonify, flash, send_file, redirect, url_for, abort
 
 
 from printer_server.settings import Config
-from printer_server.extensions import socketio, db
+from printer_server.extensions import socketio, db, login
 from printer_server.views.table import *
-from printer_server.forms import StartSessionForm, RegisterForm, EndSessionForm, EndPrintForm, ResetCodeForm, ResetPasswordForm
+from printer_server.forms import LoginForm, StartSessionForm, RegisterForm, EndSessionForm, EndPrintForm, ResetCodeForm, ResetPasswordForm
 from printer_server.models import PrintRecord, PrintQueue, Session, User, Calibration
 from printer_server.hardware_configuration.hardware_configuration import config_dict
 from printer_server.print_file_validator import validate_schema, validate_printer_compatibility
@@ -20,38 +22,142 @@ blueprint = Blueprint(
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
-# login required
-# session required (also requires login)
+def get_auth_context():
+    open_access = Config.OPEN_ACCESS
+    if current_user.is_authenticated:
+        return {
+            "authenticated": True,
+            "user": current_user,
+            "is_in_session": Session.get_active_session() is not None,
+            "permissions": {
+                "print": current_user.print_permissions,
+                "calibration": current_user.calibration_permissions,
+                "advanced": current_user.advanced_permissions,
+                "admin": current_user.admin_permissions,
+            },
+        }
+    if not open_access:
+        return {
+            "authenticated": False,
+            "user": None,
+            "is_in_session": False,
+            "permissions": {
+                "print": False,
+                "calibration": False,
+                "advanced": False,
+                "admin": False,
+            },
+        }
+    session_user = Session.get_session_user()
+    if session_user:
+        return {
+            "authenticated": True,
+            "user": session_user,
+            "is_in_session": True,
+            "permissions": {
+                "print": session_user.print_permissions,
+                "calibration": session_user.calibration_permissions,
+                "advanced": session_user.advanced_permissions,
+                "admin": session_user.admin_permissions,
+            },
+        }
+    return {
+        "authenticated": True,
+        "user": None,
+        "is_in_session": False,
+        "permissions": {
+            "print": False,
+            "calibration": False,
+            "advanced": False,
+            "admin": False,
+        },
+    }  
 
-# def conditional_login(f, permissions):
-#     @functools.wraps(f)
-#     def decorated_function(*args, **kwargs):
-#         token = request.args.get("token", None)
-#         # Check if user is signed in (users always have general permissions)
-#         if current_user.is_authenticated:
-#             # check db to see if user has the required permissions
-#             if :
-#                 return f(*args, **kwargs)
-#             pass
-#         # Check if no_user has general permissions
-#         elif 
-#             return f(*args, **kwargs)
+def require_permissions(permission=None, require_session=False):
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            ctx = get_auth_context()
+            if not ctx.get("authenticated", False):
+                if Config.OPEN_ACCESS:
+                    abort(401)
+                return redirect(url_for("users.do_login"))
+            if require_session and not ctx.get("is_in_session", False):
+                abort(401)
+            if permission is not None and not ctx.get("permissions", {}).get(permission, False):
+                abort(403)
+            return fn(*args, **kwargs)
+        return wrapper
+    return decorator
 
-#         return login_required(f)(*args, **kwargs)
-#     return decorated_function
+def socket_require_permissions(permission=None, require_session=False):
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            ctx = get_auth_context()
+            if not ctx.get("authenticated", False):
+                disconnect()
+                return
+            if require_session and not ctx.get("is_in_session", False):
+                disconnect()
+                return
+            if permission is not None and not ctx.get("permissions", {}).get(permission, False):
+                disconnect()
+                return
+            return fn(*args, **kwargs)
+        return wrapper
+    return decorator
 
-# def conditional_socketio(f, permissions):
-#     @functools.wraps(f)
-#     def wrapper(*args, **kwargs):
-#         return f(*args, **kwargs)
-#     return wrapper
+@login.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+@blueprint.route("/login", methods=["GET", "POST"])
+def do_login():
+    if current_user.is_authenticated:
+        return redirect(url_for("home.index"))
+    else:
+        next_page = request.args.get("next")
+        form = LoginForm()
+        return render_template("login.html", login_form=form, form=form, hostname=Config.HOSTNAME, next=next_page)
+
+@blueprint.route("/users/login_modal", methods=["GET"])
+def login_modal():
+    next_page = request.args.get("next") 
+    form = LoginForm()
+    return render_template("partials/login_modal.html", login_form=form, hostname=Config.HOSTNAME, next=next_page)
+
+@blueprint.route("/users/login_modal", methods=["POST"])
+def login_modal_post():
+    log.info("Login modal POST request received")
+    next_page = request.args.get("next") 
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=form.remember_me.data)
+            flash("Logged in successfully.", "success")
+            log.info("%s logged in", user.full_name)
+            return jsonify({"success": True, "redirect": request.args.get("next") or url_for("home.index")})
+        else:
+            flash("Invalid username or password.", "warning")
+            log.warning("Failed login attempt for username: %s", form.username.data)
+            return jsonify({"success": False, "errors": {"username": ["Invalid username or password"]}})
+    log.info("Rendering login modal with errors")
+    return jsonify({"success": False, "errors": form.errors})
+
+@blueprint.route("/logout")
+@login_required
+def do_logout():
+    logout_user()
+    flash("You have been logged out.", "success")
+    return redirect(url_for("users.do_login"))
 
 def generate_user_table_column_definition():
-    user = Session.get_session_user()
-    if user is None:
-        user = False
-    else:
-        user = user.id
+    ctx = get_auth_context()
+    user = ctx.get("user", None)
+    user_id = user.id if user else None
+    is_admin = user.admin_permissions if user else False
 
     columns = [
         Column(key="col-username", name="Username", value=lambda r: r.username, filterable="Yes", visible=True, db_col=User.username, db_filter=generate_string_lambda(User.username)),
@@ -60,12 +166,12 @@ def generate_user_table_column_definition():
         Column(key="col-first-name", name="First Name", value=lambda r: r.first_name, db_col=User.first_name, db_filter=generate_string_lambda(User.first_name)),
         Column(key="col-last-name", name="Last Name", value=lambda r: r.last_name, db_col=User.last_name, db_filter=generate_string_lambda(User.last_name)),
         Column(key="col-full-name", name="Full Name", value=lambda r: r.full_name, filterable="Yes", visible=True, db_col=User.full_name, db_filter=generate_string_lambda(User.full_name)),
-        Column(key="col-print-permissions", name="Print Permissions", value=lambda r: r.print_permissions, type="checkbox", href_enabled=True, button_class="permission-btn", visible=True, db_col=User.print_permissions, db_filter=generate_boolean_lambda(User.print_permissions), vertical_header=True),
-        Column(key="col-calibration-permissions", name="Calibration Permissions", value=lambda r: r.calibration_permissions, type="checkbox", href_enabled=True, button_class="permission-btn", visible=True, db_col=User.calibration_permissions, db_filter=generate_boolean_lambda(User.calibration_permissions), vertical_header=True),
-        Column(key="col-advanced-permissions", name="Advanced Permissions", value=lambda r: r.advanced_permissions, type="checkbox", href_enabled=True, button_class="permission-btn", visible=True, db_col=User.advanced_permissions, db_filter=generate_boolean_lambda(User.advanced_permissions), vertical_header=True),
-        Column(key="col-admin-permissions", name="Admin Permissions", value=lambda r: r.admin_permissions, type="checkbox", href_enabled=True, button_class="permission-btn", visible=True, db_col=User.admin_permissions, db_filter=generate_boolean_lambda(User.admin_permissions), vertical_header=True),
-        Column(key="col-reset", name="Password", type="button", href_enabled=lambda r: r.id == user, button_style="btn-outline-warning", button_name="Change", button_class="reset-btn", sortable=False, filterable="No", visible=True),
-        Column(key="col-delete", name="Delete User", type="button", href_enabled=lambda r: r.id == user, button_style="btn-outline-danger", button_name="Delete", button_class="delete-btn", sortable=False, filterable="No", visible=True)
+        Column(key="col-print-permissions", name="Print Permissions", value=lambda r: r.print_permissions, type="checkbox", href_enabled=is_admin, button_class="permission-btn", visible=True, db_col=User.print_permissions, db_filter=generate_boolean_lambda(User.print_permissions), vertical_header=True),
+        Column(key="col-calibration-permissions", name="Calibration Permissions", value=lambda r: r.calibration_permissions, type="checkbox", href_enabled=is_admin, button_class="permission-btn", visible=True, db_col=User.calibration_permissions, db_filter=generate_boolean_lambda(User.calibration_permissions), vertical_header=True),
+        Column(key="col-advanced-permissions", name="Advanced Permissions", value=lambda r: r.advanced_permissions, type="checkbox", href_enabled=is_admin, button_class="permission-btn", visible=True, db_col=User.advanced_permissions, db_filter=generate_boolean_lambda(User.advanced_permissions), vertical_header=True),
+        Column(key="col-admin-permissions", name="Admin Permissions", value=lambda r: r.admin_permissions, type="checkbox", href_enabled=lambda r: is_admin and r.username not in ["admin", "default"], button_class="permission-btn", visible=True, db_col=User.admin_permissions, db_filter=generate_boolean_lambda(User.admin_permissions), vertical_header=True),
+        Column(key="col-reset", name="Password", type="button", href_enabled=lambda r: (r.id == user_id or is_admin) and r.username not in ["admin", "default"], button_style="btn-outline-warning", button_name="Change", button_class="reset-btn", sortable=False, filterable="No", visible=True),
+        Column(key="col-delete", name="Delete User", type="button", href_enabled=lambda r: (r.id == user_id or is_admin) and r.username not in ["admin", "default"], button_style="btn-outline-danger", button_name="Delete", button_class="delete-btn", sortable=False, filterable="No", visible=True)
     ]
 
     def get_sort_col(column_key):
@@ -90,6 +196,7 @@ def generate_user_table_column_definition():
 
 
 @blueprint.route("/users")
+@require_permissions(require_session=False)
 def index():
     return render_template(
         "users.html",
@@ -98,6 +205,7 @@ def index():
 
 
 @blueprint.route("/users/user_table")
+@require_permissions(require_session=False)
 def print_table():
     table = generate_table(
         name = "Users",
@@ -118,6 +226,7 @@ def print_table():
 
 
 @blueprint.route("/users/session_summary")
+@require_permissions(require_session=False)
 def session_summary():
     session = Session.get_active_session()
     if not session:
@@ -164,9 +273,27 @@ def session_summary():
     methods=["GET"],
 )
 def register_user_get():
+    edit = request.args.get("edit", "false").lower() == "true"
+    edit_user_id = request.args.get("user_id", None)
+
+    ctx = get_auth_context()
+    ctx_user = ctx.get("user", None)
+    ctx_admin = ctx.get("permissions", {}).get("admin", False)
+
+    form = RegisterForm()
+    if edit and (ctx_user.id == edit_user_id or ctx_admin):
+        user = User.query.get(edit_user_id)
+        form.edit.data = "true"
+        form.edit_user_id.data = str(user.id)
+        form.first_name.data = user.first_name
+        form.last_name.data = user.last_name
+        form.email.data = user.email
+        form.username.data = user.username
+        form.password.data = user.password[0:20]  # pre-fill with first 20 characters of password hash for security
+
     return render_template(
         "partials/register_user_modal.html",
-        register_form=RegisterForm(),
+        register_form=form,
     )
 
 
@@ -175,24 +302,68 @@ def register_user_get():
     methods=["POST"],
 )
 def register_user_post():
-    if not Config.OPEN_REGISTRATION:
-        # check if user is logged in and has admin permissions
-        pass
-
     register_form = RegisterForm()
 
+    edit = register_form.edit.data.lower() == "true"
+    edit_user_id = register_form.edit_user_id.data if edit else None
+
+    ctx = get_auth_context()
+    ctx_user = ctx.get("user", None)
+    ctx_admin = ctx.get("permissions", {}).get("admin", False)
+
+    if not (Config.OPEN_REGISTRATION or (edit and (ctx_user.id == edit_user_id or ctx_admin))):
+        # check if user is logged in and has admin permissions
+        is_admin = False
+        if current_user.is_authenticated:
+            is_admin = current_user.admin_permissions
+        if not is_admin:
+            return jsonify({"success": False, "errors": {"username": ["Access denied"]}})
+
+    
+    log.info("Register user POST request received, edit: %s, edit_user_id: %s", edit, edit_user_id)
     if not register_form.validate():
         return jsonify({"success": False, "errors": register_form.errors})
     
-    user = User(
-        first_name=register_form.first_name.data,
-        last_name=register_form.last_name.data,
-        email=register_form.email.data,
-        username=register_form.username.data,
-        password=register_form.password.data,
-    )
-    user.save()
-    log.info("%s registered as %s", user.full_name, user.username)
+    if edit:
+        user = User.query.get(edit_user_id)
+        user.first_name = register_form.first_name.data
+        user.last_name = register_form.last_name.data
+        user.email = register_form.email.data
+        user.username = register_form.username.data
+
+        if register_form.first_name.data and register_form.last_name.data:
+            user.full_name = register_form.first_name.data + " " + register_form.last_name.data
+        elif register_form.first_name.data:
+            user.full_name = register_form.first_name.data
+        elif register_form.last_name.data:
+            user.full_name = register_form.last_name.data
+        else:
+            user.full_name = None
+
+        if register_form.password.data and str(user.password[0:20]) != register_form.password.data:
+            user.set_password(register_form.password.data)
+
+        user.save()
+        log.info("%s updated their information", user.full_name)
+
+    else:
+        user = User(
+            first_name=register_form.first_name.data,
+            last_name=register_form.last_name.data,
+            email=register_form.email.data,
+            username=register_form.username.data,
+            password=register_form.password.data,
+        )
+        
+        # set new user permission based on "default" user
+        default_user = User.query.filter_by(username="default").first()
+        user.print_permissions = default_user.print_permissions
+        user.calibration_permissions = default_user.calibration_permissions
+        user.advanced_permissions = default_user.advanced_permissions
+        user.admin_permissions = default_user.admin_permissions
+
+        user.save()
+        log.info("%s registered as %s", user.full_name, user.username)
 
     return jsonify({"success": True})
 
@@ -201,17 +372,18 @@ def register_user_post():
     "/users/start_session",
     methods=["GET"],
 )
+@require_permissions(require_session=False)
 def start_session_get():
     return render_template(
         "partials/start_session_modal.html",
-        start_session_form=StartSessionForm(),
-        open_access=Config.OPEN_REGISTRATION
+        start_session_form=StartSessionForm()
     )
 
 @blueprint.route(
     "/users/start_session",
     methods=["POST"],
 )
+@require_permissions(require_session=False)
 def start_session_post():
     start_form = StartSessionForm()
     if not start_form.validate():
@@ -300,14 +472,25 @@ def reset_password_get():
         if not user:
             return jsonify({"success": False, "errors": {"username": ["Invalid user ID"]}})
         username = user.username
+    elif username:
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({"success": False, "errors": {"username": ["Invalid username"]}})
     
     # If session user is the same as the username in the request, generate a new reset token without requiring OTC
-    session_user = Session.get_session_user()
-    if session_user and session_user.username == username:
-        session_user.generate_token(need_otc=False)
-        token = session_user.token
+    ctx = get_auth_context()
+    ctx_user = ctx.get("user", None)
+    ctx_authenticated = ctx.get("authenticated", False)
+    ctx_admin = ctx.get("permissions", {}).get("admin", False)
+
+    if ctx_user and ctx_user.username == username:
+        user.generate_token(need_otc=False)
+        token = user.token
 
     # If current user has admin permission generate token
+    if ctx_authenticated and ctx_admin:
+        user.generate_token(need_otc=False)
+        token = user.token
 
     if not token:
         return jsonify({"success": False, "errors": {"token": ["Missing reset token"]}})
@@ -345,6 +528,7 @@ def reset_password_post():
 
 
 @blueprint.route("/users/delete_user", methods=["GET"])
+@require_permissions(require_session=False)
 def delete_user_get():
     user_id = request.args.get("user_id")
     token = None
@@ -354,13 +538,20 @@ def delete_user_get():
         return jsonify({"success": False, "errors": {"token": ["Invalid user"]}})
 
     # If session user is the same as in the request, generate a new reset token
-    session_user = Session.get_session_user()
-    if session_user and session_user.id == user.id:
-        log.info("%s requested to delete their own account, generating reset token", session_user.full_name)
-        session_user.generate_token(need_otc=False)
-        token = session_user.token
+    ctx = get_auth_context()
+    ctx_user = ctx.get("user", None)
+    ctx_authenticated = ctx.get("authenticated", False)
+    ctx_admin = ctx.get("permissions", {}).get("admin", False)
+
+    if ctx_user and ctx_user.username == username:
+        log.info("%s requested to delete their own account, generating reset token", ctx_user.full_name)
+        user.generate_token(need_otc=False)
+        token = user.token
 
     # If current user has admin permission generate token
+    if ctx_authenticated and ctx_admin:
+        user.generate_token(need_otc=False)
+        token = user.token
 
     if not token:
         return jsonify({"success": False, "errors": {"token": ["Insufficient permissions"]}})
@@ -369,6 +560,7 @@ def delete_user_get():
 
 
 @blueprint.route("/users/delete_user", methods=["POST"])
+@require_permissions(require_session=False)
 def delete_user_post():
     user_id = request.args.get("user_id")
     token = request.args.get("token")
@@ -388,7 +580,7 @@ def delete_user_post():
     if user.token_expiration < datetime.now():
         return jsonify({"success": False, "errors": {"token": ["Token has expired"]}})
 
-    log.info("%s deleted user %s", Session.get_session_user().full_name, user.full_name)
+    log.info("Deleted user %s", user.full_name)
 
     # stop session if user is currently in a session
     active_session = Session.query.filter_by(user_id=user.id, active=True).first()
@@ -399,6 +591,7 @@ def delete_user_post():
 
 
 @blueprint.route("/users/change_permission", methods=["GET"])
+@require_permissions(require_session=False)
 def change_permission_get():
     user_id = request.args.get("id")
     token = None
@@ -410,6 +603,9 @@ def change_permission_get():
         return jsonify({"success": False, "errors": {"token": ["Invalid user"]}})
 
     # If current user has admin permission generate token
+    if current_user.is_authenticated and current_user.admin_permissions:
+        user.generate_token(need_otc=False)
+        token = user.token
 
     if not token:
         return jsonify({"success": False, "errors": {"token": ["Insufficient permissions"]}})
@@ -417,6 +613,7 @@ def change_permission_get():
     return {"success": True, "token": token}
 
 @blueprint.route("/users/change_permission", methods=["POST"])
+@require_permissions(require_session=False)
 def change_permission_post():
     user_id = request.args.get("id")
     token = request.args.get("token")
@@ -454,6 +651,7 @@ def change_permission_post():
 
 
 @blueprint.route("/users/print_form")
+@require_permissions(require_session=False)
 def print_form():
     def fill_print_form(idx, print_record):
         print_form = EndPrintForm(prefix=f"prints-{idx}")
@@ -513,6 +711,7 @@ def print_form():
     "/users/end_print/<print_id>",
     methods=["POST"],
 )
+@require_permissions(require_session=False)
 def end_print_post(print_id):
     end_print_form = EndPrintForm(prefix=f"prints-0")
     print_record = PrintRecord.query.get(print_id)
@@ -554,6 +753,7 @@ def end_print_post(print_id):
     "/users/end_session/<session_id>",
     methods=["GET"],
 )
+@require_permissions(require_session=False)
 def end_session_get(session_id):
     end_session_form = EndSessionForm()
     session = Session.query.get(session_id)
@@ -590,6 +790,10 @@ timeout_email_msg = {
     """
 }
 
+@blueprint.route(
+    "/users/end_session_timeout/<session_id>",
+    methods=["POST"],
+)
 def end_session_timeout(session_id):
     session = Session.query.get(session_id)
 
@@ -644,14 +848,22 @@ def end_session_timeout(session_id):
             
     socketio.emit("session_ended", namespace="/users")
 
+    # if was called via route, return JSON response
+    if request.path.startswith("/users/end_session_timeout/"):
+        return jsonify({"success": True})
+
 @blueprint.route(
     "/users/end_session/<session_id>",
     methods=["POST"],
 )
+@require_permissions(require_session=False)
 def end_session_post(session_id):
     end_session_form = EndSessionForm()
     later = request.args.get('later', "false", type=str) == "true"
     session = Session.query.get(session_id)
+
+    log.info(request.form)
+    log.info(request.args)
 
     if later:
         # Send an email to the user
@@ -746,6 +958,7 @@ def end_session_post(session_id):
 
 
 @socketio.on("connect", namespace="/users")
+@socket_require_permissions(require_session=False)
 def connect():
     emit(
         "connected",

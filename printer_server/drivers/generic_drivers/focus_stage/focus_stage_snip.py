@@ -6,6 +6,7 @@ from printer_server.hardware_configuration.hardware_configuration import (
     config_dict,
 )
 import printer_server.views.manual_controls
+from printer_server.views.users import socket_require_permissions
 
 focus_stage = driver_handles.focus_stage
 if "coord_systems" in config_dict:
@@ -20,6 +21,7 @@ log.setLevel(logging.INFO)
 
 
 @socketio.on("focus_set_coodinate_system", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def focus_set_coodinate_system(message):
     "Set coordinate system offsets"
     try:
@@ -32,6 +34,7 @@ def focus_set_coodinate_system(message):
 
 
 @socketio.on("focus_home", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def focus_home():
     """Home focus stage."""
     try:
@@ -43,6 +46,7 @@ def focus_home():
 
 
 @socketio.on("focus_move", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def focus_move(message):
     """Move the focus stage in um."""
     try:
@@ -94,6 +98,7 @@ def focus_move(message):
 
 
 @socketio.on("focus_get_position", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def focus_get_position(notify=True):
     """Get the position the focus stage in um"""
     try:

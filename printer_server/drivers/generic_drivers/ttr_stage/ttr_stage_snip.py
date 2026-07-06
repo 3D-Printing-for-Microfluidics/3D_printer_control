@@ -2,6 +2,7 @@ import logging
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration.hardware_configuration import driver_handles, config_dict
 import printer_server.views.manual_controls
+from printer_server.views.users import socket_require_permissions
 
 ttr_stage = driver_handles.ttr_stage
 
@@ -9,6 +10,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 @socketio.on("ttr_home", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def ttr_home():
     """Home ttr stage."""
     try:
@@ -21,6 +23,7 @@ def ttr_home():
         socketio.emit("hardware_failure", "ttr", namespace="/manual")
 
 @socketio.on("ttr_move", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def ttr_move(message):
     """Move the ttr stage in rad."""
     try:
@@ -58,6 +61,7 @@ def ttr_get_stage_list():
     return stages
 
 @socketio.on("ttr_get_position", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def ttr_get_position(notify=True):
     """Get the position the ttr stage in rad."""
     try:

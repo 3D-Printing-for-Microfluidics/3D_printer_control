@@ -11,6 +11,8 @@ from printer_server.views.table import *
 from printer_server.models import PrintRecord, PrintQueue, Session, User
 from printer_server.hardware_configuration.hardware_configuration import config_dict
 from printer_server.print_file_validator import validate_schema, validate_printer_compatibility
+from printer_server.views.users import get_auth_context
+from printer_server.views.users import require_permissions
 
 blueprint = Blueprint(
     "print_history", __name__, url_prefix="/", static_folder="../static"
@@ -20,6 +22,8 @@ log.setLevel(logging.INFO)
 
 def generate_session_table_column_definition():
     printer_user_options = [name for _, name in get_user_lookup()]
+
+    user = get_auth_context().get("user", None)
 
     columns = [
         Column(key="col-user", name="User", value=lambda r: r.user.full_name if r.user else "", filterable="Yes", options=printer_user_options, visible=True, db_col=Session.user.has(User.full_name), db_filter=generate_nested_lambda([Session.user, User.full_name], generate_string_lambda)),
@@ -33,8 +37,15 @@ def generate_session_table_column_definition():
         Column(key="col-hardware-issues", name="Hardware Issues", value=lambda r: r.hardware_issues, type="boolean", visible=True, db_col=Session.hardware_issues, db_filter=generate_boolean_lambda(Session.hardware_issues)),
         Column(key="col-hardware-issues-details", name="Hardware Issues Details", value=lambda r: r.hardware_issues_details, db_col=Session.hardware_issues_details, db_filter=generate_string_lambda(Session.hardware_issues_details)),
         Column(key="col-notes", name="Notes", value=lambda r: r.notes, db_col=Session.notes, db_filter=generate_string_lambda(Session.notes)),
-        # Column(key="col-active", name="Active", value=lambda r: r.active, type="boolean", visible=True, db_col=Session.active, db_filter=generate_boolean_lambda(Session.active)),
-        Column(key="col-finish", name="", type="button", button_style="btn btn-outline-warning", button_name="End Session", button_class="finish-session-btn", sortable=False, filterable="No", visible=True, href_enabled=lambda r: r.end_time is None)
+        Column(
+            key="col-finish", 
+            name="Logs", 
+            type="button", 
+            button_style=(lambda r: "btn btn-outline-warning" if r.end_time is None else "btn btn-outline-success"), 
+            button_name=(lambda r: "Finish" if r.end_time is None else "Edit"), 
+            button_class="finish-session-btn", 
+            sortable=False, filterable="No", visible=True, 
+            href_enabled=lambda r: r.user == user or r.end_time is None)
     ]
 
     def get_sort_col(column_key):
@@ -68,6 +79,8 @@ def generate_print_table_column_definition():
     # upload_ip = Column(db.String(30))
     # start_ip = Column(db.String(30))
 
+    user = get_auth_context().get("user", None)
+
     columns = [
         Column(key="col-name", name="Name", value=lambda r: r.original_filename, type="link", href="/print_history/download/<id>", filterable="Yes", visible=True, db_col=PrintRecord.original_filename, db_filter=generate_string_lambda(PrintRecord.original_filename)),
         Column(key="col-printer-user", name="Printer User", value=lambda r: r.user.full_name if r.user else "", filterable="Yes", options=printer_user_options, visible=True, db_col=PrintRecord.user.has(User.full_name), db_filter=generate_nested_lambda([PrintRecord.user, User.full_name], generate_string_lambda)),
@@ -87,7 +100,7 @@ def generate_print_table_column_definition():
         Column(key="col-failure-other", name="Other Failure Mode", value=lambda r: r.other_failure_mode, db_col=PrintRecord.other_failure_mode, db_filter=generate_string_lambda(PrintRecord.other_failure_mode)),
         Column(key="col-notes", name="Notes", value=lambda r: r.notes, db_col=PrintRecord.notes, db_filter=generate_string_lambda(PrintRecord.notes)),
         Column(key="col-reprint", name="Reprint", type="button", href="/print_history/reprint/<id>", button_style="btn-outline-info", button_name="Reprint", button_class="reprint-btn", sortable=False, filterable="No", visible=True),
-        Column(key="col-log", name="", type="button", button_style="btn btn-outline-warning", button_name="Fill Log", button_class="print-log-btn", sortable=False, filterable="No", visible=True, href_enabled=lambda r: r.logged == False and r.session.active)
+        Column(key="col-log", name="Logs", type="button", button_style=(lambda r: "btn btn-outline-warning" if r.logged == False and r.session.active else "btn btn-outline-success"), button_name=(lambda r: "Finish" if r.logged == False and r.session.active else "Edit"), button_class="print-log-btn", sortable=False, filterable="No", visible=True, href_enabled=lambda r: r.user == user)
     ]
 
     def get_sort_col(column_key):
@@ -112,6 +125,7 @@ def generate_print_table_column_definition():
 
 
 @blueprint.route("/print_history")
+@require_permissions(require_session=False)
 def index():
     val = request.args.get("session_view", "true").lower()
     session_view = val in ("true", "1", "yes", "on")
@@ -124,6 +138,7 @@ def index():
 
 
 @blueprint.route("/print_history/print_table")
+@require_permissions(require_session=False)
 def print_table():
     subtable_id = request.args.get("session_id", None)
     if subtable_id is None:
@@ -158,6 +173,7 @@ def print_table():
 
 
 @blueprint.route("/print_history/session_table")
+@require_permissions(require_session=False)
 def session_table():
     table = generate_table(
         name = "Sessions",
@@ -182,6 +198,7 @@ def session_table():
 
 
 @blueprint.route("/print_history/download/<path:job_id>", methods=["GET", "POST"])
+@require_permissions(require_session=False)
 def download(job_id):
     """Download the job specified by job_id."""
     file_location = os.path.join(os.path.join(Config.UPLOAD_FOLDER, "print_history"))
@@ -193,8 +210,8 @@ def download(job_id):
     )
 
 
-# @socketio.on("add_to_queue", namespace="/print_history")
 @blueprint.route("/print_history/reprint/<path:job_id>", methods=["GET", "POST"])
+@require_permissions(require_session=True)
 def add_to_queue(job_id):
     """Add the print job to the print queue."""
     # job_id = job_id.split("-")[1]

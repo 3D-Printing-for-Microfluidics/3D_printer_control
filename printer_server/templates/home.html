@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Home ({{ hostname }}){% endblock %}
+{% block title %}{{ hostname }} - Home{% endblock %}
 
 {% block printer3d_state %}
 <h2 style="display: inline">{{ hostname }} - </h2>
-<h2 id='printer-state' style="display: inline"></h2>
+<h2 id='printer-state' style="display: inline">{% if not active_session %}Home{% endif %}</h2>
 {% endblock %}
 
 {% block styles %}
@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block page_content %}
-
+{% if active_session %}
 <div class="row mb-2" id="printer-controls">
     <div class="col-auto mr-auto">
         <button type="button" class="printer-btn btn btn-lg btn-outline-info d-none" data-toggle="modal"
@@ -118,7 +118,28 @@
             data-target="#confirmModal" id="shutdown-btn">Shutdown</button>
     </div>
 </div>
-
+{% else %}
+<!-- Print a welcome page/message if no active session -->
+<div class="modal-dialog modal-dialog-centered"
+        role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Welcome</h5>
+        </div>
+        <div class="modal-body">
+            {% if open_access or (not open_access and not active_session) %}
+            <p class="text-muted">
+                Please start a session to access the printer controls and manage print jobs. If you are having trouble logging in, please contact your system administrator for assistance.
+            </p>
+            {% else %}
+            <p class="text-muted">
+                The current user does not have permission to print. Please contact your system administrator for assistance.
+            </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -131,5 +152,7 @@
 </script>
 <script src="{{ url_for('static', filename='lib/ajax-socket.io-4.7.5.min.js') }}"></script>
 <script src="{{ url_for('static', filename='lib/plotly-1.54.6.min.js') }}"></script>
+{% if active_session %}
 <script src="{{ url_for('static', filename='home.js') }}"></script>
+{% endif %}
 {% endblock %}

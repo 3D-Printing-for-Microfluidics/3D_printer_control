@@ -13,6 +13,7 @@ from printer_server.settings import Config
 import printer_server.views.home
 from printer_server.threading_wrapper import Thread
 from printer_server.hardware_configuration.hardware_configuration import config_dict
+from printer_server.views.users import require_permissions, socket_require_permissions
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -173,6 +174,7 @@ blueprint = Blueprint(
 
 # Decorator to handle navigation to calibration page
 @blueprint.route("/manual")
+@require_permissions(permission="advanced", require_session=False)
 def index():
     initialized = printer_server.views.home.print_control.state != "uninitialized"
 
@@ -206,6 +208,7 @@ def index():
     ) 
 
 @socketio.on("connect", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def connect():
     log.debug("MC Socket connected %s", request.sid)
     global loop_thread, connected_clients
@@ -267,6 +270,7 @@ def stop_loop(force=False):
 
 
 @blueprint.route("light_engine_image_upload", methods=["POST"])
+@require_permissions(permission="advanced", require_session=False)
 def upload():
     return printer_server.drivers.generic_drivers.light_engine.light_engine_snip.handleUpload(request)
 

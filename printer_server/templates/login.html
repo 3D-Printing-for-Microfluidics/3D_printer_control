@@ -40,17 +40,20 @@
             <div class="container">
                 <div class="row">
                     <div class="identicon-container">
-                        <canvas id="identicon" class="identicon" data-jdenticon-value={{ hostname }} width="69"
-                            height="69">{{ hostname
+                        <canvas id="identicon" class="identicon" data-jdenticon-value={{ hostname }} width="40"
+                            height="40">{{ hostname
                             }}
                         </canvas>
                     </div>
                     <div>
-                        <h2 style="display: inline">{{ hostname }}</h2>
+                        <h2 style="display: inline">{{ hostname }} - Login</h2>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="modal fade" id="registerModal" tabindex="-1" role="dialog" aria-labelledby="registerModalTitle" aria-hidden="true"></div>
+        <div class="modal fade" id="resetPasswordModal" tabindex="-1" role="dialog" aria-labelledby="resetPasswordModalLabel" aria-hidden="true"></div>
+        <div class="modal fade" id="resetCodeModal" tabindex="-1" role="dialog" aria-labelledby="resetCodeModalLabel" aria-hidden="true"></div>
         <div class="container">
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -65,25 +68,9 @@
 
             <div class="row justify-content-center">
                 <div class="col-md-6">
-                    <h2 class="text-center">Login</h2>
-                    <form method="POST" action="{{ url_for('users.login', next=next) }}">
-                        {{ form.hidden_tag() }}
-                        <div class="form-group">
-                            {{ form.username.label(class="form-label") }}
-                            {{ form.username(class="form-control") }}
-                        </div>
-                        <div class="form-group">
-                            {{ form.password.label(class="form-label") }}
-                            {{ form.password(class="form-control") }}
-                        </div>
-                        <div class="form-group form-check">
-                            {{ form.remember_me(class="form-check-input") }}
-                            {{ form.remember_me.label(class="form-check-label") }}
-                        </div>
-                        <div class="form-group">
-                            {{ form.submit(class="btn btn-primary btn-block") }}
-                        </div>
-                    </form>
+                    <div id="loginModal">
+                        {% include 'partials/login_modal.html' %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -100,4 +87,5 @@
         document.getElementById("favicon1").setAttribute("type", "image/png");
         document.getElementById("favicon2").setAttribute("type", "image/png");
     </script>
+    <script src="{{ url_for('static', filename='login.js') }}"></script>
 </html>
