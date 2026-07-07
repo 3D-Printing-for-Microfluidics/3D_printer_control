@@ -6,7 +6,11 @@
             {{ register_form.hidden_tag() }}
             <div class="modal-header">
                 <h5 class="modal-title">
+                    {% if register_form.edit.data %}
+                    Edit User Information
+                    {% else %}
                     Register New User
+                    {% endif %}
                 </h5>
                 <button type="button"
                         class="close"
