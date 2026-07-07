@@ -402,24 +402,30 @@ class Calibration(SurrogatePK, Model):
     @classmethod
     def init_Calibration_from_old_text_logs(cls):
         # This method should initialize the Calibration table from old text logs
-        if cls.get_last_positions() is None or cls.get_last_positions() == {}:
+        if cls.get_last_positions() in (None, {}):
             log.info("Initializing Calibration from old text logs")
             # Initialize from old text logs here
             """Return the last focused position from the position log file."""
             log_file = Path(Config.PROJECT_ROOT) / "logs" / "calibration_position_log.txt"
-            last_line = None
+            calibrations = []
             try:
                 with open(log_file) as f:
                     for line in f:
-                        last_line = line.rstrip()
-                        log.info("Processing line: %s", last_line)
-                        
-                        calibration = Calibration(
-                            calibration_date=datetime.strptime(last_line[:19], "%Y-%m-%d_%H-%M-%S"),
-                            calibration_data=json.loads(last_line[20:].replace("'", '"'))
+                        line = line.rstrip()
+                        log.info("Processing line: %s", line)
+                        calibrations.append(
+                            Calibration(
+                                calibration_date=datetime.strptime(
+                                    line[:19], "%Y-%m-%d_%H-%M-%S"
+                                ),
+                                calibration_data=json.loads(
+                                    line[20:].replace("'", '"')
+                                ),
+                            )
                         )
-                        calibration.save()
-                        log.info("Calibration saved: %s", calibration)
+                db.session.add_all(calibrations)
+                db.session.commit()
+                log.info("Imported %d calibrations", len(calibrations))
 
             except FileNotFoundError:
                 return
