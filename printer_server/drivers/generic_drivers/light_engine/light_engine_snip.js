@@ -67,6 +67,9 @@ $(document).ready(function () {
             let activeButton = document.querySelector(
                 `#${le}-led-group .active`
             );
+            if (activeButton === null) {
+                return 0;
+            }
             return parseInt(activeButton.dataset.ledIndex, 10);
         }
 
