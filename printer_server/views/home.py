@@ -217,7 +217,6 @@ if "loadcell" in config_dict.keys():
 
 
 def send_bootstrap_alert(msg, level="warning"):
-    log.info(f"Flashing alert to frontend: {msg} (level: {level})")
     socketio.emit(
         "bootstrap alert",
         {"text": msg, "category": level},

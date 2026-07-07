@@ -515,7 +515,7 @@ def calibration_prints_details(message):
             "calibration_prints_details_done", details, namespace="/calibration"
         )
     except (ValueError, FileNotFoundError, json.JSONDecodeError) as ex:
-        home.send_bootstrap_alert(f"Error retrieving calibration print details: {ex}", level="warning")
+        log.warning("Error retrieving calibration print details: %s", ex)
         socketio.emit(
             "calibration_prints_add_done",
             namespace="/calibration",
@@ -598,7 +598,7 @@ def calibration_prints_add_to_queue(message):
     except (ValueError, FileNotFoundError, json.JSONDecodeError) as ex:
         if "zip_path" in locals() and Path(zip_path).exists():
             Path(zip_path).unlink(missing_ok=True)
-        home.send_bootstrap_alert(f"Error adding calibration print to queue: {ex}", level="warning")
+        log.warning("Error adding calibration print to queue: %s", ex)
         socketio.emit(
             "calibration_prints_add_done",
             namespace="/calibration",

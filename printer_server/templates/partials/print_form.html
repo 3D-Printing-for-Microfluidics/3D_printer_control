@@ -39,6 +39,10 @@
         <!-- hidden print_id -->
         {{ print_form.print_id() }}
 
+        {% for error in print_form.print_id.errors %}
+            <small class="text-danger">{{ error }}</small>
+        {% endfor %}
+
         <!-- SUCCESS -->
         <div class="form-group">
             {{ print_form.successful.label(class="form-label") }}

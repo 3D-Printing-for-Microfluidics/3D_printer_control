@@ -333,6 +333,10 @@ $(document).ready(function () {
     /////////////// Session Summary ///////////////
     function showSessionSummaryModal() {
         $.get("/users/session_summary", function(html) {
+             if (typeof html === 'object' && html !== null && 'success' in html && html.success === false) {
+                console.log("Session summary request failed: " + JSON.stringify(html.errors));
+                return;
+            }
             $("#sessionSummaryModal").html(html);
             $("#sessionSummaryModal").modal("show");
         });

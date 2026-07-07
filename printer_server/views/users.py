@@ -228,7 +228,9 @@ def print_table():
 def session_summary():
     session = Session.get_active_session()
     if not session:
-        return jsonify({"success": False, "errors": {"session": ["No active session"]}})
+        msg = "Cannot display session summary: No active session"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"session": [msg]}})
 
     number_of_sessions = 4
 
@@ -315,7 +317,7 @@ def register_user_post():
         if current_user.is_authenticated:
             is_admin = current_user.admin_permissions
         if not is_admin:
-            return jsonify({"success": False, "errors": {"username": ["Access denied"]}})
+            return jsonify({"success": False, "errors": {"username": ["Access denied. You do not have permission to register users."]}})
 
     
     if not register_form.validate():
@@ -389,8 +391,9 @@ def start_session_post():
     existing = Session.get_active_session()
 
     if existing:
-        log.info("Printer already in use by %s", existing.user.full_name)
-        return jsonify({"success": False, "errors": {"password": ["Printer already in use"]}})
+        msg = "Printer already in use by %s" % existing.user.full_name
+        log.info(msg)
+        return jsonify({"success": False, "errors": {"password": [msg]}})
 
     # check if user has an unended session (end time not set)
     previous_session = Session.query.filter_by(user_id=start_form.user.id).order_by(Session.start_time.desc()).first()
@@ -419,7 +422,9 @@ def reset_code_get():
     user = User.query.filter_by(username=username).first()
     token = None
     if not user:
-        return jsonify({"success": False, "errors": {"username": ["User not found"]}})
+        msg = "User not found for username: %s" % username
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"username": [msg]}})
     token, otc = user.generate_token()
     send_email(
         recipient=user.email,
@@ -467,12 +472,16 @@ def reset_password_get():
     if user_id:
         user = User.query.get(user_id)
         if not user:
-            return jsonify({"success": False, "errors": {"username": ["Invalid user ID"]}})
+            msg = "Invalid user ID: %s" % user_id
+            log.warning(msg)
+            return jsonify({"success": False, "errors": {"username": [msg]}})
         username = user.username
     elif username:
         user = User.query.filter_by(username=username).first()
         if not user:
-            return jsonify({"success": False, "errors": {"username": ["Invalid username"]}})
+            msg = "Invalid username: %s" % username
+            log.warning(msg)
+            return jsonify({"success": False, "errors": {"username": [msg]}})
     
     # If session user is the same as the username in the request, generate a new reset token without requiring OTC
     ctx = get_auth_context()
@@ -490,16 +499,24 @@ def reset_password_get():
         token = user.token
 
     if not token:
-        return jsonify({"success": False, "errors": {"token": ["Missing reset token"]}})
+        msg = "Missing token for password reset"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
 
     user = User.query.filter_by(token=token).first()
 
     if not user:
-        return jsonify({"success": False, "errors": {"token": ["Invalid user"]}})
+        msg = "Invalid token for password reset"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
     if user.token_expiration < datetime.now():
-        return jsonify({"success": False, "errors": {"token": ["Reset token has expired"]}})
+        msg = "Token has expired for password reset"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
     if user.reset_otc is not None:
-        return jsonify({"success": False, "errors": {"token": ["Reset token requires one-time code verification"]}})
+        msg = "Requires one-time code verification"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
 
     return render_template(
         "partials/forgot_password_modal.html",
@@ -532,7 +549,9 @@ def delete_user_get():
 
     user = User.query.get(user_id)
     if not user:
-        return jsonify({"success": False, "errors": {"token": ["Invalid user"]}})
+        msg = "Invalid user ID: %s" % user_id
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
 
     # If session user is the same as in the request, generate a new reset token
     ctx = get_auth_context()
@@ -551,7 +570,9 @@ def delete_user_get():
         token = user.token
 
     if not token:
-        return jsonify({"success": False, "errors": {"token": ["Insufficient permissions"]}})
+        msg = "Insufficient permissions to delete user"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
 
     return {"success": True, "token": token}
 
@@ -563,17 +584,27 @@ def delete_user_post():
     token = request.args.get("token")
 
     if not user_id:
-        return jsonify({"success": False, "errors": {"user_id": ["Missing user ID"]}})
+        msg = "Missing user ID for deletion"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"user_id": [msg]}})
     user = User.query.get(user_id)
     if not user:
-        return jsonify({"success": False, "errors": {"user_id": ["Invalid user ID"]}})
+        msg = "Invalid user ID for deletion: %s" % user_id
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"user_id": [msg]}})
 
     if not token:
-        return jsonify({"success": False, "errors": {"token": ["Missing token"]}})
+        msg = "Missing token for user deletion"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
     if user.token != token:
-        return jsonify({"success": False, "errors": {"token": ["Insufficient permissions"]}})
+        msg = "Insufficient permissions for user deletion"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
     if user.token_expiration < datetime.now():
-        return jsonify({"success": False, "errors": {"token": ["Token has expired"]}})
+        msg = "Token has expired for user deletion"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
 
     log.info("Deleted user %s", user.full_name)
 
@@ -593,7 +624,9 @@ def change_permission_get():
 
     user = User.query.get(user_id)
     if not user:
-        return jsonify({"success": False, "errors": {"token": ["Invalid user"]}})
+        msg = "Invalid user ID: %s" % user_id
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
 
     # If current user has admin permission generate token
     if current_user.is_authenticated and current_user.admin_permissions:
@@ -601,7 +634,9 @@ def change_permission_get():
         token = user.token
 
     if not token:
-        return jsonify({"success": False, "errors": {"token": ["Insufficient permissions"]}})
+        msg = "Insufficient permissions to change user permissions"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
 
     return {"success": True, "token": token}
 
@@ -614,17 +649,27 @@ def change_permission_post():
     value = request.args.get("value", "false").lower() == "true"
 
     if not user_id:
-        return jsonify({"success": False, "errors": {"user_id": ["Missing user ID"]}})
+        msg = "Missing user ID for permission change"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"user_id": [msg]}})
     user = User.query.get(user_id)
     if not user:
-        return jsonify({"success": False, "errors": {"user_id": ["Invalid user ID"]}})
+        msg = "Invalid user ID for permission change: %s" % user_id
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"user_id": [msg]}})
 
     if not token:
-        return jsonify({"success": False, "errors": {"token": ["Missing token"]}})
+        msg = "Missing token for permission change"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
     if user.token != token:
-        return jsonify({"success": False, "errors": {"token": ["Insufficient permissions"]}})
+        msg = "Insufficient permissions for permission change"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
     if user.token_expiration < datetime.now():
-        return jsonify({"success": False, "errors": {"token": ["Token has expired"]}})
+        msg = "Token has expired for permission change"
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"token": [msg]}})
 
     if permission == "print":
         user.print_permissions = value
@@ -635,7 +680,9 @@ def change_permission_post():
     elif permission == "admin":
         user.admin_permissions = value
     else:
-        return jsonify({"success": False, "errors": {"permission": ["Invalid permission"]}})
+        msg = "Invalid permission: %s" % permission
+        log.warning(msg)
+        return jsonify({"success": False, "errors": {"permission": [msg]}})
     user.save()
 
     return jsonify({"success": True, "permission": permission, "value": value})
@@ -709,7 +756,6 @@ def end_print_post(print_id):
     later = request.args.get('later', "false", type=str) == "true"
 
     if not print_record:
-        log.warning(f"Invalid print ID: {print_id}")
         return jsonify({"success": False, "errors": {"print_id": ["Invalid print ID"]}})
 
     if not later:
