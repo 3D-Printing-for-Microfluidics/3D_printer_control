@@ -112,16 +112,16 @@ class SocketIOHandler(logging.Handler):
                 socketio.emit(
                     "bootstrap alert",
                     {"text": msg, "category": "warning"},
-                    namespace=namespace,
+                    namespace="/global",
                 )
-                socketio.emit("play_sound", {"sound": "alert.mp3"}, namespace=namespace)
+                socketio.emit("play_sound", {"sound": "alert.mp3"}, namespace="/global")
             elif record.levelno > logging.WARNING:
                 socketio.emit(
                     "bootstrap alert",
                     {"text": msg, "category": "danger"},
-                    namespace=namespace,
+                    namespace="/global",
                 )
-                socketio.emit("play_sound", {"sound": "alert.mp3"}, namespace=namespace)
+                socketio.emit("play_sound", {"sound": "alert.mp3"}, namespace="/global")
         except AttributeError:
             pass
 

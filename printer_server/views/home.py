@@ -199,13 +199,13 @@ def index():
     )
 
 def print_finished(id):
-    socketio.emit("print_finished", {"id": id}, namespace="/users")
+    socketio.emit("print_finished", {"id": id}, namespace="/global")
 
 def update_printer_state(state, msg):
     socketio.emit(state, msg, namespace="/printing")
 
 def play_sound(sound):
-    socketio.emit("play_sound", {"sound": sound}, namespace="/printing")
+    socketio.emit("play_sound", {"sound": sound}, namespace="/global")
 
 if "loadcell" in config_dict.keys():
     def clear_loadcell_graph():
@@ -216,13 +216,15 @@ if "loadcell" in config_dict.keys():
         socketio.emit("loadcell_graph_data", msg, namespace="/printing", to="loadcell")
 
 
-def send_bootstrap_alert(msg):
+def send_bootstrap_alert(msg, level="warning"):
+    log.info(f"Flashing alert to frontend: {msg} (level: {level})")
     socketio.emit(
         "bootstrap alert",
-        {"text": msg, "category": "warning"},
-        namespace="/printing",
+        {"text": msg, "category": level},
+        namespace="/global",
     )
-    play_sound("alert.mp3")
+    if level in ["warning", "danger"]:
+        play_sound("alert.mp3")
 
 critical_error_val = None
 

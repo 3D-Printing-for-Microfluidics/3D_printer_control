@@ -26,9 +26,7 @@
     <script src="{{ url_for('static', filename='lib/jquery-3.3.1.min.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/ajax-popper-2.9.2.min.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/bootstrap-4.1.1.min.js') }}"></script>
-    {% endblock %}
-
-    {% block content %}
+    <script src="{{ url_for('static', filename='lib/ajax-socket.io-4.7.5.min.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/jdenticon-3.1.1.min.js') }}"></script>
 
     <!-- Set color palette of identicon -->
@@ -49,6 +47,21 @@
             ]
         };
     </script>
+    
+    <script src="{{ url_for('static', filename='base.js') }}"></script>
+    <script src="{{ url_for('static', filename='table.js') }}"></script>
+
+    <script>
+        var global_socket;
+        var active_session = JSON.parse('{{ active_session|tojson }}');
+        var server_time = JSON.parse('{{ server_time|tojson }}');
+        var open_access = JSON.parse('{{ open_access|tojson }}');
+        var open_registration = JSON.parse('{{ open_registration|tojson }}');
+        var session_expiration_minutes = JSON.parse('{{ session_expiration_minutes|tojson }}');
+    </script>
+    {% endblock %}
+
+    {% block content %}
 
     <div class="col-12 jumbotron jumbotron-fluid">
         <div class="container">
@@ -181,23 +194,12 @@
             </div>
         </div>
 
+        <div class="collapse-area" style="max-height: 240px; overflow-y: auto; transition: height 0.3s ease;" id="flash-alerts"></div>
+        <br>
+
         {% block page_content %}{% endblock %}
     </div>
 
     {% endblock %}
 </body>
-
-<script src="{{ url_for('static', filename='lib/ajax-socket.io-4.7.5.min.js') }}"></script>
-<script src="{{ url_for('static', filename='base.js') }}"></script>
-<script src="{{ url_for('static', filename='table.js') }}"></script>
-
-<script>
-    var base_socket;
-    var active_session = JSON.parse('{{ active_session|tojson }}');
-    var server_time = JSON.parse('{{ server_time|tojson }}');
-    var open_access = JSON.parse('{{ open_access|tojson }}');
-    var open_registration = JSON.parse('{{ open_registration|tojson }}');
-    var session_expiration_minutes = JSON.parse('{{ session_expiration_minutes|tojson }}');
-</script>
-
 </html>

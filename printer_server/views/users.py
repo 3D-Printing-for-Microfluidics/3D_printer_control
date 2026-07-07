@@ -5,12 +5,13 @@ from functools import wraps
 from flask_socketio import emit, disconnect
 from flask_login import login_user, logout_user, current_user, login_required
 from datetime import datetime, timedelta
-from flask import Blueprint, request, render_template, jsonify, flash, send_file, redirect, url_for, abort
+from flask import Blueprint, request, render_template, jsonify, send_file, redirect, url_for, abort
 
 
 from printer_server.settings import Config
 from printer_server.extensions import socketio, db, login
 from printer_server.views.table import *
+import printer_server.views.home as home
 from printer_server.forms import LoginForm, StartSessionForm, RegisterForm, EndSessionForm, EndPrintForm, ResetCodeForm, ResetPasswordForm
 from printer_server.models import PrintRecord, PrintQueue, Session, User, Calibration
 from printer_server.hardware_configuration.hardware_configuration import config_dict
@@ -135,11 +136,10 @@ def login_modal_post():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
-            flash("Logged in successfully.", "success")
+            home.send_bootstrap_alert("Logged in successfully.", level="success")
             log.info("%s logged in", user.full_name)
             return jsonify({"success": True, "redirect": request.args.get("next") or url_for("home.index")})
         else:
-            flash("Invalid username or password.", "warning")
             log.warning("Failed login attempt for username: %s", form.username.data)
             return jsonify({"success": False, "errors": {"username": ["Invalid username or password"]}})
     return jsonify({"success": False, "errors": form.errors})
@@ -148,7 +148,7 @@ def login_modal_post():
 @login_required
 def do_logout():
     logout_user()
-    flash("You have been logged out.", "success")
+    home.send_bootstrap_alert("You have been logged out.", level="success")
     return redirect(url_for("users.do_login"))
 
 def generate_user_table_column_definition():
@@ -404,7 +404,7 @@ def start_session_post():
     session.save()
     log.info("%s started session", start_form.user.full_name)
 
-    socketio.emit("session_started", {"id": session.id, "user": session.user.full_name, "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, namespace="/users")
+    socketio.emit("session_started", {"id": session.id, "user": session.user.full_name, "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, namespace="/global")
 
     return jsonify({"success": True})
 
@@ -837,7 +837,7 @@ def end_session_timeout(session_id):
 
         log.info("%s session timed out", session.user.full_name)
             
-    socketio.emit("session_ended", namespace="/users")
+    socketio.emit("session_ended", namespace="/global")
 
     # if was called via route, return JSON response
     if request.path.startswith("/users/end_session_timeout/"):
@@ -940,22 +940,22 @@ def end_session_post(session_id):
 
         log.info("%s ended session", session.user.full_name)
             
-    socketio.emit("session_ended", namespace="/users")
+    socketio.emit("session_ended", namespace="/global")
 
     return jsonify({"success": True})
 
 
-@socketio.on("connect", namespace="/users")
+@socketio.on("connect", namespace="/global")
 @socket_require_permissions(require_session=False)
 def connect():
     emit(
         "connected",
         dict(),
-        namespace="/users",
+        namespace="/global",
         broadcast=False,
     )
 
 
-@socketio.on("disconnect", namespace="/users")
+@socketio.on("disconnect", namespace="/global")
 def disconnect():
     log.debug("Socket disconnected %s", request.sid)

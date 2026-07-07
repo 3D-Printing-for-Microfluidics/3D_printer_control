@@ -54,11 +54,55 @@ async function onSubmit(url, modalId, on_success, e) {
 };
 
 $(document).ready(function () {
-    var base_socket = io.connect("http://" + document.domain + ":" + location.port + "/users");
-    base_socket.emit("connecting");
+    var global_socket = io.connect("http://" + document.domain + ":" + location.port + "/global");
+    global_socket.emit("connecting");
 
     window.addEventListener('beforeunload', function (e) {
-        base_socket.disconnect();
+        global_socket.disconnect();
+    });
+
+    ////////////////////////////// Audio ///////////////////////////////
+    let audioQueue = [];
+    let isPlaying = false;
+    let lastAlertTime = 0;
+    const ALERT_TIMEOUT_MS = 5000;
+    const NEXT_SOUND_DELAY_MS = 1000;
+    function playNextSound() {
+        if (audioQueue.length === 0) {
+            isPlaying = false;
+            return;
+        }
+        isPlaying = true;
+        const sound = audioQueue.shift();
+        const audio = new Audio("/static/audio/" + sound);
+        audio.preload = "auto";
+        audio.onended = function () {
+            setTimeout(playNextSound, NEXT_SOUND_DELAY_MS);
+        };
+        audio.play().catch(function (error) {
+            console.warn("Audio blocked:", error);
+            setTimeout(playNextSound, NEXT_SOUND_DELAY_MS);
+        });
+    }
+
+    function play_sound(sound) {
+        // Throttle alert.mp3
+        if (sound === "alert.mp3") {
+            const now = Date.now();
+            if (now - lastAlertTime < ALERT_TIMEOUT_MS) {
+                return;
+            }
+            lastAlertTime = now;
+        }
+        audioQueue.push(sound);
+        if (!isPlaying) {
+            playNextSound();
+        }
+    }
+
+    global_socket.on("play_sound", function (message) {
+        let sound = message.sound;
+        play_sound(sound);
     });
 
     $('#loginBtn').on('click', async function() {
@@ -88,7 +132,7 @@ $(document).ready(function () {
         }
     }
 
-    base_socket.on("session_started", function(data) {
+    global_socket.on("session_started", function(data) {
         // get session-active-banner and update its content
         const banner = document.getElementById('session-active-banner');
         if (banner) {
@@ -112,7 +156,7 @@ $(document).ready(function () {
         document.getElementById('session-available-banner').classList.remove('d-flex');
     });
 
-    base_socket.on("session_ended", function() {
+    global_socket.on("session_ended", function() {
         // Show the active session banner
         document.getElementById('session-available-banner').classList.remove('d-none');
         document.getElementById('session-available-banner').classList.add('d-flex');
@@ -126,7 +170,7 @@ $(document).ready(function () {
         $('#endSessionModal').modal('hide');
     });
 
-    base_socket.on("print_finished", function(data) {
+    global_socket.on("print_finished", function(data) {
         const id = data.id;
         showEndPrintModal(id);
     });
@@ -461,5 +505,20 @@ $(document).ready(function () {
             chevron.css('transform', 'rotate(90deg)');
         });
 
+    });
+
+    function show_bootstrap_alert(text, category) {
+        let flash_msg = `
+       <div class="alert alert-${category}">
+         <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
+        <pre>${text}</pre>
+       </div>
+        `;
+        $("#flash-alerts").prepend(flash_msg);
+    };
+
+    global_socket.on("bootstrap alert", function (message) {
+        console.log(`Received bootstrap alert: ${message.text} (category: ${message.category})`);
+        show_bootstrap_alert(message.text, message.category);
     });
 });

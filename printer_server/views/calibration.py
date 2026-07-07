@@ -14,7 +14,7 @@ from markdown2 import markdown
 from printer_server.extensions import socketio
 from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
-import printer_server.views.home
+import printer_server.views.home as home
 from printer_server.hardware_configuration.hardware_configuration import config_dict
 from printer_server.models import PrintQueue, Session, Calibration
 from printer_server.print_file_validator import validate_schema, validate_printer_compatibility
@@ -200,7 +200,7 @@ def create_calibration_data():
 @blueprint.route("/calibration")
 @require_permissions(permission="calibration", require_session=True)
 def index():
-    initialized = printer_server.views.home.print_control.state != "uninitialized"
+    initialized = home.print_control.state != "uninitialized"
 
     return render_template(
         "calibration.html",
@@ -515,9 +515,9 @@ def calibration_prints_details(message):
             "calibration_prints_details_done", details, namespace="/calibration"
         )
     except (ValueError, FileNotFoundError, json.JSONDecodeError) as ex:
+        home.send_bootstrap_alert(f"Error retrieving calibration print details: {ex}", level="warning")
         socketio.emit(
-            "calibration_prints_flash",
-            {"category": "warning", "text": str(ex)},
+            "calibration_prints_add_done",
             namespace="/calibration",
         )
 
@@ -590,16 +590,16 @@ def calibration_prints_add_to_queue(message):
             },
             namespace="/printing",
         )
+        home.send_bootstrap_alert(f"Calibration print {display_name} added to queue.", level="success")
         socketio.emit(
             "calibration_prints_add_done",
-            {"text": f"{display_name} added to queue."},
             namespace="/calibration",
         )
     except (ValueError, FileNotFoundError, json.JSONDecodeError) as ex:
         if "zip_path" in locals() and Path(zip_path).exists():
             Path(zip_path).unlink(missing_ok=True)
+        home.send_bootstrap_alert(f"Error adding calibration print to queue: {ex}", level="warning")
         socketio.emit(
-            "calibration_prints_flash",
-            {"category": "warning", "text": str(ex)},
+            "calibration_prints_add_done",
             namespace="/calibration",
         )

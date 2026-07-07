@@ -1,9 +1,10 @@
 import logging
 from datetime import datetime, timedelta
-from flask import request, flash
+from flask import request
 
 from printer_server.models import User
 from printer_server.extensions import  db
+import printer_server.views.home as home
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -52,12 +53,12 @@ def generate_datetime_lambda(db_column):
             try:
                 filters.append(db_column >= start_date)
             except ValueError:
-                flash("Bad start date", category="danger")
+                home.send_bootstrap_alert("Bad start date", level="danger")
         if end_date is not None:
             try:
                 filters.append(db_column <= end_date + timedelta(days=1))
             except ValueError:
-                flash("Bad end date", category="danger")
+                home.send_bootstrap_alert("Bad end date", level="danger")
         return filters
     return date_lambda
 

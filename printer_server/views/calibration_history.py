@@ -3,7 +3,7 @@ import shutil
 import logging
 from flask_socketio import emit
 from datetime import datetime, timedelta
-from flask import Blueprint, request, render_template, jsonify, flash, send_file
+from flask import Blueprint, request, render_template, jsonify, send_file
 
 
 from printer_server.settings import Config

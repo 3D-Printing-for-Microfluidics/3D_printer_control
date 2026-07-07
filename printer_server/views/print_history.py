@@ -2,7 +2,7 @@ import os
 import shutil
 import logging
 from datetime import datetime, timedelta
-from flask import Blueprint, request, render_template, flash, send_file, jsonify
+from flask import Blueprint, request, render_template, send_file, jsonify
 
 
 from printer_server.settings import Config
@@ -11,8 +11,8 @@ from printer_server.views.table import *
 from printer_server.models import PrintRecord, PrintQueue, Session, User
 from printer_server.hardware_configuration.hardware_configuration import config_dict
 from printer_server.print_file_validator import validate_schema, validate_printer_compatibility
-from printer_server.views.users import get_auth_context
-from printer_server.views.users import require_permissions
+from printer_server.views.users import get_auth_context, require_permissions
+import printer_server.views.home as home
 
 blueprint = Blueprint(
     "print_history", __name__, url_prefix="/", static_folder="../static"
@@ -252,9 +252,7 @@ def add_to_queue(job_id):
         )
     except ValueError as ex:
         msg = f"Job validation failed for {job.original_filename}:\n {str(ex).strip()}"
-        socketio.emit(
-            "flash", {"text": msg, "category": "warning"}, namespace="/print_history"
-        )
+        home.send_bootstrap_alert(msg, level="warning")
         log.info(msg)
         os.remove(new_filename)
     return '', 204

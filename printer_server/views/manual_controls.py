@@ -10,7 +10,7 @@ from flask import request, Blueprint, render_template
 
 from printer_server.extensions import socketio
 from printer_server.settings import Config
-import printer_server.views.home
+import printer_server.views.home as home
 from printer_server.threading_wrapper import Thread
 from printer_server.hardware_configuration.hardware_configuration import config_dict
 from printer_server.views.users import require_permissions, socket_require_permissions
@@ -176,7 +176,7 @@ blueprint = Blueprint(
 @blueprint.route("/manual")
 @require_permissions(permission="advanced", require_session=False)
 def index():
-    initialized = printer_server.views.home.print_control.state != "uninitialized"
+    initialized = home.print_control.state != "uninitialized"
 
     # Create list/dicts for Jinja2 loading
     if "coord_systems" in config_dict:
@@ -218,7 +218,7 @@ def connect():
     else:
         connected_clients += 1
 
-    if printer_server.views.home.print_control.state != "uninitialized":
+    if home.print_control.state != "uninitialized":
         for f in on_load_f_init:
             f()
         if loop_thread is None:
