@@ -80,7 +80,9 @@ def generate_print_table_column_definition():
     # upload_ip = Column(db.String(30))
     # start_ip = Column(db.String(30))
 
-    user = get_auth_context().get("user", None)
+    ctx = get_auth_context()
+    user = ctx.get("user", None)
+    is_in_session = ctx.get("is_in_session", False)
 
     columns = [
         Column(key="col-name", name="Name", value=lambda r: r.original_filename, type="link", href="/print_history/download/<id>", filterable="Yes", visible=True, db_col=PrintRecord.original_filename, db_filter=generate_string_lambda(PrintRecord.original_filename)),
@@ -100,7 +102,7 @@ def generate_print_table_column_definition():
         Column(key="col-failure-mode", name="Failure Mode", value=lambda r: PrintRecord.FailureModeEnum(r.failure_mode).value if r.failure_mode is not None else "", db_col=PrintRecord.failure_mode, db_filter=generate_string_lambda(PrintRecord.failure_mode)),
         Column(key="col-failure-other", name="Other Failure Mode", value=lambda r: r.other_failure_mode, db_col=PrintRecord.other_failure_mode, db_filter=generate_string_lambda(PrintRecord.other_failure_mode)),
         Column(key="col-notes", name="Notes", value=lambda r: r.notes, db_col=PrintRecord.notes, db_filter=generate_string_lambda(PrintRecord.notes)),
-        Column(key="col-reprint", name="Reprint", type="button", href="/print_history/reprint/<id>", button_style="btn-outline-info", button_name="Reprint", button_class="reprint-btn", sortable=False, filterable="No", visible=True),
+        Column(key="col-reprint", name="Reprint", type="button", href="/print_history/reprint/<id>", href_enabled=is_in_session, button_style="btn-outline-info", button_name="Reprint", button_class="reprint-btn", sortable=False, filterable="No", visible=True),
         Column(key="col-log", name="Logs", type="button", button_style=(lambda r: "btn btn-outline-warning" if r.logged == False and r.session.active else "btn btn-outline-success"), button_name=(lambda r: "Finish" if r.logged == False and r.session.active else "Edit"), button_class="print-log-btn", sortable=False, filterable="No", visible=True, href_enabled=lambda r: r.user is not None and r.user == user)
     ]
 
