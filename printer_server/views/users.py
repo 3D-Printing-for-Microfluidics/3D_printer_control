@@ -275,13 +275,17 @@ def session_summary():
 def register_user_get():
     edit = request.args.get("edit", "false").lower() == "true"
     edit_user_id = request.args.get("user_id", None)
+    edit_user_id = int(edit_user_id) if edit_user_id is not None else None
+    log.info("Register user GET request: edit=%s, edit_user_id=%s", edit, edit_user_id)
 
     ctx = get_auth_context()
     ctx_user = ctx.get("user", None)
     ctx_admin = ctx.get("permissions", {}).get("admin", False)
+    log.info(ctx)
 
     form = RegisterForm()
     if edit and (ctx_user.id == edit_user_id or ctx_admin):
+        log.info("Editing user with ID: %s", edit_user_id)
         user = User.query.get(edit_user_id)
         form.edit.data = "true"
         form.edit_user_id.data = str(user.id)
@@ -306,6 +310,7 @@ def register_user_post():
 
     edit = register_form.edit.data.lower() == "true"
     edit_user_id = register_form.edit_user_id.data if edit else None
+    edit_user_id = int(edit_user_id) if edit_user_id is not None else None
 
     ctx = get_auth_context()
     ctx_user = ctx.get("user", None)
@@ -465,6 +470,7 @@ def reset_code_post():
 )
 def reset_password_get():
     user_id = request.args.get("id")
+    user_id = int(user_id) if user_id is not None else None
     username = request.args.get("username")
     token = request.args.get("token")
 
@@ -559,7 +565,7 @@ def delete_user_get():
     ctx_authenticated = ctx.get("authenticated", False)
     ctx_admin = ctx.get("permissions", {}).get("admin", False)
 
-    if ctx_user and ctx_user.username == username:
+    if ctx_user and ctx_user.username == user.username:
         log.info("%s requested to delete their own account, generating reset token", ctx_user.full_name)
         user.generate_token(need_otc=False)
         token = user.token
@@ -620,6 +626,7 @@ def delete_user_post():
 @require_permissions(require_session=False)
 def change_permission_get():
     user_id = request.args.get("id")
+    user_id = int(user_id) if user_id is not None else None
     token = None
 
     user = User.query.get(user_id)

@@ -185,10 +185,6 @@ function loadTable(table_key){
         document.getElementById(container_id).innerHTML = '';
     };
 
-    $('.table-a').on('click', function (e) {
-        e.stopPropagation();
-    });
-
     $('.' + table_key + '-row').on('click', async function (e) {
         // check that a button/checkbox was not clicked
         if ($(e.target).is('button') || $(e.target).is('input[type="checkbox"]')) {
