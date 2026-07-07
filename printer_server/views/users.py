@@ -52,7 +52,7 @@ def get_auth_context():
     session_user = Session.get_session_user()
     if session_user:
         return {
-            "authenticated": True,
+            "authenticated": False,
             "user": session_user,
             "is_in_session": True,
             "permissions": {
@@ -63,7 +63,7 @@ def get_auth_context():
             },
         }
     return {
-        "authenticated": True,
+        "authenticated": False,
         "user": None,
         "is_in_session": False,
         "permissions": {
@@ -79,9 +79,7 @@ def require_permissions(permission=None, require_session=False):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             ctx = get_auth_context()
-            if not ctx.get("authenticated", False):
-                if Config.OPEN_ACCESS:
-                    abort(401)
+            if not Config.OPEN_ACCESS and not ctx.get("authenticated", False):
                 return redirect(url_for("users.do_login"))
             if require_session and not ctx.get("is_in_session", False):
                 abort(401)
@@ -96,7 +94,7 @@ def socket_require_permissions(permission=None, require_session=False):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             ctx = get_auth_context()
-            if not ctx.get("authenticated", False):
+            if not Config.OPEN_ACCESS and not ctx.get("authenticated", False):
                 disconnect()
                 return
             if require_session and not ctx.get("is_in_session", False):
@@ -155,6 +153,7 @@ def generate_user_table_column_definition():
     ctx = get_auth_context()
     user = ctx.get("user", None)
     user_id = user.id if user else None
+    is_auth = ctx.get("authenticated", False)
     is_admin = user.admin_permissions if user else False
 
     columns = [
@@ -164,12 +163,12 @@ def generate_user_table_column_definition():
         Column(key="col-first-name", name="First Name", value=lambda r: r.first_name, db_col=User.first_name, db_filter=generate_string_lambda(User.first_name)),
         Column(key="col-last-name", name="Last Name", value=lambda r: r.last_name, db_col=User.last_name, db_filter=generate_string_lambda(User.last_name)),
         Column(key="col-full-name", name="Full Name", value=lambda r: r.full_name, filterable="Yes", visible=True, db_col=User.full_name, db_filter=generate_string_lambda(User.full_name)),
-        Column(key="col-print-permissions", name="Print Permissions", value=lambda r: r.print_permissions, type="checkbox", href_enabled=is_admin, button_class="permission-btn", visible=True, db_col=User.print_permissions, db_filter=generate_boolean_lambda(User.print_permissions), vertical_header=True),
-        Column(key="col-calibration-permissions", name="Calibration Permissions", value=lambda r: r.calibration_permissions, type="checkbox", href_enabled=is_admin, button_class="permission-btn", visible=True, db_col=User.calibration_permissions, db_filter=generate_boolean_lambda(User.calibration_permissions), vertical_header=True),
-        Column(key="col-advanced-permissions", name="Advanced Permissions", value=lambda r: r.advanced_permissions, type="checkbox", href_enabled=is_admin, button_class="permission-btn", visible=True, db_col=User.advanced_permissions, db_filter=generate_boolean_lambda(User.advanced_permissions), vertical_header=True),
-        Column(key="col-admin-permissions", name="Admin Permissions", value=lambda r: r.admin_permissions, type="checkbox", href_enabled=lambda r: is_admin and r.username not in ["admin", "default"], button_class="permission-btn", visible=True, db_col=User.admin_permissions, db_filter=generate_boolean_lambda(User.admin_permissions), vertical_header=True),
-        Column(key="col-reset", name="Edit User", type="button", href_enabled=lambda r: (r.id == user_id or is_admin) and r.username not in ["admin", "default"], button_style="btn-outline-warning", button_name="Edit", button_class="reset-btn", sortable=False, filterable="No", visible=True),
-        Column(key="col-delete", name="Delete User", type="button", href_enabled=lambda r: (r.id == user_id or is_admin) and r.username not in ["admin", "default"], button_style="btn-outline-danger", button_name="Delete", button_class="delete-btn", sortable=False, filterable="No", visible=True)
+        Column(key="col-print-permissions", name="Print Permissions", value=lambda r: r.print_permissions, type="checkbox", href_enabled=is_auth and is_admin, button_class="permission-btn", visible=True, db_col=User.print_permissions, db_filter=generate_boolean_lambda(User.print_permissions), vertical_header=True),
+        Column(key="col-calibration-permissions", name="Calibration Permissions", value=lambda r: r.calibration_permissions, type="checkbox", href_enabled=is_auth and is_admin, button_class="permission-btn", visible=True, db_col=User.calibration_permissions, db_filter=generate_boolean_lambda(User.calibration_permissions), vertical_header=True),
+        Column(key="col-advanced-permissions", name="Advanced Permissions", value=lambda r: r.advanced_permissions, type="checkbox", href_enabled=is_auth and is_admin, button_class="permission-btn", visible=True, db_col=User.advanced_permissions, db_filter=generate_boolean_lambda(User.advanced_permissions), vertical_header=True),
+        Column(key="col-admin-permissions", name="Admin Permissions", value=lambda r: r.admin_permissions, type="checkbox", href_enabled=lambda r: is_auth and is_admin and r.username not in ["admin", "default"], button_class="permission-btn", visible=True, db_col=User.admin_permissions, db_filter=generate_boolean_lambda(User.admin_permissions), vertical_header=True),
+        Column(key="col-reset", name="Edit User", type="button", href_enabled=lambda r: is_auth and (r.id == user_id or is_admin) and r.username not in ["admin", "default"], button_style="btn-outline-warning", button_name="Edit", button_class="reset-btn", sortable=False, filterable="No", visible=True),
+        Column(key="col-delete", name="Delete User", type="button", href_enabled=lambda r: is_auth and (r.id == user_id or is_admin) and r.username not in ["admin", "default"], button_style="btn-outline-danger", button_name="Delete", button_class="delete-btn", sortable=False, filterable="No", visible=True)
     ]
 
     def get_sort_col(column_key):
@@ -276,19 +275,40 @@ def register_user_get():
     edit = request.args.get("edit", "false").lower() == "true"
     edit_user_id = request.args.get("user_id", None)
     edit_user_id = int(edit_user_id) if edit_user_id is not None else None
-    log.info("Register user GET request: edit=%s, edit_user_id=%s", edit, edit_user_id)
-
+    
     ctx = get_auth_context()
     ctx_user = ctx.get("user", None)
+    ctx_authenticated = ctx.get("authenticated", False)
     ctx_admin = ctx.get("permissions", {}).get("admin", False)
-    log.info(ctx)
 
     form = RegisterForm()
     if edit and (ctx_user.id == edit_user_id or ctx_admin):
-        log.info("Editing user with ID: %s", edit_user_id)
         user = User.query.get(edit_user_id)
+
+        if not user:
+            msg = "Invalid user ID: %s" % edit_user_id
+            log.warning(msg)
+            return jsonify({"success": False, "errors": {"username": [msg]}})
+
+        token = None
+        if ctx_authenticated and ctx_user.username == user.username:
+            user.generate_token(need_otc=False)
+            token = user.token
+
+        # If current user has admin permission generate token
+        if ctx_authenticated and ctx_admin:
+            user.generate_token(need_otc=False)
+            token = user.token
+
+        if not token:
+            msg = "Insufficient permissions to edit user"
+            log.warning(msg)
+            return jsonify({"success": False, "errors": {"token": [msg]}})
+
+
         form.edit.data = "true"
         form.edit_user_id.data = str(user.id)
+        form.token.data = token
         form.first_name.data = user.first_name
         form.last_name.data = user.last_name
         form.email.data = user.email
@@ -330,6 +350,7 @@ def register_user_post():
     
     if edit:
         user = User.query.get(edit_user_id)
+        user.clear_token()
         user.first_name = register_form.first_name.data
         user.last_name = register_form.last_name.data
         user.email = register_form.email.data
@@ -495,7 +516,7 @@ def reset_password_get():
     ctx_authenticated = ctx.get("authenticated", False)
     ctx_admin = ctx.get("permissions", {}).get("admin", False)
 
-    if ctx_user and ctx_user.username == username:
+    if ctx_authenticated and ctx_user.username == username:
         user.generate_token(need_otc=False)
         token = user.token
 
@@ -565,7 +586,7 @@ def delete_user_get():
     ctx_authenticated = ctx.get("authenticated", False)
     ctx_admin = ctx.get("permissions", {}).get("admin", False)
 
-    if ctx_user and ctx_user.username == user.username:
+    if ctx_authenticated and ctx_user.username == user.username:
         log.info("%s requested to delete their own account, generating reset token", ctx_user.full_name)
         user.generate_token(need_otc=False)
         token = user.token

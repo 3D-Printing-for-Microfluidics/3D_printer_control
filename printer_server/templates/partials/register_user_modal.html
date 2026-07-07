@@ -22,6 +22,13 @@
                 <!-- hidden edit field -->
                 {{ register_form.edit }}
                 {{ register_form.edit_user_id }}
+                {{ register_form.token }}
+
+                {% for error in register_form.token.errors %}
+                <div class="text-danger small">
+                    {{ error }}
+                </div>
+                {% endfor %}
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         {{ register_form.first_name.label }}

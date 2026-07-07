@@ -18,6 +18,7 @@ class RegisterForm(FlaskForm):
 
     edit = HiddenField("Edit")
     edit_user_id = HiddenField("Edit User ID")
+    token = HiddenField("Token")
     first_name = StringField("First Name", validators=[DataRequired()])
     last_name = StringField("Last Name", validators=[DataRequired()])
     email = StringField(
@@ -42,13 +43,20 @@ class RegisterForm(FlaskForm):
         initial_validation = super(RegisterForm, self).validate()
 
         edit_user_id = self.edit_user_id.data if self.edit.data == "true" else None
+        edit_user = User.query.filter_by(id=edit_user_id).first() if edit_user_id else None
 
         if not initial_validation:
             return False
+
+        if edit_user_id and not edit_user.verify_token(self.token.data, None):
+            self.token.errors.append("Invalid token")
+            return False
+
         user = User.query.filter_by(username=self.username.data).first()
         if user and user.id != int(edit_user_id):
             self.username.errors.append("Username already registered")
             return False
+
         user = User.query.filter_by(email=self.email.data).first()
         if user and user.id != int(edit_user_id):
             self.email.errors.append("Email already registered")
