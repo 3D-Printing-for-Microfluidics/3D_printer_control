@@ -39,7 +39,7 @@ $(document).ready(function () {
             });
         });
 
-        document.on("click", ".user-table-permission-btn", async function () {
+        $(document).on("click", ".user-table-permission-btn", async function () {
             const user_id = $(this).closest("tr").data("id");
             const $btn = $(this)
             $.get(`/users/change_permission?id=${user_id}`, function(response) {
