@@ -15,6 +15,7 @@ class TipTilt_dummy:
         self.connected = False
         self.r = re.compile(r"\d*\.?\d*$")
         self.initialized = None
+        self.config_dict = config_dict
 
     @dummy_log
     def connect(self):
