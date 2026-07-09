@@ -6,8 +6,8 @@
         "v5"
     ],
     "calibration_prints": [
-        "Focus Sweep Print",
-        "Uniform Focus Print"
+        "Visitech and Wintech Calibration Print",
+        "Visitech and Wintech Alignment Print"
     ],
     "external_control": {},
     "coord_systems": {
