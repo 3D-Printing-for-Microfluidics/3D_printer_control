@@ -233,7 +233,7 @@ def idle_monitor(session_timeout_minutes=60, check_interval_seconds=60):
             idle = time.monotonic() - last_activity
 
         # session timeout
-        if idle > timedelta(minutes=session_timeout_minutes):
+        if idle > session_timeout_minutes * 60:
             with app.app_context():
                 session = Session.get_active_session()
                 if session:
