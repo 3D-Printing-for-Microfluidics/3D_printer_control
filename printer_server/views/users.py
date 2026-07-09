@@ -834,26 +834,26 @@ def end_session_get(session_id):
         end_session_form=end_session_form
     )
 
+def generate_timeout_email_msg():
+    return {
+        "head": "Printer Session Ended (Logs Required)",
+        "body": f"""
+            <html>
+                <body>
+                    <p>Your session has been ended on the <b>{Config.HOSTNAME}</b> printer at <b>{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</b>, but the required print logs have not yet been completed.</p>
 
-timeout_email_msg = {
-    "head": "Printer Session Ended (Logs Required)",
-    "body": f"""
-        <html>
-            <body>
-                <p>Your session has been ended on the <b>{Config.HOSTNAME}</b> printer at <b>{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</b>, but the required print logs have not yet been completed.</p>
+                    <p>Please complete the logs as soon as possible.</p>
 
-                <p>Please complete the logs as soon as possible.</p>
+                    <ul>
+                    <li>Access them via <b>{Config.HOSTNAME} → </b> Print History → Sessions</li>
+                    <li>You cannot start a new session until logs are complete</li>
+                    </ul>
 
-                <ul>
-                <li>Access them via <b>{Config.HOSTNAME} → </b> Print History → Sessions</li>
-                <li>You cannot start a new session until logs are complete</li>
-                </ul>
-
-                <p>Thank you.</p>
-            </body>
-        </html>
-    """
-}
+                    <p>Thank you.</p>
+                </body>
+            </html>
+        """
+    }
 
 @blueprint.route(
     "/users/end_session_timeout/<session_id>",
@@ -863,11 +863,12 @@ def end_session_timeout(session_id):
     session = Session.query.get(session_id)
 
     # Send an email to the user
+    msg = generate_timeout_email_msg()
     from printer_server.app import send_email
     send_email(
         recipient=session.user.email,
-        subject=timeout_email_msg["head"],
-        body_html=timeout_email_msg["body"]
+        subject=msg["head"],
+        body_html=msg["body"]
     )
 
     # Update print information
@@ -929,11 +930,12 @@ def end_session_post(session_id):
 
     if later:
         # Send an email to the user
+        msg = generate_timeout_email_msg()
         from printer_server.app import send_email
         send_email(
             recipient=session.user.email,
-            subject=timeout_email_msg["head"],
-            body_html=timeout_email_msg["body"]
+            subject=msg["head"],
+            body_html=msg["body"]
         )
     else:
         if not end_session_form.validate():

@@ -2,6 +2,7 @@
 import os
 import smtplib
 import logging
+import time
 from datetime import datetime, timedelta
 from threading import Lock
 from email.message import EmailMessage
@@ -191,13 +192,13 @@ def create_app(config_object=ProdConfig):
 ########### monitor activity for session timeout ###########
 
 session_active_on_boot = None
-last_activity = datetime.now()
+last_activity = time.monotonic()
 activity_lock = Lock()
 
 def update_activity():
     global last_activity
     with activity_lock:
-        last_activity = datetime.now()
+        last_activity = time.monotonic()
 
 # Override socketio.on_event and socketio.emit to update last_activity on any event or emit
 def install_on_event_hook(socketio):
@@ -229,7 +230,7 @@ def idle_monitor(session_timeout_minutes=60, check_interval_seconds=60):
         socketio.sleep(check_interval_seconds)
 
         with activity_lock:
-            idle = datetime.now() - last_activity
+            idle = time.monotonic() - last_activity
 
         # session timeout
         if idle > timedelta(minutes=session_timeout_minutes):
