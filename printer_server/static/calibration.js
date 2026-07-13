@@ -338,10 +338,10 @@ function updateAlignmentCalculator(container) {
     //---------------------------------------------------
 
     const alignX =
-        (negx_x + origin_x + posx_x + negy_x + posy_x) / 5;
+        -(negx_x + origin_x + posx_x + negy_x + posy_x) / 5;
 
     const alignY =
-        (negx_y + origin_y + posx_y + negy_y + posy_y) / 5;
+        -(negx_y + origin_y + posx_y + negy_y + posy_y) / 5;
 
     //---------------------------------------------------
     // Stitching
