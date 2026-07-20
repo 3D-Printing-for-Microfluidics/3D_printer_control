@@ -1,11 +1,27 @@
 {% extends "base.html" %}
 
-{% block title %}Internal Server Error{% endblock %}
+{% block title %}{{ hostname }} - Error 500{% endblock %}
 
 {% block printer3d_state %}
-<h2>Internal Server Error</h2>
+<h2 style="display: inline">{{ hostname }} - </h2>
+<h2 style="display: inline">Error 500</h2>
 {% endblock %}
 
 {% block page_content %}
-{{ msg }}
+<div class="modal-dialog modal-dialog-centered"
+        role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Error 500</h5>
+        </div>
+        <div class="modal-body">
+            <p>
+                - An internal server error has occurred. Please check the server logs for more information or contact your system administrator if you believe this is an error.
+            </p>
+            <p class="text-muted">
+                - {{ msg }}
+            </p>
+        </div>
+    </div>
+</div>
 {% endblock %}

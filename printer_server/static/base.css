@@ -15,6 +15,20 @@
   margin-left: -0.5rem;
 }
 
+.navbar-toggler {
+    padding: 0.2rem 0.4rem;
+    border: none;
+}
+
+.navbar-toggler:focus {
+    box-shadow: none;
+}
+
+.navbar-toggler-icon {
+    width: 1.1em;
+    height: 1.1em;
+}
+
 .identicon {
   margin-left: 2.1rem;
   margin-right: 2rem;
@@ -47,4 +61,15 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
   border-radius: 3px;
+}
+
+.chevron {
+    transition: transform 0.2s ease;
+    font-size: 18px;
+    user-select: none;
+}
+
+/* collapsed state */
+.card-header.collapsed .chevron {
+    transform: rotate(90deg);
 }

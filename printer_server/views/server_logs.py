@@ -4,6 +4,7 @@ import pstats
 import logging
 from pathlib import Path, PurePath
 from flask import Blueprint, render_template, send_file
+from printer_server.views.users import require_permissions
 
 from printer_server.settings import Config
 
@@ -24,12 +25,13 @@ def sizeof_fmt(num):
 
 
 @blueprint.route("/server_logs")
+@require_permissions(require_session=False)
 def index():
     # Create combined profile
     profile_enabled = Config.PROFILE_CODE
     if profile_enabled:
         profiles_dir = Path(Config.PROFILES_FOLDER)
-        profile_file = str(Path(Config.PROJECT_ROOT) / "logs" / "profile.txt")
+        profile_file = str(Path(Config.PROJECT_ROOT) / "logs" / "profile.prof")
         if profiles_dir.is_dir():
             combined_profile = pstats.Stats()
             for tempfile in profiles_dir.iterdir():
@@ -37,9 +39,7 @@ def index():
                     combined_profile.add(str(tempfile))
             combined_profile.dump_stats(profile_file)
 
-    txt_logs = [
-        logs_folder / f for f in os.listdir(logs_folder) if f.lower().endswith(".txt")
-    ]
+    txt_logs = ([profile_file] if profile_enabled else []) + [logs_folder / f for f in os.listdir(logs_folder) if f.lower().endswith(".txt")]
     txt_logs.sort(key=os.path.getmtime)
     files = []
     for i in sorted(txt_logs, reverse=True):
@@ -59,6 +59,7 @@ def index():
 
 
 @blueprint.route("/server_logs/<path:file_name>")
+@require_permissions(require_session=False)
 def display(file_name):
     """Display the file in the browser."""
     with open(logs_folder / file_name, "r") as f:
@@ -67,6 +68,7 @@ def display(file_name):
 
 
 @blueprint.route("/server_logs/download/<path:file_name>")
+@require_permissions(require_session=False)
 def download(file_name):
     """Download the file."""
     log.info("Downloading %s...", logs_folder / file_name)

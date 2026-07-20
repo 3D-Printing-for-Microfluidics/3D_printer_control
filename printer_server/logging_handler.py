@@ -7,7 +7,7 @@ from flask.logging import default_handler
 
 
 from printer_server.extensions import socketio
-from printer_server.models import ServerLog
+# from printer_server.models import ServerLog
 from printer_server.settings import Config
 
 host = Config.HOSTNAME
@@ -47,28 +47,29 @@ def log_namer(default_filename):
     return f"{parts[0]}.{parts[2]}.{parts[1]}"
 
 
-class SQLAlchemyHandler(logging.Handler):
-    """A logging handler that can create logs in the database."""
+## DEPRECATED DUE TO EXCESSIVE DB SIZE ##
+# class SQLAlchemyHandler(logging.Handler):
+#     """A logging handler that can create logs in the database."""
 
-    def __init__(self, app):
-        super().__init__()
-        self.app = app
+#     def __init__(self, app):
+#         super().__init__()
+#         self.app = app
 
-    # A very basic logger that commits a log to the SQL Db
-    def emit(self, record):
-        trace = None
-        exc = record.__dict__["exc_info"]
-        if exc:
-            trace = traceback.format_exc()
+#     # A very basic logger that commits a log to the SQL Db
+#     def emit(self, record):
+#         trace = None
+#         exc = record.__dict__["exc_info"]
+#         if exc:
+#             trace = traceback.format_exc()
 
-        with self.app.app_context():
-            log = ServerLog(
-                logger=record.__dict__["name"],
-                level=record.__dict__["levelname"],
-                trace=trace,
-                msg=record.__dict__["msg"],
-            )
-            log.save()
+#         with self.app.app_context():
+#             log = ServerLog(
+#                 logger=record.__dict__["name"],
+#                 level=record.__dict__["levelname"],
+#                 trace=trace,
+#                 msg=record.__dict__["msg"],
+#             )
+#             log.save()
 
 
 class SocketIOHandler(logging.Handler):
@@ -111,16 +112,16 @@ class SocketIOHandler(logging.Handler):
                 socketio.emit(
                     "bootstrap alert",
                     {"text": msg, "category": "warning"},
-                    namespace=namespace,
+                    namespace="/global",
                 )
-                socketio.emit("play_sound", {"sound": "alert.mp3"}, namespace=namespace)
+                socketio.emit("play_sound", {"sound": "alert.mp3"}, namespace="/global")
             elif record.levelno > logging.WARNING:
                 socketio.emit(
                     "bootstrap alert",
                     {"text": msg, "category": "danger"},
-                    namespace=namespace,
+                    namespace="/global",
                 )
-                socketio.emit("play_sound", {"sound": "alert.mp3"}, namespace=namespace)
+                socketio.emit("play_sound", {"sound": "alert.mp3"}, namespace="/global")
         except AttributeError:
             pass
 

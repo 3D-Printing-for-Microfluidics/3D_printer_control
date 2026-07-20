@@ -104,7 +104,7 @@ def is_set(x, n):
 
 
 def parse_hardware_status(hw_status):
-    """Return human readable codes as parsed form the hardware status."""
+    """Return human readable codes as parsed from the hardware status."""
     hw_status = int(hw_status)
     msg = ""
     if not is_set(hw_status, 0):
@@ -126,7 +126,7 @@ def parse_hardware_status(hw_status):
 
 
 def parse_system_status(sys_status):
-    """Return human readable codes as parsed form the system status."""
+    """Return human readable codes as parsed from the system status."""
     sys_status = int(sys_status)
     msg = ""
     if not is_set(sys_status, 0):
@@ -135,7 +135,7 @@ def parse_system_status(sys_status):
 
 
 def parse_main_status(main_status):
-    """Return human readable codes as parsed form the main status."""
+    """Return human readable codes as parsed from the main status."""
     main_status = int(main_status)
     msg = ""
     if is_set(main_status, 0):

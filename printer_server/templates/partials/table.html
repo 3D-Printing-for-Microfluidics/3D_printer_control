@@ -1,0 +1,295 @@
+<div id="{{ table.key }}" data-current_page="{{ table.current_page }}" data-reload_route="{{ table.reload_route }}" data-sort_by="{{ table.sort_by }}" data-sort_dir="{{ table.sort_dir }}" data-has_filters="{{ table.has_filters|tojson }}" data-subtables='{{ table.subtables|tojson }}' data-columns='[{% for column in table.columns %}{"key": {{ column.key|tojson }},"type": {{ column.type|tojson }},"filterable": {{ column.filterable|tojson }},"sortable": {{ column.sortable|tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]'>
+    {% if table.has_filters %}
+    <container>
+        {% for column in table.columns %}{% if column.filterable == "Yes" %}
+        {% if column.type == "datetime" %}
+        <div class="row justify-content-center">
+            <label class="mr-2 table-label">Filter by {{ column.name }}</label>
+            <input class="table-input" type="date" name="{{table.key}}-{{ column.key }}-start" id="{{table.key}}-{{ column.key }}-filter-start" value="{{ column.filter_start }}"> 
+            <input class="table-input" type="date" name="{{table.key}}-{{ column.key }}-end" id="{{table.key}}-{{ column.key }}-filter-end" value="{{ column.filter_end }}">
+        </div>
+        {% endif %}
+        {% endif %}{% endfor %}
+        <div class="row justify-content-center">
+            <label class="mr-2 table-label">Search</label>
+            {% for column in table.columns %}{% if column.filterable == "Yes" %}
+            {% if column.type == "datetime" %}
+            {% elif column.type == "boolean" or column.type == "checkbox" %}
+            <div class="d-flex align-items-center mr-3 mb-2"></div>
+                <label class="mr-2 table-label">{{ column.name }}</label>
+                <select id="{{table.key}}-{{ column.key }}-filter" name="{{table.key}}-{{ column.key }}">
+                    <option value="all" {% if not column.filter or column.filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="yes" {% if column.filter and column.filter == 'yes' %}selected{% endif %}>Yes</option>
+                    <option value="no" {% if column.filter and column.filter == 'no' %}selected{% endif %}>No</option>
+                </select>
+            </div>
+            {% else %}
+            <input class="table-input" type="text" name="{{table.key}}-{{ column.key }}" id="{{table.key}}-{{ column.key }}-filter" {% if column.options %}list="{{table.key}}-{{ column.key }}-options"{% endif %} placeholder="{{ column.name }}" value="{{ column.filter | default('') }}">
+            {% endif %}
+            {% endif %}{% endfor %}
+            <button type="button" class="btn btn-outline-info ml-2" id="advanced_toggle">Advanced filters</button>
+        </div>
+
+        <div class="advanced-filters advanced-section">
+            <div class="row justify-content-center">
+                <span class="mr-2 section-label">Advanced search</span>
+            </div>
+            {% for column in table.columns %}{% if column.filterable == "Hidden" %}
+            {% if column.type == "datetime" %}
+            <div class="row justify-content-center">
+                <label class="mr-2 table-label">Filter by {{ column.name }}</label>
+                <input class="table-input" type="date" name="{{table.key}}-{{ column.key }}-start" id="{{table.key}}-{{ column.key }}-filter-start" value="{{ column.filter_start }}">
+                <input class="table-input" type="date" name="{{table.key}}-{{ column.key }}-end" id="{{table.key}}-{{ column.key }}-filter-end" value="{{ column.filter_end }}">
+            </div>
+            {% endif %}
+            {% endif %}{% endfor %}
+            <div class="row justify-content-center advanced-search-inputs">
+                {% for column in table.columns %}{% if column.filterable == "Hidden" %}
+                {% if column.type == "datetime" %}
+                {% elif column.type == "boolean" or column.type == "checkbox" %}
+                <div class="d-flex align-items-center mr-3 mb-2">
+                    <label class="mr-2 table-label">{{ column.name }}</label>
+                    <select id="{{table.key}}-{{ column.key }}-filter" name="{{table.key}}-{{ column.key }}">
+                        <option value="all" {% if not column.filter or column.filter == 'all' %}selected{% endif %}>All</option>
+                        <option value="yes" {% if column.filter and column.filter == 'yes' %}selected{% endif %}>Yes</option>
+                        <option value="no" {% if column.filter and column.filter == 'no' %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+                {% else %}
+                <input class="table-input" type="text" name="{{table.key}}-{{ column.key }}" id="{{table.key}}-{{ column.key }}-filter" {% if column.options %}list="{{table.key}}-{{ column.key }}-options"{% endif %} placeholder="{{ column.name }}" value="{{ column.filter | default('') }}">
+                {% endif %}
+                {% endif %}{% endfor%}
+            </div>
+        </div>
+        {% for column in table.columns %}{% if column.options %}
+        <datalist id="{{table.key}}-{{ column.key }}-options">
+            {% for value in column.options %}
+            <option value="{{ value}}"></option>
+            {% endfor %}
+        </datalist>
+        {% endif %}{% endfor %}
+    </container>
+
+    <hr>
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">{{ table.name }}:</h5>
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary"
+                id="{{ table.key }}-toggles">
+            ⚙
+        </button>
+    </div>
+
+    <div class="{{ table.key }}-toggles" style="display: none;">
+        <div class="row justify-content-center">
+            <span class="mr-2 section-label">Columns</span>
+        </div>
+        <div class="row justify-content-center form-group columns-grid">
+            {% for column in table.columns %}
+            <div class="form-check text-center">
+                <input class="form-check-input {{ table.key }}-column-toggle table-input" type="checkbox" id="{{ table.key }}-{{ column.key }}-toggle" data-column="{{ table.key }}-{{ column.key }}" {% if column.visible %}checked{% endif %}>
+                <label class="form-check-label table-label" for="{{ table.key }}-{{ column.key }}-toggle">{{ column.name }}</label>
+            </div>
+            {% endfor %}
+        </div>
+
+        <hr>
+    </div>
+
+    {% if table.paginate %}{# Pagination #}{% endif %}
+
+    <table class="table table-sm table-bordered">
+        <thead>
+            <tr>
+                {% for column in table.columns %}
+                <th scope="col" class="{{ 'vertical-header ' if column.vertical_header else '' }}justify-center {{ table.key }}-{{ column.key }}">
+                    {% if column.sortable %}<a href="#" onclick="event.preventDefault()" id="{{ table.key }}-{{ column.key }}-sort">{% endif %}
+                        {{ column.name }}
+                        {% if column.sortable and table.sort_by == column.key %}{{ '▲' if table.sort_dir == 'asc' else '▼' }}{% endif %}
+                    {% if column.sortable %}</a>{% endif %}
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for rec in table.records.items %}
+            <tr class="data-row {{table.key}}-row" id="{{ table.key }}-row-{{ rec.id }}" data-id="{{ rec.id }}">
+                    {% for column in table.columns %}
+                    {% set value = "" %}
+                    {% if column.value is defined and column.value %}
+                        {% set value = column.value(rec) | default("") %}
+                    {% endif %}
+                    {% if column.href_enabled is sameas true %}
+                        {% set href_enabled = true %}
+                    {% elif column.href_enabled is callable %}
+                        {% set href_enabled = column.href_enabled(rec) %}
+                    {% else %}
+                        {% set href_enabled = false %}
+                    {% endif %}
+                    {% if column.type == 'link' %}
+                    <td class="align-middle{{ ' ' if loop.first else ' justify-center ' }}{{ table.key }}-{{ column.key }}">
+                        <a class="table-a" {% if href_enabled %}href="{{ column.href | replace('<id>', rec.id|string) }}"{% endif %} id="{{ table.key }}-{{ column.key }}-{{ rec.id }}">
+                            {{ value }}
+                        </a>
+                    </td>
+                    {% elif column.type == 'datetime' %}
+                    <td class="align-middle{{ ' ' if loop.first else ' justify-center ' }}{{ table.key }}-{{ column.key }}" id="{{ table.key }}-{{ column.key }}-{{ rec.id }}">
+                        {% if value %}{{ value.strftime("%Y-%m-%d %H:%M:%S") }}{% endif %}
+                    </td>
+                    {% elif column.type == 'duration' %}
+                    <td class="align-middle{{ ' ' if loop.first else ' justify-center ' }}{{ table.key }}-{{ column.key }}" id="{{ table.key }}-{{ column.key }}-{{ rec.id }}">
+                        {% if value %}{{ value | duration }}{% endif %}
+                    </td>
+                    {% elif column.type == 'boolean' %}
+                    <td class="align-middle{{ ' ' if loop.first else ' justify-center ' }}{{ table.key }}-{{ column.key }}" id="{{ table.key }}-{{ column.key }}-{{ rec.id }}">
+                        {{ 'Yes' if value else 'No' }}
+                    </td>
+                    {% elif column.type == 'checkbox' %}
+                    <td class="align-middle{{ ' ' if loop.first else ' justify-center ' }}{{ table.key }}-{{ column.key }}">
+                        {% if href_enabled %}<a class="table-a {{ table.key }}-{{ column.button_class }}" href="{{ column.href | replace('<id>', rec.id|string) }}">{% endif %}
+                            {% if not href_enabled %}
+                                {% if value %}🗹{% else %}☐{% endif %}
+                            {% else %}
+                            <input type="checkbox" {% if value %}checked{% endif %}>
+                            {% endif %}
+                        {% if href_enabled and column.href %}</a>{% endif %}
+                    </td>
+                    {% elif column.type == 'button' %}
+                    <td class="align-middle{{ ' ' if loop.first else ' justify-center ' }}{{ table.key }}-{{ column.key }}">
+                        {% if href_enabled %}
+                        {% if href_enabled and column.href %}<a class="table-a" href="{{ column.href | replace('<id>', rec.id|string) }}">{% endif %}
+                            <!-- check if button_style is callable -->
+                            {% if column.button_style is callable %}
+                                {% set button_style = column.button_style(rec) %}
+                            {% else %}
+                                {% set button_style = column.button_style %}
+                            {% endif %}
+                            <button type="button" class="btn {{ button_style }} btn-sm {{ table.key }}-{{ column.button_class }}">
+                                <!-- check if button name is lambda -->
+                                {% if column.button_name is callable %}
+                                    {{ column.button_name(rec) }}
+                                {% else %}
+                                    {{ column.button_name }}
+                                {% endif %}
+                            </button>
+                        {% if href_enabled and column.href %}</a>{% endif %}
+                        {% endif %}
+                    </td> 
+                    {% elif column.type == 'expand' %}
+                    {% else %}
+                    <td class="align-middle{{ ' ' if loop.first else ' justify-center ' }}{{ table.key }}-{{ column.key }}">
+                        {{ value }}
+                    </td>
+                    {% endif %}
+                    {% endfor %}
+            </tr>
+            
+            <tr class="details-row collapse" id="details-{{ rec.id }}">
+                <td colspan="{{ table.columns|length }}">
+                    <!-- <div class="card shadow-sm m-2"> -->
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                {% for column in table.columns %}
+                                {% set value = column.value(rec) | default("", true) if column.value else "" %}
+                                {% if column.type != 'button' %}
+                                <dt class="col-sm-3">
+                                    {{ column.name }}
+                                </dt>
+
+                                <dd class="col-sm-9">
+                                    {% if column.type == 'datetime' %}
+                                        {% if value %}{{ value.strftime("%Y-%m-%d %H:%M:%S") }}{% endif %}
+                                    {% elif column.type == 'duration' %}
+                                        {% if value %}{{ value | duration }}{% endif %}
+                                    {% elif column.type == 'boolean' or column.type == 'checkbox' %}
+                                        {{ 'Yes' if value else 'No' }}
+                                    {% else %}
+                                        {{ value if value != "" else "N/A" }}
+                                    {% endif %}
+                                </dd>
+                                {% endif %}
+                                {% endfor %}
+                            </dl>
+                        </div>
+                        {% if table.subtables %}
+                        {% for subtable_name, subtable_route in table.subtables.items() %}
+                        <div class="card-body">
+                            <div id="{{ table.key }}-{{ subtable_name }}-subtable-{{ rec.id }}-container"></div>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    <!-- </div> -->
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if table.paginate %}
+    <nav aria-label="Print Record">
+        <ul class="pagination justify-content-center">
+
+            {# Previous page #}
+            {% if table.records.has_prev %}
+            <li class="page-item">
+                {% else %}
+            <li class="page-item disabled">
+                {% endif %}
+                <a href="#{{ table.key }}" class="page-link {{table.key}}-page-link" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                    <span class="sr-only">Previous</span>
+                </a>
+            </li>
+
+            {% if table.boundaries[0] %}
+            <li class="page-item">
+                <a href="#{{ table.key }}" class="page-link {{table.key}}-page-link" aria-label="1">1</a>
+            </li>
+            <li class="page-item">
+                <a href="#{{ table.key }}" class="page-link {{table.key}}-page-link" aria-label="2">2</a>
+            </li>
+            <li class="page-item disabled">
+                <a href="#{{ table.key }}" class="page-link {{table.key}}-page-link" aria-label="...">...</a>
+            </li>
+            {% endif %}
+
+            {% for i in range(table.start, table.end+1) %}
+            {% if i == table.records.page %}
+            <li class="page-item active">
+                {% else %}
+            <li class="page-item">
+                {% endif %}
+                <a href="#{{ table.key }}" class="page-link {{table.key}}-page-link" aria-label="{{ i }}">{{ i }}</a>
+            </li>
+            {% endfor %}
+
+            {% if table.boundaries[1] %}
+            <li class="page-item disabled">
+                <a href="#{{ table.key }}" class="page-link {{table.key}}-page-link" aria-label="...">...</a>
+            </li>
+            <li class="page-item">
+                <a href="#{{ table.key }}" class="page-link {{table.key}}-page-link" aria-label="{{ table.records.pages-1 }}">{{ table.records.pages-1 }}</a>
+            </li>
+            <li class="page-item">
+                <a href="#{{ table.key }}" class="page-link {{table.key}}-page-link" aria-label="{{ table.records.pages }}">{{ table.records.pages }}</a>
+            </li>
+            {% endif %}
+
+            {# Next page #}
+            {% if table.records.has_next %}
+            <li class="page-item">
+                {% else %}
+            <li class="page-item disabled">
+                {% endif %}
+                <a href="#{{ table.key }}" class="page-link {{table.key}}-page-link" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                    <span class="sr-only">Next</span>
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+    {% endif %}
+</div>

@@ -1,6 +1,7 @@
 import logging
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
+from printer_server.views.users import socket_require_permissions
 
 gpio = driver_handles.gpio
 
@@ -8,6 +9,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 @socketio.on("gpio_switch_film_relay", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def setFilmRelayState(message):
     try:
         if message == "On":
@@ -29,6 +31,7 @@ def getFilmRelayState(emit=True):
         return False
 
 @socketio.on("gpio_switch_wintech_fan_relay", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def setWintechFanRelayState(message):
     try:
         if message == "On":

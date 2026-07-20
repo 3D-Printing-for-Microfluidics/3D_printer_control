@@ -1,6 +1,7 @@
 import logging
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
+from printer_server.views.users import socket_require_permissions
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -17,11 +18,13 @@ def _planar_status_dict():
         return {"running": False, "torque_target_kgmm": None}
 
 @socketio.on("planar_status_query", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def planar_status_query():
     """Return current running + target torque."""
     socketio.emit("planar_status", _planar_status_dict(), namespace="/manual")
 
 @socketio.on("planar_set_target", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def planar_set_target(message):
     """Set target torque only (kg·mm)."""
     try:
@@ -33,6 +36,7 @@ def planar_set_target(message):
         socketio.emit("hardware_failure", "planar", namespace="/manual")
 
 @socketio.on("planar_start", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def planar_start(message):
     """Begin tighten/untighten to the target torque."""
     try:
@@ -50,6 +54,7 @@ def planar_start(message):
         socketio.emit("hardware_failure", "planar", namespace="/manual")
 
 @socketio.on("planar_stop", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def planar_stop():
     """Emergency stop."""
     try:

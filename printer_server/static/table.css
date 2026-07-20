@@ -1,0 +1,188 @@
+/* ?? */
+
+pre {
+    font-family: "Lato";
+    --font-family-sans-serif: "Lato";
+    font-size: 1rem;
+    margin-bottom: 0;
+}
+
+/* Link formatting */
+a {
+    color: #3498DB;
+}
+
+a:hover {
+    color: #375a7f;
+}
+
+/* Date picker formatting  */
+
+[type="date"] {
+    background: #fff url(calendar.png) 97% 50% no-repeat;
+}
+
+[type="date"]::-webkit-inner-spin-button {
+    display: none;
+}
+
+[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0;
+}
+
+/* Page label and input */
+.table-label {
+    margin-top: 8px;
+    float: left;
+}
+
+.table-input {
+    border: 1px solid #c4c4c4;
+    border-radius: 5px;
+    background-color: #fff;
+    padding: 3px 5px;
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.1);
+    width: 190px;
+    height: 32px;
+    margin-left: 10px;
+    margin-top: 3px;
+}
+
+/* Pagination navbar formatting */
+
+hr {
+    margin: 12px;
+}
+
+.page-link {
+    color: #3498DB;
+    background-color: transparent;
+    border-color: #3498DB
+}
+
+.page-link:hover {
+    color: #375a7f;
+    background-color: transparent;
+    border-color: #375a7f
+}
+
+
+.page-item.active .page-link {
+    color: #3498DB;
+    background-color: transparent;
+    background-image: none;
+    border-color: #3498DB;
+    border-width: 1px;
+    border-radius: 4px;
+}
+
+.page-item.disabled .page-link {
+    color: #3498DB;
+    background-color: transparent;
+    border-color: #3498DB
+}
+
+/* Advanced filters */
+.advanced-filters {
+    display: none;
+}
+
+.advanced-section {
+    margin-top: 8px;
+}
+
+.section-label {
+    font-weight: 600;
+}
+
+.row {
+    margin-bottom: 10px;
+}
+
+.advanced-search-inputs {
+    flex-wrap: wrap;
+    column-gap: 12px;
+    row-gap: 10px;
+}
+
+/* Column visibility */
+.columns-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 8px 18px;
+    align-items: center;
+}
+
+.columns-grid .form-check {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    column-gap: 6px;
+}
+
+.columns-grid .form-check-input {
+    margin-left: 0;
+    margin-right: 6px;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    position: static;
+}
+
+.columns-grid .form-check-label {
+    float: none;
+    margin-top: 0;
+    margin-left: 0;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.col-end-time,
+.col-upload-time,
+.col-design-purpose,
+.col-design-description,
+.col-design-resin,
+.col-design-printer,
+.col-design-slicer,
+.col-design-slice-date {
+    display: none;
+}
+
+/* Rotated header*/
+.vertical-header {
+    writing-mode: sideways-lr;
+    white-space: nowrap;
+    text-align: center;
+    padding: 0.5rem;
+}
+
+/* Table data centering */
+.justify-center {
+    text-align: center;
+}
+
+/* Table row hover effect */
+.data-row:hover {
+    cursor: pointer;
+    background-color: #444444;
+}
+
+/* Table row hover effect */
+.data-row.expanded {
+    cursor: pointer;
+    background-color: #303030;
+}
+
+
+/* Details row */
+.details-row td {
+    background-color: #303030;
+    padding: 1px;
+    /* white-space: pre-line; */
+}
+
+/* add space below each detail */
+dt {
+    margin-bottom: 20px;
+}

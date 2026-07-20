@@ -1,9 +1,34 @@
 var start_job_id = "";
 var delete_job_id;
 var critical_error_process = ""
+let sessionTimeout = null;
+let countdownInterval = null;
 
-// List of pending files to handle when the Upload button is finally clicked.
-var PENDING_FILES = [];
+function clearSessionTimers() {
+    if (sessionTimeout) {
+        clearTimeout(sessionTimeout);
+        sessionTimeout = null;
+    }
+
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+}
+
+function endSession() {
+    clearSessionTimers();
+
+    $.post(`/users/end_session_timeout/${active_session.id}?later=True`, function (data) {
+        if (data.success) {
+            console.log("Session ended");
+            location.reload();
+        } else {
+            console.log("Session end failed:", data.errors);
+        }
+    });
+}
+
 
 if (loadcell_exists) {
     var loadcell_trace = {
@@ -122,210 +147,33 @@ var write_to_message_box = function (message) {
     }
 }
 
-
-function initDropbox() {
-    let $dropbox = $("#dropbox");
-
-    // On drag enter...
-    $dropbox.on("dragenter", function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-        $(this).addClass("active");
-    });
-
-    $dropbox.on("dragleave", function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-        $(this).removeClass("active");
-    });
-
-    // On drag over...
-    $dropbox.on("dragover", function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-    });
-
-    // On drop...
-    $dropbox.on("drop", function (e) {
-        e.preventDefault();
-        $(this).removeClass("active");
-
-        // Get the files.
-        let files = e.originalEvent.dataTransfer.files;
-        addFiles(files);
-    });
-
-    // If the files are dropped outside of the drop zone, the browser will
-    // redirect to show the files in the window. To avoid that we can prevent
-    // the "drop" event on the document.
-    function stopDefault(e) {
-        e.stopPropagation();
-        e.preventDefault();
-    }
-    $(document).on("dragenter", stopDefault);
-    $(document).on("dragover", stopDefault);
-    $(document).on("drop", stopDefault);
-}
-
-var get_file_str = function () {
-    if (PENDING_FILES.length <= 0) {
-        return "No files selected."
-    }
-    let file_str = PENDING_FILES.length > 1 ? " files" : " file";
-    return PENDING_FILES.length + file_str + " selected"
-}
-
-function addFiles(files) {
-    let $selected = $("#selected-files");
-
-    // Add them to the pending files list.
-    for (let i = 0; i < files.length; i++) {
-        PENDING_FILES.push(files[i]);
-
-        // Append files to show on page
-        let li_file = $("<li/>", {
-            class: "list-group-item d-flex justify-content-between align-items-center",
-            text: files[i].name
-        }).appendTo($selected);
-        let del_file = $("<button/>", {
-            type: "button",
-            class: "ml-auto btn btn-sm btn-danger",
-            html: "&times;"
-        }).appendTo(li_file);
-        del_file.on("click", function () {
-            PENDING_FILES.splice($(this).parent().index(), 1);
-            $(this).parent().remove();
-            $("#file-number").text(get_file_str());
-        });
-    }
-    $("#file-number").text(get_file_str());
-}
-
-function doUpload() {
-    $("#upload-progress").removeClass("d-none");
-
-    // Gray out the form.
-    $("#upload-form :input").attr("disabled", "disabled");
-
-    // Initialize the progress bar.
-    $("#upload-progress-bar").css({ "width": "0%" })
-        .attr({ "aria-valuenow": 0 })
-        .text("%");
-
-    // Collect the form data.
-    // fd = collectFormData();
-    let fd = new FormData();
-
-    // Attach the files.
-    for (let i = 0; i < PENDING_FILES.length; i++) {
-        // Collect the other form data.
-        fd.append("file", PENDING_FILES[i]);
-    }
-
-    let xhr = $.ajax({
-        xhr: function () {
-            var xhrobj = $.ajaxSettings.xhr();
-            if (xhrobj.upload) {
-                xhrobj.upload.addEventListener("progress", function (event) {
-                    let percent = 0;
-                    let position = event.loaded || event.position;
-                    let total = event.total;
-                    if (event.lengthComputable) {
-                        percent = Math.ceil(position / total * 100);
-                    }
-
-                    // Set the progress bar.
-                    $("#upload-progress-bar").css({ "width": percent + "%" })
-                        .attr({ "aria-valuenow": percent })
-                        .text(percent + "%");
-                    $("#upload-completion").text(percent + "%");
-                }, false)
-            }
-            return xhrobj;
-        },
-        url: "/handle-upload",
-        method: "POST",
-        contentType: false,
-        processData: false,
-        cache: false,
-        data: fd,
-        success: function (data) {
-            PENDING_FILES = [];
-            $("#file-number").text(get_file_str());
-            $("ul#selected-files > li").remove()
-            $("#upload-progress-bar").css({ "width": "0%" });
-            $("#upload-progress").addClass("d-none");
-        },
-    });
-}
-
 $(document).ready(function () {
     var socket = io.connect("http://" + document.domain + ":" + location.port + "/printing");
     socket.emit("connecting");
-
-    let audioQueue = [];
-    let isPlaying = false;
-    let lastAlertTime = 0;
-    const ALERT_TIMEOUT_MS = 5000;
-    const NEXT_SOUND_DELAY_MS = 1000;
-    function playNextSound() {
-        if (audioQueue.length === 0) {
-            isPlaying = false;
-            return;
-        }
-        isPlaying = true;
-        const sound = audioQueue.shift();
-        const audio = new Audio("/static/audio/" + sound);
-        audio.preload = "auto";
-        audio.onended = function () {
-            setTimeout(playNextSound, NEXT_SOUND_DELAY_MS);
-        };
-        audio.play().catch(function (error) {
-            console.warn("Audio blocked:", error);
-            setTimeout(playNextSound, NEXT_SOUND_DELAY_MS);
-        });
-    }
-
-    function play_sound(sound) {
-        // Throttle alert.mp3
-        if (sound === "alert.mp3") {
-            const now = Date.now();
-            if (now - lastAlertTime < ALERT_TIMEOUT_MS) {
-                return;
-            }
-            lastAlertTime = now;
-        }
-        audioQueue.push(sound);
-        if (!isPlaying) {
-            playNextSound();
-        }
-    }
-
-    socket.on("play_sound", function (message) {
-        let sound = message.sound;
-        play_sound(sound);
-    });
 
     if (loadcell_exists) {
         // Set up Loadcell graph
         draw_loadcell_graph();
     }
 
-    try {
-        if (degas_state == "idle") {
-            show_degas_btn("#start-degas-btn");
+    // check if degas state is available
+    if (typeof degas_state !== "undefined") {
+        try {
+            if (degas_state == "idle") {
+                show_degas_btn("#start-degas-btn");
+            }
+            else if (degas_state == "running") {
+                show_degas_btn("#stop-degas-btn");
+            }
+            else if (degas_state == "finish") {
+                show_degas_btn("#finish-degas-btn");
+            }
+            else if (degas_state == "none") {
+                show_degas_btn();
+            }
+        } catch (error) {
+            console.error(error);
         }
-        else if (degas_state == "running") {
-            show_degas_btn("#stop-degas-btn");
-        }
-        else if (degas_state == "finish") {
-            show_degas_btn("#finish-degas-btn");
-        }
-        else if (degas_state == "none") {
-            show_degas_btn();
-        }
-    } catch (error) {
-        console.error(error);
     }
 
     // Set up the drag/drop zone.
@@ -361,11 +209,7 @@ $(document).ready(function () {
     });
 
     $("#create-job").on("click", function () {
-        if ($("#collapseUpload").hasClass("show")) {
-            $(this).text("Upload a job");
-        } else {
-            $(this).text("Hide");
-        }
+        $("#uploadModal").modal("show");
     });
 
     $("#job-table").on("click", ".clickable-row", function (event) {
@@ -378,12 +222,6 @@ $(document).ready(function () {
             start_job_id = $(this).attr("id").replace("row-", "")
             $("#start-btn").prop("disabled", false);
         }
-    });
-
-    // Set up the handler for the file input box.
-    $("#file-picker").on("change", function () {
-        addFiles(this.files);
-        this.value = null
     });
 
     if (loadcell_exists) {
@@ -408,19 +246,6 @@ $(document).ready(function () {
         });
     }
 
-    // Handle the submit button.
-    $("#upload-btn").on("click", function (e) {
-        // If the user has JS disabled, none of this code is running but the
-        // file multi-upload input box should still work. In this case they"ll
-        // just POST to the upload endpoint directly. However, with JS we"ll do
-        // the POST using ajax and then redirect them ourself when done.
-        e.preventDefault();
-        if (PENDING_FILES.length == 0) {
-            window.close();
-        }
-        doUpload();
-    });
-
     socket.on("busy", function (message) {
         $("#printer-state").text("Printer is busy");
         show_print_btn();
@@ -429,11 +254,68 @@ $(document).ready(function () {
     });
 
     socket.on("uninitialized", function (message) {
+        console.log("Printer is uninitialized");
         $("#printer-state").text("Uninitialized");
         show_print_btn("#init-btn, #shutdown-btn");
+
         let content = '3D printer has been shutdown';
         if (document.getElementById('base-body').innerHTML == content) {
-            location.reload()
+            console.log("Reloading page because printer is uninitialized");
+            location.reload();
+        }
+
+        
+        // Session timeout logic: if there is an active session, and the session start time is more than 60 seconds ago, show a modal to end the session
+        const session_start_time = active_session && active_session.start_time ? new Date(active_session.start_time).getTime() / 1000 : null;
+        const printer_server_time = server_time ? new Date(server_time).getTime() / 1000 : null;
+
+        if (
+            active_session && 
+            session_start_time !== null && 
+            (printer_server_time - session_start_time) > session_expiration_minutes*60
+        ) {
+            // Clear any existing timers in case this event fires multiple times
+            if (sessionTimeout) clearTimeout(sessionTimeout);
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            $("#print-alert-title").text("Session Timeout");
+
+            let countdown = 60;
+            $("#print-alert-body").text(
+                `Printer is uninitialized while a session is active. The session will timeout in ${countdown} seconds. Click "Confirm" to end the session now or "Cancel" to keep the session active.`
+            );
+
+            sessionTimeout = setTimeout(function () {
+                $('#confirmModal').modal('hide');
+                endSession();
+            }, 60000);
+
+            countdownInterval = setInterval(function () {
+                countdown--;
+
+                $("#print-alert-body").text(
+                    `Printer is uninitialized while a session is active. The session will timeout in ${countdown} seconds. Click "Confirm" to end the session now or "Cancel" to keep the session active.`
+                );
+
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
+            }, 1000);
+
+            $('#confirmModal').modal('show');
+        }
+    });
+
+    $('#confirmModal').on('hidden.bs.modal', function () {
+        if (sessionTimeout) {
+            clearTimeout(sessionTimeout);
+            sessionTimeout = null;
+        }
+
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
         }
     });
 
@@ -536,6 +418,11 @@ $(document).ready(function () {
         let operation = $("#print-alert-title").text();
         let msg;
 
+        if (operation === "Session Timeout") {
+            endSession();
+            return;
+        }
+
         if (loadcell_exists && (operation === "Start" || operation === "Planarization Step 1" || operation === "Planarization Step 2" || operation === "Resume")) {
             show_loadcell();
         }
@@ -551,9 +438,6 @@ $(document).ready(function () {
             msg = {};
         }
         socket.emit(operation.toLowerCase(), msg);
-        $("#print-alert-title").text("");
-        $("#print-alert-body").text("");
-        critical_error_process = "";
     });
 
     $("#print-alert-cancel").click(function () {
@@ -565,7 +449,10 @@ $(document).ready(function () {
             msg = critical_error_process;
             socket.emit(operation.toLowerCase(), msg);
         }
+    });
 
+    $("#confirmModal").on("hidden.bs.modal", function () {
+        clearSessionTimers();
         $("#print-alert-title").text("");
         $("#print-alert-body").text("");
         critical_error_process = "";
@@ -655,10 +542,13 @@ $(document).ready(function () {
       <td><a class="btn btn-sm btn-warning delete-job" id="delete-job${message.id}" role="button" aria-pressed="true" data-toggle="modal" data-target="#confirmModal">delete</a></td>
     </tr>
         `;
-        $("#job-table > tbody").append(new_row);
-        let new_msg = { time: message.upload_time, text: "Print Job (" + message.name + ") Uploaded" };
-        $("#create-job").text("Upload a job");
-        $("#collapseUpload").removeClass('show');
+
+        if (message.is_current_user) {
+            $("#job-table > tbody").append(new_row);
+            let new_msg = { time: message.upload_time, text: "Print Job (" + message.name + ") Uploaded by " + message.user_name };
+        };
+        // $("#create-job").text("Upload a job");
+        $("#uploadModal").modal("hide");
 
     });
 
@@ -670,16 +560,6 @@ $(document).ready(function () {
 
     socket.on("job deleted", function (message) {
         $("#row-" + message.job).remove();
-    });
-
-    socket.on("bootstrap alert", function (message) {
-        let flash_msg = `
-       <div class="alert alert-${message.category}">
-         <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
-        <pre>${message.text}</pre>
-       </div>
-        `;
-        $("#printer-controls").before(flash_msg);
     });
 
     if (loadcell_exists) {

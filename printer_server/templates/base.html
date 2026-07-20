@@ -15,6 +15,7 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='lib/darkly-bootstrap-4.1.1.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    <link href="{{ url_for('static', filename='table.css') }}" rel="stylesheet">
     {% endblock %}
 </head>
 
@@ -25,9 +26,7 @@
     <script src="{{ url_for('static', filename='lib/jquery-3.3.1.min.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/ajax-popper-2.9.2.min.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/bootstrap-4.1.1.min.js') }}"></script>
-    {% endblock %}
-
-    {% block content %}
+    <script src="{{ url_for('static', filename='lib/ajax-socket.io-4.7.5.min.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/jdenticon-3.1.1.min.js') }}"></script>
 
     <!-- Set color palette of identicon -->
@@ -48,6 +47,21 @@
             ]
         };
     </script>
+    
+    <script src="{{ url_for('static', filename='base.js') }}"></script>
+    <script src="{{ url_for('static', filename='table.js') }}"></script>
+
+    <script>
+        var global_socket;
+        var active_session = JSON.parse('{{ active_session|tojson }}');
+        var server_time = JSON.parse('{{ server_time|tojson }}');
+        var open_access = JSON.parse('{{ open_access|tojson }}');
+        var open_registration = JSON.parse('{{ open_registration|tojson }}');
+        var session_expiration_minutes = JSON.parse('{{ session_expiration_minutes|tojson }}');
+    </script>
+    {% endblock %}
+
+    {% block content %}
 
     <div class="col-12 jumbotron jumbotron-fluid">
         <div class="container">
@@ -61,6 +75,14 @@
                 <div>
                     {% block printer3d_state %}{% endblock %}
                     <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                        <button class="navbar-toggler" type="button"
+                            data-toggle="collapse"
+                            data-target="#navbarSupportedContent"
+                            aria-controls="navbarSupportedContent"
+                            aria-expanded="false"
+                            aria-label="Toggle navigation">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
                         <div class="collapse navbar-collapse" id="navbarSupportedContent">
                             <ul class="navbar-nav mr-auto">
                                 <li class="nav-item">
@@ -71,19 +93,22 @@
                                     <a class="nav-link" href="{{ url_for('calibration.index') }}">Calibration</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ url_for('manual_controls.index') }}">Manual
-                                        Controls</a>
-                                </li>
-                                <li class="nav-item">
                                     <a class="nav-link" href="{{ url_for('print_history.index') }}">Print
                                         History</a>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ url_for('server_logs.index') }}">Server Logs</a>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">
+                                    More
+                                    </a>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="{{ url_for('manual_controls.index') }}">Manual Controls</a>
+                                        <a class="dropdown-item" href="{{ url_for('calibration_history.index') }}">Calibration History</a>
+                                        <a class="dropdown-item" href="{{ url_for('server_logs.index') }}">Server Logs</a>
+                                        <a class="dropdown-item" href="{{ url_for('users.index') }}">Users</a>
+                                    </div>
                                 </li>
                             </ul>
                         </div>
-
                     </nav>
                 </div>
             </div>
@@ -102,6 +127,18 @@
         document.getElementById("favicon2").setAttribute("type", "image/png");
     </script>
 
+    <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalTitle" aria-hidden="true">
+        {% include "partials/confirm_modal.html" %}
+    </div>
+    <div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-hidden="true"></div>
+    <div class="modal fade" id="registerModal" tabindex="-1" role="dialog" aria-labelledby="registerModalTitle" aria-hidden="true"></div>
+    <div class="modal fade" id="startSessionModal" tabindex="-1" role="dialog" aria-labelledby="startSessionModalTitle" aria-hidden="true"></div>
+    <div class="modal fade" id="sessionSummaryModal" tabindex="-1" role="dialog" aria-labelledby="sessionSummaryModalTitle" aria-hidden="true"></div>
+    <div class="modal fade" id="endSessionModal" tabindex="-1" role="dialog" aria-labelledby="endSessionModalLabel" aria-hidden="true"></div>
+    <div class="modal fade" id="endPrintModal" tabindex="-1" role="dialog" aria-labelledby="endPrintModalLabel" aria-hidden="true"></div>
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" role="dialog" aria-labelledby="resetPasswordModalLabel" aria-hidden="true"></div>
+    <div class="modal fade" id="resetCodeModal" tabindex="-1" role="dialog" aria-labelledby="resetCodeModalLabel" aria-hidden="true"></div>
+
     <div class="container" id="base-body">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -112,12 +149,57 @@
         </div><!-- end .alert -->
         {% endfor %}
         {% endif %}
-        {% endwith %}
+        {% endwith %}   
+
+        <div class="alert alert-primary justify-content-between align-items-center {% if active_session %}d-flex{% else %}d-none{% endif %}" id="session-active-banner">
+            <div>
+                <strong>{{ active_session.user }}</strong>
+                <br>
+                <small class="text-muted">
+                    Session active • <span id="session-time" data-start="{{ active_session.start_time }}"></span>
+                </small>
+            </div>
+
+            <div class="d-flex">
+                <button class="btn btn-outline-warning mr-2" id="endSessionBtn">
+                    End Session
+                </button>
+
+                {% if current_user %}
+                <button class="btn btn-outline-danger logoutBtn">
+                    Logout
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="alert alert-dark justify-content-between align-items-center {% if active_session %}d-none{% else %}d-flex{% endif %}" id="session-available-banner">
+            <div>
+                <strong>Available</strong>
+                <br>
+                <small class="text-muted">
+                    No active session
+                </small>
+            </div>
+
+            <div class="d-flex">
+                <button class="btn btn-outline-success  mr-2" id="startSessionBtn">
+                    Start Session
+                </button>
+
+                {% if current_user %}
+                <button class="btn btn-outline-danger logoutBtn">
+                    Logout
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="collapse-area" style="max-height: 240px; overflow-y: auto; transition: height 0.3s ease;" id="flash-alerts"></div>
+        <br>
 
         {% block page_content %}{% endblock %}
     </div>
 
     {% endblock %}
 </body>
-
 </html>

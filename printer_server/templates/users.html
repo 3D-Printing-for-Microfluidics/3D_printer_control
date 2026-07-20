@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ hostname }} - Users{% endblock %}
+
+{% block printer3d_state %}
+<h2>{{ hostname }} - Users</h2>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link href="{{ url_for('static', filename='users.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block page_content %}
+
+<!-- <br> -->
+
+<div class="d-flex justify-content-end mb-2">
+    {% if open_registration or is_admin %}
+    <button type="button" class="btn btn-outline-info mr-2" id="addUserBtn">
+        Add User
+    </button>
+    {% endif %}
+    {% if open_access %}
+    <button type="button" class="btn btn-outline-info" id="loginBtn">
+        Login
+    </button>
+    {% endif %}
+</div>
+
+<br>
+
+<div id="main-table-container"></div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='lib/ajax-socket.io-4.7.5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='users.js') }}"></script>
+{% endblock %}

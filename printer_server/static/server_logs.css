@@ -24,12 +24,12 @@ a:hover {
     opacity: 0;
 }
 
-label {
+/* label {
     margin-top: 8px;
     float: left;
-}
+} */
 
-input {
+/* input {
     border: 1px solid #c4c4c4;
     border-radius: 5px;
     background-color: #fff;
@@ -39,9 +39,9 @@ input {
     height: 32px;
     margin-left: 10px;
     margin-top: 3px;
-}
+} */
 
-form {
+/* form {
     background-color: #FFF;
     height: 600px;
     width: 600px;
@@ -52,15 +52,9 @@ form {
     border-top-right-radius: 10px;
     padding: 0px;
     text-align: center;
-}
+} */
 
 /* Pagination navbar formatting */
-
-#apply_button {
-    /* margin-bottom: 10px; */
-    margin-left: 10px;
-    margin-right: 40px;
-}
 
 /* .btn-xs{
     font-size: 0.8em;

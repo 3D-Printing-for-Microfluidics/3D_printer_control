@@ -6,6 +6,7 @@ import printer_server.views.home as home
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
 from printer_server.threading_wrapper import Thread
+from printer_server.views.users import socket_require_permissions
 
 loadcell = driver_handles.loadcell
 
@@ -16,6 +17,7 @@ graph_thread = None
 graph_stop_event = Event()
 
 @socketio.on("loadcell_set_graph_mode", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def setLoadcellGraphMode(message):
     try:
         loadcell.set_graph_mode(message)
@@ -24,6 +26,7 @@ def setLoadcellGraphMode(message):
         socketio.emit("hardware_failure", "loadcell", namespace="/manual")
 
 @socketio.on("loadcell_start", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def start_loadcell():
     try:
         loadcell.start()   
@@ -37,6 +40,7 @@ def start_loadcell():
         socketio.emit("hardware_failure", "loadcell", namespace="/manual")
 
 @socketio.on("loadcell_stop", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def stop_loadcell():
     try:
         loadcell.stop()   

@@ -10,9 +10,10 @@ from flask import request, Blueprint, render_template
 
 from printer_server.extensions import socketio
 from printer_server.settings import Config
-import printer_server.views.home
+import printer_server.views.home as home
 from printer_server.threading_wrapper import Thread
 from printer_server.hardware_configuration.hardware_configuration import config_dict
+from printer_server.views.users import require_permissions, socket_require_permissions
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -173,8 +174,9 @@ blueprint = Blueprint(
 
 # Decorator to handle navigation to calibration page
 @blueprint.route("/manual")
+@require_permissions(permission="advanced", require_session=False)
 def index():
-    initialized = printer_server.views.home.print_control.state != "uninitialized"
+    initialized = home.print_control.state != "uninitialized"
 
     # Create list/dicts for Jinja2 loading
     if "coord_systems" in config_dict:
@@ -206,6 +208,7 @@ def index():
     ) 
 
 @socketio.on("connect", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def connect():
     log.debug("MC Socket connected %s", request.sid)
     global loop_thread, connected_clients
@@ -215,7 +218,7 @@ def connect():
     else:
         connected_clients += 1
 
-    if printer_server.views.home.print_control.state != "uninitialized":
+    if home.print_control.state != "uninitialized":
         for f in on_load_f_init:
             f()
         if loop_thread is None:
@@ -267,6 +270,7 @@ def stop_loop(force=False):
 
 
 @blueprint.route("light_engine_image_upload", methods=["POST"])
+@require_permissions(permission="advanced", require_session=False)
 def upload():
     return printer_server.drivers.generic_drivers.light_engine.light_engine_snip.handleUpload(request)
 

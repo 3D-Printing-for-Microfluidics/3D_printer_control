@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}{{ hostname }} - Error 401{% endblock %}
+
+{% block printer3d_state %}
+<h2 style="display: inline">{{ hostname }} - </h2>
+<h2 style="display: inline">Error 401</h2>
+{% endblock %}
+
+{% block page_content %}
+<div class="modal-dialog modal-dialog-centered"
+        role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">No Active Session</h5>
+        </div>
+        <div class="modal-body">
+            <p>
+                - There is no active session. Please start a session to access this page.
+            </p>
+            <p class="text-muted">
+                - {{ msg }}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -176,7 +176,7 @@ class Galil(BPStageDriver, FocusStageDriver, XYStageDriver):
             return False
 
     def disconnect(self):
-        """Disconnect form the Galil controller."""
+        """Disconnect from the Galil controller."""
         if self.connected is not None and self.connected is not False:
             self.thread_running = False
             try:

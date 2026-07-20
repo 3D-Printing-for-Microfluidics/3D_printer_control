@@ -7,6 +7,7 @@ from printer_server.hardware_configuration.hardware_configuration import (
 from printer_server.views.calibration import (
     get_last_calibration_positions_from_logs,
 )
+from printer_server.views.users import socket_require_permissions
 
 xy_stage = driver_handles.xy_stage
 if "coord_systems" in config_dict:
@@ -21,6 +22,7 @@ log.setLevel(logging.INFO)
 
 
 @socketio.on("xy_set_coodinate_system", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def xy_set_coodinate_system(message):
     "Set coordinate system offsets"
     try:
@@ -33,6 +35,7 @@ def xy_set_coodinate_system(message):
 
 
 @socketio.on("xy_home", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def xy_home():
     """Home xy stage."""
     try:
@@ -44,6 +47,7 @@ def xy_home():
 
 
 @socketio.on("xy_move", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def xy_move(message):
     """Move the xy stage in um"""
     try:
@@ -100,6 +104,7 @@ def xy_get_stage_list():
 
 
 @socketio.on("xy_get_position", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def xy_get_position(notify=True):
     """Get the position the xy stage in um."""
     try:

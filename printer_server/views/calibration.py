@@ -14,15 +14,15 @@ from markdown2 import markdown
 from printer_server.extensions import socketio
 from printer_server.settings import Config
 from printer_server.threading_wrapper import Thread
-import printer_server.views.home
+import printer_server.views.home as home
 from printer_server.hardware_configuration.hardware_configuration import config_dict
-from printer_server.models import PrintQueue
+from printer_server.models import PrintQueue, Session, Calibration
 from printer_server.print_file_validator import validate_schema, validate_printer_compatibility
+from printer_server.views.users import require_permissions, socket_require_permissions
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
-position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
 CALIBRATION_PRINTS_ROOT = Path(Config.PRINT_SERVER_FOLDER) / "calibration_prints"
 
 # Create bluprint
@@ -104,20 +104,10 @@ def register_stitching_correction():
 
 
 def get_last_calibration_positions_from_logs():
-    """Return the last focused position from the position log file."""
-    log_file = Path(Config.PROJECT_ROOT) / "logs" / "calibration_position_log.txt"
-    last_line = None
-    try:
-        with open(log_file) as f:
-            for line in f:
-                last_line = line.rstrip()
-
-        last_line = last_line[20:]
-        last_line = last_line.replace("'", '"')
-        temp = json.loads(last_line)
-        return temp
-    except FileNotFoundError:
-        return {}
+    # Get the last calibration positions from the database
+    from autoapp import app
+    with app.app_context():
+        return Calibration.get_last_positions()
 
 
 def create_calibration_data():
@@ -208,8 +198,9 @@ def create_calibration_data():
 
 # Decorator to handle navigation to calibration page
 @blueprint.route("/calibration")
+@require_permissions(permission="calibration", require_session=True)
 def index():
-    initialized = printer_server.views.home.print_control.state != "uninitialized"
+    initialized = home.print_control.state != "uninitialized"
 
     return render_template(
         "calibration.html",
@@ -220,6 +211,7 @@ def index():
 
 
 def write_to_position_log(message):
+    position_log_file = str(Path.cwd() / "logs" / "calibration_position_log.txt")
     with open(position_log_file, "a") as f:
         f.write(
             "{} {}\n".format(
@@ -227,8 +219,17 @@ def write_to_position_log(message):
             )
         )
 
+    from autoapp import app
+    with app.app_context():
+        calibration = Calibration(
+            calibration_date=datetime.now(),
+            calibration_data=message
+        )
+        calibration.save()
+
 
 @socketio.on("set", namespace="/calibration")
+@socket_require_permissions(permission="calibration", require_session=True)
 def set(message):
     register_irradiance_targets()
     mode = message["mode"]
@@ -246,11 +247,18 @@ def set(message):
         last_positions[machine_name] = round(
             distance + last_positions.get(machine_name, 0.0), round_precision
         )
+
+    cal_data = create_calibration_data()
+    for val in cal_data:
+        if val["machine_name"] not in last_positions:
+            last_positions[val["machine_name"]] = 0.0
+
     write_to_position_log(last_positions)
     socketio.emit("set_done", create_calibration_data(), namespace="/calibration")
 
 
 @socketio.on("goto", namespace="/calibration")
+@socket_require_permissions(permission="calibration", require_session=True)
 def goto():
     from printer_server.hardware_configuration.hardware_configuration import (
         driver_handles,
@@ -302,6 +310,7 @@ def goto():
 
 
 @blueprint.route("/calibration_prints/<path:filename>")
+@require_permissions(permission="calibration", require_session=True)
 def calibration_prints_file(filename):
     return send_from_directory(CALIBRATION_PRINTS_ROOT, filename)
 
@@ -487,6 +496,7 @@ def _format_calibration_vars_for_filename(variables):
 
 
 @socketio.on("calibration_prints_list", namespace="/calibration")
+@socket_require_permissions(permission="calibration", require_session=True)
 def calibration_prints_list():
     socketio.emit(
         "calibration_prints_list_done",
@@ -496,6 +506,7 @@ def calibration_prints_list():
 
 
 @socketio.on("calibration_prints_details", namespace="/calibration")
+@socket_require_permissions(permission="calibration", require_session=True)
 def calibration_prints_details(message):
     try:
         print_id = (message or {}).get("id")
@@ -504,14 +515,15 @@ def calibration_prints_details(message):
             "calibration_prints_details_done", details, namespace="/calibration"
         )
     except (ValueError, FileNotFoundError, json.JSONDecodeError) as ex:
+        log.warning("Error retrieving calibration print details: %s", ex)
         socketio.emit(
-            "calibration_prints_flash",
-            {"category": "warning", "text": str(ex)},
+            "calibration_prints_add_done",
             namespace="/calibration",
         )
 
 
 @socketio.on("calibration_prints_add_to_queue", namespace="/calibration")
+@socket_require_permissions(permission="calibration", require_session=True)
 def calibration_prints_add_to_queue(message):
     try:
         payload = message or {}
@@ -563,6 +575,7 @@ def calibration_prints_add_to_queue(message):
             original_filename=display_name,
             upload_time=upload_time,
             upload_ip=request.remote_addr,
+            user=Session.get_session_user()
         ).save()
 
         socketio.emit(
@@ -572,19 +585,21 @@ def calibration_prints_add_to_queue(message):
                 "name": display_name,
                 "upload_time": upload_time.strftime("%Y-%m-%d %H:%M:%S"),
                 "upload_ip": request.remote_addr,
+                "user_name": Session.get_session_user().full_name if Session.get_session_user() else None,
+                "is_current_user": True
             },
             namespace="/printing",
         )
+        home.send_bootstrap_alert(f"Calibration print {display_name} added to queue.", level="success")
         socketio.emit(
             "calibration_prints_add_done",
-            {"text": f"{display_name} added to queue."},
             namespace="/calibration",
         )
     except (ValueError, FileNotFoundError, json.JSONDecodeError) as ex:
         if "zip_path" in locals() and Path(zip_path).exists():
             Path(zip_path).unlink(missing_ok=True)
+        log.warning("Error adding calibration print to queue: %s", ex)
         socketio.emit(
-            "calibration_prints_flash",
-            {"category": "warning", "text": str(ex)},
+            "calibration_prints_add_done",
             namespace="/calibration",
         )

@@ -4,6 +4,7 @@ from printer_server.hardware_configuration.hardware_configuration import (
     driver_handles,
     config_dict,
 )
+from printer_server.views.users import socket_require_permissions
 import printer_server.views.manual_controls
 
 import time
@@ -18,6 +19,7 @@ stop_time = 0
 
 
 @socketio.on("bp_go_to_top", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def bp_go_to_top():
     """Move main Z stage to max position (up)."""
     try:
@@ -32,6 +34,7 @@ def bp_go_to_top():
 
 
 @socketio.on("bp_home", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def bp_home():
     """Home main z stage."""
     try:
@@ -46,6 +49,7 @@ def bp_home():
 
 
 @socketio.on("bp_move", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def bp_move(message):
     """Move the main Z stage in um."""
     try:
@@ -91,6 +95,7 @@ def bp_move(message):
 
 
 @socketio.on("bp_start_jog", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def bp_start_jog(message):
     """Start jogging the main Z stage."""
     try:
@@ -104,6 +109,7 @@ def bp_start_jog(message):
 
 
 @socketio.on("bp_stop_jog", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def bp_stop_jog():
     """Stop jogging the main Z stage"""
     try:
@@ -117,6 +123,7 @@ def bp_stop_jog():
 
 
 @socketio.on("bp_get_position", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def bp_get_position(return_timing=False, notify=True):
     """Get the position the main Z stage in um"""
     try:

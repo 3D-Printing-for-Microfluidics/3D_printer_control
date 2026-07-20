@@ -1,6 +1,7 @@
 import logging
 from printer_server.extensions import socketio
 from printer_server.hardware_configuration.hardware_configuration import driver_handles
+from printer_server.views.users import socket_require_permissions
 
 photodiode = driver_handles.photodiode
 
@@ -8,6 +9,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 @socketio.on("photodiode_get_power", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def get_photodiode_power(message={}, emit=True):
     try:
         wavelength = int(message.get("wavelength", photodiode.defaultWavelength))
@@ -22,6 +24,7 @@ def get_photodiode_power(message={}, emit=True):
         return None
 
 @socketio.on("photodiode_zero", namespace="/manual")
+@socket_require_permissions(permission="advanced", require_session=False)
 def zero_photodiode():
     try:
         photodiode.zero()

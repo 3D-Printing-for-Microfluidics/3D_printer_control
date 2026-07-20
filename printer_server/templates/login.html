@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link id="favicon1" rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+        <link id="favicon2" rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
+        <title>{{ hostname }} - Login</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='lib/darkly-bootstrap-4.1.1.min.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    </head>
+    <body>
+        <script src="{{ url_for('static', filename='lib/jquery-3.3.1.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='lib/ajax-popper-2.9.2.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='lib/bootstrap-4.1.1.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='lib/jdenticon-3.1.1.min.js') }}"></script>
+
+        <!-- Set color palette of identicon -->
+        <script>
+            window.jdenticon_config = {
+                hues: [
+                    204.07, //blue
+                    210.83, //indigo
+                    262.83, //purple
+                    261.26, //pink
+                    332.47, //red
+                    5.61, //orange
+                    27.3, //yellow
+                    36.8, //green
+                    164.68, //teal
+                    162.25, //cyan
+                    0 //white
+                ]
+            };
+        </script>
+
+        <div class="col-12 jumbotron jumbotron-fluid">
+            <div class="container">
+                <div class="row">
+                    <div class="identicon-container">
+                        <canvas id="identicon" class="identicon" data-jdenticon-value={{ hostname }} width="40"
+                            height="40">{{ hostname
+                            }}
+                        </canvas>
+                    </div>
+                    <div>
+                        <h2 style="display: inline">{{ hostname }} - Login</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="registerModal" tabindex="-1" role="dialog" aria-labelledby="registerModalTitle" aria-hidden="true"></div>
+        <div class="modal fade" id="resetPasswordModal" tabindex="-1" role="dialog" aria-labelledby="resetPasswordModalLabel" aria-hidden="true"></div>
+        <div class="modal fade" id="resetCodeModal" tabindex="-1" role="dialog" aria-labelledby="resetCodeModalLabel" aria-hidden="true"></div>
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                <a class="close" title="Close" href="#" data-dismiss="alert">&times;</a>
+                {{message}}
+            </div><!-- end .alert -->
+            {% endfor %}
+            {% endif %}
+            {% endwith %}   
+
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div id="loginModal">
+                        {% include 'partials/login_modal.html' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+
+    <!-- Set favicon as identicon -->
+    <script>
+        jdenticon()
+        var l = document.getElementById("identicon");
+        var identicon_href = l.toDataURL("image/png")
+
+        document.getElementById("favicon1").setAttribute("href", identicon_href);
+        document.getElementById("favicon2").setAttribute("href", identicon_href);
+        document.getElementById("favicon1").setAttribute("type", "image/png");
+        document.getElementById("favicon2").setAttribute("type", "image/png");
+    </script>
+    <script src="{{ url_for('static', filename='login.js') }}"></script>
+</html>

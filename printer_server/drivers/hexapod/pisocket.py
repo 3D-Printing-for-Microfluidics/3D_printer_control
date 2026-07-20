@@ -177,7 +177,7 @@ class PISocket(PIGateway):
         self.disconnect()
 
     def disconnect(self):
-        """Disconnect form the device."""
+        """Disconnect from the device."""
         if self._connected is not None and self._connected and self._socket is not None:
             self._connected = None
             try:

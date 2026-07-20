@@ -115,7 +115,7 @@ class ACS(EthernetSerial, BPStageDriver, XYStageDriver):
         return ret
 
     def disconnect(self):
-        """Disconnect form the ACS controller."""
+        """Disconnect from the ACS controller."""
         if self.connected is not None and self.connected is not False and self.socket is not None:
             self.thread_running = False
             try:
