@@ -277,6 +277,14 @@ $(document).ready(function () {
         }
     });
 
+    global_socket.on("print_log_finished", function(data) {
+        const id = data.id;
+        // if the end print modal is open and the print id matches, hide the modal
+        if ($('#endPrintModal').is(':visible') && $('#endPrintModal').data('id') === id) {
+            $('#endPrintModal').modal('hide');
+        }
+    });
+
     /////////////// Start Session ///////////////
     function showStartSessionModal() {
         $.get("/users/start_session", function(html) {

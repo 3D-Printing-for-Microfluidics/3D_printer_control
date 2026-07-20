@@ -811,6 +811,8 @@ def end_print_post(print_id):
     
     print_record.save()
 
+    socketio.emit("print_log_finished", {"id": print_id}, namespace="/global")
+
     return jsonify({"success": True})
 
 
