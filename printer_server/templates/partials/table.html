@@ -148,7 +148,7 @@
                     </td>
                     {% elif column.type == 'checkbox' %}
                     <td class="align-middle{{ ' ' if loop.first else ' justify-center ' }}{{ table.key }}-{{ column.key }}">
-                        {% if href_enabled %}<a class="table-a {{ table.key }}-{{ column.button_class }}" href="{{ column.href | replace('<id>', rec.id|string) }}">{% endif %}
+                        {% if href_enabled %}<a class="table-a {{ column.button_class }}" href="{{ column.href | replace('<id>', rec.id|string) }}">{% endif %}
                             {% if not href_enabled %}
                                 {% if value %}🗹{% else %}☐{% endif %}
                             {% else %}
@@ -166,7 +166,7 @@
                             {% else %}
                                 {% set button_style = column.button_style %}
                             {% endif %}
-                            <button type="button" class="btn {{ button_style }} btn-sm {{ table.key }}-{{ column.button_class }}">
+                            <button type="button" class="btn {{ button_style }} btn-sm {{ column.button_class }}">
                                 <!-- check if button name is lambda -->
                                 {% if column.button_name is callable %}
                                     {{ column.button_name(rec) }}

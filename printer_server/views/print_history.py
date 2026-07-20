@@ -43,7 +43,7 @@ def generate_session_table_column_definition():
             type="button", 
             button_style=(lambda r: "btn btn-outline-warning" if r.end_time is None else "btn btn-outline-success"), 
             button_name=(lambda r: "Finish" if r.end_time is None else "Edit"), 
-            button_class="finish-session-btn", 
+            button_class="session-history-finish-session-btn", 
             sortable=False, filterable="No", visible=True, 
             href_enabled=lambda r: r.user is not None and (r.user == user or r.end_time is None)
         )
@@ -103,7 +103,7 @@ def generate_print_table_column_definition():
         Column(key="col-failure-other", name="Other Failure Mode", value=lambda r: r.other_failure_mode, db_col=PrintRecord.other_failure_mode, db_filter=generate_string_lambda(PrintRecord.other_failure_mode)),
         Column(key="col-notes", name="Notes", value=lambda r: r.notes, db_col=PrintRecord.notes, db_filter=generate_string_lambda(PrintRecord.notes)),
         Column(key="col-reprint", name="Reprint", type="button", href="/print_history/reprint/<id>", href_enabled=is_in_session, button_style="btn-outline-info", button_name="Reprint", button_class="reprint-btn", sortable=False, filterable="No", visible=True),
-        Column(key="col-log", name="Logs", type="button", button_style=(lambda r: "btn btn-outline-warning" if r.logged == False and r.session.active else "btn btn-outline-success"), button_name=(lambda r: "Finish" if r.logged == False and r.session.active else "Edit"), button_class="print-log-btn", sortable=False, filterable="No", visible=True, href_enabled=lambda r: r.user is not None and r.user == user)
+        Column(key="col-log", name="Logs", type="button", button_style=(lambda r: "btn btn-outline-warning" if r.logged == False and r.session.active else "btn btn-outline-success"), button_name=(lambda r: "Finish" if r.logged == False and r.session.active else "Edit"), button_class="print-history-print-log-btn", sortable=False, filterable="No", visible=True, href_enabled=lambda r: r.user is not None and r.user == user)
     ]
 
     def get_sort_col(column_key):
