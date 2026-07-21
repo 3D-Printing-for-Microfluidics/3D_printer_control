@@ -280,7 +280,7 @@ $(document).ready(function () {
     global_socket.on("print_log_finished", function(data) {
         const id = data.id;
         // if the end print modal is open and the print id matches, hide the modal
-        if ($('#endPrintModal').is(':visible') && $('#endPrintModal').data('id') === id) {
+        if ($('#endPrintModal').is(':visible') && parseInt($('#endPrintModal').data('id')) === parseInt(id)) {
             $('#endPrintModal').modal('hide');
         }
     });
