@@ -41,11 +41,11 @@ def generate_session_table_column_definition():
             key="col-finish", 
             name="Logs", 
             type="button", 
-            button_style=(lambda r: "btn btn-outline-warning" if r.end_time is None else "btn btn-outline-success"), 
-            button_name=(lambda r: "Finish" if r.end_time is None else "Edit"), 
+            button_style=(lambda r: "btn btn-outline-warning" if not r.finished else "btn btn-outline-success"), 
+            button_name=(lambda r: "Finish" if not r.finished else "Edit"), 
             button_class="session-history-finish-session-btn", 
             sortable=False, filterable="No", visible=True, 
-            href_enabled=lambda r: r.user is not None and (r.user == user or r.end_time is None)
+            href_enabled=lambda r: r.user is not None and (r.user == user or not r.finished)
         )
     ]
 

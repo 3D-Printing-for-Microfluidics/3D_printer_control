@@ -110,6 +110,7 @@ class Session(SurrogatePK, Model):
     __tablename__ = "Sessions"
 
     active = Column(db.Boolean, default=True)
+    finished = Column(db.Boolean, nullable=False, default=False)
     
     # Timestamp for the session
     start_time = Column(db.DateTime, nullable=False, default=datetime.now)

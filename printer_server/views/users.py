@@ -423,12 +423,13 @@ def start_session_post():
 
     # check if user has an unended session (end time not set)
     previous_session = Session.query.filter_by(user_id=start_form.user.id).order_by(Session.start_time.desc()).first()
-    if previous_session and previous_session.end_time is None:
+    if previous_session and not previous_session.finished:
         return jsonify({"success": False, "errors": {"password": ["Your previous session's logs are incomplete. Please complete your previous session before starting a new one."], "session_id": previous_session.id}})
 
     session = Session(
         user=start_form.user,
         start_time=datetime.now(),
+        finished=False,
     )
     session.save()
     log.info("%s started session", start_form.user.full_name)
@@ -1005,9 +1006,21 @@ def end_session_post(session_id):
 
     # Update session information
     if session:
+        if session.active is True:
+            session.end_time = datetime.now()
+        else:
+            if len(prints) > 0 and prints[-1].end_time is not None:
+                session.end_time = prints[-1].end_time
+            else:
+                # use start time of next session if it exists, otherwise use current time
+                next_session = Session.query.filter(Session.start_time > session.start_time).order_by(Session.start_time.asc()).first()
+                if next_session:
+                    session.end_time = next_session.start_time
+                else:
+                    session.end_time = datetime.now()
+
         session.active = False
-        if not later:
-            session.end_time = datetime.now() if len(prints) == 0 else prints[-1].start_time + timedelta(seconds=10)
+        session.finished = not later
         session.prints_successful = prints_successful
         session.film_changed = end_session_form.film_changed.data
         session.hardware_issues = end_session_form.printer_issues.data
