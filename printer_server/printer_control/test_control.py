@@ -185,7 +185,60 @@ class TestControl(PrintControl):
             light_engine_driver.get_image_preview()
         )
 
-    def measure_keyence_line(self, step_size=0.15, scan_length_mm=25, number_of_scans=3, scan_spacing_mm=2.0, y_offset_mm=0.0, progress=(0,100)):
+    # measure_keyence_line alias
+    def measure_keyence_grid(self, x_step_size=0.15, y_step_size=0.15, x_scan_length_mm=25, y_scan_length_mm=25, x_offset_mm=0.0, y_offset_mm=0.0, n=10, keyence_index=0, global_focus_position_mm=0, progress=(0,100)):
+        """
+        Measures the keyence sensor in a grid of given length and step size, and logs the data to a csv file.
+
+        Parameters:
+        - x_step_size: The distance between each measurement point in the x direction in mm.
+        - y_step_size: The distance between each measurement point in the y direction in mm.
+        - x_scan_length_mm: The total length of the scan in the x direction in mm.
+        - y_scan_length_mm: The total length of the scan in the y direction in mm.
+        - x_offset_mm: The offset of the center of the scan in the x direction for the scans in mm.
+        - y_offset_mm: The offset of the center of the scan in the y direction for the scans in mm.
+        - n: The number of data points to collect for each location.
+        - keyence_index: The index of the keyence sensor to read from.
+        - global_focus_position_mm: The focus position of the scan in mm in the global coordinate system.
+        - progress: A tuple of the current progress and the total progress (internal).
+        """
+        if self.printing_stopped.is_set():
+            return
+
+        x_size = x_scan_length_mm
+        y_size = y_scan_length_mm
+        x_keyence_offset = self.coord_systems["keyence_visitech"]["X"]
+        y_keyence_offset = self.coord_systems["keyence_visitech"]["Y"]
+        x_pos_sweep = x_keyence_offset - x_size/2 - x_step_size
+        y_pos_sweep = y_keyence_offset - y_size/2 - y_step_size
+        x_range = round((x_size+2*x_step_size)/x_step_size) + 1
+        y_range = round((y_size+2*y_step_size)/y_step_size) + 1
+        x_set = []
+        y_set = []
+        for x in range(x_range):
+            x_set.append(x_pos_sweep+x*x_step_size + x_offset_mm)
+        for y in range(y_range):
+            y_set.append(y_pos_sweep+y*y_step_size + y_offset_mm)
+
+        self.measure_keyence_line(step_size=x_step_size, scan_length_mm=x_scan_length_mm, number_of_scans=y_range, scan_spacing_mm=y_step_size, y_offset_mm=y_offset_mm, x_offset_mm=x_offset_mm, number_of_data_points=n, keyence_index=keyence_index, global_focus_position_mm=global_focus_position_mm, progress=progress)
+
+
+    def measure_keyence_line(self, step_size=0.15, scan_length_mm=25, number_of_scans=3, scan_spacing_mm=2.0, y_offset_mm=0.0, x_offset_mm=0.0, number_of_data_points=10, keyence_index=0, global_focus_position_mm=0, progress=(0,100)):
+        """
+        Measures the keyence sensor in a line of given length and step size, and logs the data to a csv file.
+
+        Parameters:
+        - step_size: The distance between each measurement point in mm.
+        - scan_length_mm: The total length of the scan in mm.
+        - number_of_scans: The number of scans to perform.
+        - scan_spacing_mm: The spacing between each scan in mm.
+        - y_offset_mm: The offset in the y direction for the scans in mm.
+        - x_offset_mm: The offset in the x direction for the scans in mm.
+        - number_of_data_points: The number of data points to collect for location.
+        - keyence_index: The index of the keyence sensor to read from.
+        - global_focus_position_mm: The focus position of the scan in mm in the global coordinate system.
+        - progress: A tuple of the current progress and the total progress (internal).
+        """
         if self.printing_stopped.is_set():
             return
         ################ Step ################
@@ -203,11 +256,13 @@ class TestControl(PrintControl):
         x_set = []
         y_set = []
         for x in range(x_range):
-            x_set.append(x_pos_sweep+x*step_size)
+            x_set.append(x_pos_sweep+x*step_size + x_offset_mm)
         for y in range(number_of_scans):
             y_set.append(y_keyence_offset - (number_of_scans-1)*scan_spacing_mm/2 + y*scan_spacing_mm + y_offset_mm)
 
         self._update_progress(0, 1, progress)
+
+        self.focus_stage.threadedFocusMove(log, mm=global_focus_position_mm, join=True)
 
         # Move to x start
         self.xy_stage.threadedXYMove(log, x_set[0], y_set[0], join=True)
@@ -226,7 +281,7 @@ class TestControl(PrintControl):
                 )
 
                 # Wait
-                time.sleep(0.1)
+                time.sleep(0.01)
 
                 # Get Position
                 x_position = self.xy_stage.getXYPosition(axis="X")
@@ -234,18 +289,21 @@ class TestControl(PrintControl):
                 x_position -= x_keyence_offset
                 y_position -= y_keyence_offset
 
-                # Log measurements
-                # Start time
-                t = datetime.now() - self.print_start_time 
-                async_file_hander.write(self.test_log, f"{t},")
+                for i in range(number_of_data_points):
+                    if self.printing_stopped.is_set():
+                        return
+                    # Log measurements
+                    # Start time
+                    t = datetime.now() - self.print_start_time 
+                    async_file_hander.write(self.test_log, f"{t},")
 
-                # Get Photodiode power
-                async_file_hander.write(self.test_log, f"{self.keyence.read_sensor('visitech')},")
-                async_file_hander.write(self.test_log, f"{x_position:.3f},{y_position:.3f},")
-                async_file_hander.write(self.test_log, f"\n")
+                    # Get keyence reading
+                    async_file_hander.write(self.test_log, f"{self.keyence.read_sensor_at_index(keyence_index)},")
+                    async_file_hander.write(self.test_log, f"{x_position:.3f},{y_position:.3f},")
+                    async_file_hander.write(self.test_log, f"\n")
 
-                # Wait
-                time.sleep(0.1)
+                    # Wait
+                    time.sleep(0.01)
 
                 if self.printing_stopped.is_set():
                     return
