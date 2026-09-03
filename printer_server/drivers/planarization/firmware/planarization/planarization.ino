@@ -107,8 +107,10 @@ void driveTighten() {
 }
 
 void driveUntighten() {
-  analogWrite(IN2, kPWM);
+  analogWrite(IN2, 255);
   digitalWrite(IN1, LOW);
+  delay(300);
+  analogWrite(IN2, kPWM);
 }
 
 void brakeCoastOff() {
@@ -165,7 +167,7 @@ void startMotor(int dir) {
   }
 
   controlTimer.begin(torqueControlISR, 10000);  // 100 Hz
-  delay(500);
+  delay(100);
   motor_engaged = true;
 }
 
